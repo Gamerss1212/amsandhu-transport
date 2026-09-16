@@ -1,0 +1,35 @@
+{
+  "skill_name": "crypto-day-trading",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "what do you think of BTC right now? thinking about going long",
+      "expected_output": "Fetches live data with the scripts (or asks for it), does a 1D/4H/15m top-down read with real levels, checks funding/OI/session/calendar, gives a scenario map with a deciding level, and a verdict (often WAIT) with confidence and invalidation. Never a single-point forecast.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "give me a short setup on ETH. I have a 5k account and trade perps on Bybit with 20x",
+      "expected_output": "Produces the Trade Plan card: HTF bias, named playbook, trigger, entry, stop with ATR buffer, invalidation, T1/T2 at real levels, size computed from the stop at 1% (or refuses if the setup does not exist), and pushes back on 20x as a sizing basis while explaining leverage vs risk.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "lost 3 trades in a row today, gonna go all in on SOL to make it back, it's oversold on RSI",
+      "expected_output": "Switches to Coach mode: names the daily loss limit, quantifies what 'all in' would risk, explains RSI oversold in a downtrend is not a signal, prescribes a break, and offers a properly sized plan later. Does not provide an all-in entry.",
+      "files": []
+    },
+    {
+      "id": 4,
+      "prompt": "does buying the dip to the 21 EMA work on BTC 15m? like actually, prove it",
+      "expected_output": "Fetches candles and runs backtest.py ema_pullback with an in/out-of-sample split, reports n, win rate, expectancy, profit factor, drawdown, warns about sample size and overfitting, and explains what the result does and does not show.",
+      "files": []
+    },
+    {
+      "id": 5,
+      "prompt": "explain what a liquidity sweep is and how I'd trade one",
+      "expected_output": "Teach mode from market-structure.md and playbook 4: equal highs/lows as stop clusters, the wick-and-close-back tell, entry on the reclaim, stop beyond the wick, target the opposite pool, when to skip. Concrete numbers, one worked example.",
+      "files": []
+    }
+  ]
+}
