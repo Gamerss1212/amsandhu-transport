@@ -189,6 +189,21 @@ check("15 min before FOMC is inside the no-trade window", t1["inside_no_trade_wi
 t1b = events.next_tier1(datetime(2026, 9, 16, 19, 0, tzinfo=timezone.utc))
 check("60 min after FOMC is outside the window", not t1b["inside_no_trade_window"])
 
+# ------------------------------------------------------------- confluence ---
+print("== confluence ==")
+import confluence
+_snap_now = ts[-1] + timedelta(minutes=15)
+_s = snapshot.analyze(d, 3, now=_snap_now)
+_res = confluence.score(_s, _s, {"funding_rate_8h_pct": 0.01}, "long", datetime(2026, 9, 17, 14, 0, tzinfo=timezone.utc),
+                        entry=_s["price"], stop=_s["price"] - 1.0 * (_s["atr14"] or 1), target=_s["price"] + 2.5 * (_s["atr14"] or 1))
+check("confluence returns a 0-10 score with ten rows", 0 <= _res["score"] <= 10 and len(_res["rows"]) == 10)
+check("confluence awards reward and stop-quality points for a 2.5R plan at 1 ATR", 
+      all(r["points"] == 1 for r in _res["rows"] if r["factor"] in (9, 10)), str([r for r in _res["rows"] if r["factor"] in (9, 10)]))
+check("confluence awards the session point at 14:00 UTC on a weekday", next(r for r in _res["rows"] if r["factor"] == 7)["points"] == 1)
+_res2 = confluence.score(_s, _s, {"funding_rate_8h_pct": 0.01}, "long", datetime(2026, 9, 16, 17, 50, tzinfo=timezone.utc))
+check("confluence denies the calendar point 10 min before FOMC", next(r for r in _res2["rows"] if r["factor"] == 8)["points"] == 0)
+check("confluence grade is skip without a plan", _res2["grade"] == "skip")
+
 # --------------------------------------------------------------- snapshot ---
 print("== snapshot ==")
 snap = snapshot.analyze(d, 3, now=ts[-1] + timedelta(minutes=15))

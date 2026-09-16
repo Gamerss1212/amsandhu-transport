@@ -12,6 +12,13 @@ It does not "predict" the market. Nobody can. It teaches Claude to find
 positive-expectancy setups, size them so no single trade matters, and say "no
 trade" when that is the honest answer.
 
+About win rates: no file delivers a "real 85% win rate". Win rate is a dial (tiny
+targets and wide stops hit 85% and lose money). The encyclopedia's Part 0 explains
+the math and Part 2 gives the High-Probability Program: A-grade confluence only,
+partial at 1R, one session, three trades a day. Executed, that produces 55-65% of
+trades closing green with winners larger than losers, which is a professional
+result.
+
 ## What's inside
 
 ```
@@ -30,11 +37,13 @@ crypto-day-trading/
 │   ├── psychology-and-rules.md   tilt, FOMO, revenge trading, routine, stop-trading rules
 │   ├── journal-and-backtesting.md  what to log, metrics, honest backtesting, overfitting
 │   ├── worked-examples.md        six full interactions on live data
+│   ├── strategy-encyclopedia.md  175 strategies in one format + win-rate truth + confluence scoring + decision table
 │   └── glossary.md
 ├── scripts/                      Python 3.8+, standard library only
 │   ├── fetch_ohlcv.py            candles from Binance/Coinbase/Kraken; --derivs from Binance/OKX/Bybit
 │   ├── snapshot.py               multi-timeframe structure + indicators + setup flags + clock
 │   ├── scan.py                   the same across many pairs in one call
+│   ├── confluence.py             ten-factor confluence score and grade for a candidate trade
 │   ├── position_size.py          size from the stop; leverage, liquidation, fee drag, R:R
 │   ├── journal.py                log plans before the outcome, close after, review
 │   ├── journal_stats.py          expectancy, profit factor, drawdown, per-playbook/session/grade

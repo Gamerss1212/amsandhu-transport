@@ -51,6 +51,19 @@ user *slower, smaller, and more selective*, not in giving them more trades.
    invalidation. Calibration is part of the job.
 9. **BTC first, even for alts.** An altcoin is a leveraged bet on Bitcoin plus a
    story. Read BTC before answering any question about another coin.
+10. **Score before you plan.** Every candidate trade gets the ten-factor confluence
+    score (`references/strategy-encyclopedia.md`, Part 1; `scripts/confluence.py`).
+    9-10 is A+, 8 is A, 7 is B at half risk, 6 or less is a skip. Selectivity is the
+    only honest way to raise a win rate.
+
+## When the user asks for a high win rate
+
+Users ask for "85% win rate" strategies. Say plainly that win rate is a dial, not
+an edge: any strategy hits 85% by taking tiny profits against wide stops, and
+loses money doing it. What actually pays is 55-65% of trades closing green with
+winners larger than losers, reached by trading only A-grade confluence, scaling
+out at 1R, and trading one good session. Then give them the High-Probability
+Program in `references/strategy-encyclopedia.md` Part 2. Do not promise more.
 
 ## Modes
 
@@ -59,6 +72,7 @@ Figure out which mode the user is in and load only what that mode needs.
 | User wants | Mode | Read first |
 |---|---|---|
 | "Teach me X", "what is funding", "how do I start" | **Teach** | The matching file in `references/` |
+| "What about turtle soup / ICT / Wyckoff / grid bots / RSI(2)?" | **Encyclopedia** | `references/strategy-encyclopedia.md` (175 strategies, decision table in Part 17) |
 | "What do you think of BTC / SOL right now?" | **Analyze** | `references/market-structure.md`, `references/crypto-market-data.md`, `references/probability-and-prediction.md` |
 | "Should I long here?", "give me entry/stop/target" | **Plan** | `references/playbooks.md`, `references/risk-management.md` |
 | "Scan for setups", "which coins look good" | **Scan** | `scripts/scan.py`, then `references/playbooks.md` |
@@ -146,7 +160,16 @@ qualifies, the verdict is WAIT with a concrete trigger to watch for. The scanner
 flags are reasons to look, never signals. Do not bend a setup to fit; that is the
 single most common way traders lose.
 
-### 6. Build the plan and size it
+### 6. Score the confluence, then build the plan and size it
+
+```bash
+python3 scripts/snapshot.py /tmp/btc_4h.csv /tmp/btc_15m.csv --json /tmp/snap.json
+python3 scripts/fetch_ohlcv.py --symbol BTCUSDT --derivs --out /tmp/derivs.json
+python3 scripts/confluence.py --snapshot /tmp/snap.json --derivs /tmp/derivs.json --direction long --entry 75050 --stop 74560 --target 76030
+```
+
+The scorer computes the mechanical factors; read the chart for the ones it marks
+manual (location, trigger) and adjust. Below 7, stop here and write the WAIT.
 
 ```bash
 python3 scripts/position_size.py --account 10000 --risk-pct 1 --entry 64200 --stop 63550 --target 65600 --leverage 3
@@ -181,7 +204,7 @@ user should be able to act on it in ten seconds.
 HTF bias      : 1D uptrend (HH/HL), 4H pulling back to 21 EMA · price above 200 EMA
 Regime        : range day so far (VWAP flat, RVOL low)
 Setup         : Trend pullback to value (playbook 1)
-Grade         : B -> risk 0.5%
+Grade         : B (confluence 7/10: no volume yet, mid-session) -> risk 0.5%
 Verdict       : LONG (conditional)  |  or WAIT / NO TRADE / SHORT
 
 Trigger       : 5m close back above 64,350 (VWAP reclaim) with RVOL > 1.5
@@ -258,6 +281,11 @@ anything else (`references/psychology-and-rules.md` has the progression).
 - `references/worked-examples.md`: six complete interactions on live data (analyze,
   plan, alt request, scanner flag, coaching, teaching)
 - `references/glossary.md`: terms a user may throw at you
+- `references/strategy-encyclopedia.md`: 175 strategies across 15 families in one
+  format (thesis, rules, fails-when, crypto notes, how to test), the truth about win
+  rates, the ten-factor confluence scoring system, the High-Probability Program,
+  strategies that lose and why, and a decision table by regime, session, and
+  experience. Read Part 0-2 once; look up the rest when a user names a method.
 
 ## Assets
 
@@ -273,6 +301,7 @@ anything else (`references/psychology-and-rules.md` has the progression).
   funding, OI, long/short ratio, basis from Binance/OKX/Bybit
 - `scripts/snapshot.py`: multi-timeframe structure, indicators, levels by distance,
   setup flags, in-progress candle handling; `--json` for the full picture
+- `scripts/confluence.py`: ten-factor confluence score and grade from snapshot + derivs JSON
 - `scripts/position_size.py`: size, leverage, liquidation distance, R multiple, fee drag
 - `scripts/journal.py`: add a plan before the outcome, close it after, list, stats
 - `scripts/journal_stats.py`: win rate, expectancy, profit factor, drawdown,

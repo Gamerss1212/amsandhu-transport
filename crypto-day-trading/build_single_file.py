@@ -25,6 +25,7 @@ ORDER = [
     "references/crypto-market-data.md",
     "references/risk-management.md",
     "references/playbooks.md",
+    "references/strategy-encyclopedia.md",
     "references/probability-and-prediction.md",
     "references/regimes-and-cycles.md",
     "references/altcoins-and-memecoins.md",
