@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Jarvus Terminal</title>
+<link rel="stylesheet" href="/static/app.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='13' font-size='13'>📡</text></svg>">
+</head>
+<body>
+<header>
+  <div class="bar">
+    <div class="brand"><span class="dot"></span><h1>Jarvus Terminal</h1>
+      <span class="small muted" id="subtitle">scanning every liquid market</span></div>
+    <div class="ctl"><label class="lbl" for="feeTier">Fee tier</label>
+      <select id="feeTier" title="Round-trip cost decides more outcomes than setup choice"></select></div>
+    <div class="ctl"><label class="lbl" for="deepN">Depth</label>
+      <select id="deepN">
+        <option value="20">20</option><option value="40" selected>40</option>
+        <option value="60">60</option><option value="100">100</option>
+      </select></div>
+    <div class="ctl"><label class="lbl" for="account">Account</label>
+      <input id="account" type="number" value="10000" min="100" step="100" style="width:96px"></div>
+    <button id="refresh" class="primary">Rescan</button>
+    <button id="theme" title="Toggle light and dark">◑</button>
+  </div>
+</header>
+
+<nav role="tablist">
+  <button role="tab" data-tab="markets" aria-selected="true">Markets</button>
+  <button role="tab" data-tab="detail" aria-selected="false">Detail</button>
+  <button role="tab" data-tab="news" aria-selected="false">News</button>
+  <button role="tab" data-tab="learning" aria-selected="false">Learning</button>
+  <button role="tab" data-tab="journal" aria-selected="false">Journal</button>
+</nav>
+
+<main>
+  <!-- ===================== MARKETS ===================== -->
+  <section class="panel on" id="panel-markets" role="tabpanel">
+    <div class="grid tiles" id="tiles"></div>
+
+    <div class="card">
+      <h2>Most likely to move next</h2>
+      <p class="small sec" style="margin:4px 0 10px">
+        Ranked by the volatility gate, which forecasts <strong>how much</strong> a market will move,
+        never which way. Volatility is forecastable because it clusters; direction is not
+        (a trained model on 67,585 hours reached 0.513 against a 0.500 coin flip).
+        Sorting by expected movement is the honest version of "which ones are about to blow".
+      </p>
+      <div id="marketsWrap"><div class="load"><span class="spin"></span>scanning every liquid market…</div></div>
+    </div>
+
+    <div class="card">
+      <h3>How to read this</h3>
+      <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(230px,1fr));margin-top:8px">
+        <div class="note"><strong>Heat</strong> blends how fast a market already moves with whether it is
+          speeding up or winding tight. High heat means a big move is likely — the direction is a coin flip.</div>
+        <div class="note"><strong>Cost</strong> is the round trip as a share of your risk. Above 33% the trade
+          is refused: fees would eat it before the idea gets a chance.</div>
+        <div class="note warn"><strong>BUY</strong> means the structural boxes are ticked and the cost gate
+          passed. It is not a forecast. Every plan carries a stop that defines the loss in advance.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== DETAIL ===================== -->
+  <section class="panel" id="panel-detail" role="tabpanel">
+    <div id="detail"><div class="card"><p class="muted">Pick a market on the Markets tab to open it here.</p></div></div>
+  </section>
+
+  <!-- ===================== NEWS ===================== -->
+  <section class="panel" id="panel-news" role="tabpanel">
+    <div class="card">
+      <h2>Live headlines</h2>
+      <p class="small sec" style="margin:4px 0 10px">Public RSS from five crypto desks. Words that have
+        historically preceded violent repricing are flagged. A flag is a reason to read, never a signal —
+        by the time a headline is tradeable the algorithms have already traded it.</p>
+      <div id="newsWrap"><div class="load"><span class="spin"></span>loading…</div></div>
+    </div>
+  </section>
+
+  <!-- ===================== LEARNING ===================== -->
+  <section class="panel" id="panel-learning" role="tabpanel">
+    <div class="card">
+      <h2>What this app has learned about itself</h2>
+      <p class="small sec" style="margin:4px 0 10px">
+        Every scan writes down its claims <em>before</em> the outcome is known, with the threshold that
+        will later decide whether each claim was right. After the horizon passes, the app grades itself.
+        The numbers below are measured on your own data, not borrowed from a paper.
+      </p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+        <button id="resolveBtn" class="primary">Grade what is due</button>
+        <button id="reloadLearn">Reload</button>
+      </div>
+      <div id="learnWrap"><div class="load"><span class="spin"></span>loading…</div></div>
+    </div>
+  </section>
+
+  <!-- ===================== JOURNAL ===================== -->
+  <section class="panel" id="panel-journal" role="tabpanel">
+    <div class="card">
+      <h2>Journal</h2>
+      <p class="small sec" style="margin:4px 0 10px">Log the plan before the order, close it after.
+        Expectancy over 50–100 trades is the only scoreboard that means anything.</p>
+      <div id="journalWrap"><div class="load"><span class="spin"></span>loading…</div></div>
+    </div>
+  </section>
+
+  <footer class="small muted" style="padding:10px 2px 26px">
+    Educational research tool, not financial advice. It looks and plans; you decide and click.
+    Crypto is volatile and most retail day traders lose money.
+  </footer>
+</main>
+
+<div class="tip" id="tip" role="status" aria-live="polite"></div>
+<script src="/static/app.js"></script>
+</body>
+</html>
