@@ -1,0 +1,3 @@
+id,date_utc,time_utc,symbol,direction,playbook,grade,entry,stop,target,exit,risk_pct,size,r_multiple,fees_r,planned,execution_grade,mistake,notes
+1,2026-09-14,13:52,BTCUSDT,long,1-trend-pullback,A,64350,63780,65900,65100,1.0,0.1754,,0.12,yes,4,none,"NY open pullback to 15m 21 EMA + VWAP; took 1/2 at PDH 65100 and rest stopped at BE"
+2,2026-09-14,16:10,SOLUSDT,short,2-range-fade,B,152.4,154.9,147.5,154.9,0.5,20,,0.10,no,2,chased,"Not in the plan. Faded range high on 3rd test without a rejection candle; broke out. Rule break."

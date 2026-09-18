@@ -12,12 +12,14 @@ It does not "predict" the market. Nobody can. It teaches Claude to find
 positive-expectancy setups, size them so no single trade matters, and say "no
 trade" when that is the honest answer.
 
-About win rates: no file delivers a "real 85% win rate". Win rate is a dial (tiny
-targets and wide stops hit 85% and lose money). The encyclopedia's Part 0 explains
-the math and Part 2 gives the High-Probability Program: A-grade confluence only,
-partial at 1R, one session, three trades a day. Executed, that produces 55-65% of
-trades closing green with winners larger than losers, which is a professional
-result.
+About win rates, measured rather than asserted: an 80% win rate **was built and
+tested** on 78,000 hourly candles of BTC, ETH and SOL. Sell half at +0.25R and move
+the stop to breakeven and **79.5% of trades close green**. The same rules applied to
+deliberately random entries score **78.6%** — the exit ladder makes the number, not
+the analysis — and it is worth +0.012R gross and is negative at every retail fee
+tier. The one configuration that made money won 51% of the time. Part 26 of the
+encyclopedia has the tables, the out-of-sample split and the code; Part 2 has the
+High-Probability Program that follows from it.
 
 ## What's inside
 
@@ -37,13 +39,15 @@ crypto-day-trading/
 │   ├── psychology-and-rules.md   tilt, FOMO, revenge trading, routine, stop-trading rules
 │   ├── journal-and-backtesting.md  what to log, metrics, honest backtesting, overfitting
 │   ├── worked-examples.md        six full interactions on live data
-│   ├── strategy-encyclopedia.md  175 strategies in one format + win-rate truth + confluence scoring + decision table
+│   ├── strategy-encyclopedia.md  320 strategies + win-rate truth + confluence scoring + decision table + the measured 80% experiment
 │   └── glossary.md
 ├── scripts/                      Python 3.8+, standard library only
 │   ├── fetch_ohlcv.py            candles from Binance/Coinbase/Kraken; --derivs from Binance/OKX/Bybit
 │   ├── snapshot.py               multi-timeframe structure + indicators + setup flags + clock
 │   ├── scan.py                   the same across many pairs in one call
 │   ├── confluence.py             ten-factor confluence score and grade for a candidate trade
+│   ├── ladder.py                 scale-out ladder simulator with a random-entry control (the 80% engine)
+│   ├── experiment_80.py          reproduces the measured 80% tables
 │   ├── position_size.py          size from the stop; leverage, liquidation, fee drag, R:R
 │   ├── journal.py                log plans before the outcome, close after, review
 │   ├── journal_stats.py          expectancy, profit factor, drawdown, per-playbook/session/grade

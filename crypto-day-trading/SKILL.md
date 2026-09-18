@@ -58,12 +58,25 @@ user *slower, smaller, and more selective*, not in giving them more trades.
 
 ## When the user asks for a high win rate
 
-Users ask for "85% win rate" strategies. Say plainly that win rate is a dial, not
-an edge: any strategy hits 85% by taking tiny profits against wide stops, and
-loses money doing it. What actually pays is 55-65% of trades closing green with
-winners larger than losers, reached by trading only A-grade confluence, scaling
-out at 1R, and trading one good session. Then give them the High-Probability
-Program in `references/strategy-encyclopedia.md` Part 2. Do not promise more.
+Do not refuse and do not lecture. **Build it, measure it, then show what it is made
+of.** This was settled by experiment, not argument, on 78,000 hourly candles of BTC,
+ETH and SOL:
+
+- The 80% is **real**: sell half at +0.25R, move the stop to breakeven, runner to 2R.
+  Measured **79.5% of trades closing green** over 669 trades.
+- It is **not skill**: the same ladder on deliberately random entries scores **78.6%**.
+  The exit rules manufacture the number; the setup contributes about one point.
+- It **costs** most of the edge: +0.012R gross against +0.050R for a +1R ladder, and
+  it is negative at every retail fee tier.
+- At taker fees **it stops being 80%**, falling to 68.3%, because a +0.25R partial
+  minus two fees no longer closes green.
+- The only configuration that made money won **51%** of the time (+0.019R at maker
+  fees).
+
+Run `python3 scripts/experiment_80.py <csv...>` to reproduce it, show
+`references/strategy-encyclopedia.md` Part 26 for the full tables, then give the
+High-Probability Program in Part 2. The honest target is expectancy after costs, and
+the levers are fee tier, stop width and selectivity, in that order.
 
 ## Modes
 
@@ -285,7 +298,11 @@ anything else (`references/psychology-and-rules.md` has the progression).
   format (thesis, rules, fails-when, crypto notes, how to test), the truth about win
   rates, the ten-factor confluence scoring system, the High-Probability Program,
   strategies that lose and why, and a decision table by regime, session, and
-  experience. Read Part 0-2 once; look up the rest when a user names a method.
+  experience. **Volume II (176-320)** adds options and volatility, DeFi and on-chain,
+  portfolio and allocation, execution and cost, seasonality, sentiment and flow,
+  arbitrage and market making, named systems and quant methodology, and **Part 26, the
+  measured 80% experiment**. Read Parts 0-2 and 26 once; look up the rest when a user
+  names a method.
 
 ## Assets
 
@@ -302,6 +319,9 @@ anything else (`references/psychology-and-rules.md` has the progression).
 - `scripts/snapshot.py`: multi-timeframe structure, indicators, levels by distance,
   setup flags, in-progress candle handling; `--json` for the full picture
 - `scripts/confluence.py`: ten-factor confluence score and grade from snapshot + derivs JSON
+- `scripts/ladder.py`: scale-out ladder simulator — green rate vs expectancy vs fee tier,
+  with a random-entry control. The engine behind the measured 80% finding.
+- `scripts/experiment_80.py`: reproduces the three published tables in Part 26
 - `scripts/position_size.py`: size, leverage, liquidation distance, R multiple, fee drag
 - `scripts/journal.py`: add a plan before the outcome, close it after, list, stats
 - `scripts/journal_stats.py`: win rate, expectancy, profit factor, drawdown,
