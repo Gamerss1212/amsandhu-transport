@@ -168,6 +168,128 @@ def main() -> int:
     check("headlines match assets by name as well as ticker",
           "BTC" in matched and "SOL" in matched and "XRP" not in matched, str(list(matched)))
 
+    # ---- indicators catalog
+    print("\nindicator library")
+    from engine import indicators as ind3
+    check("the catalog is populated", len(ind3.CATALOG) >= 30, str(len(ind3.CATALOG)))
+    cs = synth(300)
+    failed = []
+    for name in ind3.catalog_names():
+        try:
+            ind3.compute(name, cs)
+        except Exception as exc:                        # noqa: BLE001
+            failed.append((name, str(exc)[:40]))
+    check("every catalogued indicator computes", not failed, str(failed[:3]))
+    line, direction = ind3.supertrend([c["high"] for c in cs], [c["low"] for c in cs],
+                                      [c["close"] for c in cs])
+    check("Supertrend returns a line and a direction",
+          line[-1] is not None and direction[-1] in (1, -1))
+    adx_v, pdi, mdi = ind3.adx([c["high"] for c in cs], [c["low"] for c in cs], [c["close"] for c in cs])
+    check("ADX is inside 0..100", 0 <= (adx_v[-1] or 0) <= 100, str(adx_v[-1]))
+
+    # ---- strategies and the swarm
+    print("\nstrategies and swarm")
+    from engine import strategies as strat, swarm as sw
+    strat.load_custom()
+    check("a useful number of strategies is registered", len(strat.REGISTRY) >= 50, str(len(strat.REGISTRY)))
+    check("the custom folder's example loaded",
+          any(s2.source.startswith("custom/") for s2 in strat.REGISTRY.values()))
+    check("controls are registered so strategies can be compared against them",
+          "_control_random_entry" in strat.REGISTRY)
+
+    ctx = strat.Ctx(cs, "TEST")
+    fired = 0
+    for spec in strat.all_strategies():
+        sig = strat.evaluate(spec, ctx)
+        if sig:
+            fired += 1
+            if not (0 <= sig.strength <= 1):
+                check("strength stays inside 0..1", False, spec.name)
+                break
+    check("strategies run without raising, and some fire", fired > 0, f"{fired} fired")
+
+    # the prefix view is what keeps a backtest from reading the future
+    full = strat.SeriesCache(cs)
+    early = strat.Ctx(cs, "TEST", cache=full, at=100)
+    check("a prefix context sees only its own bars", len(early.close) == 101)
+    check("its last close is that bar's close, not the newest one",
+          early.close[-1] == cs[100]["close"] and early.close[-1] != cs[-1]["close"])
+    ema_full = full.indicator("ema", {"period": 21})
+    check("an indicator view is truncated to the same bar", len(early.ind("ema", period=21)) == 101)
+    check("but its values match the full series", early.ind("ema", period=21)[100] == ema_full[100])
+
+    res = sw.evaluate_market(cs, "TEST")
+    check("the swarm returns a consensus reading",
+          "consensus" in res and res["agents_run"] == len(strat.all_strategies()))
+    check("votes are grouped into families rather than counted raw",
+          res["families_agreeing"] <= len(sw.FAMILY_SET))
+
+    # ---- backtest
+    print("\nbacktest")
+    from engine import backtest as bt
+    spec = strat.REGISTRY["_control_always_long"]
+    # a longer series, because 210 warmup bars plus a 96-bar time stop leaves little
+    # room for trades in a 300-bar sample
+    long_cs = synth(900)
+    trades = bt.simulate(long_cs, spec, fee_bps=0, slip_bps=0)
+    check("the control produces trades on synthetic data", len(trades) > 3, str(len(trades)))
+    st2 = bt.stats(trades)
+    check("stats report a win rate and an expectancy",
+          "win_rate" in st2 and "expectancy" in st2)
+    wf = bt.walk_forward(long_cs, spec, split=0.6, fee_bps=0, slip_bps=0)
+    check("walk-forward splits trades into two periods",
+          wf["in_sample"]["n"] + wf["out_sample"]["n"] == wf["n"])
+    check("no evidence means no weight rather than an average one",
+          bt.weight_from({"out_sample": {"n": 3, "expectancy": 0.5}}) is None)
+    check("a strategy that cannot beat the control is muted",
+          bt.weight_from({"out_sample": {"n": 40, "expectancy": 0.05}}, control_expectancy=0.18) == 0.0)
+    check("beating the control earns a weight above the floor",
+          (bt.weight_from({"out_sample": {"n": 40, "expectancy": 0.40}}, control_expectancy=0.18) or 0) > 0.5)
+
+    # ---- portfolio
+    print("\nportfolio")
+    from engine import portfolio as pf
+    import importlib as _il
+    _il.reload(pf)
+    pf.ensure_default()
+    before = pf.performance("paper")["equity"]
+    r2 = pf.open_position("paper", "SELFTEST", 100.0, 96.0, 108.0)
+    check("a position sizes itself from the stop", r2.get("ok") and
+          abs(r2["units"] * (r2["fill"] - 96.0) - r2["risk_amount"]) < 0.02, str(r2)[:110])
+    check("risk equals the configured percentage of equity",
+          abs(r2["risk_pct_of_equity"] - pf.get("paper")["risk_pct"]) < 0.01, str(r2.get("risk_pct_of_equity")))
+    pos = [p for p in pf.performance("paper")["open_positions"] if p["symbol"] == "SELFTEST"]
+    check("the open position is recorded", len(pos) == 1)
+    if pos:
+        c2 = pf.close_position(pos[0]["id"], 108.0, "target")
+        # A 2R target does not pay 2R, and that gap is the whole point of the cost
+        # gate: fees and slippage are charged on both sides, so the book records what
+        # the trade was actually worth rather than what the plan hoped for.
+        check("a 2R target pays a little under 2R once fees are charged",
+              1.7 < c2["r_multiple"] < 2.0, str(c2["r_multiple"]))
+        check("the fee is recorded rather than quietly absorbed", c2["fee"] > 0)
+    rd = pf.readiness("paper")
+    check("readiness reports every check", len(rd["checks"]) == len(pf.READINESS_RULES))
+    check("a thin record is not declared ready", rd["ready"] is False)
+
+    # ---- automation
+    print("\nautomation")
+    from engine import automation as auto
+    n_before = len(auto.rules())
+    rid = auto.add_rule(name="selftest rule", min_heat=0.9, cooldown_min=1)
+    check("a rule can be added", len(auto.rules()) == n_before + 1)
+    scan_stub = {"markets": [{"symbol": "SELFTEST", "base": "ST", "price": 1.0,
+                              "usd_volume_24h": 1e9,
+                              "gate": {"blow_score": 0.95, "label": "LOUD", "explain": "test"},
+                              "signal": {"verdict": "BUY", "confluence": {"cost_r": 0.1}}}]}
+    fired2 = auto.check(scan_stub, {})
+    check("a matching rule fires", any(f["symbol"] == "SELFTEST" for f in fired2), str(fired2))
+    fired3 = auto.check(scan_stub, {})
+    check("the cooldown stops it firing again immediately",
+          not any(f["symbol"] == "SELFTEST" for f in fired3))
+    auto.delete_rule(rid)
+    check("a rule can be deleted", len(auto.rules()) == n_before)
+
     # ---- one network call
     print("\nnetwork")
     uni = universe.scan(["okx_spot"])

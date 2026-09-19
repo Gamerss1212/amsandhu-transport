@@ -11,8 +11,8 @@
 <header>
   <div class="bar">
     <div class="brand"><span class="dot"></span><h1>Jarvus Terminal</h1>
-      <span class="small muted" id="subtitle">scanning every liquid market</span></div>
-    <div class="ctl"><label class="lbl" for="feeTier">Fee tier</label>
+      <span class="small muted" id="subtitle">starting up</span></div>
+    <div class="ctl"><label class="lbl" for="feeTier">Fees</label>
       <select id="feeTier" title="Round-trip cost decides more outcomes than setup choice"></select></div>
     <div class="ctl"><label class="lbl" for="deepN">Depth</label>
       <select id="deepN">
@@ -20,73 +20,189 @@
         <option value="60">60</option><option value="100">100</option>
       </select></div>
     <div class="ctl"><label class="lbl" for="account">Account</label>
-      <input id="account" type="number" value="10000" min="100" step="100" style="width:96px"></div>
+      <input id="account" type="number" value="10000" min="100" step="100" style="width:92px"></div>
     <button id="refresh" class="primary">Rescan</button>
-    <button id="theme" title="Toggle light and dark">◑</button>
+    <button id="openSettings" title="Customise everything">Settings</button>
   </div>
 </header>
 
 <nav role="tablist">
   <button role="tab" data-tab="markets" aria-selected="true">Markets</button>
   <button role="tab" data-tab="detail" aria-selected="false">Detail</button>
+  <button role="tab" data-tab="swarm" aria-selected="false">Swarm</button>
+  <button role="tab" data-tab="research" aria-selected="false">Research</button>
+  <button role="tab" data-tab="portfolio" aria-selected="false">Portfolio</button>
+  <button role="tab" data-tab="alerts" aria-selected="false">Alerts<span class="badge" id="alertBadge" hidden>0</span></button>
   <button role="tab" data-tab="news" aria-selected="false">News</button>
   <button role="tab" data-tab="learning" aria-selected="false">Learning</button>
-  <button role="tab" data-tab="journal" aria-selected="false">Journal</button>
 </nav>
 
 <main>
-  <!-- ===================== MARKETS ===================== -->
+  <!-- ============ MARKETS ============ -->
   <section class="panel on" id="panel-markets" role="tabpanel">
-    <div class="grid tiles" id="tiles"></div>
+    <div class="grid tiles" id="tiles" data-panel="tiles"></div>
 
     <div class="card">
-      <h2>Most likely to move next</h2>
-      <p class="small sec" style="margin:4px 0 10px">
+      <div class="bigrow" style="margin-bottom:8px">
+        <h2>Most likely to move next</h2>
+        <span class="small muted" id="rowCount"></span>
+      </div>
+      <p class="small sec" data-panel="explainer" style="margin:0 0 10px">
         Ranked by the volatility gate, which forecasts <strong>how much</strong> a market will move,
         never which way. Volatility is forecastable because it clusters; direction is not
         (a trained model on 67,585 hours reached 0.513 against a 0.500 coin flip).
-        Sorting by expected movement is the honest version of "which ones are about to blow".
       </p>
-      <div id="marketsWrap"><div class="load"><span class="spin"></span>scanning every liquid market…</div></div>
+
+      <div class="filters">
+        <input id="search" type="search" placeholder="Filter by name…" style="width:150px">
+        <div class="ctl"><label class="lbl" for="fHeat">Min heat</label>
+          <input id="fHeat" type="range" min="0" max="1" step="0.05" value="0" style="width:100px">
+          <span class="mono tiny" id="fHeatVal">0.00</span></div>
+        <div class="ctl"><label class="lbl" for="fState">State</label>
+          <select id="fState"><option value="">any</option><option>LOUD</option>
+            <option>COILED</option><option>NORMAL</option><option>QUIET</option></select></div>
+        <div class="ctl"><label class="lbl" for="fVerdict">Plan</label>
+          <select id="fVerdict"><option value="">any</option><option>BUY</option><option>WAIT</option></select></div>
+        <div class="ctl"><label class="lbl" for="fVol">Min $ vol</label>
+          <select id="fVol"><option value="0">any</option><option value="10000000">10M</option>
+            <option value="50000000">50M</option><option value="200000000">200M</option></select></div>
+        <button id="resetFilters" class="ghost sm">Reset</button>
+        <span style="margin-left:auto"></span>
+        <div class="ctl"><label class="lbl" for="viewSel">View</label>
+          <select id="viewSel" style="width:130px"><option value="">— saved views —</option></select>
+          <button id="saveView" class="sm">Save</button>
+          <button id="delView" class="sm ghost">Delete</button></div>
+      </div>
+
+      <div class="tablewrap" id="marketsWrap">
+        <div class="load"><span class="spin"></span>scanning every liquid market…</div>
+      </div>
     </div>
 
-    <div class="card">
+    <div class="card" data-panel="howto">
       <h3>How to read this</h3>
-      <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(230px,1fr));margin-top:8px">
+      <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(225px,1fr));margin-top:8px">
         <div class="note"><strong>Heat</strong> blends how fast a market already moves with whether it is
-          speeding up or winding tight. High heat means a big move is likely — the direction is a coin flip.</div>
-        <div class="note"><strong>Cost</strong> is the round trip as a share of your risk. Above 33% the trade
-          is refused: fees would eat it before the idea gets a chance.</div>
-        <div class="note warn"><strong>BUY</strong> means the structural boxes are ticked and the cost gate
-          passed. It is not a forecast. Every plan carries a stop that defines the loss in advance.</div>
+          speeding up or winding tight. High heat means a big move is likely. The direction is a coin flip.</div>
+        <div class="note"><strong>Agree</strong> counts how many independent strategy families fired at
+          once. Twelve trend strategies saying the same thing is one opinion, so they are grouped first.</div>
+        <div class="note"><strong>Cost</strong> is the round trip as a share of your risk. Above 33% the
+          trade is refused: fees would eat it before the idea gets a chance.</div>
+        <div class="note warn"><strong>BUY</strong> means the structural boxes are ticked and the cost
+          gate passed. It is not a forecast. Every plan carries a stop that defines the loss in advance.</div>
       </div>
     </div>
   </section>
 
-  <!-- ===================== DETAIL ===================== -->
+  <!-- ============ DETAIL ============ -->
   <section class="panel" id="panel-detail" role="tabpanel">
-    <div id="detail"><div class="card"><p class="muted">Pick a market on the Markets tab to open it here.</p></div></div>
+    <div id="detail"><div class="card"><p class="muted">Pick a market on the Markets tab.</p></div></div>
   </section>
 
-  <!-- ===================== NEWS ===================== -->
+  <!-- ============ SWARM ============ -->
+  <section class="panel" id="panel-swarm" role="tabpanel">
+    <div class="card">
+      <h2>The swarm</h2>
+      <p class="small sec" style="margin:4px 0 10px">
+        Every loaded strategy is run against every scanned market on each scan. Votes are grouped
+        into families first, because a dozen strategies that all say "price is above a rising average"
+        are one idea and not twelve, and agreement across <em>different</em> families is the only kind
+        worth counting.
+      </p>
+      <div id="swarmWrap"><div class="load"><span class="spin"></span>loading…</div></div>
+    </div>
+    <div class="card">
+      <div class="bigrow" style="margin-bottom:8px">
+        <h2>Strategies</h2><span class="small muted" id="stratCount"></span>
+        <span style="margin-left:auto"></span>
+        <button id="stratAll" class="sm">Enable all</button>
+        <button id="stratNone" class="sm">Disable all</button>
+      </div>
+      <p class="small sec" style="margin:0 0 10px">Turn any of them off and rescan. Drop a
+        <code>.py</code> file in <code>engine/strategies/custom/</code> to add your own; there is a
+        worked example in that folder.</p>
+      <div id="stratWrap"></div>
+    </div>
+  </section>
+
+  <!-- ============ RESEARCH ============ -->
+  <section class="panel" id="panel-research" role="tabpanel">
+    <div class="card">
+      <div class="bigrow" style="margin-bottom:6px">
+        <h2>Research</h2>
+        <span style="margin-left:auto"></span>
+        <div class="ctl"><label class="lbl" for="rBars">Bars</label>
+          <select id="rBars"><option>1500</option><option selected>3000</option><option>5000</option></select></div>
+        <div class="ctl"><label class="lbl" for="rMarkets">Markets</label>
+          <select id="rMarkets"><option>8</option><option selected>12</option><option>20</option></select></div>
+        <button id="runResearch" class="primary">Run research</button>
+      </div>
+      <p class="small sec" style="margin:4px 0 10px">
+        Backtests every strategy against every market over deep history, splits the period in two, and
+        judges each strategy only on the half it was not built on. The weights the swarm uses come from
+        here. Ranking is by <strong>excess over a control</strong> that buys with no analysis at all,
+        because in a rising market the control makes money too, and anything that cannot beat it is
+        measuring the weather.
+      </p>
+      <div id="researchWrap"><div class="load"><span class="spin"></span>loading…</div></div>
+    </div>
+  </section>
+
+  <!-- ============ PORTFOLIO ============ -->
+  <section class="panel" id="panel-portfolio" role="tabpanel">
+    <div class="card">
+      <div class="bigrow" style="margin-bottom:6px">
+        <h2>Portfolio</h2>
+        <span style="margin-left:auto"></span>
+        <div class="ctl"><label class="lbl" for="pfSel">Book</label>
+          <select id="pfSel" style="width:140px"></select></div>
+        <button id="newPf" class="sm">New book</button>
+      </div>
+      <p class="small sec" style="margin:4px 0 10px">
+        Paper trading with real prices, real fees, real slippage and real position sizing, so the
+        record it produces is a fair prediction of what real money would have done.
+      </p>
+      <div id="pfWrap"><div class="load"><span class="spin"></span>loading…</div></div>
+    </div>
+  </section>
+
+  <!-- ============ ALERTS ============ -->
+  <section class="panel" id="panel-alerts" role="tabpanel">
+    <div class="card">
+      <div class="bigrow" style="margin-bottom:6px">
+        <h2>Automation</h2>
+        <span style="margin-left:auto"></span>
+        <div class="ctl"><label class="lbl" for="autoInt">Every</label>
+          <select id="autoInt"><option value="120">2 min</option><option value="300" selected>5 min</option>
+            <option value="900">15 min</option><option value="1800">30 min</option></select></div>
+        <button id="autoToggle" class="primary">Start</button>
+      </div>
+      <p class="small sec" style="margin:4px 0 10px" id="autoStatus">
+        While it runs the app rescans on that interval, fires any alert rule that matches, marks open
+        paper positions to market, closes anything through its stop, and grades predictions whose
+        horizon has passed. It never sends an order.
+      </p>
+      <div id="alertsWrap"><div class="load"><span class="spin"></span>loading…</div></div>
+    </div>
+  </section>
+
+  <!-- ============ NEWS ============ -->
   <section class="panel" id="panel-news" role="tabpanel">
     <div class="card">
       <h2>Live headlines</h2>
       <p class="small sec" style="margin:4px 0 10px">Public RSS from five crypto desks. Words that have
-        historically preceded violent repricing are flagged. A flag is a reason to read, never a signal —
-        by the time a headline is tradeable the algorithms have already traded it.</p>
+        historically preceded violent repricing are flagged. A flag is a reason to read, never a signal.</p>
       <div id="newsWrap"><div class="load"><span class="spin"></span>loading…</div></div>
     </div>
   </section>
 
-  <!-- ===================== LEARNING ===================== -->
+  <!-- ============ LEARNING ============ -->
   <section class="panel" id="panel-learning" role="tabpanel">
     <div class="card">
       <h2>What this app has learned about itself</h2>
       <p class="small sec" style="margin:4px 0 10px">
         Every scan writes down its claims <em>before</em> the outcome is known, with the threshold that
-        will later decide whether each claim was right. After the horizon passes, the app grades itself.
-        The numbers below are measured on your own data, not borrowed from a paper.
+        will later decide whether each claim was right. The numbers below are measured on your own data.
       </p>
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
         <button id="resolveBtn" class="primary">Grade what is due</button>
@@ -96,21 +212,73 @@
     </div>
   </section>
 
-  <!-- ===================== JOURNAL ===================== -->
-  <section class="panel" id="panel-journal" role="tabpanel">
-    <div class="card">
-      <h2>Journal</h2>
-      <p class="small sec" style="margin:4px 0 10px">Log the plan before the order, close it after.
-        Expectancy over 50–100 trades is the only scoreboard that means anything.</p>
-      <div id="journalWrap"><div class="load"><span class="spin"></span>loading…</div></div>
-    </div>
-  </section>
-
   <footer class="small muted" style="padding:10px 2px 26px">
     Educational research tool, not financial advice. It looks and plans; you decide and click.
     Crypto is volatile and most retail day traders lose money.
   </footer>
 </main>
+
+<!-- ============ SETTINGS DRAWER ============ -->
+<div class="scrim" id="scrim"></div>
+<aside class="drawer" id="drawer" aria-label="Settings">
+  <div class="bigrow" style="margin-bottom:10px">
+    <h2>Settings</h2><span style="margin-left:auto"></span>
+    <button id="closeSettings" class="ghost">Close</button>
+  </div>
+
+  <div class="setgroup">
+    <h3>Appearance</h3>
+    <div class="setrow"><span>Theme</span>
+      <select id="setTheme"><option value="auto">Match system</option>
+        <option value="light">Light</option><option value="dark">Dark</option></select></div>
+    <div class="setrow"><span>Accent</span>
+      <div class="swatches" id="accentSwatches"></div></div>
+    <div class="setrow"><span>Density</span>
+      <select id="setDensity"><option value="compact">Compact</option>
+        <option value="normal" selected>Normal</option><option value="roomy">Roomy</option></select></div>
+    <div class="setrow"><span>Text size</span>
+      <span><input id="setFont" type="range" min="12" max="18" step="1" value="14">
+        <span class="mono tiny" id="setFontVal">14px</span></span></div>
+    <p class="tiny muted" style="margin:6px 0 0">Each accent was checked against the LOUD orange for
+      colour-vision deficiency in both themes. Green was offered and dropped because it failed.</p>
+  </div>
+
+  <div class="setgroup">
+    <h3>Panels</h3>
+    <div class="setrow"><span>Summary tiles</span><input type="checkbox" data-panel-toggle="tiles" checked></div>
+    <div class="setrow"><span>Explainer paragraph</span><input type="checkbox" data-panel-toggle="explainer" checked></div>
+    <div class="setrow"><span>"How to read this"</span><input type="checkbox" data-panel-toggle="howto" checked></div>
+    <div class="setrow"><span>Sparklines in the table</span><input type="checkbox" id="setSpark" checked></div>
+  </div>
+
+  <div class="setgroup">
+    <h3>Columns</h3>
+    <p class="tiny muted" style="margin:0 0 6px">Tick what you want to see. Drag is not needed: the
+      order follows this list, and you can move any row with the arrows.</p>
+    <div class="collist" id="colList"></div>
+  </div>
+
+  <div class="setgroup">
+    <h3>Chart indicators</h3>
+    <p class="tiny muted" style="margin:0 0 6px">Overlaid on the Detail chart. Every one is computed
+      locally from exchange candles.</p>
+    <div class="collist" id="indList" style="max-height:200px"></div>
+  </div>
+
+  <div class="setgroup">
+    <h3>Risk model</h3>
+    <div class="setrow"><span>Stop width (× ATR)</span>
+      <input id="setStopAtr" type="number" min="1" max="10" step="0.5" value="4" style="width:72px"></div>
+    <div class="setrow"><span>Target (R)</span>
+      <input id="setTargetR" type="number" min="1" max="6" step="0.5" value="2" style="width:72px"></div>
+    <p class="tiny muted" style="margin:6px 0 0">Wide stops are what survive retail fees: cost in R is
+      the round trip divided by the stop distance, so halving the stop doubles the fee drag.</p>
+  </div>
+
+  <div class="setgroup">
+    <button id="resetAll" class="ghost">Reset everything to defaults</button>
+  </div>
+</aside>
 
 <div class="tip" id="tip" role="status" aria-live="polite"></div>
 <script src="/static/app.js"></script>

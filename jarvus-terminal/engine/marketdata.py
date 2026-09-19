@@ -10,6 +10,7 @@ the app only ever reasons about closed bars.
 
 from __future__ import annotations
 
+import time
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 from typing import Dict, List, Optional
@@ -107,6 +108,157 @@ def candles_many(markets: List[dict], tf: str, limit: int = None) -> Dict[str, O
         return m["symbol"], candles(m["symbol"], m.get("venue", "okx"), tf, limit)
 
     with ThreadPoolExecutor(max_workers=config.MAX_WORKERS) as pool:
+        for sym, c in pool.map(work, markets):
+            out[sym] = c
+    return out
+
+
+# =============================================================================
+# Deep history, for backtesting
+# =============================================================================
+# A scan only needs a few hundred bars, but measuring whether a strategy works needs
+# thousands. Public endpoints cap a single request at 300 candles, so deep history is
+# paged and then cached on disk: refetching years of candles on every backtest would
+# be slow, rude to a free API, and pointless since old bars never change.
+
+import csv as _csv
+import os as _os
+import threading as _threading
+
+_DEEP_DIR = _os.path.join(_os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))), "data", "candles")
+_deep_lock = _threading.Lock()
+
+
+def _cache_path(symbol: str, tf: str) -> str:
+    safe = symbol.replace("/", "_").replace(":", "_")
+    return _os.path.join(_DEEP_DIR, f"{safe}_{tf}.csv")
+
+
+def _read_cache(path: str) -> List[dict]:
+    if not _os.path.exists(path):
+        return []
+    try:
+        with open(path, newline="", encoding="utf-8") as fh:
+            return [{"ts": datetime.fromisoformat(r["ts"]), "open": float(r["open"]),
+                     "high": float(r["high"]), "low": float(r["low"]),
+                     "close": float(r["close"]), "volume": float(r["volume"])}
+                    for r in _csv.DictReader(fh)]
+    except Exception:                                   # noqa: BLE001 - a corrupt cache is not fatal
+        return []
+
+
+def _write_cache(path: str, candles: List[dict]) -> None:
+    _os.makedirs(_os.path.dirname(path), exist_ok=True)
+    tmp = path + ".tmp"
+    with open(tmp, "w", newline="", encoding="utf-8") as fh:
+        w = _csv.writer(fh)
+        w.writerow(["ts", "open", "high", "low", "close", "volume"])
+        for c in candles:
+            w.writerow([c["ts"].isoformat(), c["open"], c["high"], c["low"], c["close"], c["volume"]])
+    _os.replace(tmp, path)                              # atomic, so a crash cannot truncate the cache
+
+
+def _okx_paged(symbol: str, tf: str, want: int) -> List[dict]:
+    bar = TF[tf][0]
+    rows: List[list] = []
+    after = None
+    while len(rows) < want:
+        params = {"instId": symbol, "bar": bar, "limit": "300"}
+        if after:
+            params["after"] = str(after)
+        d = http.get_json("https://www.okx.com/api/v5/market/history-candles", params,
+                          ttl=86400 if after else 300)
+        if not d or d.get("code") != "0" or not d.get("data"):
+            break
+        page = d["data"]
+        for c in page:
+            if len(c) > 8 and c[8] == "0":
+                continue
+            rows.append([int(c[0]), float(c[1]), float(c[2]), float(c[3]), float(c[4]), float(c[5])])
+        after = int(page[-1][0])
+        if len(page) < 300:
+            break
+        time.sleep(0.12)                                # be polite to a free endpoint
+    rows.sort()
+    seen, dedup = set(), []
+    for r in rows:
+        if r[0] not in seen:
+            seen.add(r[0])
+            dedup.append(r)
+    return _rows_to_candles(dedup)
+
+
+def _coinbase_paged(symbol: str, tf: str, want: int) -> List[dict]:
+    gran = TF[tf][1]
+    if gran is None:
+        return []
+    rows: List[list] = []
+    end = datetime.now(timezone.utc)
+    while len(rows) < want:
+        n = min(300, want - len(rows))
+        start = end - timedelta(seconds=gran * n)
+        d = http.get_json(f"https://api.exchange.coinbase.com/products/{symbol}/candles",
+                          {"granularity": gran, "start": start.isoformat(), "end": end.isoformat()},
+                          ttl=86400)
+        if not isinstance(d, list) or not d:
+            break
+        rows += [[int(c[0]) * 1000, float(c[3]), float(c[2]), float(c[1]), float(c[4]), float(c[5])] for c in d]
+        end = start
+        if len(d) < n * 0.5:
+            break
+        time.sleep(0.15)
+    rows.sort()
+    now = datetime.now(timezone.utc).timestamp()
+    rows = [r for r in rows if r[0] / 1000 + gran <= now]
+    seen, dedup = set(), []
+    for r in rows:
+        if r[0] not in seen:
+            seen.add(r[0])
+            dedup.append(r)
+    return _rows_to_candles(dedup)
+
+
+def deep_candles(symbol: str, venue: str, tf: str = "1h", want: int = 3000,
+                 use_cache: bool = True) -> List[dict]:
+    """Thousands of closed candles, paged from the venue and cached on disk.
+
+    Only the missing tail is fetched when a cache already exists, so the first call
+    for a market is slow and every call after it is nearly free.
+    """
+    path = _cache_path(symbol, tf)
+    cached = _read_cache(path) if use_cache else []
+    if cached and len(cached) >= want:
+        tf_sec = {"5m": 300, "15m": 900, "1h": 3600, "4h": 14400, "1d": 86400}.get(tf, 3600)
+        age = (datetime.now(timezone.utc) - cached[-1]["ts"]).total_seconds()
+        if age < tf_sec * 3:
+            return cached[-want:]
+
+    fetched: List[dict] = []
+    for fn in ([_okx_paged, _coinbase_paged] if venue != "coinbase" else [_coinbase_paged, _okx_paged]):
+        try:
+            fetched = fn(symbol, tf, want)
+        except Exception:                               # noqa: BLE001
+            fetched = []
+        if fetched and len(fetched) >= min(300, want // 4):
+            break
+
+    merged = {c["ts"]: c for c in cached}
+    merged.update({c["ts"]: c for c in fetched})
+    out = [merged[k] for k in sorted(merged)]
+    if out and use_cache:
+        with _deep_lock:
+            _write_cache(path, out)
+    return out[-want:]
+
+
+def deep_many(markets: List[dict], tf: str = "1h", want: int = 3000,
+              max_workers: int = None) -> Dict[str, List[dict]]:
+    out: Dict[str, List[dict]] = {}
+
+    def work(m):
+        return m["symbol"], deep_candles(m["symbol"], m.get("venue", "okx"), tf, want)
+
+    with ThreadPoolExecutor(max_workers=max_workers or max(2, config.MAX_WORKERS // 2)) as pool:
         for sym, c in pool.map(work, markets):
             out[sym] = c
     return out

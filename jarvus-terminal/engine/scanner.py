@@ -18,7 +18,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Optional
 
 import config
-from engine import analysis, learn, marketdata, news, store, universe, volgate
+from engine import analysis, learn, marketdata, news, research, store, strategies as S, swarm, universe, volgate
 
 
 def big_move_threshold(candles: List[dict], horizon_h: int) -> Optional[float]:
@@ -43,7 +43,7 @@ def big_move_threshold(candles: List[dict], horizon_h: int) -> Optional[float]:
 
 
 def scan(deep_n: int = None, fee_tier: str = None, account: float = None,
-         write: bool = True) -> Dict[str, object]:
+         write: bool = True, with_swarm: bool = True) -> Dict[str, object]:
     t0 = time.time()
     deep_n = deep_n or config.DEEP_SCAN_N
     fee_tier = fee_tier or config.DEFAULT_FEE_TIER
@@ -61,6 +61,17 @@ def scan(deep_n: int = None, fee_tier: str = None, account: float = None,
 
     headlines = news.headlines()
     by_asset = news.match_symbols(headlines["items"], [m["base"] for m in chosen])
+
+    # The swarm: every loaded strategy against every market, weighted by whatever the
+    # last research run measured. With no research run the votes are unweighted, and
+    # the result says so rather than implying the weighting happened.
+    swarm_res = {}
+    if with_swarm:
+        try:
+            weights = research.weights()
+            swarm_res = swarm.run(chosen, ltf, htf, weights_by_symbol=weights)
+        except Exception:                               # noqa: BLE001
+            swarm_res = {}
 
     rows: List[dict] = []
     predictions: List[dict] = []
@@ -85,8 +96,10 @@ def scan(deep_n: int = None, fee_tier: str = None, account: float = None,
         thr = big_move_threshold(lc, config.RESOLVE_HORIZON_H)
         calibrated = learn.calibrated_probability(gate["blow_score"])
 
+        sw = (swarm_res.get("by_symbol") or {}).get(m["symbol"])
         row = {
             **m,
+            "swarm": sw,
             "gate": gate,
             "structure": s_ltf,
             "htf": {"trend": s_htf["trend"], "ema_stack": s_htf["ema_stack"]} if s_htf else None,
@@ -95,6 +108,8 @@ def scan(deep_n: int = None, fee_tier: str = None, account: float = None,
             "calibrated": calibrated,
             "news": by_asset.get(m["base"], [])[:4],
             "tradingview": tradingview_symbol(m),
+            # a short close series so the table can draw a sparkline without a second request
+            "sparkline": [c["close"] for c in lc[-40:]],
         }
         rows.append(row)
 
@@ -130,6 +145,8 @@ def scan(deep_n: int = None, fee_tier: str = None, account: float = None,
         "predictions_written": written,
         "resolve_horizon_h": config.RESOLVE_HORIZON_H,
         "errors": uni.get("errors", {}),
+        "swarm": {k: v for k, v in (swarm_res or {}).items() if k != "results" and k != "by_symbol"},
+        "research": research.latest_run(),
     }
 
 
@@ -166,8 +183,14 @@ def market_detail(symbol: str, venue: str = "okx", fee_tier: str = None,
     sig = analysis.signal(m, s_htf, s_ltf, gate, fee_bps, account or config.DEFAULT_ACCOUNT)
     heads = news.headlines()
 
+    sw = None
+    try:
+        sw = swarm.evaluate_market(lc, symbol, m, hc, research.weights().get(symbol))
+    except Exception:                                   # noqa: BLE001
+        sw = None
+
     return {
-        "market": m, "gate": gate, "structure": s_ltf,
+        "market": m, "gate": gate, "structure": s_ltf, "swarm": sw,
         "htf": s_htf, "signal": sig,
         "calibrated": learn.calibrated_probability(gate["blow_score"]) if gate else None,
         "tradingview": tradingview_symbol(m),
