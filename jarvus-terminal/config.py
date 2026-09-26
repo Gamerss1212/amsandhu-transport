@@ -3,6 +3,23 @@
 
 from __future__ import annotations
 import os
+import sys
+
+# --- where things live ------------------------------------------------------
+# Running from source, everything sits next to this file. Running as a packaged
+# executable, the code lives in a temporary folder that is wiped on exit, so
+# anything worth keeping (the database, cached candles, your settings) has to be
+# written beside the executable instead. Getting this wrong is how a packaged app
+# silently forgets every trade you logged.
+FROZEN = getattr(sys, "frozen", False)
+if FROZEN:
+    BASE_DIR = os.path.dirname(os.path.abspath(sys.executable))   # beside the .exe
+    BUNDLE_DIR = getattr(sys, "_MEIPASS", BASE_DIR)               # read-only payload
+else:
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    BUNDLE_DIR = BASE_DIR
+DATA_DIR = os.environ.get("JARVUS_DATA") or os.path.join(BASE_DIR, "data")
+WEB_DIR = os.path.join(BUNDLE_DIR, "web")
 
 # --- what to scan -----------------------------------------------------------
 # The universe pass is cheap (one request per venue). Deep analysis is expensive
@@ -54,7 +71,7 @@ HTTP_TIMEOUT = 20
 MAX_WORKERS = 8              # concurrent candle fetches; be polite to public APIs
 
 # --- storage ----------------------------------------------------------------
-DB_PATH = os.environ.get("JARVUS_DB", os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "jarvus.db"))
+DB_PATH = os.environ.get("JARVUS_DB") or os.path.join(DATA_DIR, "jarvus.db")
 
 # --- server -----------------------------------------------------------------
 HOST = os.environ.get("JARVUS_HOST", "127.0.0.1")

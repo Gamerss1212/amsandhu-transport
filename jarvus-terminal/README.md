@@ -12,6 +12,34 @@ python3 run.py
 That is the whole install. Python 3.8+ and an internet connection. No pip, no node,
 no API keys, no account.
 
+### Other ways to start it
+
+| You have | Do this |
+|---|---|
+| **Windows, no Python** | Double-click `JarvusTerminal.exe`. It opens the app in your browser and keeps a console window open. Closing that window stops Jarvus. |
+| Windows with Python | Double-click `Jarvus Terminal.bat` |
+| Mac | Double-click `Jarvus Terminal.command`. The first time, right-click it and choose **Open**. |
+| Linux | `./jarvus-terminal.sh` |
+
+**About the Windows warning.** The exe is not code-signed, because signing costs money
+and needs a registered company. So the first time you run it, Windows SmartScreen will say
+*"Windows protected your PC"*. Click **More info**, then **Run anyway**. Some antivirus
+programs also flag any unsigned exe built with PyInstaller. If yours deletes it, use the
+`.bat` launcher with Python installed from python.org. It runs the same code.
+
+The exe keeps its data (database, settings, cached candles) in a `data` folder next to
+itself, so move the exe and its `data` folder together. To add your own strategies to
+the exe, make a `strategies` folder next to it and drop `.py` files in.
+
+**Rebuilding the exe yourself** (on Windows, with Python 3.8+):
+
+```
+pip install pyinstaller
+pyinstaller --noconfirm jarvus.spec
+```
+
+The result is `dist\JarvusTerminal.exe`.
+
 ---
 
 ## Start here: what this can and cannot do
@@ -229,7 +257,7 @@ python3 run.py selftest           # verify the install (68 checks)
 ```
 
 Environment overrides: `JARVUS_PORT`, `JARVUS_DEEP_N`, `JARVUS_FEE_TIER`, `JARVUS_ACCOUNT`,
-`JARVUS_MIN_VOL`, `JARVUS_DB`. Everything else is in `config.py`.
+`JARVUS_MIN_VOL`, `JARVUS_DB`, `JARVUS_DATA` (the data folder). Everything else is in `config.py`.
 
 ---
 
@@ -238,6 +266,9 @@ Environment overrides: `JARVUS_PORT`, `JARVUS_DEEP_N`, `JARVUS_FEE_TIER`, `JARVU
 ```
 jarvus-terminal/
 ├── run.py / server.py / config.py / selftest.py
+├── desktop.py          entry point for the Windows exe
+├── jarvus.spec         PyInstaller recipe for the exe
+├── Jarvus Terminal.bat / Jarvus Terminal.command / jarvus-terminal.sh   launchers
 ├── engine/
 │   ├── universe.py     market discovery and the cheap pre-rank
 │   ├── marketdata.py   candles across venues; deep paged history, disk-cached

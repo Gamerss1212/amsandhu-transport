@@ -248,10 +248,31 @@ def load_custom(folder: str = None) -> Dict[str, str]:
     whole app down, because the most likely time to have a syntax error in a
     strategy is the moment you are writing one.
     """
-    folder = folder or os.path.join(os.path.dirname(os.path.abspath(__file__)), "custom")
+    folders = []
+    if folder:
+        folders = [folder]
+    else:
+        folders = [os.path.join(os.path.dirname(os.path.abspath(__file__)), "custom")]
+        # A packaged build keeps its code in a temporary folder, so also look for a
+        # "strategies" folder beside the executable. That is where someone who
+        # downloaded the .exe can actually drop a file.
+        try:
+            import config as _cfg
+            beside = os.path.join(_cfg.BASE_DIR, "strategies")
+            if beside not in folders:
+                folders.append(beside)
+        except Exception:                          # noqa: BLE001
+            pass
     results: Dict[str, str] = {}
-    if not os.path.isdir(folder):
-        return results
+    for folder in folders:
+        if not os.path.isdir(folder):
+            continue
+        results.update(_load_folder(folder))
+    return results
+
+
+def _load_folder(folder: str) -> Dict[str, str]:
+    results: Dict[str, str] = {}
     for fname in sorted(os.listdir(folder)):
         if not fname.endswith(".py") or fname.startswith("_"):
             continue

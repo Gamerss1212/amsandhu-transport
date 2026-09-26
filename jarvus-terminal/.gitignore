@@ -4,3 +4,5 @@ data/*.db
 data/*.db-*
 data/candles/
 data/settings.json
+build/
+dist/

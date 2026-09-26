@@ -125,7 +125,7 @@ import csv as _csv
 import os as _os
 import threading as _threading
 
-_DEEP_DIR = _os.path.join(_os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))), "data", "candles")
+_DEEP_DIR = _os.path.join(config.DATA_DIR, "candles")
 _deep_lock = _threading.Lock()
 
 

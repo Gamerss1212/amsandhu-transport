@@ -27,11 +27,11 @@ from engine import automation, learn, news, portfolio, research, scanner, store,
 from engine import indicators as eind
 from engine import strategies as estrat
 
-WEB_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "web")
+WEB_DIR = config.WEB_DIR
 _scan_lock = threading.Lock()
 _last_scan = {"data": None, "at": 0.0}
 
-SETTINGS_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "settings.json")
+SETTINGS_PATH = os.path.join(config.DATA_DIR, "settings.json")
 
 
 def load_settings() -> dict:
@@ -350,8 +350,8 @@ def serve():
     httpd.daemon_threads = True
     url = f"http://{config.HOST}:{config.PORT}"
     print(f"\n  Jarvus Terminal is running at  {url}\n", flush=True)
-    print(f"  {len(estrat.REGISTRY)} strategies · {len(eind.CATALOG)} indicators · "
-          f"top {config.DEEP_SCAN_N} of every liquid market · fee tier '{config.DEFAULT_FEE_TIER}'", flush=True)
+    print(f"  {len(estrat.REGISTRY)} strategies | {len(eind.CATALOG)} indicators | "
+          f"top {config.DEEP_SCAN_N} of every liquid market | fee tier '{config.DEFAULT_FEE_TIER}'", flush=True)
     print("  Ctrl-C to stop.\n", flush=True)
     try:
         httpd.serve_forever()
