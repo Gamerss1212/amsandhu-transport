@@ -27,7 +27,8 @@
 </header>
 
 <nav role="tablist">
-  <button role="tab" data-tab="markets" aria-selected="true">Markets</button>
+  <button role="tab" data-tab="bots" aria-selected="true">Bots<span class="badge on" id="botsBadge" hidden>ON</span></button>
+  <button role="tab" data-tab="markets" aria-selected="false">Markets</button>
   <button role="tab" data-tab="detail" aria-selected="false">Detail</button>
   <button role="tab" data-tab="swarm" aria-selected="false">Swarm</button>
   <button role="tab" data-tab="research" aria-selected="false">Research</button>
@@ -38,8 +39,88 @@
 </nav>
 
 <main>
+  <!-- ============ BOTS ============ -->
+  <section class="panel on" id="panel-bots" role="tabpanel">
+    <div class="card">
+      <div class="herorow">
+        <div>
+          <div class="k">Practice money, all six bots</div>
+          <div class="hero mono" id="botsEquity">—</div>
+          <div class="small" id="botsPnl">&nbsp;</div>
+        </div>
+        <div class="runbox">
+          <button id="runBots" class="run" disabled>Run bots</button>
+          <div class="small sec" id="botsState" role="status" aria-live="polite">Loading…</div>
+        </div>
+      </div>
+      <p class="small sec" style="margin:12px 0 0">
+        Press <strong>Run bots</strong> once. Every five minutes the bots scan every liquid market, run all
+        66 strategies on each, backtest any setup on that coin's last 1,500 hours before touching it,
+        and buy only what passes. Every fifteen seconds they check each open trade and sell at its stop,
+        its target or its time limit. They keep running across restarts until you press Stop.
+        <strong>Practice money:</strong> live prices, real fees, real slippage, no real funds.
+      </p>
+      <p class="tiny muted" style="margin:6px 0 0">
+        Measured before release, walk-forward on 15 markets: the bots' rule made <strong>+0.22R per trade
+        over 675 trades</strong> (about $3.70 on a trade risking $16.67) and beat random buying in all three
+        test windows, but mostly on volatile small coins; on BTC/ETH-type majors it made +0.07R. One period,
+        no guarantee. This screen is where you find out whether it holds.
+      </p>
+    </div>
+
+    <div class="grid tiles" id="botsTiles"></div>
+
+    <div class="card">
+      <div class="bigrow" style="margin-bottom:6px"><h2>Account</h2>
+        <span class="small muted" id="botsEqNote"></span></div>
+      <div id="botsEq"></div>
+    </div>
+
+    <div class="card">
+      <div class="bigrow" style="margin-bottom:8px"><h2>The bots</h2>
+        <span class="small muted">Each has its own playbook and its own share of the money.</span></div>
+      <div class="botgrid" id="botCards"></div>
+    </div>
+
+    <div class="grid half">
+      <div class="card">
+        <div class="bigrow" style="margin-bottom:6px"><h2>Open trades</h2>
+          <span style="margin-left:auto"></span>
+          <button id="closeAllBots" class="sm ghost">Close all now</button></div>
+        <div id="botsPositions"></div>
+      </div>
+      <div class="card">
+        <div class="bigrow" style="margin-bottom:6px"><h2>What the bots are doing</h2>
+          <span style="margin-left:auto"></span>
+          <select id="feedKind" style="width:130px" aria-label="Filter activity">
+            <option value="">Everything</option><option value="trades">Trades only</option>
+            <option value="cycle">Scans</option><option value="learn">Learning</option></select></div>
+        <div id="botsFeed" class="feed"></div>
+      </div>
+    </div>
+
+    <div class="grid half">
+      <div class="card"><h2>What they have learned</h2><div id="botsLearn" style="margin-top:8px"></div></div>
+      <div class="card"><h2>Recent closed trades</h2><div id="botsRecent" style="margin-top:8px"></div></div>
+    </div>
+
+    <div class="card">
+      <h2>Is this good enough for real money?</h2>
+      <p class="small sec" style="margin:4px 0 10px">The same six checks the Portfolio tab uses, applied
+        to everything the bots have closed. Under 50 trades nothing here means anything yet.</p>
+      <div id="botsReady"></div>
+    </div>
+
+    <div class="card">
+      <details id="botsSettingsBox">
+        <summary><strong>Bot settings</strong> <span class="small muted">optional; the defaults are the measured ones</span></summary>
+        <div id="botsSettings" style="margin-top:10px"></div>
+      </details>
+    </div>
+  </section>
+
   <!-- ============ MARKETS ============ -->
-  <section class="panel on" id="panel-markets" role="tabpanel">
+  <section class="panel" id="panel-markets" role="tabpanel">
     <div class="grid tiles" id="tiles" data-panel="tiles"></div>
 
     <div class="card">
@@ -213,8 +294,8 @@
   </section>
 
   <footer class="small muted" style="padding:10px 2px 26px">
-    Educational research tool, not financial advice. It looks and plans; you decide and click.
-    Crypto is volatile and most retail day traders lose money.
+    Educational research tool, not financial advice. The bots trade practice money only: live prices,
+    no real funds. Crypto is volatile and most retail day traders lose money.
   </footer>
 </main>
 

@@ -95,6 +95,9 @@ def evaluate_market(candles: List[dict], symbol: str, meta: Dict = None,
         "consensus": consensus,
         "weighted": any_proven,
         "signals": sorted(fired, key=lambda f: -f["strength"])[:12],
+        # every vote, compact, so each bot can pick out its own family's signals
+        "fired_all": [{"s": f["strategy"], "f": f["family"], "st": f["strength"], "w": f["weight"]}
+                      for f in fired],
         "top_reasons": [f["reason"] for f in sorted(fired, key=lambda f: -f["strength"])[:3]],
     }
 

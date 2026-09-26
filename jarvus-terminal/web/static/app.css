@@ -240,3 +240,58 @@ svg { display: block; width: 100%; overflow: visible; }
 .pill { display: inline-block; font-size: .76em; padding: 1px 7px; border-radius: 999px;
         background: var(--surface-2); color: var(--text-secondary); border: 1px solid var(--line); }
 .bigrow { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+
+/* ---- bots ---- */
+.herorow { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; justify-content: space-between; }
+.herorow .k { font-size: .78em; color: var(--text-muted); text-transform: uppercase; letter-spacing: .05em; }
+.hero { font-size: 48px; font-weight: 600; line-height: 1.1; letter-spacing: -0.02em; }
+.runbox { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; text-align: right; max-width: 420px; }
+button.run { font-size: 1.15em; font-weight: 600; padding: 12px 30px; border-radius: 10px;
+  background: var(--accent); border-color: var(--accent); color: #fff; min-width: 190px; }
+button.run.stop { background: var(--surface-0); color: var(--text-primary); border-color: var(--text-muted); }
+button.run:disabled { opacity: .55; cursor: default; }
+nav .badge.on { background: var(--up); }
+.botgrid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); }
+.bot { border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 14px; background: var(--surface-1);
+  display: flex; flex-direction: column; gap: 6px; }
+.bot.off { opacity: .6; }
+.bot .top { display: flex; align-items: center; gap: 8px; }
+.bot .name { font-weight: 600; font-size: 1.02em; }
+.bot .toggle { margin-left: auto; display: flex; align-items: center; gap: 6px; font-size: .82em; color: var(--text-secondary); }
+.bot .doing { font-size: .86em; color: var(--text-primary); background: var(--surface-2);
+  border-radius: 7px; padding: 6px 8px; }
+.bot .play { font-size: .8em; color: var(--text-secondary); }
+.bot .nums { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px 10px; }
+.bot .nums .k { font-size: .7em; color: var(--text-muted); text-transform: uppercase; letter-spacing: .05em; }
+.bot .nums .v { font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: .95em; }
+.bot .spark { width: 100%; height: 34px; }
+.feed { max-height: 460px; overflow-y: auto; }
+.feed .item { display: grid; grid-template-columns: 64px 78px 1fr; gap: 8px; padding: 7px 0;
+  border-bottom: 1px solid var(--line); font-size: .88em; align-items: start; }
+.feed .item:last-child { border-bottom: none; }
+.feed .t { font-family: var(--mono); color: var(--text-muted); font-size: .9em; white-space: nowrap; }
+.feed .kind { font-size: .72em; text-transform: uppercase; letter-spacing: .04em; font-weight: 600;
+  color: var(--text-secondary); border: 1px solid var(--line); border-radius: 999px; padding: 1px 6px;
+  text-align: center; white-space: nowrap; }
+.feed .kind.enter { color: var(--up); border-color: color-mix(in srgb, var(--up) 45%, var(--line)); }
+.feed .kind.exit { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 45%, var(--line)); }
+.feed .kind.error { color: var(--down); border-color: color-mix(in srgb, var(--down) 45%, var(--line)); }
+.feed .kind.learn { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 45%, var(--line)); }
+.setgrid { display: grid; gap: 10px 18px; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); }
+.setgrid label { display: flex; flex-direction: column; gap: 3px; font-size: .88em; }
+.setgrid label .h { font-size: .8em; color: var(--text-muted); }
+.setgrid input { width: 120px; }
+details summary { cursor: pointer; }
+@media (max-width: 640px) {
+  .hero { font-size: 40px; }
+  .runbox { align-items: stretch; text-align: left; max-width: none; width: 100%; }
+  button.run { width: 100%; }
+  .feed .item { grid-template-columns: 60px 1fr; }
+  .feed .item .kind { display: none; }
+}
+#botsTiles { margin-bottom: 14px; }
+/* the settings drawer waits off the right edge; never let it widen the page on a phone */
+body { overflow-x: hidden; }
+/* grid cells may shrink below their content, so a wide table scrolls inside its own card
+   instead of stretching the page sideways on a phone */
+.grid > * { min-width: 0; }

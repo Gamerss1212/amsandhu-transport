@@ -33,8 +33,13 @@ from engine import strategies as S
 def simulate(candles: List[dict], spec: S.StrategySpec, *, stop_atr: float = None,
              target_r: float = None, horizon: int = 96, fee_bps: float = None,
              slip_bps: float = None, warmup: int = 210,
-             cache: "S.SeriesCache" = None) -> List[dict]:
-    """Walk the history once, taking every trade this strategy would have taken."""
+             cache: "S.SeriesCache" = None, exit_fn=None) -> List[dict]:
+    """Walk the history once, taking every trade this strategy would have taken.
+
+    `exit_fn(candles, entry_index, entry_price, atr)` swaps the fixed stop/target exit
+    for any other exit policy and returns (exit_index, r_after_costs, reason). The
+    bots pass their own, so what they verify is exactly how they trade.
+    """
     stop_atr = stop_atr if stop_atr is not None else config.STOP_ATR_MULT
     target_r = target_r if target_r is not None else config.TARGET_R
     fee_bps = fee_bps if fee_bps is not None else config.FEE_TIERS.get(config.DEFAULT_FEE_TIER, 26.0)
@@ -63,6 +68,16 @@ def simulate(candles: List[dict], spec: S.StrategySpec, *, stop_atr: float = Non
             continue
 
         entry = candles[i + 1]["open"] * (1 + slip)
+        if exit_fn is not None:
+            res = exit_fn(candles, i + 1, entry, a)
+            if res is None:
+                i += 1
+                continue
+            exit_i, r, reason = res
+            trades.append({"i": i, "t": candles[i]["ts"], "entry": entry, "exit": None,
+                           "r": round(r, 4), "reason": reason, "bars": exit_i - i})
+            i = exit_i + 1
+            continue
         stop = entry - stop_atr * a
         risk = entry - stop
         if risk <= 0:

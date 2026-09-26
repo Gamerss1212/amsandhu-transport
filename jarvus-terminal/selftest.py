@@ -290,6 +290,98 @@ def main() -> int:
     auto.delete_rule(rid)
     check("a rule can be deleted", len(auto.rules()) == n_before)
 
+    # ---- the bots, on a scratch database with a fake price feed
+    print("\nthe bots")
+    from engine import bots as BT, broker as BK
+    tmpb = tempfile.mkdtemp()
+    old_db, old_set = config.DB_PATH, BT.SETTINGS_PATH
+    config.DB_PATH = os.path.join(tmpb, "b.db")
+    BT.SETTINGS_PATH = os.path.join(tmpb, "bots.json")
+    importlib.reload(store)
+
+    c = synth(400, drift=0.0, amp=0.0)
+    for k in range(300, 400):                       # a flat tape, then a drop through the stop
+        c[k] = {**c[k], "open": 100.0, "high": 100.5, "low": 99.5, "close": 100.0}
+    c[310] = {**c[310], "low": 90.0}
+    pol = {"stop_atr": 4, "target_r": 2, "max_hold_h": 96, "partial_r": 0, "partial_frac": .5, "trail_atr": 0}
+    j, r, why = BT.policy_exit(c, 301, 100.0, 1.0, pol, 0.0026, 0.0002)
+    check("the bots' exit policy stops out at -1R plus costs", why == "stop" and -1.2 < r < -1.0, f"{why} {r:.3f}")
+    c[305] = {**c[305], "high": 109.0}
+    j, r, why = BT.policy_exit(c, 301, 100.0, 1.0, pol, 0.0026, 0.0002)
+    check("the target is taken before a later stop", why == "target" and 1.8 < r < 2.0, f"{why} {r:.3f}")
+    j, r, why = BT.policy_exit(c, 301, 100.0, 1.0, {**pol, "max_hold_h": 3}, 0.0026, 0.0002)
+    check("a trade that goes nowhere is closed at its time limit", why == "time" and j == 303, f"{why} {j}")
+
+    class FakeBroker(BK.PaperBroker):
+        def __init__(self):
+            super().__init__(26.0, 2.0)
+            self.px = {}
+
+        def price(self, symbol, venue="okx"):
+            return self.px.get(symbol)
+
+    fb = FakeBroker()
+    eng = BT.Engine(lambda: {"markets": []}, broker=fb)
+    BT.save_settings({"practice_money": 6000})
+    made = BT.ensure_bots()
+    check("six bots start with an even split of the practice money",
+          len(made) == 6 and abs(sum(b["cash"] for b in made) - 6000) < 1e-9)
+    tr = next(b for b in made if b["key"] == "trend")
+    cfgb = BT.bot_config(tr)
+
+    def cand(sym, px, atr, bot=tr, cfg=cfgb):
+        m = {"symbol": sym, "base": sym.split("-")[0], "venue": "okx", "price": px, "usd_volume_24h": 1e9,
+             "structure": {"atr": atr, "price": px}, "gate": {"label": "LOUD", "blow_score": .7}}
+        return {"bot": bot, "cfg": cfg, "m": m, "mine": [{"s": "ema_stack_pullback", "f": "trend", "st": .7, "w": None}],
+                "lead": "ema_stack_pullback", "score": 1,
+                "ver": {"lead": "ema_stack_pullback", "edge": .3, "n": 20, "win": 50, "control_exp": 0, "hours": 1500}}
+
+    fb.px["AAA-USDT"] = 100.0
+    eng._open(cand("AAA-USDT", 100.0, 1.0), BT.learning())
+    pos = BT.open_positions(tr["id"])[0]
+    check("a bot risks 1% of its own money on a trade", abs(pos["risk_amount"] - 10.0) < 0.05, pos["risk_amount"])
+    check("its stop is 4 ATR under the fill", abs(pos["entry"] - pos["stop"] - 4.0) < 1e-9)
+    fb.px["AAA-USDT"] = 95.0
+    eng.manage()
+    pos = BT.closed_positions(tr["id"])[-1]
+    check("the manager sells at the stop", pos["exit_reason"] == "stop")
+    fb.px["BBB-USDT"] = 50.0
+    eng._open(cand("BBB-USDT", 50.0, 0.5), BT.learning())
+    fb.px["BBB-USDT"] = 60.0
+    eng.manage()
+    pos = BT.closed_positions(tr["id"])[-1]
+    check("the manager sells at the target for about +2R after fees",
+          pos["exit_reason"] == "target" and 1.8 < pos["r_multiple"] < 2.0, pos["r_multiple"])
+    con = store.conn()
+    ok_cash = True
+    for b in BT.all_bots():
+        fills = con.execute("SELECT side, units, price, fee FROM bot_fills WHERE bot_id=?", (b["id"],)).fetchall()
+        flow = sum((-1 if f["side"] == "buy" else 1) * f["units"] * f["price"] - f["fee"] for f in fills)
+        ok_cash = ok_cash and abs(b["starting_cash"] + flow - b["cash"]) < 1e-6
+    check("every bot's cash reconciles to the cent with its fills", ok_cash)
+
+    for k in range(10):
+        s = f"L{k}-USDT"
+        fb.px[s] = 10.0
+        mo = next(b for b in BT.all_bots() if b["key"] == "momentum")
+        eng._open(cand(s, 10.0, 0.1, bot=mo, cfg=BT.bot_config(mo)), BT.learning())
+        fb.px[s] = 9.0
+        eng.manage()
+    lr = BT.learning()
+    check("a strategy that keeps losing is benched for every bot", "ema_stack_pullback" in lr["benched"])
+    check("a bot on a losing run cuts its own risk", lr["risk_mult"][mo["id"]] < 1.0)
+    mo = next(b for b in BT.all_bots() if b["key"] == "momentum")
+    check("a bot that used its trades for the day stops opening more",
+          "trades for today" in (eng._bot_blocker(mo, BT.bot_config(mo), lr) or ""))
+    check("a bot that hit its daily loss limit stops opening trades",
+          "daily loss" in (eng._bot_blocker(mo, {**BT.bot_config(mo), "max_trades_per_day": 50}, lr) or ""))
+    BT.save_settings({"shared": {"risk_pct": 40}})
+    check("risk settings are clamped to a 3% ceiling", BT.load_settings()["shared"]["risk_pct"] == 3.0)
+    check("slippage is wider on thin markets", BK.slippage_for(5e6) > BK.slippage_for(1e9))
+
+    config.DB_PATH, BT.SETTINGS_PATH = old_db, old_set
+    importlib.reload(store)
+
     # ---- one network call
     print("\nnetwork")
     uni = universe.scan(["okx_spot"])

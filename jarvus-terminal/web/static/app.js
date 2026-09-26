@@ -38,7 +38,7 @@ async function saveSettings(patch) {
   applySettings();
   try { localStorage.setItem('jarvus-settings', JSON.stringify(state.settings)); } catch {}
   try {
-    await fetch('/api/settings', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+    await fetch('/api/settings', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Jarvus': '1' },
       body: JSON.stringify(state.settings) });
   } catch {}
 }
@@ -86,11 +86,15 @@ const SVG = 'http://www.w3.org/2000/svg';
 const el = (n, a = {}) => { const e = document.createElementNS(SVG, n);
   for (const k in a) e.setAttribute(k, a[k]); return e; };
 
-function sparkline(values, w = 74, h = 22) {
+function sparkline(values, w = 74, h = 22, minHalfSpan = 0, center = null) {
   const svg = el('svg', { viewBox: `0 0 ${w} ${h}`, class: 'spark', 'aria-hidden': 'true' });
   const v = (values || []).filter(x => isFinite(x));
   if (v.length < 2) return svg;
-  const lo = Math.min(...v), hi = Math.max(...v), span = (hi - lo) || 1;
+  let lo = Math.min(...v), hi = Math.max(...v);
+  if (minHalfSpan && center != null) {
+    lo = Math.min(lo, center - minHalfSpan); hi = Math.max(hi, center + minHalfSpan);
+  }
+  const span = (hi - lo) || 1;
   const X = i => (i / (v.length - 1)) * (w - 2) + 1;
   const Y = k => h - 2 - ((k - lo) / span) * (h - 4);
   svg.appendChild(el('path', {
@@ -295,6 +299,25 @@ function equityChart(curve, startCash) {
   svg.appendChild(el('path', {
     d: curve.map((p, i) => `${i ? 'L' : 'M'}${X(i).toFixed(1)},${Y(p.equity).toFixed(1)}`).join(' '),
     fill: 'none', stroke: 'var(--accent)', 'stroke-width': 2, 'stroke-linejoin': 'round' }));
+  // hover: a crosshair that snaps to the nearest closed trade, so nobody has to aim at a 2px line
+  const cross = el('line', { y1: m.t, y2: H - m.b, stroke: 'var(--text-muted)', 'stroke-width': 1, opacity: 0 });
+  const dot = el('circle', { r: 4, fill: 'var(--accent)', stroke: 'var(--surface-1)', 'stroke-width': 2, opacity: 0 });
+  const hit = el('rect', { x: m.l, y: 0, width: W - m.l - m.r, height: H, fill: 'transparent' });
+  svg.append(cross, dot, hit);
+  hit.addEventListener('mousemove', ev => {
+    const box = svg.getBoundingClientRect();
+    const fx = (ev.clientX - box.left) / box.width * W;
+    const i = Math.max(0, Math.min(curve.length - 1, Math.round((fx - m.l) / (W - m.l - m.r) * (curve.length - 1))));
+    const p = curve[i];
+    cross.setAttribute('x1', X(i)); cross.setAttribute('x2', X(i)); cross.setAttribute('opacity', 1);
+    dot.setAttribute('cx', X(i)); dot.setAttribute('cy', Y(p.equity)); dot.setAttribute('opacity', 1);
+    const chg = p.equity - startCash;
+    showTip(`<div class="t">$${esc(p.equity.toLocaleString(undefined, { maximumFractionDigits: 2 }))}</div>
+      <div class="r"><span>vs start</span><span>${chg >= 0 ? '+' : '-'}$${esc(Math.abs(chg).toLocaleString(undefined, { maximumFractionDigits: 2 }))}</span></div>
+      <div class="r"><span>after trade</span><span>${i + 1} of ${curve.length}</span></div>
+      <div class="r"><span>closed</span><span>${esc((p.t || '').replace('T', ' ').replace('Z', ' UTC'))}</span></div>`, ev);
+  });
+  hit.addEventListener('mouseleave', () => { hideTip(); cross.setAttribute('opacity', 0); dot.setAttribute('opacity', 0); });
   wrap.appendChild(svg);
   const lg = document.createElement('div');
   lg.className = 'legend';
@@ -336,7 +359,7 @@ async function api(path, opts) {
   return r.json();
 }
 const post = (path, body) => api(path, { method: 'POST',
-  headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body || {}) });
+  headers: { 'Content-Type': 'application/json', 'X-Jarvus': '1' }, body: JSON.stringify(body || {}) });
 
 /* ---------------- columns ---------------- */
 const COLUMNS = {
@@ -1050,6 +1073,248 @@ function refreshViewSelect() {
     + Object.keys(views).map(v => `<option>${esc(v)}</option>`).join('');
 }
 
+/* ---------------- bots ---------------- */
+const money = (v, d = 2) => v == null || !isFinite(v) ? '—'
+  : `${v < 0 ? '-' : ''}$${Math.abs(v).toLocaleString(undefined, { minimumFractionDigits: d, maximumFractionDigits: d })}`;
+const signedMoney = v => v == null || !isFinite(v) ? '—' : `${v >= 0 ? '+' : '-'}$${Math.abs(v).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+const rFmt = v => v == null || !isFinite(v) ? '—' : `${v >= 0 ? '+' : ''}${v.toFixed(2)}R`;
+const localTime = iso => { if (!iso) return ''; const d = new Date(iso);
+  return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); };
+const KIND_LABEL = { enter: 'bought', exit: 'sold', manage: 'managed', cycle: 'scan', learn: 'learned',
+  research: 'research', system: 'system', error: 'problem' };
+
+function botSpark(b) {
+  const vals = [b.starting_cash, ...(b.equity_curve || []).map(p => p.equity)];
+  if (b.open || vals.length < 2) vals.push(b.equity);
+  // The scale never shrinks below +/-2% of the starting money, so a 0.1% wobble is drawn
+  // as the wobble it is instead of a cliff.
+  const svg = sparkline(vals, 280, 34, b.starting_cash * 0.02, b.starting_cash);
+  svg.setAttribute('preserveAspectRatio', 'none');
+  svg.setAttribute('role', 'img');
+  svg.setAttribute('aria-label', `${b.name} equity, ${money(b.starting_cash, 0)} to ${money(b.equity, 0)}`);
+  return svg;
+}
+
+async function loadBots() {
+  try {
+    const s = await api('/api/bots');
+    if (s.error) { $('#botsState').textContent = s.error; return; }
+    renderBots(s);
+  } catch (e) { $('#botsState').textContent = 'Could not reach the app: ' + e.message; }
+}
+
+function renderBots(s) {
+  state.bots = s;                           // every render is the latest truth, whoever fetched it
+  const t = s.totals;
+  $('#botsBadge').hidden = !s.running;
+  $('#botsEquity').textContent = money(t.equity);
+  const pnl = $('#botsPnl');
+  pnl.className = 'small ' + (t.pnl > 0 ? 'up' : t.pnl < 0 ? 'down' : 'muted');
+  pnl.textContent = `${signedMoney(t.pnl)} (${pct(t.return_pct, 2)}) since the start, from ${money(t.starting, 0)}`;
+
+  const run = $('#runBots');
+  run.disabled = false;
+  run.textContent = s.running ? 'Stop bots' : 'Run bots';
+  run.classList.toggle('stop', s.running);
+  let st;
+  if (!s.running) st = t.open_positions
+    ? `Stopped. Not opening new trades; still managing ${t.open_positions} open trade${t.open_positions > 1 ? 's' : ''} to their exits.`
+    : 'Stopped. Press Run bots and they take it from here.';
+  else if (s.cycle_busy) st = 'Running. Scanning every market and backtesting setups now…';
+  else if (s.next_cycle_in_s != null) st = `Running. Next scan in ${Math.floor(s.next_cycle_in_s / 60)}:${String(s.next_cycle_in_s % 60).padStart(2, '0')}.`
+    + (s.last_cycle_at ? ` Last scan ${localTime(s.last_cycle_at)}.` : '');
+  else st = 'Running.';
+  if (s.last_error) st += ` Last problem: ${s.last_error}`;
+  $('#botsState').textContent = st;
+
+  $('#botsTiles').innerHTML = [
+    ['Open trades', t.open_positions, `across ${s.bots.filter(b => b.enabled).length} bots`],
+    ['Closed trades', t.closed_count, t.closed_count < 50 ? 'under 50: too few to judge' : 'enough to start judging'],
+    ['Win rate', t.win_rate != null ? t.win_rate.toFixed(1) + '%' : '—', 'of closed trades'],
+    ['Average trade', rFmt(t.expectancy_r), 'after fees, in R'],
+    ['Fees paid', money(t.total_fees), 'the silent tax'],
+    ['Backtests run', (s.verifier.backtests_run || 0).toLocaleString(), 'since the app started'],
+  ].map(([k, v, sub]) => `<div class="tile"><div class="k">${esc(k)}</div><div class="v">${esc(String(v))}</div>
+      <div class="s">${esc(sub)}</div></div>`).join('');
+
+  const eqKey = `${t.starting}|${(t.equity_curve || []).length}|${(t.equity_curve || []).slice(-1)[0]?.equity}`;
+  if (state.botsEqKey !== eqKey) {          // redraw only when a trade closes, not under the pointer
+    state.botsEqKey = eqKey;
+    const eq = $('#botsEq'); eq.innerHTML = '';
+    eq.appendChild(equityChart(t.equity_curve, t.starting));
+  }
+  $('#botsEqNote').textContent = t.max_drawdown_pct ? `worst drop so far ${t.max_drawdown_pct.toFixed(1)}%` : '';
+
+  // bot cards
+  const cards = $('#botCards'); cards.innerHTML = '';
+  s.bots.forEach(b => {
+    const d = document.createElement('div');
+    d.className = 'bot' + (b.enabled ? '' : ' off');
+    d.innerHTML = `
+      <div class="top"><span class="name"></span>
+        <span class="chip ${b.enabled && s.running ? 'buy' : ''}"><span class="sw"></span>${b.enabled ? (s.running ? 'running' : 'ready') : 'off'}</span>
+        <label class="toggle"><input type="checkbox" ${b.enabled ? 'checked' : ''} data-bot="${esc(b.key)}"> on</label></div>
+      <div class="doing"></div>
+      <div class="nums">
+        <div><div class="k">Money</div><div class="v">${esc(money(b.equity, 0))}</div></div>
+        <div><div class="k">Return</div><div class="v ${b.return_pct > 0 ? 'up' : b.return_pct < 0 ? 'down' : ''}">${esc(pct(b.return_pct, 1))}</div></div>
+        <div><div class="k">Open</div><div class="v">${b.open}</div></div>
+        <div><div class="k">Trades</div><div class="v">${b.closed_count}</div></div>
+        <div><div class="k">Win rate</div><div class="v">${b.win_rate != null ? b.win_rate.toFixed(0) + '%' : '—'}</div></div>
+        <div><div class="k">Avg trade</div><div class="v">${esc(rFmt(b.expectancy_r))}</div></div>
+      </div>
+      <div class="sparkbox"></div>
+      <div class="play"></div>`;
+    $('.name', d).textContent = b.name;
+    $('.doing', d).textContent = b.status + (b.risk_mult < 1 ? ` Risk cut to ${Math.round(b.risk_mult * 100)}% after recent losses.` : '');
+    $('.play', d).textContent = b.playbook;
+    $('.sparkbox', d).appendChild(botSpark(b));
+    cards.appendChild(d);
+  });
+  $$('#botCards [data-bot]').forEach(cb => cb.addEventListener('change', async () => {
+    renderBots(await post('/api/bots/bot', { key: cb.dataset.bot, enabled: cb.checked }));
+  }));
+
+  // open positions
+  const pw = $('#botsPositions');
+  if (!s.positions.length) {
+    pw.innerHTML = `<p class="muted small">${s.running ? 'No open trades. The bots only buy when a setup passes its backtest, so quiet stretches are normal.' : 'No open trades.'}</p>`;
+  } else {
+    pw.innerHTML = `<div class="tablewrap"><table><thead><tr><th>Bot</th><th>Coin</th><th class="n">Bought</th>
+      <th class="n">Now</th><th class="n">P&amp;L</th><th class="n">R</th><th class="n">Stop</th><th class="n">Target</th>
+      <th class="n">Held</th></tr></thead><tbody>${s.positions.map(p => `<tr class="row" data-why="${p.id}">
+        <td class="small">${esc(p.bot)}</td><td><strong>${esc(p.base)}</strong></td>
+        <td class="n">${fmtPrice(p.entry)}</td><td class="n">${fmtPrice(p.last)}</td>
+        <td class="n ${p.pnl > 0 ? 'up' : p.pnl < 0 ? 'down' : ''}">${esc(signedMoney(p.pnl))}</td>
+        <td class="n">${esc(rFmt(p.r_now))}</td><td class="n">${fmtPrice(p.stop)}</td>
+        <td class="n">${fmtPrice(p.target)}</td><td class="n">${p.age_h < 48 ? p.age_h.toFixed(0) + 'h' : (p.age_h / 24).toFixed(1) + 'd'}</td>
+      </tr>`).join('')}</tbody></table></div>
+      <p class="tiny muted" style="margin:6px 0 0">Hover a row for why the bot bought it. P&amp;L includes the fee already paid.</p>`;
+    const byId = Object.fromEntries(s.positions.map(p => [String(p.id), p]));
+    $$('#botsPositions tr[data-why]').forEach(tr => {
+      const p = byId[tr.dataset.why];
+      tr.addEventListener('mousemove', ev => showTip(`<div class="t">${esc(p.bot)} · ${esc(p.base)}</div>
+        <div style="max-width:340px;white-space:normal">${esc(p.why || '')}</div>`, ev));
+      tr.addEventListener('mouseleave', hideTip);
+    });
+  }
+
+  renderFeed();
+
+  // learning
+  const L = s.learning;
+  const lw = $('#botsLearn');
+  if (!L.trades) {
+    lw.innerHTML = `<p class="muted small">Nothing yet. After each closed trade the bots re-score every strategy and
+      coin they have traded. A strategy that keeps losing for them is benched, a coin that keeps losing is avoided,
+      and a bot on a losing streak cuts its own risk. Learning only ever makes them more careful.</p>`;
+  } else {
+    const list = (arr, empty) => arr.length ? arr.map(x => `<span class="pill">${esc(x)}</span>`).join(' ') : `<span class="muted small">${empty}</span>`;
+    lw.innerHTML = `
+      <div class="small" style="margin-bottom:6px">Learned from <strong>${L.trades}</strong> closed trade${L.trades > 1 ? 's' : ''}.</div>
+      <div class="small" style="margin:4px 0">Benched strategies: ${list(L.benched, 'none')}</div>
+      <div class="small" style="margin:4px 0">Coins avoided: ${list(L.avoid_coins, 'none')}</div>
+      <div class="small" style="margin:4px 0 10px">Market states avoided: ${list(L.avoid_states, 'none')}</div>
+      <div class="tablewrap"><table><thead><tr><th>Strategy</th><th class="n">Trades</th><th class="n">Win</th>
+        <th class="n">Avg</th><th class="n">Trusted as</th></tr></thead><tbody>
+        ${L.by_strategy.slice(0, 12).map(x => `<tr><td class="small">${esc(x.name)}</td><td class="n">${x.n}</td>
+          <td class="n">${x.win.toFixed(0)}%</td><td class="n">${esc(rFmt(x.mean))}</td><td class="n">${esc(rFmt(x.shrunk))}</td></tr>`).join('')}
+      </tbody></table></div>
+      <p class="tiny muted" style="margin:6px 0 0">"Trusted as" shrinks each average toward zero by eight imaginary
+        break-even trades, so a few lucky results cannot crown a strategy and a few unlucky ones cannot bench it.</p>`;
+  }
+
+  // recent closed
+  const rw = $('#botsRecent');
+  rw.innerHTML = s.recent.length ? `<div class="tablewrap"><table><thead><tr><th>Bot</th><th>Coin</th><th>Why</th>
+      <th class="n">R</th><th class="n">P&amp;L</th></tr></thead><tbody>${s.recent.slice(0, 15).map(r => `<tr>
+      <td class="small">${esc(r.bot)}</td><td><strong>${esc(r.base)}</strong></td>
+      <td class="tiny sec">${esc(r.exit_reason)}</td>
+      <td class="n ${r.r_multiple > 0 ? 'up' : r.r_multiple < 0 ? 'down' : ''}">${esc(rFmt(r.r_multiple))}</td>
+      <td class="n ${r.pnl > 0 ? 'up' : r.pnl < 0 ? 'down' : ''}">${esc(signedMoney(r.pnl))}</td></tr>`).join('')}
+    </tbody></table></div>` : '<p class="muted small">Nothing closed yet.</p>';
+
+  // readiness
+  $('#botsReady').innerHTML = `<div class="note ${s.readiness.passed === s.readiness.total ? 'good' : 'warn'}" style="margin-bottom:8px">
+      ${s.readiness.passed} of ${s.readiness.total} checks pass.
+      ${s.readiness.passed === s.readiness.total ? 'The practice record has met every bar.' : 'Not yet. Every practice trade costs nothing and buys evidence.'}</div>
+    <table><tbody>${s.readiness.checks.map(c => `<tr><td style="width:18px">${c.passed ? '✓' : '✗'}</td>
+      <td><strong class="small">${esc(c.check)}</strong><div class="tiny muted">${esc(c.why)}</div></td></tr>`).join('')}</tbody></table>`;
+
+  if (!$('#botsSettings').dataset.built) buildBotSettings(s);
+}
+
+function renderFeed() {
+  const s = state.bots; if (!s) return;
+  const f = $('#feedKind').value;
+  const rows = s.feed.filter(r => !f || (f === 'trades' ? ['enter', 'exit', 'manage'].includes(r.kind) : r.kind === f));
+  const fw = $('#botsFeed');
+  const keep = fw.scrollTop;
+  fw.innerHTML = rows.length ? '' : '<p class="muted small">Nothing yet. Press Run bots.</p>';
+  rows.slice(0, 120).forEach(r => {
+    const d = document.createElement('div');
+    d.className = 'item';
+    d.innerHTML = `<span class="t"></span><span class="kind ${esc(r.kind)}"></span><span class="m"></span>`;
+    $('.t', d).textContent = localTime(r.ts);
+    $('.kind', d).textContent = KIND_LABEL[r.kind] || r.kind;
+    $('.m', d).textContent = r.message;
+    fw.appendChild(d);
+  });
+  fw.scrollTop = keep;
+}
+
+const BOT_FIELDS = [
+  ['risk_pct', 'Risk per trade (% of that bot\'s money)', 0.05, 3, 0.05, 'What one losing trade costs. 1% means a bot with $1,667 loses about $17 if the stop is hit.'],
+  ['max_positions', 'Most open trades per bot', 1, 8, 1, ''],
+  ['max_hold_h', 'Longest a trade is held (hours)', 2, 720, 1, 'Measured: holds of 24h or less lost money after fees; 96h did best.'],
+  ['stop_atr', 'Stop distance (× ATR)', 1, 10, 0.5, 'Wide stops survive fees. Tighter stops mean more of each trade goes to the exchange.'],
+  ['target_r', 'Profit target (R)', 0.5, 10, 0.5, '2R means the target is twice as far as the stop.'],
+  ['verify_min_edge', 'Backtest bar (R per trade)', -1, 2, 0.05, 'A setup must have made at least this much per trade on that coin to be traded. Lower = more trades, less proof.'],
+  ['daily_loss_limit_pct', 'Daily loss limit (%)', 0.5, 20, 0.5, 'A bot that loses this much in a day stops opening trades until 00:00 UTC.'],
+  ['max_trades_per_day', 'Most new trades per bot per day', 1, 50, 1, ''],
+];
+
+function buildBotSettings(s) {
+  const box = $('#botsSettings');
+  box.dataset.built = '1';
+  const shared = { ...s.defaults, ...(s.settings.shared || {}) };
+  box.innerHTML = `<div class="setgrid">${BOT_FIELDS.map(([k, label, lo, hi, step, help]) => `
+      <label><span>${esc(label)}</span>
+        <input type="number" data-set="${k}" min="${lo}" max="${hi}" step="${step}" value="${shared[k]}">
+        ${help ? `<span class="h">${esc(help)}</span>` : ''}</label>`).join('')}
+      <label><span>Scan every (minutes)</span>
+        <input type="number" id="setScanMin" min="2" max="60" step="1" value="${Math.round(s.settings.scan_interval_s / 60)}">
+        <span class="h">Setups are built on hourly candles, so faster than 5 minutes adds load, not trades.</span></label>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
+      <button id="saveBotSet" class="primary">Save settings</button>
+      <button id="defaultBotSet">Back to measured defaults</button>
+      <span style="margin-left:auto"></span>
+      <label class="small sec" style="display:flex;align-items:center;gap:6px">Practice money
+        <input type="number" id="setPractice" min="100" step="100" value="${s.settings.practice_money}" style="width:110px"></label>
+      <button id="resetBots" class="ghost">Reset practice account</button>
+    </div>
+    <p class="tiny muted" style="margin:8px 0 0">Every setting is clamped to a safe range, so a typo cannot bet the account.
+      Changes apply to new trades; open trades keep the rules they were opened with.</p>`;
+  $('#saveBotSet').addEventListener('click', async () => {
+    const shared = {};
+    $$('#botsSettings [data-set]').forEach(i => { if (i.value !== '') shared[i.dataset.set] = Number(i.value); });
+    const r = await post('/api/bots/settings', { shared, scan_interval_s: Number($('#setScanMin').value) * 60 });
+    box.dataset.built = ''; renderBots(r);
+  });
+  $('#defaultBotSet').addEventListener('click', async () => {
+    const r = await post('/api/bots/settings', { shared: { ...s.defaults }, scan_interval_s: 300 });
+    box.dataset.built = ''; renderBots(r);
+  });
+  $('#resetBots').addEventListener('click', async () => {
+    const amt = Number($('#setPractice').value);
+    if (!confirm(`Close every open trade and restart all six bots with ${money(amt, 0)} of practice money? The trade history is wiped.`)) return;
+    const r = await post('/api/bots/reset', { practice_money: amt });
+    if (r.error) { alert(r.error); return; }
+    box.dataset.built = ''; renderBots(r);
+  });
+}
+
 /* ---------------- tabs & boot ---------------- */
 function showTab(name) {
   $$('nav button').forEach(b => b.setAttribute('aria-selected', String(b.dataset.tab === name)));
@@ -1060,6 +1325,7 @@ function showTab(name) {
   if (name === 'research') loadResearch();
   if (name === 'portfolio') loadPortfolio();
   if (name === 'alerts') loadAlerts(false);
+  if (name === 'bots') loadBots();
 }
 
 function syncFilterUI() {
@@ -1202,10 +1468,32 @@ async function boot() {
     $('#deepN').value = String(h.deep_n);
   } catch { $('#feeTier').innerHTML = '<option>Kraken Pro taker</option>'; }
 
+  $('#runBots').addEventListener('click', async e => {
+    e.target.disabled = true;
+    const running = state.bots && state.bots.running;
+    try { renderBots(await post(running ? '/api/bots/stop' : '/api/bots/run')); }
+    catch (err) { $('#botsState').textContent = err.message; e.target.disabled = false; }
+  });
+  $('#closeAllBots').addEventListener('click', async () => {
+    if (!confirm('Sell every open bot trade at the current price?')) return;
+    const r = await post('/api/bots/close-all');
+    renderBots(r.status);
+  });
+  $('#feedKind').addEventListener('change', renderFeed);
+
   buildSettingsUI(state.health);
   refreshViewSelect();
   syncFilterUI();
+  loadBots();
   loadScan(false);
   setInterval(() => loadAlerts(true), 60000);
+  // The Bots tab refreshes every few seconds while it is on screen, and quietly otherwise
+  // so the ON badge stays true.
+  let tick = 0;
+  setInterval(() => {
+    tick++;
+    const onBots = $('#panel-bots').classList.contains('on') && !document.hidden;
+    if (onBots || tick % 6 === 0) loadBots();
+  }, 5000);
 }
 boot();

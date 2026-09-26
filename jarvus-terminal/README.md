@@ -5,6 +5,10 @@ against each of them at once**, ranks what is most likely to move, builds a cost
 and **grades its own predictions** so the confidence it shows you is measured rather than
 claimed.
 
+It also has **six trading bots that run themselves**. Press **Run bots** once and they
+scan, backtest, buy, manage and sell on their own, around the clock, with practice money
+at live prices. See **The bots**, below.
+
 ```
 python3 run.py
 ```
@@ -59,18 +63,80 @@ was a bull market and everything long made money. Of 64 real strategies, **13 be
 The other 51 were measuring the weather. That is why every ranking here is by *excess
 over the control* rather than by raw return.
 
-**It will not place orders.** There is no live-trading button and this is deliberate,
-for reasons the app's own numbers make plain: the strategies here have no forward-tested
-record, and of the configurations tested in this project essentially none were profitable
-after retail taker fees. Automating orders on an unproven edge does not make money
-faster, it loses it faster with nobody watching. What the app does instead is make paper
-trading arithmetically identical to real trading, then tell you honestly when that record
-would justify risking money. See **Real money**, below.
+**The bots trade practice money, not your money.** They are fully automatic: nobody
+has to press anything after Run. Every fill uses the live price, the real fee for your fee
+tier and realistic slippage, so their record is a fair preview of what real money would
+have done. There is no connection to a real exchange account. The reason is in the
+numbers: taken on their own, the strategies here lose money after fees, and the filter
+that makes the bots positive in testing has not yet been proven forward on your screen.
+Let the practice record reach the readiness bar first. See **Real money**, below.
 
 **Nobody can promise you profits, and anything that does is selling something.** What
 this gives you is a way to look at 1,700 markets in six seconds, a measured opinion about
 which are about to move, a plan whose loss is defined before you enter, and an honest
 scoreboard. That is a real edge over trading on vibes. It is not a money printer.
+
+---
+
+## The bots
+
+Open the app, stay on the **Bots** tab, press **Run bots**. That is the whole job.
+
+| Bot | Playbook |
+|---|---|
+| **Trend Rider** | Buys pullbacks and continuations in markets already trending up, when two of its 16 trend strategies agree. |
+| **Breakout Hunter** | Waits for a market to coil or start moving hard (LOUD or COILED only), then buys the break when two of its 16 breakout strategies fire. |
+| **Dip Buyer** | Buys sharp oversold dips in markets whose bigger trend is not down. |
+| **Momentum** | Buys when momentum turns up and two of its 8 momentum strategies agree. |
+| **Smart Money** | Liquidity sweeps, order blocks, fair-value gaps and volume absorption. |
+| **Swarm Captain** | Only trades when three different strategy families agree at once. |
+
+Each bot has its own share of the practice money (default $10,000 split six ways) and
+its own record, so you can see which playbooks earn their keep.
+
+**What happens without you**
+
+* **Every 5 minutes** they scan every liquid market (about 1,700), analyse the top 40,
+  and run all 66 strategies on each: 2,680 checks per scan. Each bot picks out the
+  setups that match its playbook.
+* **Before any trade** the bot backtests the strategies that fired on *that coin's last
+  1,500 hours*, using the exact exits it will trade with, and buys only if they made at
+  least **+0.15R per trade over 12+ trades there and beat random buying**. Each buy is
+  logged with its reason, e.g. *"supertrend_adx made +0.74R per trade over 17 trades
+  (71% winners) vs random buying at +0.48R."*
+* **Every 15 seconds** they check every open trade against the live price and sell at
+  the stop (4 x ATR below entry), the target (2R) or the time limit (96 hours).
+* **After every closed trade** they learn: a strategy that keeps losing for them is
+  benched, a coin that keeps losing is avoided, and a bot on a losing run cuts its own
+  risk to a half or a quarter. Learning only ever makes them more careful.
+* **Every 24 hours** they re-run the full research backtest in the background, so the
+  strategy weights keep up with the market.
+* **They survive restarts.** If the app or the computer restarts, the bots resume on
+  their own and pick up every open trade where they left it.
+
+**Safety rails, all on by default:** 1% of the bot's money at risk per trade, at most 3
+open trades per bot and 2 bots per coin, 6 new trades per bot per day, a 4% daily loss
+limit per bot, a 12-hour cooling-off after 4 losses in a row, a fee gate that refuses any
+trade where fees would eat more than 20% of the risk, and a hard ceiling of 3% risk per
+trade that no setting can exceed.
+
+**Why these defaults.** Every one comes from a walk-forward test on 15 markets x 3,300
+hours, where each decision could only see data from before it:
+
+| What was tested | Result |
+|---|---|
+| Taking every strategy signal | Lost money after fees in every exit style tried. No better than buying at random. |
+| Holding 24 hours or less (true day trading) | Lost money even with the filter. Fees and forced exits cut the winners. |
+| Holding up to 4 days, 4 x ATR stop, 2R target | The best of seven exit styles tested. |
+| The bots' full rule (fee gate + recent edge on that coin + beats random), 10bps slippage | **+0.22R per trade over 675 trades.** Positive in all three test windows: +0.15R while prices fell (random buying: -0.26R), +0.27R and +0.19R while they rose (random: +0.21R and +0.17R). |
+
+**Read that last row carefully.** The rule beat random buying in every window, clearly
+when the market fell and narrowly when it rose. **Its edge came mostly from volatile small
+coins (+0.30R per trade); on BTC, ETH and SOL-type majors it made only +0.07R** and lost
+money in the latest window. It is one 75-day period on 15 markets that were picked while
+they were busy, which likely flatters the small coins. In money terms, +0.22R on a trade
+risking $16.67 is about $3.70. It is a real, measured edge, not a money printer. The
+practice record on the Bots tab is how you find out whether it holds from here.
 
 ---
 
@@ -174,15 +240,20 @@ direction row visible. Expect roughly 50%. That number is the honesty check, not
 
 ## Automation
 
-Turn it on from the Alerts tab and pick an interval. While it runs the app rescans every
-market, fires any alert rule that matches, marks open paper positions to market, closes
-anything through its stop or target, and grades predictions whose horizon has passed.
+The bots (above) are the automation most people want: they scan, trade, manage and learn
+on their own. Running them also fires your alert rules and grades predictions, so there is
+nothing else to switch on.
+
+The older scheduler on the Alerts tab is still there if you want scanning and alerts
+without any trading. While it runs the app rescans every market, fires any alert rule
+that matches, marks open Portfolio positions to market, closes anything through its stop
+or target, and grades predictions whose horizon has passed.
 
 Alert rules combine heat, gate state, consensus, family agreement, verdict, cost and
 volume, each with a cooldown so a market sitting just over a threshold does not fire
 every cycle.
 
-It never sends an order.
+Neither the scheduler nor the bots ever touch a real exchange account.
 
 ---
 
@@ -204,6 +275,8 @@ pass:
 | Max drawdown under 20% | Assume the real one is worse, because paper does not panic. |
 | Average win larger than average loss | Otherwise you are relying on a high hit rate, which does not survive a bad week. |
 | Fees under a third of gross profit | If fees eat a third, the venue is the problem and a better fee tier beats a better strategy. |
+
+The Bots tab runs the same six checks on everything the bots have closed.
 
 When all six pass, going live is a matter of placing the orders yourself from the plan the
 app prints, at a quarter of the size the maths allows, because live execution and live
@@ -234,6 +307,7 @@ Everything below is in the Settings drawer and persists to both the browser and 
 
 | Tab | What it is for |
 |---|---|
+| **Bots** | The Run button, six bot cards with what each is doing right now, open trades with live P&L, the activity feed, what they have learned, and the readiness checks. |
 | **Markets** | Every liquid market ranked by heat, with family agreement, consensus, cost and verdict. |
 | **Detail** | TradingView chart, local price and volume with your indicator overlays, why the gate reads what it does, the costed plan, every strategy that fired and its weight. |
 | **Swarm** | The whole grid, plus the strategy roster with on/off switches. |
@@ -253,7 +327,7 @@ python3 run.py --port 9000        # a different port
 python3 run.py scan -n 20         # one scan, printed here
 python3 run.py resolve            # grade predictions past their horizon
 python3 run.py learn              # measured calibration as JSON
-python3 run.py selftest           # verify the install (68 checks)
+python3 run.py selftest           # verify the install (83 checks)
 ```
 
 Environment overrides: `JARVUS_PORT`, `JARVUS_DEEP_N`, `JARVUS_FEE_TIER`, `JARVUS_ACCOUNT`,
@@ -281,6 +355,8 @@ jarvus-terminal/
 │   ├── analysis.py     structure, levels, confluence, the cost gate, the plan
 │   ├── portfolio.py    paper books with real accounting and the readiness gate
 │   ├── automation.py   scheduler and alert rules
+│   ├── bots.py         the six self-running bots: scan, verify, trade, manage, learn
+│   ├── broker.py       practice-money fills at live prices, liquidity-scaled slippage
 │   ├── learn.py        resolution, calibration, reliability
 │   ├── news.py / store.py / scanner.py / http.py
 └── web/                the dashboard; no frameworks, inline SVG charts

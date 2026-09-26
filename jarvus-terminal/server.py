@@ -23,7 +23,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import config
 from engine import http as ehttp
-from engine import automation, learn, news, portfolio, research, scanner, store, swarm
+from engine import automation, bots, learn, news, portfolio, research, scanner, store, swarm
 from engine import indicators as eind
 from engine import strategies as estrat
 
@@ -108,8 +108,37 @@ class Handler(BaseHTTPRequestHandler):
         with open(path, "rb") as fh:
             self._send(200, fh.read(), ctype)
 
+    def _allowed_hosts(self):
+        hosts = {f"127.0.0.1:{config.PORT}", f"localhost:{config.PORT}", f"{config.HOST}:{config.PORT}"}
+        return hosts
+
+    def _guard(self, is_post: bool) -> bool:
+        """Only this app's own page may talk to this server.
+
+        The server listens on your machine only, but any website open in your browser
+        can still try to send requests to 127.0.0.1. Checking the Host header stops
+        DNS-rebinding tricks, and requiring a custom header on every change stops a
+        foreign page from pressing buttons, because browsers will not let another
+        site add that header without this server's permission, which it never gives.
+        """
+        host = (self.headers.get("Host") or "").strip().lower()
+        if host not in self._allowed_hosts():
+            self._send(403, b"forbidden host", "text/plain; charset=utf-8")
+            return False
+        if is_post:
+            origin = self.headers.get("Origin")
+            if origin and origin.lower().replace("http://", "", 1) not in self._allowed_hosts():
+                self._send(403, b"forbidden origin", "text/plain; charset=utf-8")
+                return False
+            if self.headers.get("X-Jarvus") != "1":
+                self._send(403, b"missing app header", "text/plain; charset=utf-8")
+                return False
+        return True
+
     # -- routes -------------------------------------------------------------
     def do_GET(self):
+        if not self._guard(False):
+            return
         try:
             parsed = urllib.parse.urlparse(self.path)
             route, q = parsed.path, urllib.parse.parse_qs(parsed.query)
@@ -136,6 +165,7 @@ class Handler(BaseHTTPRequestHandler):
                     "automation": (automation.get_scheduler().status()
                                    if automation.get_scheduler() else {"enabled": False}),
                     "settings": load_settings(),
+                    "bots_running": bots.load_settings()["running"],
                 })
 
             if route == "/api/scan":
@@ -244,12 +274,18 @@ class Handler(BaseHTTPRequestHandler):
             if route == "/api/settings":
                 return self._json(load_settings())
 
+            if route == "/api/bots":
+                eng = bots.get_engine()
+                return self._json(eng.status() if eng else {"error": "bots are not running in this process"})
+
             return self._send(404, b"not found", "text/plain; charset=utf-8")
         except Exception:                                    # noqa: BLE001
             traceback.print_exc()
             return self._json({"error": traceback.format_exc(limit=3)}, 500)
 
     def do_POST(self):
+        if not self._guard(True):
+            return
         try:
             parsed = urllib.parse.urlparse(self.path)
             length = int(self.headers.get("Content-Length") or 0)
@@ -327,6 +363,35 @@ class Handler(BaseHTTPRequestHandler):
                     sch.stop()
                 return self._json(sch.status())
 
+            if parsed.path.startswith("/api/bots/"):
+                eng = bots.get_engine()
+                if not eng:
+                    return self._json({"error": "bots are not running in this process"}, 503)
+                action = parsed.path[len("/api/bots/"):]
+                if action == "run":
+                    return self._json(eng.run())
+                if action == "stop":
+                    return self._json(eng.stop())
+                if action == "close-all":
+                    return self._json({**eng.close_all(), "status": eng.status()})
+                if action == "scan-now":
+                    eng.next_cycle_at = 0
+                    eng._wake.set()
+                    return self._json({"ok": True})
+                if action == "reset":
+                    money = float(payload.get("practice_money") or bots.load_settings()["practice_money"])
+                    if not 100 <= money <= 10_000_000:
+                        return self._json({"error": "practice money must be between $100 and $10,000,000"}, 400)
+                    eng.close_all("reset")
+                    return self._json(eng.reset(money))
+                if action == "settings":
+                    bots.save_settings(payload)
+                    return self._json(eng.status())
+                if action == "bot":
+                    r = eng.set_bot(payload.get("key", ""), payload.get("enabled"), payload.get("overrides"))
+                    return self._json(r if r.get("error") else eng.status())
+                return self._send(404, b"not found", "text/plain; charset=utf-8")
+
             if parsed.path == "/api/cache/clear":
                 ehttp.cache_clear()
                 _last_scan["data"] = None
@@ -348,16 +413,25 @@ def serve():
             print(f"  custom strategy {f}: {msg}", flush=True)
     httpd = ThreadingHTTPServer((config.HOST, config.PORT), Handler)
     httpd.daemon_threads = True
+    # The bots start their threads only once the port is ours, so a second copy of
+    # the app that fails to bind can never trade the same practice account twice.
+    engine = bots.get_engine(lambda: _scan_for_scheduler()[0])
+    engine.boot()
     url = f"http://{config.HOST}:{config.PORT}"
     print(f"\n  Jarvus Terminal is running at  {url}\n", flush=True)
     print(f"  {len(estrat.REGISTRY)} strategies | {len(eind.CATALOG)} indicators | "
           f"top {config.DEEP_SCAN_N} of every liquid market | fee tier '{config.DEFAULT_FEE_TIER}'", flush=True)
     print("  Ctrl-C to stop.\n", flush=True)
+    if bots.load_settings()["running"]:
+        print("  Bots were running when the app last closed, so they have resumed.\n", flush=True)
+    else:
+        print("  Bots are ready. Open the Bots tab and press Run bots.\n", flush=True)
     try:
         httpd.serve_forever()
     except KeyboardInterrupt:
         print("\n  stopped.\n")
     finally:
+        engine.shutdown()
         httpd.server_close()
 
 

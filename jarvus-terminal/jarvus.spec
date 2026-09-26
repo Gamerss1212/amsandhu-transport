@@ -23,7 +23,7 @@ hiddenimports = [
     "engine", "engine.http", "engine.universe", "engine.marketdata", "engine.volgate",
     "engine.analysis", "engine.news", "engine.store", "engine.learn", "engine.scanner",
     "engine.indicators", "engine.swarm", "engine.backtest", "engine.research",
-    "engine.portfolio", "engine.automation",
+    "engine.portfolio", "engine.automation", "engine.broker", "engine.bots",
     "engine.strategies", "engine.strategies.builtin",
 ]
 
