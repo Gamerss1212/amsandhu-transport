@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""The bots: six automated traders that scan, decide, trade and learn on their own.
+"""The bots: seven automated traders that scan, decide, trade and learn on their own.
 
 Press Run once. From then on, every five minutes the bots scan every liquid market,
-run all 66 strategies against each one, pick out the setups that match their own
-playbook, **backtest those exact setups on that coin's last 1,500 hours using the exact
+run all 95 strategies against each one, pick out the setups that match their own
+playbook, **backtest those exact setups on that market's last 1,500 hours using the exact
 exits they will trade with**, and buy only what passes. Every fifteen seconds they check
 every open position against the live price and sell at the stop, the target or the time
 limit. They keep running across restarts until you press Stop.
@@ -53,7 +53,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Callable, Dict, List, Optional, Tuple
 
 import config
-from engine import automation, backtest, broker as B, learn, marketdata, portfolio, research, store
+from engine import automation, backtest, brain as BR, broker as B, learn, marketdata, portfolio, research, store
 from engine import strategies as S
 from engine import swarm
 
@@ -105,28 +105,31 @@ ALL = "*"
 BOT_DEFS: List[Dict] = [
     {"key": "trend", "name": "Trend Rider", "families": ["trend"], "min_signals": 2,
      "playbook": "Buys pullbacks and continuations in markets already trending up, when at least "
-                 "two of its 16 trend strategies agree."},
+                 "two of its 19 trend strategies agree."},
     {"key": "breakout", "name": "Breakout Hunter", "families": ["breakout"], "min_signals": 2,
      "gates": ["LOUD", "COILED"],
      "playbook": "Waits for a market to coil tight or start moving hard, then buys the break when "
-                 "two of its 16 breakout strategies fire."},
+                 "two of its 17 breakout strategies fire."},
     {"key": "dip", "name": "Dip Buyer", "families": ["mean-reversion"], "min_signals": 1,
      "playbook": "Buys sharp, oversold dips in markets whose bigger trend is not down, betting on "
                  "the snap back."},
     {"key": "momentum", "name": "Momentum", "families": ["momentum"], "min_signals": 2,
-     "playbook": "Buys when momentum turns up (MACD, RSI, rate of change) and two of its 8 momentum "
+     "playbook": "Buys when momentum turns up (MACD, RSI, rate of change) and two of its 10 momentum "
                  "strategies agree."},
     {"key": "smart", "name": "Smart Money", "families": ["structure", "volume"], "min_signals": 2,
-     "playbook": "Trades liquidity sweeps, order blocks, fair-value gaps and volume absorption, the "
-                 "footprints large traders leave."},
+     "playbook": "Trades liquidity sweeps, order blocks, fair-value gaps, candlestick reversals, flags and "
+                 "volume absorption: the footprints large traders leave."},
+    {"key": "daytrader", "name": "Day Trader", "families": ["session"], "min_signals": 1,
+     "playbook": "Trades the daily rhythm: opening-range breakouts, VWAP reclaims and pullbacks, gap-and-go, "
+                 "prior-day level reclaims and pivot bounces, on stocks and crypto."},
     {"key": "swarm", "name": "Swarm Captain", "families": ALL, "min_signals": 3,
      "min_families": 3, "min_consensus": 0.30,
      "playbook": "Only trades when at least three different strategy families agree at once, across "
-                 "all 66 strategies."},
+                 "all 95 strategies."},
 ]
 BOT_BY_KEY = {b["key"]: b for b in BOT_DEFS}
 
-COMMON_RULE = ("Before every trade it backtests the strategies that fired on that coin's last 1,500 "
+COMMON_RULE = ("Before every trade it backtests the strategies that fired on that market's last 1,500 "
                "hours using the exact exits it will trade with, and only buys if they made at least "
                "+0.15R per trade there and beat random buying.")
 
@@ -156,6 +159,9 @@ SHARED_DEFAULTS: Dict = {
     "daily_loss_limit_pct": 4.0,  # of the bot's equity; stops new trades until 00:00 UTC
     "loss_streak": 4,
     "loss_streak_pause_h": 12,
+    "trade_crypto": True,
+    "trade_stocks": True,
+    "stocks_flat_at_close": False,  # a true day trade on stocks: out by the 16:00 close
 }
 
 # Hard bounds. Settings outside these are clamped, so a typo cannot bet the account.
@@ -176,6 +182,8 @@ GLOBAL_DEFAULTS: Dict = {
     "manage_interval_s": 15,
     "max_bots_per_coin": 2,
     "auto_research_h": 24,
+    "brain_mode": "veto",          # "veto": the Brain can block a trade; "rank": it only reorders; "off"
+    "brain_min_r": 0.0,            # the Brain's predicted R must be above this to trade in veto mode
     "shared": {},
 }
 
@@ -247,12 +255,20 @@ def bot_config(bot_row: Dict, settings: Dict = None) -> Dict:
 
 
 def policy_of(cfg: Dict) -> Dict:
-    return {k: cfg[k] for k in ("stop_atr", "target_r", "max_hold_h", "partial_r", "partial_frac", "trail_atr")}
+    pol = {k: cfg[k] for k in ("stop_atr", "target_r", "max_hold_h", "partial_r", "partial_frac", "trail_atr")}
+    pol["flat_at_close"] = bool(cfg.get("flat_at_close", False))
+    return pol
 
 
 # =============================================================================
 # the exit policy, shared by the backtest and the live position manager
 # =============================================================================
+
+def _new_session(candles: List[dict], i: int) -> bool:
+    """Does bar i open a new session? An overnight gap for stocks, a new UTC day for crypto."""
+    a, b = candles[i - 1]["ts"], candles[i]["ts"]
+    return (b - a).total_seconds() >= 3 * 3600 or b.date() != a.date()
+
 
 def policy_exit(candles: List[dict], j0: int, entry: float, atr: float, pol: Dict,
                 fee: float, slip: float):
@@ -270,7 +286,19 @@ def policy_exit(candles: List[dict], j0: int, entry: float, atr: float, pol: Dic
     target = entry + pol["target_r"] * risk
     pr, pf, trail = pol.get("partial_r") or 0, pol.get("partial_frac", 0.5), pol.get("trail_atr") or 0
     n = len(candles)
-    last = min(n - 1, j0 + int(pol["max_hold_h"]) - 1)
+    # The time limit is in clock hours, as in live trading, so it means the same thing on
+    # 24/7 crypto (one bar per hour) and on stocks (seven bars a day, none overnight).
+    t0 = candles[j0]["ts"]
+    limit_s = float(pol["max_hold_h"]) * 3600
+    last = j0
+    while last + 1 < n and (candles[last + 1]["ts"] - t0).total_seconds() < limit_s:
+        last += 1
+    if pol.get("flat_at_close"):
+        # A true day trade: out by the close of the session it was opened in.
+        k = j0
+        while k + 1 < n and not _new_session(candles, k + 1):
+            k += 1
+        last = min(last, k)
     frac, gross, exit_notional, partial, highest = 1.0, 0.0, 0.0, False, entry
     j, reason = j0, "time"
     while j <= last:
@@ -329,17 +357,15 @@ class Verifier:
     def _candles(self, symbol: str, venue: str, want: int) -> List[dict]:
         return marketdata.deep_candles(symbol, venue, "1h", want)
 
-    def check(self, symbol: str, venue: str, names: List[str], pol: Dict, cfg: Dict,
-              fee: float, slip: float) -> Dict:
-        want = int(cfg["verify_bars"]) + 260
+    def snapshot(self, symbol: str, venue: str, want: int):
+        """The candles and shared indicator cache for a market, as of its latest closed bar."""
         candles = self._candles(symbol, venue, want)
-        n = len(candles)
-        if n < 600:
-            return {"ok": False, "reason": f"only {n} hours of history, need 600+ to verify", "per": {}}
-        last_ts = candles[-1]["ts"]
-        pkey = json.dumps(pol, sort_keys=True) + f"|{fee:.6f}|{slip:.6f}"
-        start = n - int(cfg["verify_bars"])
+        if not candles:
+            return candles, None
+        return candles, self._series_for(symbol, candles)
 
+    def _series_for(self, symbol: str, candles: List[dict]) -> "S.SeriesCache":
+        last_ts = candles[-1]["ts"]
         with self._lock:
             sc = self._series.get((symbol, last_ts))
             if sc is None:
@@ -358,6 +384,19 @@ class Verifier:
                         self._series.pop(k, None)
                     for k in [k for k in self._trades if k[0] == old_sym]:
                         self._trades.pop(k, None)
+        return sc
+
+    def check(self, symbol: str, venue: str, names: List[str], pol: Dict, cfg: Dict,
+              fee: float, slip: float) -> Dict:
+        want = int(cfg["verify_bars"]) + 260
+        candles = self._candles(symbol, venue, want)
+        n = len(candles)
+        if n < 600:
+            return {"ok": False, "reason": f"only {n} hours of history, need 600+ to verify", "per": {}}
+        last_ts = candles[-1]["ts"]
+        pkey = json.dumps(pol, sort_keys=True) + f"|{fee:.6f}|{slip:.6f}"
+        start = n - int(cfg["verify_bars"])
+        sc = self._series_for(symbol, candles)
 
         exit_fn = lambda cs, j0, e, a: policy_exit(cs, j0, e, a, pol, fee, slip)
 
@@ -403,11 +442,14 @@ class Verifier:
 def _init():
     c = store.conn()
     c.executescript(SCHEMA)
+    cols = {r[1] for r in c.execute("PRAGMA table_info(bot_positions)").fetchall()}
+    if "brain" not in cols:
+        c.execute("ALTER TABLE bot_positions ADD COLUMN brain TEXT")
     c.commit()
 
 
 def ensure_bots(practice_money: float = None) -> List[Dict]:
-    """Create the six bots the first time, splitting the practice money evenly."""
+    """Create the bots the first time, splitting the practice money evenly."""
     _init()
     c = store.conn()
     have = {r["key"] for r in c.execute("SELECT key FROM bots").fetchall()}
@@ -606,6 +648,8 @@ class Engine:
         self._benched_seen: set = set()
         self._research_thread: Optional[threading.Thread] = None
         self.started_at = store.now_iso()
+        self.brain_votes = 0
+        self.brain_last: List[Dict] = []
 
     # -- lifecycle -----------------------------------------------------------
     def boot(self):
@@ -743,11 +787,68 @@ class Engine:
             return "out of cash"
         return None
 
+    def _costs(self, m: Dict) -> Tuple[float, float]:
+        """(fee, slippage) in basis points for this market."""
+        return self.broker.fee_for(m), B.slippage_for(m.get("usd_volume_24h"))
+
+    def _policy_for(self, cfg: Dict, m: Dict) -> Dict:
+        pol = policy_of(cfg)
+        if m.get("asset") == "stock":
+            pol["flat_at_close"] = bool(cfg.get("stocks_flat_at_close"))
+        return pol
+
+    def _brain_view(self, m: Dict, cfg: Dict) -> Optional[Dict]:
+        """All 120 agents read this market; the coordinator predicts the trade's result in R.
+
+        Built exactly as in the research that trained it: the same candles, the same agents,
+        the same verification edge (from the standard exit), the same market leader.
+        """
+        br = BR.get()
+        if not br.trained:
+            return None
+        stock = m.get("asset") == "stock"
+        venue = m.get("venue", "okx")
+        candles, sc = self.verifier.snapshot(m["symbol"], venue, int(cfg["verify_bars"]) + 260)
+        if not candles or sc is None or len(candles) < 300:
+            return None
+        ctx = S.Ctx(candles, m["symbol"], cache=sc)
+        fired = []
+        for spec in S.all_strategies():
+            if spec.group == "control":
+                continue
+            sig = S.evaluate(spec, ctx)
+            if sig and sig.direction == "long":
+                fired.append((spec.name, round(sig.strength, 3)))
+        fee_bps, slip_bps = self._costs(m)
+        std = {**policy_of(SHARED_DEFAULTS), "flat_at_close": False}
+        v = self.verifier.check(m["symbol"], venue, [n for n, _ in fired], std,
+                                {**SHARED_DEFAULTS}, fee_bps / 10000.0, slip_bps / 10000.0) if fired else {}
+        per = v.get("per", {})
+        seen = [x["exp"] for x in per.values() if x["n"] >= 12 and x["exp"] is not None]
+        edge = {"best": max(seen) if seen else None, "control": v.get("control_exp"),
+                "passes": any(x["ok"] for x in per.values())}
+        leader_candles = (marketdata.deep_candles("SPY", "yahoo", "1h", 400) if stock
+                          else marketdata.deep_candles("BTC-USDT", "okx", "1h", 400))
+        ld = BR.leader_state(leader_candles) if leader_candles else None
+        feats = BR.context_features(ctx, fired, fee_bps=fee_bps, slip_bps=slip_bps, stop_atr=4.0,
+                                    is_stock=stock, edge=edge, leader=ld)
+        asset = "stock" if stock else "crypto"
+        if stock and self._policy_for(cfg, m).get("flat_at_close") and "stock_dt" in br.models:
+            asset = "stock_dt"
+        pred = br.predict(asset, feats, fired)
+        return {"asset": asset, "pred": pred, "explain": br.explain(asset, feats, fired, 5),
+                "ctx": feats, "fired": fired, "agents": len(fired) + len(feats)}
+
     def _screen(self, bot: Dict, cfg: Dict, m: Dict, learned: Dict) -> Tuple[Optional[str], List[Dict]]:
         """Does this market match this bot's playbook? Returns (reason_not, its_signals)."""
         gate, stc, sw = m.get("gate") or {}, m.get("structure") or {}, m.get("swarm") or {}
         if not stc.get("atr") or not stc.get("price"):
             return "no data", []
+        stock = m.get("asset") == "stock"
+        if (stock and not cfg.get("trade_stocks", True)) or (not stock and not cfg.get("trade_crypto", True)):
+            return "asset class switched off", []
+        if stock and not m.get("market_open"):
+            return "stock market closed", []
         if (m.get("usd_volume_24h") or 0) < cfg["min_volume_usd"]:
             return "too little volume", []
         if gate.get("label") not in cfg["gates"]:
@@ -757,10 +858,10 @@ class Engine:
         if cfg["avoid_htf_downtrend"] and ((m.get("htf") or {}).get("trend") == "downtrend"):
             return "bigger trend is down", []
         if (m.get("base") or "") in learned["avoid_coins"]:
-            return "learned: this coin loses", []
+            return "learned: this market loses", []
         stop_pct = cfg["stop_atr"] * stc["atr"] / stc["price"]
-        slip = B.slippage_for(m.get("usd_volume_24h"))
-        cost_r = 2 * (self.broker.fee_bps + slip) / 10000.0 / stop_pct if stop_pct else 99
+        fee_bps, slip = self._costs(m)
+        cost_r = 2 * (fee_bps + slip) / 10000.0 / stop_pct if stop_pct else 99
         if cost_r > cfg["max_cost_r"]:
             return "fees too high for the stop", []
         fams = cfg["families"]
@@ -805,14 +906,13 @@ class Engine:
                 per_bot[bot["key"]]["matched"] += 1
 
         # Verify each coin once for the union of strategies any bot wants to know about.
-        fee = self.broker.fee_bps / 10000.0
         backtests_before = self.verifier.backtests_run
         verdicts: Dict[tuple, Dict] = {}
         wanted: Dict[tuple, set] = {}
         for bot, cfg, m, mine in setups:
             if not cfg["verify"]:
                 continue
-            key = (m["symbol"], json.dumps(policy_of(cfg), sort_keys=True),
+            key = (m["symbol"], json.dumps(self._policy_for(cfg, m), sort_keys=True),
                    json.dumps({k: cfg[k] for k in ("verify_bars", "verify_min_trades", "verify_min_edge",
                                                    "verify_beat_control")}, sort_keys=True))
             wanted.setdefault(key, set()).update(f["s"] for f in mine)
@@ -821,18 +921,21 @@ class Engine:
             sym = key[0]
             m = next(x for (_, _, x, _) in setups if x["symbol"] == sym)
             cfg = next(c for (_, c, x, _) in setups if x["symbol"] == sym)
-            slip = B.slippage_for(m.get("usd_volume_24h")) / 10000.0
+            fee_bps, slip_bps = self._costs(m)
             try:
                 verdicts[key] = self.verifier.check(sym, m.get("venue", "okx"), sorted(names),
-                                                    json.loads(key[1]), {**cfg, **json.loads(key[2])}, fee, slip)
+                                                    json.loads(key[1]), {**cfg, **json.loads(key[2])},
+                                                    fee_bps / 10000.0, slip_bps / 10000.0)
             except Exception as exc:                          # noqa: BLE001
                 verdicts[key] = {"ok": False, "reason": f"backtest failed: {exc}", "per": {}}
 
         candidates: Dict[str, List[Dict]] = {}
+        brain_views: Dict[str, Optional[Dict]] = {}
+        self.brain_last = self.brain_last[-60:]
         for bot, cfg, m, mine in setups:
             names = [f["s"] for f in mine]
             if cfg["verify"]:
-                key = (m["symbol"], json.dumps(policy_of(cfg), sort_keys=True),
+                key = (m["symbol"], json.dumps(self._policy_for(cfg, m), sort_keys=True),
                        json.dumps({k: cfg[k] for k in ("verify_bars", "verify_min_trades", "verify_min_edge",
                                                        "verify_beat_control")}, sort_keys=True))
                 v = verdicts.get(key)
@@ -869,8 +972,29 @@ class Engine:
             strength = sum(f["st"] * (f["w"] if f.get("w") is not None else 1.0) for f in mine[:4])
             heat = (m.get("gate") or {}).get("blow_score") or 0.0
             score = (0.5 + max(0.0, edge or 0.0)) * (0.5 + heat) * (1 + 0.1 * strength)
+            bv = None
+            if st.get("brain_mode", "off") != "off":
+                if m["symbol"] not in brain_views:
+                    try:
+                        brain_views[m["symbol"]] = self._brain_view(m, cfg)
+                    except Exception as exc:                      # noqa: BLE001 - the Brain must never stop a cycle
+                        brain_views[m["symbol"]] = None
+                        self.last_error = f"brain: {exc}"
+                bv = brain_views[m["symbol"]]
+                if bv and bv.get("pred") is not None:
+                    self.brain_votes += 1
+                    if st["brain_mode"] == "veto" and bv["pred"] <= st.get("brain_min_r", 0.0):
+                        reasons["the Brain voted no"] += 1
+                        per_bot[bot["key"]]["brain_no"] = per_bot[bot["key"]].get("brain_no", 0) + 1
+                        self.brain_last.append({"symbol": m.get("base"), "bot": bot["name"], "pred": round(bv["pred"], 3),
+                                                "vote": "no", "why": bv["explain"], "at": store.now_iso()})
+                        continue
+                    score *= max(0.2, 1 + bv["pred"])
+                    self.brain_last.append({"symbol": m.get("base"), "bot": bot["name"], "pred": round(bv["pred"], 3),
+                                            "vote": "yes", "why": bv["explain"], "at": store.now_iso()})
             candidates.setdefault(bot["key"], []).append(
-                {"bot": bot, "cfg": cfg, "m": m, "mine": mine, "lead": lead, "ver": ver, "score": round(score, 4)})
+                {"bot": bot, "cfg": cfg, "m": m, "mine": mine, "lead": lead, "ver": ver, "score": round(score, 4),
+                 "brain": bv})
 
         # Open the best candidates, respecting slots and how many bots may share a coin.
         opened: List[str] = []
@@ -899,6 +1023,9 @@ class Engine:
                 continue
             if took:
                 self.bot_status[bot["key"]] = f"Opened {took} trade{'s' if took > 1 else ''} this scan."
+            elif pb["verified"] and pb.get("brain_no", 0) >= pb["verified"]:
+                self.bot_status[bot["key"]] = (f"{pb['verified']} setup{'s' if pb['verified'] != 1 else ''} passed the "
+                                               f"backtest, but the Brain voted no. Waiting.")
             elif pb["verified"]:
                 self.bot_status[bot["key"]] = "Found a verified setup but had no room for it."
             elif pb["matched"]:
@@ -945,29 +1072,36 @@ class Engine:
             if notional < 10:
                 return {"ok": False, "reason": "not enough cash"}
             units = notional / px
-            slip_bps = B.slippage_for(m.get("usd_volume_24h"))
-            fill = self.broker.buy(units, px, slip_bps)
+            fee_bps, slip_bps = self._costs(m)
+            fill = self.broker.buy(units, px, slip_bps, fee_bps)
             entry = fill["avg_price"]
             stop = entry - cfg["stop_atr"] * atr
             target = entry + cfg["target_r"] * (entry - stop)
             risk_amount = units * (entry - stop)
             why = (f"{len(c['mine'])} of its strategies fired, led by {c['lead']}. "
-                   + (f"Backtest on this coin's last {ver.get('hours')}h: {c['lead']} made {ver['edge']:+.2f}R per "
+                   + (f"Backtest on this market's last {ver.get('hours')}h: {c['lead']} made {ver['edge']:+.2f}R per "
                       f"trade over {ver['n']} trades ({ver['win']:.0f}% winners)"
                       + (f" vs random buying at {ver['control_exp']:+.2f}R" if ver.get("control_exp") is not None
                          else "") + ". " if ver.get("edge") is not None else "Backtest check is switched off. ")
                    + f"Market is {(m.get('gate') or {}).get('label', '?')}."
+                   + (f" The Brain ({c['brain']['agents']} agents) predicts {c['brain']['pred']:+.2f}R: "
+                      + ", ".join(f"{e['agent']} {e['effect']:+.2f}" for e in c["brain"]["explain"][:3]) + "."
+                      if c.get("brain") and c["brain"].get("pred") is not None else "")
                    + (f" Risk cut to {mult:.0%} after recent losses." if mult < 1 else ""))
+            pol = {**self._policy_for(cfg, m), "slip_bps": slip_bps, "fee_bps": fee_bps}
+            brain_rec = (json.dumps({"asset": c["brain"]["asset"], "ctx": c["brain"]["ctx"],
+                                     "fired": c["brain"]["fired"], "pred": c["brain"]["pred"]})
+                         if c.get("brain") and c["brain"].get("pred") is not None else None)
             con = store.conn()
             cur = con.execute(
                 "INSERT INTO bot_positions(bot_id, symbol, venue, base, opened_at, entry, units_initial, units_open, "
                 "stop, initial_stop, target, atr, risk_amount, fees, highest, policy, lead_strategy, strategies, "
-                "gate_label, score, why, verification, last_price) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                "gate_label, score, why, verification, last_price, brain) "
+                "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
                 (bot["id"], m["symbol"], m.get("venue", "okx"), m.get("base"), store.now_iso(), entry, units, units,
-                 stop, stop, target, atr, risk_amount, fill["fee"], entry,
-                 json.dumps({**policy_of(cfg), "slip_bps": slip_bps}),
+                 stop, stop, target, atr, risk_amount, fill["fee"], entry, json.dumps(pol),
                  c["lead"], json.dumps([f["s"] for f in c["mine"]]), (m.get("gate") or {}).get("label"),
-                 c["score"], why, json.dumps(ver), px))
+                 c["score"], why, json.dumps(ver), px, brain_rec))
             pid = cur.lastrowid
             con.execute("INSERT INTO bot_fills(position_id, bot_id, ts, side, units, price, fee, reason) "
                         "VALUES(?,?,?,?,?,?,?,?)", (pid, bot["id"], store.now_iso(), "buy", units, entry,
@@ -1003,6 +1137,12 @@ class Engine:
                         "r_multiple=?, last_price=? WHERE id=?",
                         (fees, store.now_iso(), reason, round(pnl, 4), round(r, 4), fill["avg_price"], p["id"]))
             con.commit()
+            if p.get("brain") and reason not in ("reset",):
+                try:
+                    b = json.loads(p["brain"])
+                    BR.get().learn(b["asset"], b["ctx"], [tuple(x) for x in b["fired"]], r)
+                except Exception:                            # noqa: BLE001 - learning must never break an exit
+                    pass
             return {"closed": True, "pnl": pnl, "r": r, "fees": fees}
         con.execute("UPDATE bot_positions SET units_open=?, fees=fees+? WHERE id=?", (left, fill["fee"], p["id"]))
         con.commit()
@@ -1011,7 +1151,8 @@ class Engine:
     def _exit_log(self, p: Dict, res: Dict, reason: str, px: float):
         bot = next((b for b in all_bots() if b["id"] == p["bot_id"]), {"name": "?"})
         words = {"stop": "hit its stop", "protected stop": "hit its raised stop", "target": "reached its target",
-                 "time": "ran out of time", "close all": "closed on request"}.get(reason, reason)
+                 "time": "ran out of time", "close all": "closed on request",
+                 "session close": "day trade closed at the end of the session"}.get(reason, reason)
         held = _age_h(p["opened_at"])
         log("exit",
             f"{bot['name']} sold {p['base']} at {_fmt(px)}: {words}. {res['r']:+.2f}R, "
@@ -1047,15 +1188,16 @@ class Engine:
             # last known price rather than hold a practice trade forever.
             if _age_h(p["opened_at"]) >= pol.get("max_hold_h", 96) + 6 and (p["last_price"] or p["entry"]):
                 last = p["last_price"] or p["entry"]
-                fill = self.broker.sell(p["units_open"], last, pol.get("slip_bps"))
+                fill = self.broker.sell(p["units_open"], last, pol.get("slip_bps"), pol.get("fee_bps"))
                 res = self._sell(p, p["units_open"], fill, "time")
                 self._exit_log(p, res, "time", fill["avg_price"])
                 return 1
             return 0
         risk_u = p["entry"] - p["initial_stop"]
         sb = pol.get("slip_bps")
+        fb = pol.get("fee_bps")
 
-        hit = self.broker.check_stop(p["stop"], p["units_open"], px, sb)
+        hit = self.broker.check_stop(p["stop"], p["units_open"], px, sb, fb)
         if hit:
             reason = "stop" if p["stop"] <= p["initial_stop"] + 1e-12 else "protected stop"
             res = self._sell(p, p["units_open"], hit, reason)
@@ -1066,7 +1208,7 @@ class Engine:
         stop = p["stop"]
         if pol.get("partial_r") and not p["partial_done"] and px >= p["entry"] + pol["partial_r"] * risk_u:
             units = p["units_open"] * pol.get("partial_frac", 0.5)
-            fill = self.broker.sell(units, px, sb)
+            fill = self.broker.sell(units, px, sb, fb)
             self._sell(p, units, fill, "partial")
             stop = max(stop, p["entry"] * (1 + 2 * (fee_rate + (sb if sb is not None else 0) / 10000.0)))
             store.conn().execute("UPDATE bot_positions SET partial_done=1, stop=? WHERE id=?", (stop, p["id"]))
@@ -1077,12 +1219,17 @@ class Engine:
             p = dict(store.conn().execute("SELECT * FROM bot_positions WHERE id=?", (p["id"],)).fetchone())
 
         if p["target"] and px >= p["target"]:
-            fill = self.broker.sell(p["units_open"], p["target"], sb)
+            fill = self.broker.sell(p["units_open"], p["target"], sb, fb)
             res = self._sell(p, p["units_open"], fill, "target")
             self._exit_log(p, res, "target", fill["avg_price"])
             return 1
+        if pol.get("flat_at_close") and self._session_over(p):
+            fill = self.broker.sell(p["units_open"], px, sb, fb)
+            res = self._sell(p, p["units_open"], fill, "session close")
+            self._exit_log(p, res, "session close", fill["avg_price"])
+            return 1
         if _age_h(p["opened_at"]) >= pol.get("max_hold_h", 96):
-            fill = self.broker.sell(p["units_open"], px, sb)
+            fill = self.broker.sell(p["units_open"], px, sb, fb)
             res = self._sell(p, p["units_open"], fill, "time")
             self._exit_log(p, res, "time", fill["avg_price"])
             return 1
@@ -1092,12 +1239,30 @@ class Engine:
                              (px, highest, stop, p["id"]))
         return 0
 
+    def _session_over(self, p: Dict) -> bool:
+        """For a day trade: has the session it was opened in ended, or is it about to?"""
+        opened = store.parse_iso(p["opened_at"])
+        now = _now()
+        if p["venue"] == "yahoo":
+            from engine import stocks
+            clock = stocks.session_clock()
+            if not clock:
+                return False
+            if not clock["open"]:
+                return True                              # after the bell: the day trade is over
+            if opened.timestamp() < clock["start"]:
+                return True                              # opened in an earlier session
+            return clock["end"] - now.timestamp() <= 10 * 60
+        # crypto: the UTC day is the session
+        return opened.date() != now.date() or (now.hour == 23 and now.minute >= 50)
+
     def close_all(self, reason: str = "close all") -> Dict:
         n = 0
         with self._lock:
             for p in open_positions():
                 px = self.broker.price(p["symbol"], p["venue"] or "okx") or p["last_price"] or p["entry"]
-                fill = self.broker.sell(p["units_open"], px, json.loads(p["policy"] or "{}").get("slip_bps"))
+                pol = json.loads(p["policy"] or "{}")
+                fill = self.broker.sell(p["units_open"], px, pol.get("slip_bps"), pol.get("fee_bps"))
                 res = self._sell(p, p["units_open"], fill, reason)
                 self._exit_log(p, res, reason, fill["avg_price"])
                 n += 1
@@ -1151,19 +1316,24 @@ class Engine:
         hours = st.get("auto_research_h") or 0
         if not hours or (self._research_thread and self._research_thread.is_alive()):
             return
-        last = research.latest_run()
-        if last and last.get("finished_at") and _age_h(last["finished_at"]) < hours:
+        runs = research.latest_runs()
+        due = [a for a in ("crypto", "stock")
+               if not (runs.get(a) and _age_h(runs[a]["finished_at"]) < hours)]
+        if not due:
             return
 
         def go():
-            log("research", "Re-measuring every strategy on every major market (deep backtest). "
-                            "This runs in the background and takes a few minutes.")
-            try:
-                r = research.run(market_count=12, bars=3000)
-                log("research", f"Research finished: {r.get('beating_control', '?')} of {r.get('judged', '?')} "
-                                f"strategies beat random buying. Strategy weights updated for every bot.")
-            except Exception as exc:                          # noqa: BLE001
-                log("error", f"Research run failed: {exc}")
+            for asset in due:
+                label = "stocks" if asset == "stock" else "crypto"
+                log("research", f"Re-measuring every strategy on the major {label} markets (deep backtest). "
+                                f"This runs in the background and takes a few minutes.")
+                try:
+                    r = research.run(market_count=12, bars=3000, asset=asset)
+                    log("research", f"{label.capitalize()} research finished: {r.get('beating_control', '?')} of "
+                                    f"{r.get('judged', '?')} strategies beat random buying. Strategy weights "
+                                    f"updated for every bot.")
+                except Exception as exc:                      # noqa: BLE001
+                    log("error", f"{label.capitalize()} research run failed: {exc}")
         self._research_thread = threading.Thread(target=go, name="bots-research", daemon=True)
         self._research_thread.start()
 
@@ -1245,6 +1415,8 @@ class Engine:
             "verifier": {"backtests_run": self.verifier.backtests_run, "bars_walked": self.verifier.bars_walked},
             "settings": st, "defaults": SHARED_DEFAULTS, "limits": LIMITS,
             "research_running": bool(self._research_thread and self._research_thread.is_alive()),
+            "brain": {**BR.get().summary(), "votes": self.brain_votes, "last": self.brain_last[-25:][::-1],
+                      "mode": st.get("brain_mode"), "min_r": st.get("brain_min_r")},
         }
 
 

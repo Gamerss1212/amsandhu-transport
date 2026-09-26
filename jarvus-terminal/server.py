@@ -250,7 +250,7 @@ class Handler(BaseHTTPRequestHandler):
                                    "t": [c["ts"].strftime("%Y-%m-%dT%H:%MZ") for c in cs], **data})
 
             if route == "/api/research":
-                return self._json(research.summary())
+                return self._json(research.summary(one("asset")))
 
             if route == "/api/portfolio":
                 name = one("name", "paper")
@@ -273,6 +273,30 @@ class Handler(BaseHTTPRequestHandler):
 
             if route == "/api/settings":
                 return self._json(load_settings())
+
+            if route == "/api/brain":
+                from engine import brain as ebrain
+                eng = bots.get_engine()
+                st = bots.load_settings()
+                return self._json({"summary": ebrain.get().summary(), "agents": ebrain.get().agents(),
+                                   "votes": (eng.brain_last[-60:][::-1] if eng else []),
+                                   "vote_count": eng.brain_votes if eng else 0,
+                                   "mode": st.get("brain_mode"), "min_r": st.get("brain_min_r")})
+
+            if route == "/api/learn":
+                book = os.path.join(os.path.dirname(os.path.abspath(bots.__file__)), "research_book.json")
+                try:
+                    with open(book, encoding="utf-8") as fh:
+                        data = json.load(fh)
+                except Exception:                            # noqa: BLE001
+                    data = {"error": "the research book is missing from this install"}
+                data["strategies"] = [{"name": sp.name, "group": sp.group,
+                                       "family": swarm.FAMILY.get(sp.group, sp.group),
+                                       "description": sp.description, "source": sp.source}
+                                      for sp in sorted(estrat.REGISTRY.values(), key=lambda x: x.name)]
+                data["bots"] = [{"name": d["name"], "families": d["families"], "playbook": d["playbook"]}
+                                for d in bots.BOT_DEFS]
+                return self._json(data)
 
             if route == "/api/bots":
                 eng = bots.get_engine()
@@ -315,7 +339,8 @@ class Handler(BaseHTTPRequestHandler):
                     try:
                         research.run(bars=int(payload.get("bars", 3000)),
                                      market_count=int(payload.get("markets", 12)),
-                                     split=float(payload.get("split", 0.6)))
+                                     split=float(payload.get("split", 0.6)),
+                                     asset="stock" if payload.get("asset") == "stock" else "crypto")
                     except Exception:                # noqa: BLE001
                         traceback.print_exc()
                 threading.Thread(target=go, name="jarvus-research", daemon=True).start()

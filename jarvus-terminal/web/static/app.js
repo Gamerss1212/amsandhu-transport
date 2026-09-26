@@ -764,7 +764,7 @@ async function loadStrategies() {
 async function loadResearch() {
   const w = $('#researchWrap');
   try {
-    const r = await api('/api/research');
+    const r = await api('/api/research?asset=' + ($('#rAsset').value || 'crypto'));
     if (!r.has_run) { w.innerHTML = `<div class="note">${esc(r.note)}</div>`; return; }
     const run = r.run;
     const lb = r.leaderboard || [];
@@ -1264,12 +1264,12 @@ function renderFeed() {
 }
 
 const BOT_FIELDS = [
-  ['risk_pct', 'Risk per trade (% of that bot\'s money)', 0.05, 3, 0.05, 'What one losing trade costs. 1% means a bot with $1,667 loses about $17 if the stop is hit.'],
+  ['risk_pct', 'Risk per trade (% of that bot\'s money)', 0.05, 3, 0.05, 'What one losing trade costs. 1% means a bot with $1,429 loses about $14 if the stop is hit.'],
   ['max_positions', 'Most open trades per bot', 1, 8, 1, ''],
   ['max_hold_h', 'Longest a trade is held (hours)', 2, 720, 1, 'Measured: holds of 24h or less lost money after fees; 96h did best.'],
   ['stop_atr', 'Stop distance (× ATR)', 1, 10, 0.5, 'Wide stops survive fees. Tighter stops mean more of each trade goes to the exchange.'],
   ['target_r', 'Profit target (R)', 0.5, 10, 0.5, '2R means the target is twice as far as the stop.'],
-  ['verify_min_edge', 'Backtest bar (R per trade)', -1, 2, 0.05, 'A setup must have made at least this much per trade on that coin to be traded. Lower = more trades, less proof.'],
+  ['verify_min_edge', 'Backtest bar (R per trade)', -1, 2, 0.05, 'A setup must have made at least this much per trade on that market to be traded. Lower = more trades, less proof.'],
   ['daily_loss_limit_pct', 'Daily loss limit (%)', 0.5, 20, 0.5, 'A bot that loses this much in a day stops opening trades until 00:00 UTC.'],
   ['max_trades_per_day', 'Most new trades per bot per day', 1, 50, 1, ''],
 ];
@@ -1308,11 +1308,356 @@ function buildBotSettings(s) {
   });
   $('#resetBots').addEventListener('click', async () => {
     const amt = Number($('#setPractice').value);
-    if (!confirm(`Close every open trade and restart all six bots with ${money(amt, 0)} of practice money? The trade history is wiped.`)) return;
+    if (!confirm(`Close every open trade and restart all seven bots with ${money(amt, 0)} of practice money? The trade history is wiped.`)) return;
     const r = await post('/api/bots/reset', { practice_money: amt });
     if (r.error) { alert(r.error); return; }
     box.dataset.built = ''; renderBots(r);
   });
+}
+
+/* ---------------- the Brain ---------------- */
+const MODEL_TITLE = { crypto: 'Crypto', stock: 'Stocks, held up to 4 days', stock_dt: 'Stocks, day trade (out by the close)' };
+const TEST_ROWS = [
+  ['all_candidates', 'Every moment any strategy fired'],
+  ['bots_rule', "The bots' backtest rule"],
+  ['brain_positive', 'The Brain predicts a profit'],
+  ['brain_top10pct', "The Brain's top 10% of picks"],
+  ['rule_and_brain', 'Backtest rule and the Brain agree'],
+];
+
+function decileChart(vals) {
+  const wrap = document.createElement('figure');
+  const v = (vals || []).map(x => (x == null ? 0 : x));
+  if (!v.length) { wrap.innerHTML = '<p class="muted small">Not trained yet.</p>'; return wrap; }
+  const W = 460, H = 170, m = { t: 12, r: 8, b: 22, l: 40 };
+  const hi = Math.max(0.05, ...v), lo = Math.min(-0.05, ...v);
+  const Y = x => m.t + (hi - x) / (hi - lo) * (H - m.t - m.b);
+  const bw = (W - m.l - m.r) / v.length;
+  const svg = el('svg', { viewBox: `0 0 ${W} ${H}`, role: 'img', 'aria-label': 'Average result by prediction decile' });
+  const g = el('g', { class: 'axis' });
+  [hi, 0, lo].forEach(t => {
+    g.appendChild(el('line', { x1: m.l, x2: W - m.r, y1: Y(t), y2: Y(t), class: 'grid-line' }));
+    const tx = el('text', { x: m.l - 6, y: Y(t) + 3, 'text-anchor': 'end' }); tx.textContent = (t >= 0 ? '+' : '') + t.toFixed(2);
+    g.appendChild(tx);
+  });
+  svg.appendChild(g);
+  v.forEach((x, i) => {
+    const y0 = Y(0), y1 = Y(x);
+    const r = el('rect', { x: m.l + i * bw + 2, width: bw - 4, y: Math.min(y0, y1), height: Math.max(1, Math.abs(y1 - y0)),
+      rx: 3, fill: x >= 0 ? 'var(--up)' : 'var(--down)' });
+    r.addEventListener('mousemove', ev => showTip(`<div class="t">${x >= 0 ? '+' : ''}${x.toFixed(3)}R per trade</div>
+      <div class="r"><span>group</span><span>${i + 1} of 10 (${i === 0 ? 'most confident' : i === 9 ? 'least confident' : 'by prediction'})</span></div>`, ev));
+    r.addEventListener('mouseleave', hideTip);
+    svg.appendChild(r);
+    const lab = el('text', { x: m.l + i * bw + bw / 2, y: H - 6, 'text-anchor': 'middle', class: 'axis' });
+    lab.setAttribute('font-size', '10'); lab.setAttribute('fill', 'var(--text-muted)');
+    lab.textContent = i === 0 ? 'best' : i === 9 ? 'worst' : String(i + 1);
+    svg.appendChild(lab);
+  });
+  wrap.appendChild(svg);
+  return wrap;
+}
+
+function trustBar(w, maxAbs) {
+  if (w == null) return '<span class="muted">—</span>';
+  const pctW = Math.min(50, Math.abs(w) / (maxAbs || 1) * 50);
+  return `<span class="trust"><span class="axis0"></span><span class="fill" style="${w >= 0 ? 'left:50%' : `left:${50 - pctW}%`};width:${pctW}%;background:${w >= 0 ? 'var(--up)' : 'var(--down)'}"></span></span>
+    <span class="mono tiny">${w >= 0 ? '+' : ''}${w.toFixed(3)}</span>`;
+}
+
+async function loadBrain() {
+  let r;
+  try { r = await api('/api/brain'); } catch (e) { $('#brainTest').innerHTML = `<p class="down">${esc(e.message)}</p>`; return; }
+  state.brainData = r;
+  const s = r.summary;
+  $('#brainSub').textContent = s.trained
+    ? `${s.agents} agents · ${r.vote_count || 0} votes this session · weights ${s.source}`
+    : 'not trained yet';
+  $('#agentCount').textContent = s.agents;
+  $('#brainMode').value = r.mode || 'veto';
+  $('#brainMin').value = r.min_r ?? 0;
+
+  const tw = $('#brainTest');
+  const models = Object.entries(s.models || {});
+  tw.innerHTML = models.length ? models.map(([k, mdl]) => {
+    const t = mdl.test || {};
+    return `<h3 style="margin:10px 0 4px">${esc(MODEL_TITLE[k] || k)}</h3>
+      <div class="small muted" style="margin-bottom:6px">Trained on ${(mdl.trained_examples || 0).toLocaleString()} moments from
+        ${mdl.markets} markets. Correlation between prediction and result on unseen data: <strong>${(t.test_ic >= 0 ? '+' : '') + (t.test_ic ?? 0).toFixed(3)}</strong>
+        ${mdl.online_updates ? ` · ${mdl.online_updates} lessons from the bots' own trades since` : ''}</div>
+      <div class="tablewrap"><table><thead><tr><th>How trades were chosen</th><th class="n">Trades</th><th class="n">Win rate</th>
+        <th class="n">Average</th></tr></thead><tbody>${TEST_ROWS.map(([key, lbl]) => {
+          const x = t[key] || {};
+          return `<tr><td>${esc(lbl)}</td><td class="n">${(x.n || 0).toLocaleString()}</td>
+            <td class="n">${x.win != null ? x.win.toFixed(1) + '%' : '—'}</td>
+            <td class="n ${x.exp > 0 ? 'up' : x.exp < 0 ? 'down' : ''}">${esc(rFmt(x.exp))}</td></tr>`;
+        }).join('')}</tbody></table></div>`;
+  }).join('') : '<p class="muted small">No trained model is installed.</p>';
+
+  const dw = $('#brainDeciles'); dw.innerHTML = '';
+  models.forEach(([k, mdl]) => {
+    const h = document.createElement('div'); h.className = 'small'; h.style.margin = '6px 0 0';
+    h.textContent = MODEL_TITLE[k] || k;
+    dw.appendChild(h);
+    dw.appendChild(decileChart((mdl.test || {}).deciles_best_to_worst));
+  });
+
+  const vw = $('#brainVotes');
+  vw.innerHTML = (r.votes || []).length ? r.votes.slice(0, 25).map(v => `<div class="vote">
+      <span class="chip ${v.vote === 'yes' ? 'buy' : ''}"><span class="sw"></span>${v.vote === 'yes' ? 'yes' : 'no'}</span>
+      <strong>${esc(v.symbol)}</strong> <span class="small muted">for ${esc(v.bot)}</span>
+      <span class="mono small ${v.pred > 0 ? 'up' : 'down'}">${esc(rFmt(v.pred))}</span>
+      <div class="tiny muted">${(v.why || []).map(e => `${esc(e.agent)} ${e.effect >= 0 ? '+' : ''}${e.effect.toFixed(2)}`).join(' · ')}</div>
+    </div>`).join('')
+    : '<p class="muted small">No votes yet. The Brain votes on every setup that passes a bot\'s backtest, so votes appear once the bots are running and find something.</p>';
+  renderAgents();
+}
+
+function renderAgents() {
+  const r = state.brainData; if (!r) return;
+  const q = ($('#agentSearch').value || '').toLowerCase(), kind = $('#agentKind').value;
+  let rows = r.agents.filter(a => (!kind || a.kind === kind) && (!q || a.name.toLowerCase().includes(q) || (a.family || '').includes(q)));
+  rows.sort((a, b) => Math.abs(b.crypto || 0) + Math.abs(b.stock || 0) - Math.abs(a.crypto || 0) - Math.abs(a.stock || 0));
+  const maxAbs = Math.max(1e-6, ...r.agents.map(a => Math.max(Math.abs(a.crypto || 0), Math.abs(a.stock || 0))));
+  const total = rows.length;
+  const showAll = state.agentsAll || q || kind;
+  rows = showAll ? rows : rows.slice(0, 25);
+  $('#brainAgents').innerHTML = `<div class="tablewrap"><table><thead><tr><th>Agent</th><th>Kind</th>
+      <th>Trust on crypto</th><th>Trust on stocks</th><th class="n">Active (crypto)</th><th class="n">Avg when active</th>
+      </tr></thead><tbody>${rows.map(a => {
+        const cs = a.crypto_stats || {};
+        return `<tr><td><strong class="small">${esc(a.name)}</strong><div class="tiny muted">${esc(a.help || '')}</div></td>
+          <td class="tiny sec">${esc(a.family)}</td><td>${trustBar(a.crypto, maxAbs)}</td><td>${trustBar(a.stock, maxAbs)}</td>
+          <td class="n">${cs.n != null ? cs.n.toLocaleString() : '—'}</td>
+          <td class="n ${cs.mean_r > 0 ? 'up' : cs.mean_r < 0 ? 'down' : ''}">${esc(rFmt(cs.mean_r))}</td></tr>`;
+      }).join('')}</tbody></table></div>
+      ${total > rows.length ? `<button id="agentsMore" class="sm" style="margin-top:8px">Show all ${total} agents</button>` : ''}`;
+  $('#agentsMore')?.addEventListener('click', () => { state.agentsAll = true; renderAgents(); });
+}
+
+/* ---------------- learn trading ---------------- */
+function pooled(cards, policy, filter) {
+  let n = 0, s = 0, w = 0;
+  for (const [name, c] of Object.entries(cards || {})) {
+    if (name.startsWith('_') || (filter && !filter(name))) continue;
+    const x = c[policy]; if (!x || !x.n) continue;
+    n += x.n; s += x.exp * x.n; w += x.win * x.n;
+  }
+  return n ? { n, exp: s / n, win: w / n } : null;
+}
+
+function streakOdds(winRate, trades, streak) {
+  // probability of at least `streak` losses in a row somewhere in `trades` trades
+  const q = 1 - winRate;
+  let dp = new Array(streak).fill(0); dp[0] = 1;
+  let hit = 0;
+  for (let t = 0; t < trades; t++) {
+    const nx = new Array(streak).fill(0);
+    for (let k = 0; k < streak; k++) {
+      nx[0] += dp[k] * winRate;
+      if (k + 1 === streak) hit += dp[k] * q; else nx[k + 1] += dp[k] * q;
+    }
+    dp = nx;
+  }
+  return hit;
+}
+
+function lesson(title, body, open) {
+  return `<div class="card lesson"><details ${open ? 'open' : ''}><summary><h2 style="display:inline">${esc(title)}</h2></summary>
+    <div class="lbody">${body}</div></details></div>`;
+}
+
+function statRow(label, x) {
+  return `<tr><td>${esc(label)}</td><td class="n">${x && x.n != null ? x.n.toLocaleString() : '—'}</td>
+    <td class="n">${x && x.win != null ? x.win.toFixed(1) + '%' : '—'}</td>
+    <td class="n">${x && x.avg_win != null ? '+' + x.avg_win.toFixed(2) + 'R' : '—'}</td>
+    <td class="n">${x && x.avg_loss != null ? x.avg_loss.toFixed(2) + 'R' : '—'}</td>
+    <td class="n ${x && x.exp > 0 ? 'up' : x && x.exp < 0 ? 'down' : ''}">${x ? esc(rFmt(x.exp)) : '—'}</td></tr>`;
+}
+
+function buildLessons(b) {
+  const C = (b.assets || {}).crypto || {}, K = (b.assets || {}).stock || {};
+  const out = [];
+  const wl = (A, t) => (A.win_rate_lesson || {})[t];
+
+  // 1. expectancy
+  const c05 = wl(C, '0.5'), c2 = wl(C, '2.0');
+  out.push(lesson('1. The only formula that matters', `
+    <p>Every trading result in the world comes down to one line:</p>
+    <p class="formula">average result per trade = win rate × average win − loss rate × average loss</p>
+    <p>Win rate alone tells you nothing. A 90% win rate that wins $1 and loses $20 goes broke; a 35% win rate that wins
+      $3 and loses $1 makes money. Professionals talk about <strong>R</strong>: the amount you decided to risk on a trade.
+      A trade that hits its stop is −1R; one that makes twice what it risked is +2R. Measuring in R lets you compare any
+      strategy on any market, at any account size.</p>
+    ${c05 && c2 ? `<p>Measured here on crypto, the same entries with a small target won <strong>${c05.win}%</strong> of the time but
+      averaged <strong>${rFmt(c05.exp)}</strong> per trade. With a 2R target they won only ${c2.win}% and averaged ${rFmt(c2.exp)}.
+      The entries were identical; only the exit changed the win rate.</p>` : ''}`, true));
+
+  // 2. win rate is a dial
+  const tbl = (A) => `<div class="tablewrap"><table><thead><tr><th>Target</th><th class="n">Trades</th><th class="n">Win rate</th>
+      <th class="n">Avg win</th><th class="n">Avg loss</th><th class="n">Per trade</th></tr></thead><tbody>
+      ${['0.5', '1.0', '2.0', '3.0'].map(t => statRow(`${t}R target, 4 ATR stop`, wl(A, t))).join('')}</tbody></table></div>`;
+  out.push(lesson('2. Win rate is a dial you set with your exit, not a skill', `
+    <p>Take every trade all 95 strategies found and change only the profit target. Watch the win rate move and the
+      average result barely care:</p>
+    <h3>Crypto</h3>${tbl(C)}<h3 style="margin-top:10px">US stocks</h3>${tbl(K)}
+    <p>A closer target is hit more often, so the win rate climbs, but every win shrinks while every loss stays full size.
+      This is why "95% win rate" systems are easy to build and usually lose money: they take tiny profits and hold the
+      rare big loss. When someone sells you a win rate, ask for the average win and the average loss.</p>`));
+
+  // 3. where 70% comes from
+  const dc = b.daily_classics || {};
+  const etf = dc['index ETFs'] || {}, big = dc['large stocks'] || {};
+  const dnames = { ibs_reversion: 'IBS under 0.15', double_sevens: 'Double 7s', connors_rsi_dip: 'Connors RSI under 10',
+    cumulative_rsi2: 'Cumulative RSI(2)', rsi2_reversion: 'RSI(2) washout', three_lower_lows: 'Three lower lows',
+    _control_random_entry: 'Random entry (control)' };
+  const dtab = (g) => `<div class="tablewrap"><table><thead><tr><th>Rule</th><th class="n">Trades</th><th class="n">Win rate</th>
+      <th class="n">Avg per trade</th><th class="n">Avg win</th><th class="n">Avg loss</th><th class="n">Worst</th></tr></thead><tbody>
+      ${Object.entries(g).map(([k, x]) => `<tr${k.startsWith('_') ? ' class="ctrl"' : ''}><td>${esc(dnames[k] || k)}</td>
+        <td class="n">${x.n}</td><td class="n">${x.win}%</td><td class="n ${x.avg_pct > 0 ? 'up' : 'down'}">${x.avg_pct > 0 ? '+' : ''}${x.avg_pct.toFixed(2)}%</td>
+        <td class="n">+${x.avg_win_pct}%</td><td class="n">${x.avg_loss_pct}%</td><td class="n down">${x.worst_pct}%</td></tr>`).join('')}
+      </tbody></table></div>`;
+  const rnd = etf._control_random_entry;
+  out.push(lesson('3. Where the famous 70% win rates really come from', `
+    <p>Larry Connors' short-term rules are the best-known high-win-rate strategies in stock trading: buy a sharp dip while
+      the market is above its 200-day average, sell on the first up-close. Tested here on ten years of daily bars:</p>
+    <h3>Index ETFs (SPY, QQQ, IWM, DIA)</h3>${dtab(etf)}
+    ${rnd ? `<p><strong>Look at the last row.</strong> Buying on random days with the same exit won <strong>${rnd.win}%</strong> of the time.
+      Most of the famous win rate comes from the exit ("sell on the first up day") and from stocks drifting up over time.
+      The good rules still add something on top, and that extra is the real edge. It is smaller than the win rate suggests.</p>` : ''}
+    <h3>Large individual stocks</h3>${dtab(big)}
+    <p>On single stocks the win rates hold up, but look at the worst trade: with no stop, one bad company can take a
+      third of the position. These rules were built for index funds for a reason.</p>`));
+
+  // 4. most strategies are the weather
+  const beat = (A, p) => Object.entries(A.cards || {}).filter(([n, c]) => !n.startsWith('_') && c[p] && c[p].n >= 30 && c[p].excess > 0).length;
+  const judged = (A, p) => Object.entries(A.cards || {}).filter(([n, c]) => !n.startsWith('_') && c[p] && c[p].n >= 30).length;
+  const ctlC = ((C.cards || {})._control_random_entry || {}).A, ctlK = ((K.cards || {})._control_random_entry || {}).A;
+  out.push(lesson('4. Most strategies are measuring the weather', `
+    <p>Every strategy is compared with a control that buys at random under the same rules. In a rising market the control
+      makes money too, so a strategy has to beat it to prove it knows anything.</p>
+    <ul>
+      <li><strong>Crypto:</strong> random buying averaged ${rFmt(ctlC && ctlC.exp)} per trade; <strong>${beat(C, 'A')} of ${judged(C, 'A')}</strong> strategies beat it.</li>
+      <li><strong>Stocks:</strong> random buying averaged ${rFmt(ctlK && ctlK.exp)} per trade; <strong>${beat(K, 'A')} of ${judged(K, 'A')}</strong> strategies beat it.</li>
+    </ul>
+    <p>That is why the bots never trust a strategy blindly. Before every trade they check whether the strategies that
+      fired have actually worked on that exact market recently, and beaten random buying there.</p>`));
+
+  // 5. day trading vs holding
+  const kA = pooled(K.cards, 'A'), kD = pooled(K.cards, 'DT'), cA = pooled(C.cards, 'A'), cD = pooled(C.cards, 'DT');
+  out.push(lesson('5. Day trading versus holding a few days', `
+    <p>Same entries, two ways out: a true day trade that is closed by the end of the session, or a trade allowed up to four
+      days to reach its stop or target. Averaged over every strategy:</p>
+    <div class="tablewrap"><table><thead><tr><th>Market</th><th class="n">Day trade: win</th><th class="n">Day trade: per trade</th>
+      <th class="n">Up to 4 days: win</th><th class="n">Up to 4 days: per trade</th></tr></thead><tbody>
+      ${[['Crypto', cD, cA], ['US stocks', kD, kA]].map(([n, d, a]) => `<tr><td>${n}</td>
+        <td class="n">${d ? d.win.toFixed(1) + '%' : '—'}</td><td class="n ${d && d.exp > 0 ? 'up' : 'down'}">${d ? rFmt(d.exp) : '—'}</td>
+        <td class="n">${a ? a.win.toFixed(1) + '%' : '—'}</td><td class="n ${a && a.exp > 0 ? 'up' : 'down'}">${a ? rFmt(a.exp) : '—'}</td></tr>`).join('')}
+      </tbody></table></div>
+    <p>A day trade gives the idea only a few hours to work. With a stop wide enough to survive normal noise, most trades
+      end at the bell somewhere in the middle, and the fees on every trade add up. That is the measured reason the bots
+      hold up to four days by default. You can switch stocks to true day trading in Bot settings.</p>`));
+
+  // 6. costs
+  out.push(lesson('6. Fees decide more trades than strategies do', `
+    <p>The cost of a trade, measured in R, is the round-trip fee divided by how far away your stop is:</p>
+    <p class="formula">cost in R = 2 × (fee + slippage) ÷ stop distance</p>
+    <ul><li>Crypto at a 0.26% taker fee with a 1% stop: 2 × 0.28% ÷ 1% = <strong>0.56R</strong>. More than half the risk is gone before the trade starts.</li>
+      <li>The same trade with a 4% stop: <strong>0.14R</strong>. Wide stops, sized smaller, are how retail traders survive fees.</li>
+      <li>US stocks at a commission-free broker: about <strong>0.01R</strong>. Stocks are far cheaper to day trade than crypto.</li></ul>
+    <p>The bots refuse any trade where fees would take more than 20% of the risk. Choosing a cheaper exchange or maker
+      orders improves results more reliably than any new indicator.</p>`));
+
+  // 7. risk and survival
+  const streaks = [0.4, 0.5, 0.6].map(w => `<tr><td>${Math.round(w * 100)}%</td>
+    <td class="n">${Math.round(streakOdds(w, 100, 5) * 100)}%</td><td class="n">${Math.round(streakOdds(w, 100, 8) * 100)}%</td>
+    <td class="n">${Math.round(streakOdds(w, 100, 10) * 100)}%</td></tr>`).join('');
+  out.push(lesson('7. Risk: how not to blow up', `
+    <p><strong>Risk 1% per trade or less.</strong> Losing streaks are not bad luck, they are guaranteed. Chance of a losing
+      streak somewhere in your next 100 trades:</p>
+    <div class="tablewrap"><table><thead><tr><th>Win rate</th><th class="n">5 in a row</th><th class="n">8 in a row</th>
+      <th class="n">10 in a row</th></tr></thead><tbody>${streaks}</tbody></table></div>
+    <p>At 1% risk, ten losses cost about 10%. At 10% risk they cost 65%. <strong>Losses are harder to undo than they look:</strong></p>
+    <div class="tablewrap"><table><thead><tr><th>Drop</th><th class="n">Gain needed to get back</th></tr></thead><tbody>
+      ${[10, 20, 30, 50, 75].map(d => `<tr><td>−${d}%</td><td class="n">+${Math.round(100 * d / (100 - d))}%</td></tr>`).join('')}</tbody></table></div>
+    <p>Decide the stop before you enter, size the position from it (risk ÷ distance to stop), never move a stop further away,
+      and stop for the day after a set loss. The bots do all of this automatically: 1% risk, a 4% daily loss limit, and a
+      pause after four losses in a row.</p>`));
+
+  // 8. what works
+  const top = (A, p, k) => Object.entries(A.cards || {}).filter(([n, c]) => !n.startsWith('_') && c[p] && c[p].n >= 60)
+    .sort((a, b) => b[1][p].exp - a[1][p].exp).slice(0, k);
+  const tlist = (A, p) => `<div class="tablewrap"><table><thead><tr><th>Strategy</th><th class="n">Trades</th><th class="n">Win</th>
+      <th class="n">Per trade</th><th class="n">Earlier half</th><th class="n">Later half</th><th class="n">Beats random in</th></tr></thead><tbody>
+      ${top(A, p, 10).map(([n, c]) => { const x = c[p]; return `<tr><td class="small"><strong>${esc(n)}</strong></td><td class="n">${x.n}</td>
+        <td class="n">${x.win}%</td><td class="n ${x.exp > 0 ? 'up' : 'down'}">${rFmt(x.exp)}</td>
+        <td class="n">${rFmt(x.early)}</td><td class="n">${rFmt(x.late)}</td><td class="n">${esc(x.beats_random_in)} markets</td></tr>`; }).join('')}
+      </tbody></table></div>`;
+  out.push(lesson('8. What held up best, measured', `
+    <p>The ten best strategies on each market (60+ trades), with their results in the earlier and later half of the data.
+      A strategy whose result flips between halves was probably lucky. One that holds up in both, and beats random buying in
+      most markets, is the kind worth paying attention to.</p>
+    <h3>Crypto</h3>${tlist(C, 'A')}<h3 style="margin-top:10px">US stocks</h3>${tlist(K, 'A')}
+    <p>Even the best numbers here are small: a few tenths of R per trade. That is what a real edge looks like. Anything that
+      promises much more is either taking hidden risk or has not been measured this way.</p>`));
+
+  // 9. rules
+  out.push(lesson('9. Ten rules the bots follow, and you should too', `<ol>
+      <li>Know your stop before you enter. The stop decides your size, not the other way round.</li>
+      <li>Risk 1% or less per trade. You will have ten losses in a row eventually.</li>
+      <li>Judge by average result per trade after fees, never by win rate.</li>
+      <li>Compare every strategy with random buying on the same market.</li>
+      <li>Trust only what has worked recently on the market you are trading, and re-check it.</li>
+      <li>Refuse trades where fees eat more than a fifth of the risk.</li>
+      <li>Stop trading for the day after a set loss.</li>
+      <li>Keep a journal of every trade with its reason. The Bots tab does this for you.</li>
+      <li>Fifty trades before judging anything. Under that, results are mostly noise.</li>
+      <li>Practice money until the numbers earn the right to real money.</li></ol>`));
+  return out.join('');
+}
+
+let learnBook = null;
+async function loadLearn() {
+  if (!learnBook) {
+    try { learnBook = await api('/api/learn'); } catch (e) { $('#learnLessons').innerHTML = `<div class="card down">${esc(e.message)}</div>`; return; }
+    if (learnBook.error) { $('#learnLessons').innerHTML = `<div class="card">${esc(learnBook.error)}</div>`; return; }
+    $('#learnMeta').textContent = learnBook.generated ? ` Measured ${learnBook.generated}.` : '';
+    $('#learnLessons').innerHTML = buildLessons(learnBook);
+    const fams = [...new Set(learnBook.strategies.map(s => s.family))].filter(f => f !== 'control').sort();
+    $('#encFamily').innerHTML = '<option value="">Every family</option>' + fams.map(f => `<option>${esc(f)}</option>`).join('');
+  }
+  renderEncyclopedia();
+}
+
+function renderEncyclopedia() {
+  const b = learnBook; if (!b) return;
+  const C = ((b.assets || {}).crypto || {}).cards || {}, K = ((b.assets || {}).stock || {}).cards || {};
+  const q = ($('#encSearch').value || '').toLowerCase(), fam = $('#encFamily').value, sort = $('#encSort').value;
+  const usedBy = s => b.bots.filter(bt => bt.families === '*' || bt.families.includes(s.family)).map(bt => bt.name);
+  let rows = b.strategies.filter(s => s.family !== 'control' && (!fam || s.family === fam)
+    && (!q || s.name.includes(q) || s.description.toLowerCase().includes(q)));
+  const val = s => ({ crypto: (C[s.name] || {}).A, stock: (K[s.name] || {}).A, stock_dt: (K[s.name] || {}).DT }[sort]);
+  if (sort === 'name') rows.sort((a, c) => a.name.localeCompare(c.name));
+  else if (sort === 'win') rows.sort((a, c) => (((C[c.name] || {}).A || {}).win || 0) - (((C[a.name] || {}).A || {}).win || 0));
+  else rows.sort((a, c) => ((val(c) || {}).exp ?? -9) - ((val(a) || {}).exp ?? -9));
+  $('#encCount').textContent = `${rows.length} strategies`;
+  const cell = x => x && x.n ? `<td class="n">${x.win}%</td><td class="n ${x.exp > 0 ? 'up' : 'down'}">${rFmt(x.exp)}</td>`
+    : '<td class="n muted">—</td><td class="n muted">—</td>';
+  $('#encTable').innerHTML = `<div class="tablewrap"><table><thead><tr><th>Strategy</th><th>Family</th>
+      <th class="n">Crypto win</th><th class="n">Crypto R</th><th class="n">Stocks win</th><th class="n">Stocks R</th>
+      <th class="n">Day-trade win</th><th class="n">Day-trade R</th><th class="n">Beats random</th></tr></thead><tbody>
+      ${rows.map(s => { const c = (C[s.name] || {}).A, k = (K[s.name] || {}).A, d = (K[s.name] || {}).DT; return `
+        <tr class="row" data-enc="${esc(s.name)}"><td><strong class="small">${esc(s.name)}</strong></td><td class="tiny sec">${esc(s.family)}</td>
+          ${cell(c)}${cell(k)}${cell(d)}<td class="n tiny">${esc((c || {}).beats_random_in || '—')} · ${esc((k || {}).beats_random_in || '—')}</td></tr>
+        <tr class="encx" data-for="${esc(s.name)}" hidden><td colspan="9"><div class="small">${esc(s.description)}</div>
+          <div class="tiny muted" style="margin-top:4px">Used by: ${esc(usedBy(s).join(', ') || '—')}.
+          Crypto, earlier vs later half: ${rFmt((c || {}).early)} → ${rFmt((c || {}).late)}.
+          Stocks: ${rFmt((k || {}).early)} → ${rFmt((k || {}).late)}. Profit factor ${(c || {}).pf ?? '—'} crypto, ${(k || {}).pf ?? '—'} stocks.</div></td></tr>`; }).join('')}
+      </tbody></table></div>
+      <p class="tiny muted" style="margin:6px 0 0">"Beats random" is crypto · stocks: markets where it beat random buying out of markets where it traded 5+ times.</p>`;
+  $$('#encTable tr[data-enc]').forEach(tr => tr.addEventListener('click', () => {
+    const x = $(`#encTable tr[data-for="${CSS.escape(tr.dataset.enc)}"]`); if (x) x.hidden = !x.hidden;
+  }));
 }
 
 /* ---------------- tabs & boot ---------------- */
@@ -1326,6 +1671,8 @@ function showTab(name) {
   if (name === 'portfolio') loadPortfolio();
   if (name === 'alerts') loadAlerts(false);
   if (name === 'bots') loadBots();
+  if (name === 'brain') loadBrain();
+  if (name === 'learn') loadLearn();
 }
 
 function syncFilterUI() {
@@ -1426,7 +1773,7 @@ async function boot() {
 
   $('#runResearch').addEventListener('click', async e => {
     e.target.disabled = true; e.target.textContent = 'running…';
-    await post('/api/research/run', { bars: Number($('#rBars').value), markets: Number($('#rMarkets').value) });
+    await post('/api/research/run', { bars: Number($('#rBars').value), markets: Number($('#rMarkets').value), asset: $('#rAsset').value });
     $('#researchWrap').innerHTML = `<div class="note">Research started. It backtests every strategy on
       every market over deep history, so it takes a few minutes. This tab updates when it lands —
       press Reload, or just come back.</div>
@@ -1480,6 +1827,14 @@ async function boot() {
     renderBots(r.status);
   });
   $('#feedKind').addEventListener('change', renderFeed);
+  $('#rAsset').addEventListener('change', loadResearch);
+  $('#agentSearch').addEventListener('input', renderAgents);
+  $('#agentKind').addEventListener('change', renderAgents);
+  $('#brainSave').addEventListener('click', async () => {
+    await post('/api/bots/settings', { brain_mode: $('#brainMode').value, brain_min_r: Number($('#brainMin').value) || 0 });
+    loadBrain();
+  });
+  ['#encSearch', '#encFamily', '#encSort'].forEach(id => $(id).addEventListener(id === '#encSearch' ? 'input' : 'change', renderEncyclopedia));
 
   buildSettingsUI(state.health);
   refreshViewSelect();

@@ -92,7 +92,8 @@ def scan(deep_n: int = None, fee_tier: str = None, account: float = None,
             rows.append({**m, "error": "not enough history to analyse"})
             continue
 
-        sig = analysis.signal(m, s_htf, s_ltf, gate, fee_bps, account)
+        m_fee = config.STOCK_FEE_BPS if m.get("asset") == "stock" else fee_bps
+        sig = analysis.signal(m, s_htf, s_ltf, gate, m_fee, account)
         thr = big_move_threshold(lc, config.RESOLVE_HORIZON_H)
         calibrated = learn.calibrated_probability(gate["blow_score"])
 
@@ -153,6 +154,8 @@ def scan(deep_n: int = None, fee_tier: str = None, account: float = None,
 def tradingview_symbol(m: dict) -> str:
     """Best-effort TradingView symbol for the embedded chart widget."""
     base, quote = m["base"], m["quote"]
+    if m.get("asset") == "stock":
+        return base                                  # TradingView resolves a bare US ticker
     if m["venue"] == "coinbase":
         return f"COINBASE:{base}{quote}"
     if m["kind"] == "perp":

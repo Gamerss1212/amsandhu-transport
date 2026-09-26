@@ -79,7 +79,13 @@ def _coinbase() -> List[dict]:
     return out
 
 
-LOADERS = {"okx_spot": lambda: _okx("SPOT"), "okx_swap": lambda: _okx("SWAP"), "coinbase": _coinbase}
+def _stocks() -> List[dict]:
+    from engine import stocks
+    return stocks.universe_markets()
+
+
+LOADERS = {"okx_spot": lambda: _okx("SPOT"), "okx_swap": lambda: _okx("SWAP"), "coinbase": _coinbase,
+           "stocks": _stocks}
 
 
 def annotate(m: dict) -> dict:
@@ -104,6 +110,8 @@ def prerank_score(m: dict) -> float:
     # any size and its volatility is noise rather than opportunity.
     if m["usd_volume_24h"] < config.MIN_USD_VOLUME_24H:
         return -1.0
+    if m.get("asset") == "stock":
+        return rng + 0.5 * chg                          # same formula, ranked only against stocks
     # Range dominates; a large directional change on a small range is usually a gap.
     return rng + 0.5 * chg
 
@@ -124,7 +132,7 @@ def scan(venues: List[str] | None = None) -> Dict[str, object]:
     best: Dict[str, dict] = {}
     for m in markets:
         m = annotate(m)
-        key = f"{m['base']}/{m['quote']}/{m['kind']}"
+        key = f"{m.get('asset', 'crypto')}:{m['base']}/{m['quote']}/{m['kind']}"
         if key not in best or m["usd_volume_24h"] > best[key]["usd_volume_24h"]:
             best[key] = m
     unique = list(best.values())
@@ -146,7 +154,7 @@ def dedupe_by_base(markets: List[dict]) -> List[dict]:
     """
     best: Dict[str, dict] = {}
     for m in markets:
-        key = m["base"]
+        key = f"{m.get('asset', 'crypto')}:{m['base']}"        # a stock ticker is never a coin
         if key not in best or m["usd_volume_24h"] > best[key]["usd_volume_24h"]:
             if key in best:
                 m.setdefault("alternates", []).append(best[key]["symbol"])
@@ -160,6 +168,11 @@ def dedupe_by_base(markets: List[dict]) -> List[dict]:
 def pick_deep(markets: List[dict], n: int | None = None) -> List[dict]:
     """The top n by pre-rank, plus the always-include majors, without duplicates."""
     n = n or config.DEEP_SCAN_N
+    # Stocks move a fraction of what crypto does in a day, so a single movement ranking
+    # would never pick one. They get their own slots, ranked among themselves.
+    stock_list = [m for m in markets if m.get("asset") == "stock"]
+    markets = [m for m in markets if m.get("asset") != "stock"]
+    stock_pick = stock_list[:config.STOCK_DEEP_N] if "stocks" in config.UNIVERSE_VENUES else []
     chosen: List[dict] = []
     seen = set()
     by_symbol = {m["symbol"]: m for m in markets}
@@ -174,4 +187,4 @@ def pick_deep(markets: List[dict], n: int | None = None) -> List[dict]:
         if m["symbol"] not in seen:
             chosen.append(m)
             seen.add(m["symbol"])
-    return chosen
+    return chosen + stock_pick

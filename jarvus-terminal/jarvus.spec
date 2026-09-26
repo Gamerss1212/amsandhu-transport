@@ -13,6 +13,9 @@ block_cipher = None
 datas = [
     ("web", "web"),
     ("engine/strategies/custom", "engine/strategies/custom"),
+    # the Brain's trained weights and the measured results the Learn tab teaches from
+    ("engine/brain_weights.json", "engine"),
+    ("engine/research_book.json", "engine"),
 ]
 
 # The engine imports several modules dynamically, so name them explicitly rather
@@ -24,6 +27,7 @@ hiddenimports = [
     "engine.analysis", "engine.news", "engine.store", "engine.learn", "engine.scanner",
     "engine.indicators", "engine.swarm", "engine.backtest", "engine.research",
     "engine.portfolio", "engine.automation", "engine.broker", "engine.bots",
+    "engine.brain", "engine.stocks", "engine.strategies.pro",
     "engine.strategies", "engine.strategies.builtin",
 ]
 

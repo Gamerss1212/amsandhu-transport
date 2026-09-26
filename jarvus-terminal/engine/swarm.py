@@ -41,6 +41,7 @@ FAMILY = {
     "momentum": "momentum",
     "volume": "volume",
     "structure": "structure",
+    "session": "session",
 }
 
 

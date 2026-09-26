@@ -119,6 +119,87 @@ class SeriesCache:
         self.close = [c["close"] for c in candles]
         self.volume = [c["volume"] for c in candles]
         self._ind: Dict[str, object] = {}
+        self._session: Optional[Dict[str, list]] = None
+
+    def session(self) -> Dict[str, list]:
+        """Per-bar facts about the trading session each bar belongs to, computed once.
+
+        Stocks trade in sessions separated by overnight gaps; crypto trades around the
+        clock. Which one a market is gets decided from the data itself (regular gaps of
+        three hours or more mean sessions), so the same strategy works on both and in
+        a backtest, where no metadata is available.
+
+        Everything here is known at the bar it is stored on: running highs, lows and
+        VWAP include only bars up to and including that bar; previous-session values
+        come from sessions that had already finished. The opening range only counts
+        once its window has closed. Nothing looks ahead.
+
+          gapped      True for session markets (stocks), judged from the previous 200 bars
+          start       True on the first bar of a session
+          idx         bar number within its session, 0 for the first
+          s_open      the session's opening price
+          s_high/low  session high / low so far, including this bar
+          vwap        session VWAP so far
+          prev_*      high, low, close, open of the previous full session
+          gap_pct     session open vs previous session close, in percent
+          or_high/low opening range: the first bar of a stock session, or the
+                      00:00-08:00 UTC (Asia) range of a crypto day
+          or_done     True once the opening-range window has finished
+        """
+        if self._session is not None:
+            return self._session
+        from collections import deque
+        n = self.n
+        ts = [c["ts"] for c in self.candles]
+        cols = ("start", "idx", "s_open", "s_high", "s_low", "vwap", "prev_high", "prev_low",
+                "prev_close", "prev_open", "gap_pct", "or_high", "or_low", "or_done", "gapped")
+        out: Dict[str, list] = {k: [None] * n for k in cols}
+        prev = None                                   # (high, low, close, open) of the last finished session
+        cur = None
+        pv = vv = 0.0
+        orh = orl = None
+        recent_gaps: "deque[int]" = deque()
+        for i in range(n):
+            gap = i > 0 and (ts[i] - ts[i - 1]).total_seconds() >= 3 * 3600
+            if gap:
+                recent_gaps.append(i)
+            while recent_gaps and recent_gaps[0] <= i - 200:
+                recent_gaps.popleft()
+            # A session market (stocks) shows overnight gaps; decided from the past 200 bars
+            # only, so the answer at any bar never depends on bars after it.
+            gapped = len(recent_gaps) >= 2
+            new = i == 0 or gap or ts[i].date() != ts[i - 1].date()
+            if new:
+                if cur is not None:
+                    prev = (cur["high"], cur["low"], self.close[i - 1], cur["open"])
+                cur = {"open": self.open[i], "high": self.high[i], "low": self.low[i], "idx": 0}
+                pv = vv = 0.0
+                orh = orl = None
+            else:
+                cur["idx"] += 1
+                cur["high"] = max(cur["high"], self.high[i])
+                cur["low"] = min(cur["low"], self.low[i])
+            typical = (self.high[i] + self.low[i] + self.close[i]) / 3
+            pv += typical * self.volume[i]
+            vv += self.volume[i]
+            in_or = (cur["idx"] == 0) if gapped else (ts[i].hour < 8)
+            if in_or:
+                orh = self.high[i] if orh is None else max(orh, self.high[i])
+                orl = self.low[i] if orl is None else min(orl, self.low[i])
+            out["start"][i] = new
+            out["idx"][i] = cur["idx"]
+            out["s_open"][i] = cur["open"]
+            out["s_high"][i] = cur["high"]
+            out["s_low"][i] = cur["low"]
+            out["vwap"][i] = pv / vv if vv else typical
+            if prev:
+                out["prev_high"][i], out["prev_low"][i], out["prev_close"][i], out["prev_open"][i] = prev
+                out["gap_pct"][i] = (cur["open"] / prev[2] - 1) * 100 if prev[2] else None
+            out["or_high"][i], out["or_low"][i] = orh, orl
+            out["or_done"][i] = (orh is not None) and not in_or
+            out["gapped"][i] = gapped
+        self._session = out
+        return out
 
     def indicator(self, name: str, params: Dict):
         key = name + ":" + ",".join(f"{k}={v}" for k, v in sorted(params.items()))
@@ -215,6 +296,14 @@ class Ctx:
                 return True
         return False
 
+    def sess(self, back: int = 0) -> Optional[Dict]:
+        """Session facts at this bar (or `back` bars earlier). See SeriesCache.session."""
+        i = self.n - 1 - back
+        if i < 0:
+            return None
+        s = self.cache.session()
+        return {k: s[k][i] for k in s}
+
     @property
     def atr(self):
         return self.last(self.ind("atr", period=14))
@@ -310,4 +399,4 @@ def evaluate(spec: StrategySpec, ctx: Ctx) -> Optional[Signal]:
 
 
 # importing the built-ins registers them
-from engine.strategies import builtin  # noqa: E402,F401
+from engine.strategies import builtin, pro  # noqa: E402,F401

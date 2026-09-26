@@ -31,25 +31,29 @@ class PaperBroker:
     def price(self, symbol: str, venue: str = "okx") -> Optional[float]:
         return ticker(symbol, venue)
 
-    def _fill(self, units: float, px: float) -> Dict:
-        fee = units * px * self.fee_bps / 10000.0
+    def _fill(self, units: float, px: float, fee_bps: float = None) -> Dict:
+        fee = units * px * (self.fee_bps if fee_bps is None else fee_bps) / 10000.0
         return {"ok": True, "units": units, "avg_price": px, "fee": fee, "cost": units * px,
                 "order_id": f"paper-{int(time.time() * 1000)}"}
 
-    def buy(self, units: float, ref_price: float, slip_bps: float = None) -> Dict:
+    def buy(self, units: float, ref_price: float, slip_bps: float = None, fee_bps: float = None) -> Dict:
         slip = self.slippage_bps if slip_bps is None else slip_bps
-        return self._fill(units, ref_price * (1 + slip / 10000.0))
+        return self._fill(units, ref_price * (1 + slip / 10000.0), fee_bps)
 
-    def sell(self, units: float, ref_price: float, slip_bps: float = None) -> Dict:
+    def sell(self, units: float, ref_price: float, slip_bps: float = None, fee_bps: float = None) -> Dict:
         slip = self.slippage_bps if slip_bps is None else slip_bps
-        return self._fill(units, ref_price * (1 - slip / 10000.0))
+        return self._fill(units, ref_price * (1 - slip / 10000.0), fee_bps)
 
     def check_stop(self, stop: float, units: float, price: Optional[float],
-                   slip_bps: float = None) -> Optional[Dict]:
+                   slip_bps: float = None, fee_bps: float = None) -> Optional[Dict]:
         """If price has traded through the stop, the fill a stop order would have got."""
         if price is None or price > stop:
             return None
-        return self.sell(units, min(price, stop), slip_bps)
+        return self.sell(units, min(price, stop), slip_bps, fee_bps)
+
+    def fee_for(self, market: Dict) -> float:
+        """Stocks are commission-free at most brokers; crypto pays the chosen exchange tier."""
+        return config.STOCK_FEE_BPS if market.get("asset") == "stock" else self.fee_bps
 
 
 def slippage_for(usd_volume_24h: float) -> float:
@@ -72,6 +76,9 @@ def slippage_for(usd_volume_24h: float) -> float:
 
 def ticker(symbol: str, venue: str = "okx") -> Optional[float]:
     """Last traded price, a few seconds fresh, from the market's own venue first."""
+    if venue == "yahoo":
+        from engine import stocks
+        return stocks.price(symbol)
     def okx():
         d = http.get_json("https://www.okx.com/api/v5/market/ticker", {"instId": symbol}, ttl=4)
         if d and d.get("code") == "0" and d.get("data"):

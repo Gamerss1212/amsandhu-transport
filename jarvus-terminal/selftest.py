@@ -12,6 +12,7 @@ from __future__ import annotations
 import os
 import sys
 import tempfile
+import threading
 from datetime import datetime, timedelta, timezone
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -322,10 +323,10 @@ def main() -> int:
 
     fb = FakeBroker()
     eng = BT.Engine(lambda: {"markets": []}, broker=fb)
-    BT.save_settings({"practice_money": 6000})
+    BT.save_settings({"practice_money": 7000})
     made = BT.ensure_bots()
-    check("six bots start with an even split of the practice money",
-          len(made) == 6 and abs(sum(b["cash"] for b in made) - 6000) < 1e-9)
+    check("seven bots start with an even split of the practice money",
+          len(made) == 7 and abs(sum(b["cash"] for b in made) - 7000) < 1e-9)
     tr = next(b for b in made if b["key"] == "trend")
     cfgb = BT.bot_config(tr)
 
@@ -381,6 +382,63 @@ def main() -> int:
 
     config.DB_PATH, BT.SETTINGS_PATH = old_db, old_set
     importlib.reload(store)
+
+    # ---- sessions, stocks and the new strategies
+    print("\nsessions, stocks and the day-trading classics")
+    from engine import strategies as ST, stocks as SK
+    t0 = datetime(2026, 3, 2, 14, 30, tzinfo=timezone.utc)
+    tape, px = [], 100.0
+    for day in range(3):
+        for k in range(7):
+            ts = t0 + timedelta(days=day, hours=k)
+            o = px * (1.02 if (day == 2 and k == 0) else 1.0)          # day 3 gaps up 2%
+            px = o * 1.001
+            tape.append({"ts": ts, "open": o, "high": px * 1.002, "low": o * 0.998, "close": px, "volume": 1000.0})
+    sc = ST.SeriesCache(tape)
+    ss = sc.session()
+    check("a market with overnight gaps is recognised as a session market", ss["gapped"][-1] is True)
+    check("each session's bars are numbered from zero", ss["idx"][7] == 0 and ss["idx"][13] == 6)
+    check("the previous session's high is carried into the next",
+          abs(ss["prev_high"][8] - max(b["high"] for b in tape[:7])) < 1e-9)
+    check("the opening range is the first bar of a stock session, closed only after it",
+          ss["or_high"][15] == tape[14]["high"] and ss["or_done"][14] is False and ss["or_done"][15] is True)
+    check("the overnight gap is measured from the prior close", abs(ss["gap_pct"][14] - (tape[14]["open"] / tape[13]["close"] - 1) * 100) < 1e-9)
+    same = all(ST.SeriesCache(tape[:i + 1]).session()[k][i] == ss[k][i]
+               for i in range(len(tape)) for k in ("idx", "s_high", "vwap", "prev_close", "or_high", "or_done", "gapped"))
+    check("session facts never look ahead: a prefix gives the same answer as the whole", same)
+    check("at least 95 strategies are loaded", len([s for s in ST.REGISTRY.values() if s.group != "control"]) >= 95)
+    payload = {"meta": {"currentTradingPeriod": {"regular": {"start": 0, "end": 1}}},
+               "timestamp": [1_700_000_000, 1_700_003_600, 1_700_007_200],
+               "indicators": {"quote": [{"open": [1, 2, None], "high": [1.5, 2.5, 3], "low": [0.5, 1.5, 2],
+                                         "close": [1.2, 2.2, 2.9], "volume": [10, 20, 30]}]}}
+    bars = SK._bars(payload, "1h")
+    check("Yahoo bars parse, and a bar with a missing price is dropped", len(bars) == 2 and bars[1]["close"] == 2.2)
+    four = SK._aggregate_4h(tape[:7])
+    check("hourly stock bars roll up into bias bars without crossing sessions", len(four) == 2 and four[0]["high"] == max(b["high"] for b in tape[:4]))
+
+    # ---- the Brain's arithmetic
+    print("\nthe Brain")
+    from engine import brain as BRN
+    import random as _rnd
+    _rnd.seed(3)
+    rg = BRN.Ridge(3)
+    for _ in range(400):
+        x1, x2 = _rnd.uniform(-1, 1), _rnd.uniform(-1, 1)
+        rg.add([0, 1, 2], [1.0, x1, x2], 0.5 + 2 * x1 - x2)
+    w = rg.solve(0.001)
+    check("the coordinator recovers a known rule from data", all(abs(a - b) < 0.01 for a, b in zip(w, [0.5, 2, -1])), w)
+    w2 = rg.solve(1e6)
+    check("heavy regularisation shrinks agents toward zero but never the baseline",
+          abs(w2[1]) < 0.01 and abs(w2[0] - 0.5) < 0.1, w2)
+    br = BRN.Brain.__new__(BRN.Brain)
+    br._lock = threading.Lock()
+    br.models = {"crypto": {"weights": {"bias": 0.1, "cost": -1.0, "s:rsi2_reversion": 0.5}}}
+    br.meta = {}
+    p1 = br.predict("crypto", {"cost": 0.2}, [("rsi2_reversion", 0.8)])
+    check("a prediction is the weighted vote of the active agents", abs(p1 - (0.1 - 0.2 + 0.4)) < 1e-9, p1)
+    ex = br.explain("crypto", {"cost": 0.2}, [("rsi2_reversion", 0.8)])
+    check("every prediction can be explained agent by agent", ex[0]["agent"] == "rsi2_reversion" and ex[0]["effect"] == 0.4)
+    check("there are more than 100 agents", len(BRN.agent_names()) - 1 >= 100)
 
     # ---- one network call
     print("\nnetwork")

@@ -1,13 +1,15 @@
 # Jarvus Terminal
 
-A local trading terminal that scans **every liquid crypto market**, runs **67 strategies
-against each of them at once**, ranks what is most likely to move, builds a costed plan,
-and **grades its own predictions** so the confidence it shows you is measured rather than
-claimed.
+A local trading terminal that scans **every liquid crypto market and the most active US
+stocks**, runs **95 strategies against each of them at once**, ranks what is most likely to
+move, builds a costed plan, and **grades its own predictions** so the confidence it shows
+you is measured rather than claimed.
 
-It also has **six trading bots that run themselves**. Press **Run bots** once and they
-scan, backtest, buy, manage and sell on their own, around the clock, with practice money
-at live prices. See **The bots**, below.
+It has **seven trading bots that run themselves**, a **Brain** of 120 agents that votes on
+every trade they consider, and a **Learn trading** tab: a course plus an encyclopedia of
+every strategy with its measured results on crypto and stocks. Press **Run bots** once and
+the bots scan, backtest, buy, manage and sell on their own, around the clock, with
+practice money at live prices. See **The bots** and **The Brain**, below.
 
 ```
 python3 run.py
@@ -84,14 +86,15 @@ Open the app, stay on the **Bots** tab, press **Run bots**. That is the whole jo
 
 | Bot | Playbook |
 |---|---|
-| **Trend Rider** | Buys pullbacks and continuations in markets already trending up, when two of its 16 trend strategies agree. |
-| **Breakout Hunter** | Waits for a market to coil or start moving hard (LOUD or COILED only), then buys the break when two of its 16 breakout strategies fire. |
-| **Dip Buyer** | Buys sharp oversold dips in markets whose bigger trend is not down. |
-| **Momentum** | Buys when momentum turns up and two of its 8 momentum strategies agree. |
-| **Smart Money** | Liquidity sweeps, order blocks, fair-value gaps and volume absorption. |
+| **Trend Rider** | Buys pullbacks and continuations in markets already trending up, when two of its 19 trend strategies agree. |
+| **Breakout Hunter** | Waits for a market to coil or start moving hard (LOUD or COILED only), then buys the break when two of its 17 breakout strategies fire. |
+| **Dip Buyer** | Buys sharp oversold dips in markets whose bigger trend is not down, including the Connors high-win-rate rules. |
+| **Momentum** | Buys when momentum turns up and two of its 10 momentum strategies agree. |
+| **Smart Money** | Liquidity sweeps, order blocks, fair-value gaps, candlestick reversals, flags and volume absorption. |
+| **Day Trader** | Trades the daily rhythm: opening-range breakouts, VWAP reclaims and pullbacks, gap-and-go, prior-day level reclaims and pivot bounces. |
 | **Swarm Captain** | Only trades when three different strategy families agree at once. |
 
-Each bot has its own share of the practice money (default $10,000 split six ways) and
+Each bot has its own share of the practice money (default $10,000 split seven ways) and
 its own record, so you can see which playbooks earn their keep.
 
 **What happens without you**
@@ -140,17 +143,75 @@ practice record on the Bots tab is how you find out whether it holds from here.
 
 ---
 
+## Stocks
+
+The app trades the 40 most liquid US stocks and ETFs as well as crypto (edit
+`STOCK_WATCHLIST` in `config.py`; any Yahoo ticker works). Data comes from Yahoo Finance's
+public chart API, with no key and no account.
+
+* **Market hours.** Stocks are only bought during the regular session, 9:30 to 16:00 New
+  York time. A stop resting overnight fills at the next open if the stock gaps through it,
+  which is how it fills in real life.
+* **Costs.** Most brokers charge no commission on US stocks, so the practice broker
+  charges half a basis point for regulatory fees plus liquidity-scaled slippage. That is
+  roughly fifty times cheaper than a crypto taker trade, and it matters: see lesson 6 in
+  Learn trading.
+* **Day trading or not.** Stock trades can be held up to four days (the default) or
+  closed by the bell like a true day trade: switch on *Stocks: out by the close* in Bot
+  settings. The Learn tab shows what each choice measured.
+* **Research** runs separately for crypto and stocks, each with its own costs, and the
+  bots use the latest weights for each.
+
+---
+
+## The Brain
+
+The bots already require every trade to pass a backtest on that market. The Brain is a
+second opinion that looks at everything at once.
+
+**120 agents.** One per strategy (95), reading how strongly its pattern is present, and 25
+context agents reading what strategies do not: volatility and whether it is expanding or
+compressing, trend on three horizons, how stretched price is, momentum, volume, fees as a
+share of the risk, time of day, weekends, the overnight gap, price against session VWAP,
+how many strategies and families agree, the verification backtest's measured edge on that
+market, and what the leader is doing (Bitcoin for crypto, the S&P 500 for stocks).
+
+**One coordinator.** A ridge regression per market type turns the 120 readings into a
+single prediction: the trade's expected result in R, after fees. It was trained on every
+hourly bar of the study where any strategy fired, each one recorded with every agent's
+reading and how a trade taken there actually ended. It is deliberately simple. With a few
+hundred thousand noisy examples, a model that can bend into any shape memorises the
+noise, and a regularised linear model can only learn "this agent tends to help, that one
+tends to hurt, by this much", which is what can be learned reliably here. Every prediction
+comes with its reasons, agent by agent.
+
+**How it is used.** In the default *veto* mode, a setup that has passed its bot's backtest
+is only traded if the Brain also predicts a profit. Every vote, with its reasons, appears on
+the Brain tab. Switch the Brain to *rank only* or *off* there.
+
+**It keeps learning.** Every trade the bots close nudges the weights of the agents that
+were active in it toward what really happened. The learned weights are saved beside the
+app and survive restarts.
+
+Its measured results on data it never saw are on the Brain tab.
+
+---
+
 ## What it does
 
-**Scans everything.** One pass discovers ~1,700 markets across OKX spot, OKX perps and
-Coinbase, filters to those clearing a liquidity floor, collapses the same asset listed on
-several venues, and ranks what is left. About six seconds.
+**Scans everything.** One pass discovers ~1,700 crypto markets across OKX spot, OKX perps
+and Coinbase, plus 40 of the most liquid US stocks and ETFs from Yahoo Finance (no key),
+filters to those clearing a liquidity floor, collapses the same asset listed on several
+venues, and ranks what is left. The top 40 crypto markets and the top 15 stocks get the
+full analysis. Stocks are ranked only against other stocks, so crypto's bigger daily
+swings never crowd them out.
 
-**Runs 67 strategies on every market, concurrently.** 67 strategies × 40 markets is
-**2,680 independent evaluations per scan**. That is what "analyses thousands of
+**Runs 95 strategies on every market, concurrently.** 97 strategy checks (95 plus two
+controls) × 55 markets is **over 5,300 independent evaluations per scan**, and the Brain's
+120 agents then read every setup that survives. That is what "analyses thousands of
 possibilities" means here: a real count of real evaluations.
 
-**Refuses to double-count.** Sixty-seven opinions are worthless added up, because a dozen
+**Refuses to double-count.** Ninety-five opinions are worthless added up, because a dozen
 of these strategies are different spellings of "price is above a rising average". Votes
 are grouped into families first, each family gets one weighted say, and agreement across
 *different* families is the only kind counted.
@@ -193,9 +254,29 @@ with, and `engine/strategies/custom/` is where it goes.
 
 ## Strategies
 
-Sixty-four built-in strategies plus two controls, drawn from the families in the
-320-strategy encyclopedia: trend (12), mean reversion (10), breakout (10), momentum (8),
-volatility (6), volume (6), structure and liquidity (8), composite (4).
+Ninety-five built-in strategies plus two controls, in seven families: trend (19),
+breakout (17), price action and structure (16), mean reversion (15), momentum (10),
+**session (10)** and volume (8).
+
+The newest 31 are the setups professional day traders are known for:
+
+* **Session:** opening-range breakout and its retest, VWAP reclaim, VWAP trend-day
+  pullback, gap-and-go, gap-down reclaim, first-hour momentum, prior-day-low reclaim
+  (turtle soup), floor-trader pivot bounce, inside-day breakout. These read a session
+  table that knows each bar's trading day: the opening range (the first hour of a stock
+  session, 00:00-08:00 UTC on crypto), running VWAP, the overnight gap and yesterday's
+  high, low and close. It works on stocks' 9:30-16:00 sessions and crypto's 24-hour day
+  alike, and never looks ahead.
+* **Price action:** bullish engulfing, hammer, morning star, three white soldiers,
+  outside-bar reversal, bull flag, the Fibonacci golden pocket, pin bar at the 21/50 EMA.
+* **Quant classics:** Larry Connors' high-win-rate rules: IBS, Double 7s, Connors RSI,
+  cumulative RSI(2), three lower lows.
+* **Trend and momentum:** Kaufman's adaptive average, Heikin-Ashi flips, MACD zero-line
+  cross, +DI/-DI cross, Keltner breakout, the 9/21 EMA cross.
+* **Volume:** selling-climax reversal, anchored-VWAP bounce.
+
+Every one of them was measured on crypto and on stocks before shipping; the results are in
+the Learn trading tab.
 
 Turn any of them off on the Swarm tab. **Add your own by dropping a `.py` file in
 `engine/strategies/custom/`** — there is a commented worked example in that folder. A
@@ -307,7 +388,9 @@ Everything below is in the Settings drawer and persists to both the browser and 
 
 | Tab | What it is for |
 |---|---|
-| **Bots** | The Run button, six bot cards with what each is doing right now, open trades with live P&L, the activity feed, what they have learned, and the readiness checks. |
+| **Bots** | The Run button, seven bot cards with what each is doing right now, open trades with live P&L, the activity feed, what they have learned, and the readiness checks. |
+| **Brain** | The 120 agents and how much the coordinator trusts each, its results on data it never saw, and every vote it casts with its reasons. |
+| **Learn trading** | A nine-lesson course built from this app's own measurements, and an encyclopedia of all 95 strategies with their results on crypto, stocks and stock day trades. |
 | **Markets** | Every liquid market ranked by heat, with family agreement, consensus, cost and verdict. |
 | **Detail** | TradingView chart, local price and volume with your indicator overlays, why the gate reads what it does, the costed plan, every strategy that fired and its weight. |
 | **Swarm** | The whole grid, plus the strategy roster with on/off switches. |
@@ -315,7 +398,7 @@ Everything below is in the Settings drawer and persists to both the browser and 
 | **Portfolio** | Paper books with real accounting, equity curve, and the readiness gate. |
 | **Alerts** | Rules, fired alerts, and the automation switch. |
 | **News** | Live headlines with hot-word flags. |
-| **Learning** | The reliability curve and the direction reality check. |
+| **Calibration** | The reliability curve and the direction reality check. |
 
 ---
 
@@ -348,14 +431,16 @@ jarvus-terminal/
 │   ├── marketdata.py   candles across venues; deep paged history, disk-cached
 │   ├── volgate.py      the volatility gate
 │   ├── indicators.py   36 indicators and the catalog
-│   ├── strategies/     registry, 64 built-ins, 2 controls, and your custom folder
+│   ├── strategies/     registry, the session table, 95 built-ins, 2 controls, your custom folder
 │   ├── swarm.py        every strategy × every market, concurrently, family-grouped
 │   ├── backtest.py     walk-forward grid, control-relative weighting
 │   ├── research.py     research runs, persistence, the weights the swarm uses
 │   ├── analysis.py     structure, levels, confluence, the cost gate, the plan
 │   ├── portfolio.py    paper books with real accounting and the readiness gate
 │   ├── automation.py   scheduler and alert rules
-│   ├── bots.py         the six self-running bots: scan, verify, trade, manage, learn
+│   ├── bots.py         the seven self-running bots: scan, verify, trade, manage, learn
+│   ├── brain.py        the 120 agents and the coordinator; brain_weights.json ships trained
+│   ├── stocks.py       US stocks from Yahoo Finance: quotes, candles, the market clock
 │   ├── broker.py       practice-money fills at live prices, liquidity-scaled slippage
 │   ├── learn.py        resolution, calibration, reliability
 │   ├── news.py / store.py / scanner.py / http.py

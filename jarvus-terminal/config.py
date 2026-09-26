@@ -25,13 +25,29 @@ WEB_DIR = os.path.join(BUNDLE_DIR, "web")
 # The universe pass is cheap (one request per venue). Deep analysis is expensive
 # (one candle request per market), so only the top DEEP_SCAN_N by the cheap
 # volatility pre-rank get analysed in full.
-UNIVERSE_VENUES = ["okx_spot", "okx_swap", "coinbase"]
+UNIVERSE_VENUES = ["okx_spot", "okx_swap", "coinbase", "stocks"]
 DEEP_SCAN_N = int(os.environ.get("JARVUS_DEEP_N", "40"))
 MIN_USD_VOLUME_24H = float(os.environ.get("JARVUS_MIN_VOL", "3000000"))  # liquidity floor
 QUOTE_WHITELIST = {"USDT", "USD", "USDC"}
 
 # Markets always analysed regardless of rank.
 ALWAYS_INCLUDE = ["BTC-USDT", "ETH-USDT", "SOL-USDT"]
+
+# --- US stocks (Yahoo Finance, no key) ----------------------------------------
+# The most liquid US stocks and ETFs, where day-trading costs are lowest. Edit freely;
+# any Yahoo ticker works. STOCK_DEEP_N of them get full analysis each scan, chosen by
+# the same cheap movement pre-rank as crypto, so crypto's larger swings never crowd
+# the stocks out of the scan entirely.
+STOCK_WATCHLIST = [
+    "SPY", "QQQ", "IWM", "DIA", "AAPL", "MSFT", "NVDA", "AMZN", "META", "GOOGL", "TSLA", "AMD",
+    "NFLX", "AVGO", "COIN", "MSTR", "PLTR", "SMCI", "JPM", "BAC", "XOM", "UNH", "LLY", "COST",
+    "WMT", "BA", "INTC", "MU", "ORCL", "CRM", "SHOP", "UBER", "SOFI", "HOOD", "MARA", "ARM",
+    "SMH", "TQQQ", "XLF", "XLE",
+]
+STOCK_DEEP_N = int(os.environ.get("JARVUS_STOCK_N", "15"))
+# Most brokers charge no commission on US stocks. What is left is the regulatory fee on
+# sales and the spread, which is covered by slippage. Half a basis point each way.
+STOCK_FEE_BPS = 0.5
 
 # --- analysis ---------------------------------------------------------------
 BIAS_TF = "4h"       # higher timeframe: trend/bias

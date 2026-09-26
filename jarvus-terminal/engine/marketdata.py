@@ -88,6 +88,10 @@ def _kraken(symbol: str, tf: str, limit: int) -> Optional[List[dict]]:
 def candles(symbol: str, venue: str, tf: str, limit: int = None) -> Optional[List[dict]]:
     """Closed candles, oldest first. Tries the market's own venue first, then others."""
     limit = limit or config.CANDLES
+    if venue == "yahoo":
+        from engine import stocks
+        got = stocks.candles(symbol, tf, limit)
+        return got if got and len(got) >= 60 else None
     order = {"okx": [_okx, _coinbase, _kraken], "coinbase": [_coinbase, _okx, _kraken]}.get(
         venue, [_okx, _coinbase, _kraken])
     for fn in order:
@@ -225,6 +229,9 @@ def deep_candles(symbol: str, venue: str, tf: str = "1h", want: int = 3000,
     Only the missing tail is fetched when a cache already exists, so the first call
     for a market is slow and every call after it is nearly free.
     """
+    if venue == "yahoo":
+        from engine import stocks                    # one request returns two years; cached by the HTTP layer
+        return stocks.deep(symbol, tf, want)
     path = _cache_path(symbol, tf)
     cached = _read_cache(path) if use_cache else []
     if cached and len(cached) >= want:

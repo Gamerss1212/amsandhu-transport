@@ -52,7 +52,7 @@ def main() -> int:
     print(f"   Opening {url} in your browser.")
     print("   Keep this window open. Closing it stops Jarvus and the bots.")
     print()
-    print("   Press 'Run bots' on the Bots tab once. The six bots then scan,")
+    print("   Press 'Run bots' on the Bots tab once. The seven bots then scan,")
     print("   backtest, trade and learn on their own, with practice money,")
     print("   and resume by themselves whenever you start this program.")
     print()

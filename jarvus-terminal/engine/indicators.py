@@ -787,6 +787,89 @@ CATALOG = {
 }
 
 
+# =============================================================================
+# Additions for the day-trading classics
+# =============================================================================
+
+def kama(closes: Sequence[float], period: int = 10, fast: int = 2, slow: int = 30) -> List[Num]:
+    """Kaufman's adaptive moving average: fast when price trends, nearly still in chop.
+
+    The efficiency ratio (net move over total path) decides how much of each new price
+    the average takes, so it follows a clean trend closely and ignores back-and-forth.
+    """
+    n = len(closes)
+    out: List[Num] = [None] * n
+    if n <= period:
+        return out
+    fsc, ssc = 2 / (fast + 1), 2 / (slow + 1)
+    out[period - 1] = closes[period - 1]
+    for i in range(period, n):
+        change = abs(closes[i] - closes[i - period])
+        path = sum(abs(closes[k] - closes[k - 1]) for k in range(i - period + 1, i + 1))
+        er = change / path if path else 0.0
+        sc = (er * (fsc - ssc) + ssc) ** 2
+        out[i] = out[i - 1] + sc * (closes[i] - out[i - 1])
+    return out
+
+
+def heikin_ashi(opens, highs, lows, closes):
+    """Heikin-Ashi candles: averaged bars that make a trend read as one colour.
+
+    Returns (ha_open, ha_high, ha_low, ha_close). A green HA bar with no lower wick is
+    the classic sign of a strong push; they lag real prices, so they are a filter, not
+    a fill price.
+    """
+    n = len(closes)
+    ho, hh, hl, hc = [None] * n, [None] * n, [None] * n, [None] * n
+    for i in range(n):
+        hc[i] = (opens[i] + highs[i] + lows[i] + closes[i]) / 4
+        ho[i] = (opens[i] + closes[i]) / 2 if i == 0 else (ho[i - 1] + hc[i - 1]) / 2
+        hh[i] = max(highs[i], ho[i], hc[i])
+        hl[i] = min(lows[i], ho[i], hc[i])
+    return ho, hh, hl, hc
+
+
+def connors_rsi(closes: Sequence[float], rsi_period: int = 3, streak_period: int = 2,
+                rank_period: int = 100) -> List[Num]:
+    """Connors RSI: the average of a 3-period RSI, an RSI of the up/down streak length,
+    and where today's one-bar change ranks among the last 100. Below 10 is a deep
+    short-term washout, which is the only reading it was designed to act on."""
+    n = len(closes)
+    r1 = rsi(closes, rsi_period)
+    streak = [0.0] * n
+    for i in range(1, n):
+        if closes[i] > closes[i - 1]:
+            streak[i] = streak[i - 1] + 1 if streak[i - 1] > 0 else 1
+        elif closes[i] < closes[i - 1]:
+            streak[i] = streak[i - 1] - 1 if streak[i - 1] < 0 else -1
+    r2 = rsi(streak, streak_period)
+    out: List[Num] = [None] * n
+    for i in range(rank_period + 1, n):
+        ch = closes[i] / closes[i - 1] - 1 if closes[i - 1] else 0.0
+        past = [closes[k] / closes[k - 1] - 1 for k in range(i - rank_period + 1, i) if closes[k - 1]]
+        rank = 100.0 * sum(1 for x in past if x < ch) / len(past) if past else None
+        if None not in (r1[i], r2[i], rank):
+            out[i] = (r1[i] + r2[i] + rank) / 3
+    return out
+
+
+def ibs(highs, lows, closes) -> List[Num]:
+    """Internal bar strength: where the close sits in the bar's range, 0 = low, 1 = high.
+
+    A close in the bottom fifth of the bar, in an uptrend, is one of the best-known
+    short-term mean-reversion readings in equity-index research."""
+    return [((c - l) / (h - l)) if h > l else 0.5 for h, l, c in zip(highs, lows, closes)]
+
+
+CATALOG.update({
+    "kama": {"fn": kama, "needs": ["close"], "params": {"period": 10}, "group": "trend"},
+    "heikin_ashi": {"fn": heikin_ashi, "needs": ["open", "high", "low", "close"], "params": {},
+                    "group": "trend", "multi": True},
+    "connors_rsi": {"fn": connors_rsi, "needs": ["close"], "params": {}, "group": "momentum"},
+    "ibs": {"fn": ibs, "needs": ["high", "low", "close"], "params": {}, "group": "momentum"},
+})
+
+
 def catalog_names() -> List[str]:
     return sorted(CATALOG)
 
