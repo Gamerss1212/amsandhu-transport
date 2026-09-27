@@ -2027,6 +2027,7 @@ async function loadFleet() {
   ['#fleetStop', '#fleetPause', '#fleetResume', '#fleetEmergency'].forEach(id => { $(id).disabled = !s.running; });
   if (s.running) { $('#fleetPause').disabled = !!s.paused; $('#fleetResume').disabled = !s.paused && !s.emergency; }
   const ap = s.autopilot || {};
+  if (ap.stage && document.activeElement !== $('#fleetStage')) $('#fleetStage').value = String(ap.stage);
   $('#fleetAuto').textContent = ap.enabled ? `autopilot on: starts with Jarvus and restarts itself (${ap.stage} bots)` : 'autopilot off (you pressed Stop)';
   $('#fleetMeta').textContent = s.running ? (s.emergency ? 'running - EMERGENCY STOP active' : s.paused ? 'running - entries paused' : 'running')
     : (ap.enabled ? 'starting...' : 'stopped');

@@ -175,7 +175,7 @@ const usd=(v,d=2)=>v==null||isNaN(v)?"–":(v<0?"-$":"$")+fmt(Math.abs(v),d);con
 const big=v=>{const a=Math.abs(v);return a>=1e9?(v/1e9).toFixed(1)+"B":a>=1e6?(v/1e6).toFixed(1)+"M":a>=1e3?(v/1e3).toFixed(1)+"K":fmt(v,0)};
 const t=ms=>ms?new Date(ms).toLocaleString():"–";const hm=ms=>ms?new Date(ms).toLocaleTimeString([],{hour12:false}):"–";
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-const pxf=v=>fmt(v,v>=100?2:v>=1?4:6);const sgn0=v=>v?sgn(v):"$0.00";
+const pxf=v=>fmt(v,v>=100?2:v>=1?4:6);const sid=v=>esc(String(v||"").replace("@low"," · low-fee"));const sgn0=v=>v?sgn(v):"$0.00";
 async function get(p){const r=await fetch(p,{cache:"no-store"});return r.json()}
 async function control(command,args={}){const r=await fetch("/api/control",{method:"POST",headers:{"Content-Type":"application/json","X-CSRF-Token":TOKEN},body:JSON.stringify({command,args})});const j=await r.json();if(j.error)alert(j.error.replace(/^ValueError: /,""));refresh();return j}
 $("bPause").onclick=()=>control("pause");$("bResume").onclick=()=>control("resume");
@@ -288,7 +288,7 @@ function renderBook(){const b=BOOK||{},el=$("book");if(!b.asks||!b.asks.length||
  const asks=b.asks.slice(0,7).reverse(),bids=b.bids.slice(0,7),mx=Math.max(...asks.map(a=>a[1]),...bids.map(a=>a[1]))||1,mid=(b.asks[0][0]+b.bids[0][0])/2;
  const row=(r,c)=>`<div class="rw"><i style="width:${Math.max(4,100*r[1]/mx)}%;background:${c}"></i><span>${usd(r[0],r[0]>=100?2:4)}</span><span class="muted">${fmt(r[1],r[1]<10?3:0)}</span></div>`;
  el.innerHTML=asks.map(r=>row(r,"#ff3d63")).join("")+`<div class="mid">${usd(mid,mid>=100?2:4)} <span class="tiny dim">spread ${fmt(10000*(b.asks[0][0]-b.bids[0][0])/mid,1)} bps</span></div>`+bids.map(r=>row(r,"#2ee6a6")).join("")}
-function renderPicks(){const p=BRAIN.top_picks||[];$("picks").innerHTML=p.map(x=>`<div><span class="hotc">${esc(x.bot_id)}</span> ${esc(x.strategy_id)} <span class="dim">${esc(x.instrument)}</span></div><div class="${x.edge_r>=0?"up":"dn"}">${x.edge_r>=0?"+":""}${fmt(x.edge_r,2)}R</div>`).join("")||'<div class="muted">–</div><div></div>'}
+function renderPicks(){const p=BRAIN.top_picks||[];$("picks").innerHTML=p.map(x=>`<div><span class="hotc">${esc(x.bot_id)}</span> ${sid(x.strategy_id)} <span class="dim">${esc(x.instrument)}</span></div><div class="${x.edge_r>=0?"up":"dn"}">${x.edge_r>=0?"+":""}${fmt(x.edge_r,2)}R</div>`).join("")||'<div class="muted">–</div><div></div>'}
 function renderTrader(){renderPicks();const by={};TR.slice().reverse().forEach(x=>{(by[x.bot_id]=by[x.bot_id]||[]).push(x)});let best=null;
  Object.entries(by).forEach(([id,l])=>{const pnl=l.reduce((a,x)=>a+x.pnl,0);let st=0;for(let i=l.length-1;i>=0&&l[i].pnl>0;i--)st++;if(!best||pnl>best.pnl)best={id,pnl,st,l}});
  if(!best){$("stN").textContent="0";$("stR").textContent="";minibars($("stSpark"),[],"#ff2d95","");$("stA").textContent="–";$("stB").textContent="–";$("stBot").textContent="–";$("stW").textContent="–";$("stM").textContent="–";
@@ -313,7 +313,7 @@ function renderAnalytics(){const now=Date.now(),hours=new Array(24).fill(0);TR.f
 function renderLog(){const L=[],tag=(g,c)=>`<span class="g" style="color:${c}">${g}</span>`;
  (BRAIN.recent||[]).forEach(r=>{if(r.kind==="decision"){const g=r.action==="veto"?(r.benched?"BENCH":"VETO"):r.action==="resize"?"SIZE":"IN",c=r.action==="veto"?"var(--bad)":"var(--hot2)";
    L.push({time:r.time,h:tag(g,c)+`${esc(r.bot_id)} ${r.side>0?"UP":"DN"} · ${esc(r.instrument)} · win ${(100*r.p_win).toFixed(0)}% · edge ${r.edge>=0?"+":""}${fmt(r.edge,2)}R · size ${fmt(r.size,2)}x · ${esc((r.regime||"").replace("-"," / "))}`})}
-  else if(r.kind==="lesson")L.push({time:r.time,h:tag(r.r>0?"WIN":"LOSS",r.r>0?"var(--good)":"var(--bad)")+`${esc(r.bot_id)} · ${esc(r.instrument)} · ${r.r>=0?"+":""}${fmt(r.r,2)}R · brain learned (${esc(r.strategy_id)})`});
+  else if(r.kind==="lesson")L.push({time:r.time,h:tag(r.r>0?"WIN":"LOSS",r.r>0?"var(--good)":"var(--bad)")+`${esc(r.bot_id)} · ${esc(r.instrument)} · ${r.r>=0?"+":""}${fmt(r.r,2)}R · brain learned (${sid(r.strategy_id)})`});
   else if(r.kind==="shadow")L.push({time:r.time,h:tag("SHADOW",r.r>0?"var(--warn)":"var(--mute)")+`${esc(r.bot_id)} · blocked trade would have made ${r.r>=0?"+":""}${fmt(r.r,2)}R (${esc(r.exit)}) · learned at half weight`});
   else if(r.kind==="insight")L.push({time:r.time,h:tag("LEARN","var(--gold)")+esc(r.text)})});
  TR.slice(0,40).forEach(x=>L.push({time:x.exit_time,h:tag("CLOSE",x.pnl>=0?"var(--good)":"var(--bad)")+`#${x.id} ${esc(x.bot_id)} ${x.side>0?"UP":"DN"} · ${esc(x.instrument)} · ${sgn(x.pnl)} · ${fmt(x.r,2)}R · ${esc(x.exit_reason)}`}));

@@ -42,12 +42,26 @@ venues (Coinbase, Kraken, OKX, Yahoo) -> data hub (one poll per series, quality 
 | Strategy runtime | `mab/strategy.py` | one TradeManager for backtest, replay and live; stops before targets; bracket orders |
 | Risk | `mab/risk.py` | exposure caps, concentration, conflicting positions, duplicates, rate limits, loss limits, kill switch |
 | Paper broker | `mab/broker.py` | latency, book-walk slippage, partial fills (IOC), fees, rejections; stock fills labelled synthetic |
-| Account | `mab/account.py` | change the balance any time (deposit / withdraw / set); performance is time-weighted |
+| Account | `mab/account.py` | set the balance to any amount at any time (deposit / withdraw / set), running or stopped; open trades are never closed for it; performance is time-weighted |
+| Fleet Brain | `mab/brain.py` | the coordinator every bot is connected to; see below |
 | Storage | `mab/storage.py` | SQLite WAL; signals, intents, risk decisions, orders, fills, trades, health, events; retention; backups |
 | Runtime | `mab/runtime.py` | bot isolation, auto-disable after repeated errors, restart recovery, control queue, health cycle |
-| Dashboard | `mab/dashboard.py` | state counts, account, positions, trades, data health, alerts, per-bot rule explanations |
+| Dashboard | `mab/dashboard.py`, `mab/dashboard.html` | header stats, stat tape, wallet, candles and live order book, #1 bot streak, 3D hive-mind swarm, P&L, analytics, execution log, per-bot rule explanations |
 | Secrets | `mab/secrets_store.py` | Windows DPAPI / keyring / owner-only file; hidden prompt; log redaction |
 | Evaluation | `mab/backtest.py`, `mab/evaluate.py`, `mab/metrics.py` | walk-forward, embargo, costs, Holm, deflated Sharpe |
+
+## Fleet Brain (self-learning, local)
+
+Every bot reports its signal state each bar; before any paper entry is sent the brain decides on its own to approve,
+resize (0.5x-1.5x), veto, or bench the bot. It combines a hierarchical Bayesian estimate of the result per trade
+after costs (fleet -> strategy family -> strategy -> strategy on this instrument / in this market regime), a shared
+context model trained on every bot's closed trades, and a stacking layer that learns how much to trust each part.
+Priors come from the batch evaluation, priced like each bot's venue (retail fees vs a low-fee venue). Vetoed entries
+are followed as shadow trades and learned from at half weight, so a benched strategy can earn its way back and the
+value of the vetoes is measured. Insights are written in plain language when a pattern is statistically clear.
+No AI service is called; nothing leaves the computer. `brain.mode` in the config: `active` (default), `advisory`
+(learns and scores, never blocks), `off`. The brain cannot create an edge the markets do not give: its calibration,
+high- vs low-score results and the average result of vetoed trades are on the dashboard so its value can be judged.
 
 ## Bots
 
