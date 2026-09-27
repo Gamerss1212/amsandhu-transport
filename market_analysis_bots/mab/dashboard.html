@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bot Fleet</title>
+<style>
+:root{--bg:#f6f7f9;--panel:#fff;--ink:#16181d;--muted:#5d6470;--line:#e2e5ea;--accent:#2f6fde;
+--good:#1f8a4c;--warn:#b7791f;--bad:#c2372f;--chip:#eef1f5;--mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+@media (prefers-color-scheme:dark){:root{--bg:#111318;--panel:#1a1d24;--ink:#e8eaee;--muted:#9aa3b0;--line:#2a2f38;
+--accent:#6f9cf0;--good:#4cc27d;--warn:#e0a948;--bad:#ef6b62;--chip:#232833}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+header{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--line);background:var(--panel);position:sticky;top:0;z-index:5}
+h1{font-size:17px;margin:0}h2{font-size:14px;margin:0 0 10px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+main{padding:16px;max-width:1400px;margin:0 auto;display:grid;gap:14px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px;min-width:0}
+.row{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
+.tiles{display:grid;gap:8px;grid-template-columns:repeat(auto-fit,minmax(110px,1fr))}
+.tile{border:1px solid var(--line);border-radius:8px;padding:8px 10px;cursor:pointer}.tile b{display:block;font-size:22px}
+.tile span{color:var(--muted);font-size:12px}.tile.sel{outline:2px solid var(--accent)}
+button{font:inherit;border:1px solid var(--line);background:var(--chip);color:var(--ink);border-radius:7px;padding:6px 11px;cursor:pointer}
+button.primary{background:var(--accent);border-color:var(--accent);color:#fff}button.danger{background:var(--bad);border-color:var(--bad);color:#fff}
+input,select{font:inherit;padding:6px 8px;border:1px solid var(--line);border-radius:7px;background:var(--panel);color:var(--ink)}
+table{width:100%;border-collapse:collapse;font-size:13px}th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--muted);font-weight:600;position:sticky;top:0;background:var(--panel)}
+.scroll{max-height:460px;overflow:auto}.mono{font-family:var(--mono);font-size:12px}
+.pill{display:inline-block;padding:1px 8px;border-radius:99px;font-size:12px;background:var(--chip);white-space:nowrap}
+.s-running{color:var(--good)}.s-degraded,.s-data_unavailable{color:var(--bad)}.s-warming,.s-paused{color:var(--warn)}
+.pass{color:var(--good)}.fail{color:var(--bad)}.unk{color:var(--muted)}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 14px}.kv div:nth-child(odd){color:var(--muted)}
+#drawer{position:fixed;inset:0 0 0 auto;width:min(760px,100%);background:var(--panel);border-left:1px solid var(--line);box-shadow:-8px 0 24px rgba(0,0,0,.15);overflow:auto;padding:16px;display:none;z-index:10}
+#drawer.open{display:block}.muted{color:var(--muted)}.banner{padding:10px 14px;border-radius:8px;background:var(--bad);color:#fff}
+.flex{display:flex;gap:8px;flex-wrap:wrap;align-items:center}svg{display:block;width:100%}
+@media (max-width:640px){main{padding:10px}header{padding:10px}}
+</style>
+</head>
+<body>
+<header>
+  <div><h1>Bot Fleet <span class="pill" id="mode">paper trading</span></h1><div class="muted" id="sub">loading...</div></div>
+  <div class="flex">
+    <button id="bPause">Pause entries</button><button id="bResume">Resume</button>
+    <button class="danger" id="bStop">Emergency stop</button><button id="bClear">Clear emergency</button>
+  </div>
+</header>
+<main>
+  <div id="emerg"></div>
+  <section class="panel"><h2>Bots by state</h2><div class="tiles" id="tiles"></div></section>
+  <div class="row">
+    <section class="panel"><h2>Paper account</h2><div class="kv" id="acct"></div>
+      <div class="flex" style="margin-top:10px"><input id="amt" type="number" min="0" step="100" placeholder="amount" style="width:130px">
+      <button id="bSet" class="primary">Set balance</button><button id="bDep">Deposit</button><button id="bWd">Withdraw</button></div>
+      <p class="muted" style="font-size:12px">Balance changes are cash flows: returns are time-weighted, so they never count as profit or loss. Real-money trading is disabled in this build.</p>
+    </section>
+    <section class="panel"><h2>Equity</h2><div id="eq"></div></section>
+    <section class="panel"><h2>System</h2><div class="kv" id="sys"></div></section>
+  </div>
+  <section class="panel"><h2>Bots</h2>
+    <div class="flex" style="margin-bottom:8px"><input id="q" placeholder="filter by id, strategy, instrument, state" style="flex:1;min-width:200px"><span class="muted" id="count"></span></div>
+    <div class="scroll"><table><thead><tr><th>Bot</th><th>Strategy</th><th>Market</th><th>State</th><th>Position</th><th>Last decision</th></tr></thead><tbody id="bots"></tbody></table></div>
+  </section>
+  <div class="row">
+    <section class="panel"><h2>Shared data series</h2><div class="scroll"><table><thead><tr><th>Series</th><th>Status</th><th>Bars</th><th>Bots</th><th>Fetches</th></tr></thead><tbody id="series"></tbody></table></div></section>
+    <section class="panel"><h2>Alerts and events</h2><div class="scroll"><table><tbody id="events"></tbody></table></div></section>
+  </div>
+  <section class="panel"><h2>Recent trades</h2><div class="scroll"><table><thead><tr><th>Exit</th><th>Bot</th><th>Market</th><th>Side</th><th>Entry</th><th>Exit</th><th>P&amp;L</th><th>R</th><th>Why it closed</th></tr></thead><tbody id="trades"></tbody></table></div></section>
+</main>
+<aside id="drawer"></aside>
+<script>
+const TOKEN="__TOKEN__";let bots=[],stateFilter=null;
+const $=id=>document.getElementById(id);
+const fmt=(v,d=2)=>v==null?"n/a":(typeof v==="number"?v.toLocaleString(undefined,{maximumFractionDigits:d}):String(v));
+const t=ms=>ms?new Date(ms).toLocaleString():"n/a";
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+async function get(p){const r=await fetch(p,{cache:"no-store"});return r.json()}
+async function control(command,args={}){const r=await fetch("/api/control",{method:"POST",headers:{"Content-Type":"application/json","X-CSRF-Token":TOKEN},body:JSON.stringify({command,args})});const j=await r.json();if(j.error)alert(j.error);refresh();return j}
+$("bPause").onclick=()=>control("pause");$("bResume").onclick=()=>control("resume");
+$("bStop").onclick=()=>{if(confirm("Emergency stop: close every paper position now and block new trades until cleared?"))control("emergency_stop",{reason:"operator"})};
+$("bClear").onclick=()=>control("clear_emergency");
+const amt=()=>{const v=parseFloat($("amt").value);if(!(v>=0)){alert("Enter an amount");throw 0}return v};
+$("bSet").onclick=()=>control("set_balance",{amount:amt()});$("bDep").onclick=()=>control("deposit",{amount:amt()});$("bWd").onclick=()=>control("withdraw",{amount:amt()});
+$("q").oninput=renderBots;
+const STATES=["running","warming","idle_no_signal","data_unavailable","degraded","stopped","disabled","paused"];
+function renderTiles(s){const c=s.bot_states||{};let h=`<div class="tile" data-s=""><b>${fmt(s.configured??s.bots,0)}</b><span>configured</span></div><div class="tile" data-s=""><b>${fmt(s.enabled,0)}</b><span>enabled</span></div>`;
+for(const k of STATES)h+=`<div class="tile ${stateFilter===k?"sel":""}" data-s="${k}"><b class="s-${k}">${fmt(c[k]||0,0)}</b><span>${k.replace(/_/g," ")}</span></div>`;
+$("tiles").innerHTML=h;for(const el of $("tiles").children)el.onclick=()=>{stateFilter=el.dataset.s||null;renderTiles(s);renderBots()}}
+function renderBots(){const q=$("q").value.toLowerCase();const rows=bots.filter(b=>(!stateFilter||b.state===stateFilter)&&(!q||JSON.stringify(b).toLowerCase().includes(q)));
+$("count").textContent=`${rows.length} of ${bots.length}`;
+$("bots").innerHTML=rows.slice(0,400).map(b=>`<tr style="cursor:pointer" data-id="${esc(b.bot_id)}"><td class="mono">${esc(b.bot_id)}</td><td>${esc(b.strategy_id||"")}<div class="muted">${esc(b.family||"")}</div></td><td>${esc(b.venue||"")} ${esc(b.instrument||"")} ${esc(b.tf||"")}</td><td><span class="pill s-${esc(b.state)}">${esc((b.state||"").replace(/_/g," "))}</span><div class="muted">${esc(b.message||"")}</div></td><td>${esc(b.position||"")}</td><td>${esc(b.last_decision||"")}</td></tr>`).join("");
+for(const tr of $("bots").children)tr.onclick=()=>openBot(tr.dataset.id)}
+function spark(rows){if(!rows.length)return'<p class="muted">no equity records yet</p>';const v=rows.map(r=>r.equity),mn=Math.min(...v),mx=Math.max(...v),w=600,h=120,p=4;
+const x=i=>p+i*(w-2*p)/Math.max(1,v.length-1),y=e=>h-p-(mx===mn?0.5:(e-mn)/(mx-mn))*(h-2*p);
+return`<svg viewBox="0 0 ${w} ${h}" role="img" aria-label="equity"><polyline fill="none" stroke="var(--accent)" stroke-width="2" points="${v.map((e,i)=>x(i)+","+y(e)).join(" ")}"/></svg><div class="flex muted" style="justify-content:space-between"><span>${fmt(mn)}</span><span>${t(rows[rows.length-1].time)}</span><span>${fmt(mx)}</span></div>`}
+async function openBot(id){const d=await get("/api/bot/"+encodeURIComponent(id));const s=d.last_signal||(d.recent_signals||[])[0]||{};
+const rules=(s.rules||[]).map(r=>`<tr><td class="${r.passed===true?"pass":r.passed===false?"fail":"unk"}">${r.passed===true?"pass":r.passed===false?"fail":"unknown"}</td><td class="mono">${esc(r.rule)}</td><td class="mono">${esc(r.detail)}</td><td>${esc(r.group||"")}</td></tr>`).join("");
+const feats=Object.entries(s.features||{}).map(([k,v])=>`<tr><td class="mono">${esc(k)}</td><td class="mono">${esc(fmt(v,6))}</td></tr>`).join("");
+const tr=(d.trades_list||[]).map(x=>`<tr><td>${t(x.exit_time)}</td><td>${x.side>0?"long":"short"}</td><td>${fmt(x.entry_price,6)}</td><td>${fmt(x.exit_price,6)}</td><td>${fmt(x.pnl)}</td><td>${fmt(x.r)}</td><td>${esc(x.exit_reason)}</td></tr>`).join("");
+const risk=(d.risk||[]).map(r=>`<tr><td>${t(r.time)}</td><td>${r.approved?"approved":"blocked"}</td><td>${(r.checks||[]).filter(c=>!c.passed).map(c=>esc(c.check+(c.detail?": "+c.detail:""))).join("; ")||"all checks passed"}</td></tr>`).join("");
+const sig=(d.recent_signals||[]).map(x=>`<tr><td>${t(x.bar_time)}</td><td>${esc(x.action)}</td><td>${esc(x.reason)}</td></tr>`).join("");
+$("drawer").innerHTML=`<div class="flex" style="justify-content:space-between"><h1>${esc(id)}</h1><button onclick="document.getElementById('drawer').classList.remove('open')">Close</button></div>
+<p>${esc(d.strategy_name||"")} <span class="pill">${esc(d.strategy_id||"")}</span> on ${esc(d.venue||"")} ${esc(d.instrument||"")} ${esc(d.timeframe||"")}</p>
+<div class="flex"><span class="pill s-${esc(d.state)}">${esc(d.state||"")}</span><span class="muted">${esc(d.message||"")}</span>
+${d.enabled===false?`<button onclick="control('enable_bot',{bot_id:'${esc(id)}'})">Enable</button>`:`<button onclick="control('disable_bot',{bot_id:'${esc(id)}'})">Disable</button>`}</div>
+<h2 style="margin-top:14px">Latest decision</h2><p><b>${esc(s.action||"none yet")}</b> ${esc(s.reason||"")} <span class="muted">${t(s.bar_time)}</span></p>
+<table><thead><tr><th>Outcome</th><th>Rule</th><th>Values</th><th>Part</th></tr></thead><tbody>${rules||'<tr><td colspan=4 class="muted">rule detail is recorded for entries, exits and skipped signals</td></tr>'}</tbody></table>
+<h2 style="margin-top:14px">Indicator values</h2><table><tbody>${feats||'<tr><td class="muted">none recorded</td></tr>'}</tbody></table>
+<h2 style="margin-top:14px">Position</h2><pre class="mono">${esc(JSON.stringify(d.position,null,1)||"flat")}</pre>
+<h2 style="margin-top:14px">Rules as configured</h2><pre class="mono" style="white-space:pre-wrap">${esc(JSON.stringify(d.rules,null,1)||"")}</pre>
+<h2>Recent decisions</h2><table><tbody>${sig}</tbody></table>
+<h2 style="margin-top:14px">Risk decisions</h2><table><tbody>${risk||'<tr><td class="muted">none</td></tr>'}</tbody></table>
+<h2 style="margin-top:14px">Trades</h2><table><thead><tr><th>Exit</th><th>Side</th><th>Entry</th><th>Exit</th><th>P&amp;L</th><th>R</th><th>Why</th></tr></thead><tbody>${tr||'<tr><td colspan=7 class="muted">no trades yet</td></tr>'}</tbody></table>`;
+$("drawer").classList.add("open")}
+async function refresh(){try{const [s,b,ser,ev,tr,eq]=await Promise.all([get("/api/summary"),get("/api/bots"),get("/api/series"),get("/api/events"),get("/api/trades?limit=100"),get("/api/equity")]);
+bots=b;renderTiles(s);renderBots();const a=s.account||{};
+$("sub").textContent=`${fmt(s.bots,0)} bots on ${fmt(s.series,0)} shared data series · ${s.source||""} · updated ${new Date().toLocaleTimeString()}`;
+$("emerg").innerHTML=s.emergency?`<div class="banner">Emergency stop active: ${esc(s.emergency.reason)} (${t(s.emergency.time)}). New trades are blocked until cleared.</div>`:(s.paused?`<div class="banner" style="background:var(--warn)">Paused: no new entries. Open positions keep their stops and exits.</div>`:"");
+$("acct").innerHTML=[["Equity",fmt(a.equity)+" "+(a.currency||"")],["Free cash",fmt(a.cash)],["Open positions",fmt(a.open_positions,0)],["Gross exposure",fmt(a.gross_exposure)+(a.gross_exposure_pct!=null?` (${fmt(a.gross_exposure_pct,1)}%)`:"")],["Realized P&L",fmt(a.realized_pnl)],["Fees paid",fmt(a.fees)],["Time-weighted return",a.twr!=null?fmt(100*a.twr,3)+"%":"n/a"],["Sizing slot",fmt(a.slot_equity)+` (1/${a.slots})`]].map(([k,v])=>`<div>${k}</div><div>${v}</div>`).join("");
+$("sys").innerHTML=[["Uptime",fmt((s.uptime_s||0)/60,1)+" min"],["Evaluations",`${fmt(s.completed_evaluations,0)} of ${fmt(s.scheduled_evaluations,0)} scheduled`],["Decision time p95",fmt(s.eval_ms_p95,1)+" ms"],["Bar close to decision p95",s.latency_ms_p95!=null?fmt(s.latency_ms_p95/1000,1)+" s":"n/a"],["Data requests",`${fmt(s.requests,0)} (${fmt(100*(s.rate_429||0),2)}% rate-limited)`],["Memory",fmt(s.rss_mb,0)+" MB (peak "+fmt(s.peak_rss_mb,0)+")"],["Database",fmt((s.db_bytes||0)/1048576,1)+" MB"],["Storage",s.storage_ok===false?"FAILING":"ok"]].map(([k,v])=>`<div>${k}</div><div>${v}</div>`).join("");
+$("eq").innerHTML=spark(eq);
+$("series").innerHTML=(ser.series||[]).map(x=>`<tr><td class="mono">${esc(x.key)}</td><td><span class="pill">${esc(x.status)}</span><div class="muted">${esc(x.last_fetch_error||x.last_issue||"")}</div></td><td>${x.bars}/${x.need}</td><td>${x.subscribers}</td><td>${x.fetches}</td></tr>`).join("")||`<tr><td class="muted">${esc(ser.note||"")}</td></tr>`;
+$("events").innerHTML=ev.map(e=>`<tr><td class="muted" style="white-space:nowrap">${t(e.time)}</td><td><span class="pill">${esc(e.level)}</span></td><td>${esc(e.message)}</td></tr>`).join("");
+$("trades").innerHTML=tr.map(x=>`<tr><td>${t(x.exit_time)}</td><td class="mono">${esc(x.bot_id)}</td><td>${esc(x.instrument)}</td><td>${x.side>0?"long":"short"}</td><td>${fmt(x.entry_price,6)}</td><td>${fmt(x.exit_price,6)}</td><td class="${x.pnl>=0?"pass":"fail"}">${fmt(x.pnl)}</td><td>${fmt(x.r)}</td><td>${esc(x.exit_reason)}</td></tr>`).join("")||'<tr><td class="muted">no closed trades yet</td></tr>';
+}catch(e){$("sub").textContent="dashboard cannot reach the fleet: "+e}}
+refresh();setInterval(refresh,5000);
+</script>
+</body>
+</html>

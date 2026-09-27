@@ -1,0 +1,7 @@
+{"strategies": [{"id": "STRAT-001", "implementation_status": "implemented", "definition": {
+ "id": "STRAT-001", "name": "EMA 9/21 cross with session VWAP filter", "family": "trend_following", "version": "1.0.0",
+ "timeframe": "1m", "direction": "long", "params": {"fast": 9, "slow": 21},
+ "entry": {"long": "cross_above(ema(close,$fast), ema(close,$slow))"},
+ "filters": ["close > vwap()"],
+ "stop": {"type": "atr", "mult": 2.0, "n": 14}, "target": {"type": "r", "r": 2.0},
+ "exit": {"long": "cross_below(ema(close,$fast), ema(close,$slow))"}, "max_trades_per_day": 20}}]}

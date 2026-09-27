@@ -1,0 +1,25 @@
+{
+  "_comment": "Example configuration. Contains no secrets. Copy to config/fleet.json (python -m mab init) and edit.",
+  "data_dir": "data",
+  "catalog": null,
+  "bots_file": "bots/registry.json",
+  "account": {"balance": 100000, "currency": "USD", "slots": 20},
+  "risk": {
+    "max_gross_exposure_pct": 100.0,
+    "max_instrument_exposure_pct": 25.0,
+    "max_open_positions": 20,
+    "daily_loss_limit_pct": 3.0,
+    "max_drawdown_pct": 15.0,
+    "bot_daily_loss_limit_pct": 1.0,
+    "max_orders_per_minute": 30,
+    "max_orders_per_minute_per_bot": 4,
+    "conflict_policy": "block",
+    "max_price_age_bars": 3.0
+  },
+  "paper": {"latency_ms": 150, "max_slippage_bps": 50},
+  "hub": {"workers": 4},
+  "health_interval_s": 60,
+  "backup_interval_h": 6,
+  "dashboard": {"port": 8765},
+  "live_trading": {"enabled": false, "note": "Real-money order submission is not available in this build."}
+}
