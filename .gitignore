@@ -2,3 +2,4 @@ market_analysis_bots/data/
 __pycache__/
 *.pyc
 strategies/.cache/
+strategies/results/evaluation_summary.json

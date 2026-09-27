@@ -56,9 +56,12 @@ def folds(frame: Frame, k: int = 4) -> List[tuple]:
 
 
 def run_one(definition: dict, frame: Frame, venue: str, cost_mult: float, resolver=None, events=None,
-            asset_type: str = "crypto", params: Optional[dict] = None, can_short: bool = True) -> dict:
-    c = compile_strategy(definition, params, asset_type)
-    rs = eval_rules(c, frame, resolver, events)                  # rules computed once, reused by every segment
+            asset_type: str = "crypto", params: Optional[dict] = None, can_short: bool = True, pre=None) -> dict:
+    if pre is None:
+        c = compile_strategy(definition, params, asset_type)
+        rs = eval_rules(c, frame, resolver, events)              # rules computed once, reused by every segment
+    else:
+        c, rs = pre
     out = {"segments": {}, "folds": []}
     for name, (s, e) in boundaries(frame).items():
         r = backtest.run(c, frame, venue, cost_mult=cost_mult, start=s, end=e, period=name, rs=rs, can_short=can_short)

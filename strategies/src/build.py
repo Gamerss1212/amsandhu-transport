@@ -111,6 +111,10 @@ def build():
     if os.path.exists(ev_path):
         with open(ev_path) as fh:
             evals = json.load(fh).get("strategies", {})
+    elif os.path.exists(ev_path + ".gz"):
+        import gzip
+        with gzip.open(ev_path + ".gz", "rt") as fh:
+            evals = json.load(fh).get("strategies", {})
     keep = ("trades", "win_rate", "expectancy_r", "profit_factor", "net_return", "sharpe", "max_drawdown")
     for r in counted:
         e = evals.get(r["id"])

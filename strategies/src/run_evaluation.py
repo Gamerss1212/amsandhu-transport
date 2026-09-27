@@ -151,6 +151,8 @@ def jobs_for(strats):
             if "stock" in s["markets"]:
                 insts = [x for x in (s.get("instruments") or []) if x in STOCK_SYMS]
                 targets += [("yahoo", x) for x in (insts or STOCK_SYMS)]
+        if d["timeframe"] == "1m":
+            targets = [t for t in targets if t == ("coinbase", "BTC-USD")] or [("coinbase", "BTC-USD")]
         for venue, sym in targets:
             jobs.append((s["id"], s["key"], d, venue, sym))
     return jobs
@@ -182,8 +184,11 @@ def work(job):
                       f"{time.strftime('%Y-%m-%d', time.gmtime(f.t[-1] / 1000))}", "runs": {}}
     t0 = time.time()
     try:
+        from mab.strategy import compile_strategy, evaluate as eval_rules
+        c = compile_strategy(d, params, at)
+        pre = (c, eval_rules(c, f, resolver, events))
         for label, fee_venue, mult in costs:
-            r = EV.run_one(d, f, fee_venue, mult, resolver, events, at, params, can_short=can_short)
+            r = EV.run_one(d, f, fee_venue, mult, resolver, events, at, params, can_short=can_short, pre=pre)
             out["runs"][label] = r
     except Exception as e:
         out["error"] = f"{type(e).__name__}: {e}"
