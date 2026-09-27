@@ -2003,6 +2003,11 @@ async function loadFleet() {
   $('#fleetStart').disabled = !!s.running;
   ['#fleetStop', '#fleetPause', '#fleetResume', '#fleetEmergency', '#fleetSet', '#fleetDep', '#fleetWd']
     .forEach(id => { $(id).disabled = !s.running; });
+  // the starting balance only applies to a brand-new paper account; a saved one carries on
+  const saved = a.equity != null;
+  $('#fleetBalance').disabled = saved;
+  if (saved) $('#fleetBalance').value = Math.round(a.equity);
+  $('#fleetBalanceLbl').title = saved ? 'Your saved paper account carries on. Change it any time with Set balance, Deposit or Withdraw while the fleet runs.' : 'Paper money the new account starts with';
   if (s.running) { $('#fleetPause').disabled = !!s.paused; $('#fleetResume').disabled = !s.paused && !s.emergency; }
   $('#fleetMeta').textContent = s.running ? (s.emergency ? 'running - EMERGENCY STOP active' : s.paused ? 'running - entries paused' : 'running')
     : 'stopped';

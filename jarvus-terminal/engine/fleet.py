@@ -170,6 +170,9 @@ def status() -> dict:
                 out.update({k: h.get(k) for k in ("bots", "bot_states", "series", "series_status", "account", "paused",
                                                    "emergency", "completed_evaluations", "scheduled_evaluations",
                                                    "latency_ms_p95", "time")})
+            # pause and emergency are written the moment a command applies; the health snapshot lags
+            out["paused"] = bool(st.kv_get("paused", False))
+            out["emergency"] = st.kv_get("emergency", None)
         except Exception as e:                                          # noqa: BLE001
             out["error"] = str(e)
     return out

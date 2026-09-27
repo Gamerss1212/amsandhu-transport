@@ -82,7 +82,7 @@ tr[data-id]:hover td{background:#1d1022;cursor:pointer}
         <button class="hot" id="bSet">Set balance</button><button id="bDep">Deposit</button><button id="bWd">Withdraw</button></div>
     </section>
     <section class="p"><div class="h"><span class="dot"></span><span id="chartTitle">Price</span><span style="margin-left:auto" class="flex" id="chartPick"></span></div>
-      <canvas id="chart" height="230"></canvas></section>
+      <canvas id="chart" height="330"></canvas></section>
     <section class="p glow"><div class="h"><span class="dot"></span>#1 bot · live streak</div>
       <div class="flex" style="align-items:baseline;gap:10px"><div class="streak" id="stN">–</div><div><b id="stBot">waiting for closed trades</b><div class="small muted" id="stSub"></div></div></div>
       <canvas id="stSpark" height="90" style="margin-top:6px"></canvas>
@@ -136,12 +136,13 @@ setInterval(()=>{$("clock").textContent=new Date().toLocaleTimeString()},1000);
 function fit(c){const r=c.getBoundingClientRect(),d=devicePixelRatio||1;if(!c.dataset.h)c.dataset.h=c.id==="net"?c.clientHeight:(parseFloat(c.getAttribute("height"))||150);const h=+c.dataset.h;
  if(c.width!==Math.round(r.width*d)){c.width=Math.round(r.width*d);c.height=Math.round(h*d)}const x=c.getContext("2d");x.setTransform(d,0,0,d,0,0);return[x,r.width,h]}
 function area(c,vals,color="#ff2d95",label=true,empty="waiting for data"){const[x,w,h]=fit(c);x.clearRect(0,0,w,h);x.font="11px monospace";if(!vals||vals.length<2){x.fillStyle="#6d5c75";x.fillText(empty,10,20);return}
- const mn=Math.min(...vals),mx=Math.max(...vals),p=6,px=i=>p+i*(w-2*p-(label?64:0))/(vals.length-1),py=v=>h-p-(mx===mn?.5:(v-mn)/(mx-mn))*(h-2*p-12);
+ const mn=Math.min(...vals),mx=Math.max(...vals),lv=vals[vals.length-1],tag=fmt(lv,lv>100?2:4);x.font="bold 11px monospace";const tw=label?x.measureText(tag).width+10:0;
+ const p=6,pt=label?18:p,pb=label?16:p,px=i=>p+i*(w-2*p-(label?tw+4:0))/(vals.length-1),py=v=>h-pb-(mx===mn?.5:(v-mn)/(mx-mn))*(h-pt-pb);
  x.strokeStyle="#241728";x.lineWidth=1;for(let k=1;k<4;k++){const y=k*h/4;x.beginPath();x.moveTo(0,y);x.lineTo(w,y);x.stroke()}
  const g=x.createLinearGradient(0,0,0,h);g.addColorStop(0,color+"66");g.addColorStop(1,color+"00");
  x.beginPath();vals.forEach((v,i)=>i?x.lineTo(px(i),py(v)):x.moveTo(px(i),py(v)));x.lineTo(px(vals.length-1),h);x.lineTo(px(0),h);x.closePath();x.fillStyle=g;x.fill();
  x.beginPath();vals.forEach((v,i)=>i?x.lineTo(px(i),py(v)):x.moveTo(px(i),py(v)));x.strokeStyle=color;x.lineWidth=1.6;x.shadowColor=color;x.shadowBlur=8;x.stroke();x.shadowBlur=0;
- if(label){const lv=vals[vals.length-1],y=py(lv);x.fillStyle=color;x.fillRect(w-62,y-9,60,18);x.fillStyle="#12020c";x.font="bold 11px monospace";x.fillText(fmt(lv,lv>100?2:4),w-58,y+4);
+ if(label){const y=py(lv);x.fillStyle=color;x.fillRect(w-tw-2,y-9,tw,18);x.fillStyle="#12020c";x.font="bold 11px monospace";x.fillText(tag,w-tw+3,y+4);
  x.fillStyle="#9b8aa3";x.font="10px monospace";x.fillText("high "+fmt(mx,mx>100?2:4),8,12);x.fillText("low "+fmt(mn,mn>100?2:4),8,h-4)}}
 function bars(c,vals,labels,color,empty){const[x,w,h]=fit(c);x.clearRect(0,0,w,h);x.font="11px monospace";
  if(empty&&!vals.some(v=>v)){x.fillStyle="#6d5c75";x.fillText(empty,10,20);return}const mx=Math.max(1,...vals.map(v=>v||0)),bw=w/vals.length;
@@ -227,7 +228,8 @@ function renderBrain(){const b=BRAIN||{};$("brainMode").textContent=`mode: ${b.m
   ["high-score trades",b.high_score_trades?`${b.high_score_trades} · ${fmt(b.high_score_avg_r,3)}R`:"–"],["low-score trades",b.low_score_trades?`${b.low_score_trades} · ${fmt(b.low_score_avg_r,3)}R`:"–"],
   ["prediction error (Brier)",fmt(b.brier,3)]].map(([k,v])=>`<div>${k}</div><div>${v}</div>`).join("");
  const row=x=>`<div class="flex" style="justify-content:space-between"><span>${esc(x.strategy_id)} ${esc((x.name||"").slice(0,26))}</span><span class="${x.estimate_r>=0?"up":"dn"}">${fmt(x.estimate_r,3)} (${x.trades})</span></div>`;
- $("brainBest").innerHTML=(b.best_learned||[]).slice(0,4).map(row).join("")+'<div style="height:6px"></div>'+(b.worst_learned||[]).slice(0,4).map(row).join("")||'<span class="muted">learns from every closed trade</span>';
+ const bl=(b.best_learned||[]).slice(0,4),wl=(b.worst_learned||[]).slice(0,4);
+ $("brainBest").innerHTML=bl.length||wl.length?bl.map(row).join("")+'<div style="height:6px"></div>'+wl.map(row).join(""):'<span class="muted">appears after the first closed trades: the brain learns from every one</span>';
  const cal=b.calibration||[];bars($("calib"),cal.map(c=>c.trades?c.actual*100:0),cal.map((c,i)=>i%2?null:(c.predicted*100).toFixed(0)),i=>"#56d8ff","calibration appears after closed trades");
  $("calibTxt").textContent="bars: actual win % for each predicted win-chance bucket (well calibrated = rising left to right)"}
 function renderHist(){const bins=new Array(12).fill(0);TR.forEach(x=>{if(x.r==null)return;const k=Math.max(0,Math.min(11,Math.floor((x.r+3)*2)));bins[k]++});
@@ -238,7 +240,7 @@ function renderLog(ev){const lines=[];(BRAIN.recent||[]).forEach(r=>lines.push({
  TR.slice(0,40).forEach(x=>lines.push({time:x.exit_time,html:`<span class="${x.pnl>=0?"up":"dn"}">CLOSE</span> ${esc(x.bot_id)} ${esc(x.instrument)} ${x.side>0?"long":"short"} · ${fmt(x.pnl)} · ${esc(x.exit_reason)}`}));
  (ev||[]).slice(0,40).forEach(e=>lines.push({time:e.time,html:`<span class="${e.level==="critical"||e.level==="error"?"dn":e.level==="warning"?"hotc":"muted"}">${esc(e.level.toUpperCase())}</span> ${esc(e.message)}`}));
  lines.sort((a,b)=>b.time-a.time);$("log").innerHTML=lines.slice(0,120).map(l=>`<div><span class="t">${hm(l.time)}</span> ${l.html}</div>`).join("")||'<span class="muted">waiting for activity</span>'}
-async function refresh(){try{const[s,b,ser,ev,tr,eq,br,tk]=await Promise.all([get("/api/summary"),get("/api/bots"),get("/api/series"),get("/api/events"),get("/api/trades?limit=300"),get("/api/equity"),get("/api/brain"),get("/api/tickers")]);
+let DOWN=0;async function refresh(){if(DOWN){try{await get("/api/summary")}catch(e){DOWN++;$("liveTag").textContent="OFFLINE";$("eqSub").textContent="the fleet is not running (retrying every 15 s)";return}DOWN=0}try{const[s,b,ser,ev,tr,eq,br,tk]=await Promise.all([get("/api/summary"),get("/api/bots"),get("/api/series"),get("/api/events"),get("/api/trades?limit=300"),get("/api/equity"),get("/api/brain"),get("/api/tickers")]);
  S=s;BOTS=b;TR=tr;EQ=eq;BRAIN=br;TICK=tk;layoutNodes();NET.nodes.forEach(n=>{const x=BOTS.find(y=>y.bot_id===n.id);if(x)n.b=x});spawnPulses();
  renderTiles();renderBots();renderTop();renderStreak();renderBrain();renderHist();renderLog(ev);const a=s.account||{};
  $("eqBig").textContent=a.equity!=null?fmt(a.equity)+" "+(a.currency||""):"–";$("eqSub").innerHTML=a.twr!=null?`<span class="${a.twr>=0?"up":"dn"}">${a.twr>=0?"+":""}${(100*a.twr).toFixed(3)}%</span> time-weighted`:"";
@@ -251,8 +253,8 @@ async function refresh(){try{const[s,b,ser,ev,tr,eq,br,tk]=await Promise.all([ge
  $("events").innerHTML=ev.slice(0,60).map(e=>`<tr><td class="muted">${hm(e.time)}</td><td class="w">${esc(e.message)}</td></tr>`).join("");
  $("trades").innerHTML=tr.slice(0,80).map(x=>`<tr><td>${hm(x.exit_time)}</td><td>${esc(x.bot_id)}</td><td>${esc(x.instrument)}</td><td>${x.side>0?"long":"short"}</td><td class="${x.pnl>=0?"up":"dn"}">${fmt(x.pnl)}</td><td>${fmt(x.r)}</td><td class="w">${esc(x.exit_reason)}</td></tr>`).join("")||'<tr><td colspan=7 class="muted">no closed trades yet</td></tr>';
  if(!CHART.data||Math.random()<.34)loadChart();
- }catch(e){$("eqSub").textContent="dashboard cannot reach the fleet: "+e}}
-refresh();setInterval(refresh,5000);requestAnimationFrame(drawNet);
+ }catch(e){DOWN=1;$("liveTag").textContent="OFFLINE";$("eqSub").textContent="dashboard cannot reach the fleet: "+e}}
+(async function loop(){await refresh();setTimeout(loop,DOWN?15000:5000)})();requestAnimationFrame(drawNet);
 window.addEventListener("resize",()=>{for(const c of document.querySelectorAll("canvas"))c.width=0;refresh()});
 </script>
 </body>

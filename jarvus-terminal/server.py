@@ -438,6 +438,16 @@ class Handler(BaseHTTPRequestHandler):
             return self._json({"error": traceback.format_exc(limit=3)}, 500)
 
 
+class QuietServer(ThreadingHTTPServer):
+    """A browser closing a tab resets its open connection; that is normal, not an error worth a traceback."""
+
+    def handle_error(self, request, client_address):
+        import sys
+        if isinstance(sys.exc_info()[1], (ConnectionResetError, ConnectionAbortedError, BrokenPipeError)):
+            return
+        super().handle_error(request, client_address)
+
+
 def serve():
     store.conn()
     loaded = estrat.load_custom()
@@ -446,7 +456,7 @@ def serve():
     if loaded:
         for f, msg in loaded.items():
             print(f"  custom strategy {f}: {msg}", flush=True)
-    httpd = ThreadingHTTPServer((config.HOST, config.PORT), Handler)
+    httpd = QuietServer((config.HOST, config.PORT), Handler)
     httpd.daemon_threads = True
     # The bots start their threads only once the port is ours, so a second copy of
     # the app that fails to bind can never trade the same practice account twice.

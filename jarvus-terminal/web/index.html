@@ -135,7 +135,7 @@
         Stocks trade only in US/Toronto market hours; crypto trades all day and every bot is flat before its session ends.
         Real-money trading is not available in this version.</p>
       <div class="bigrow" style="gap:8px;flex-wrap:wrap">
-        <label class="small">Paper balance <input id="fleetBalance" type="number" min="100" step="100" value="100000" style="width:120px"></label>
+        <label class="small" id="fleetBalanceLbl">Starting balance <input id="fleetBalance" type="number" min="100" step="100" value="100000" style="width:120px"></label>
         <select id="fleetStage" style="width:190px"><option value="10">10 bots (starter)</option><option value="50">50 bots</option>
           <option value="250" selected>All 250 bots</option></select>
         <button class="primary" id="fleetStart">Start fleet</button><button id="fleetStop">Stop</button>

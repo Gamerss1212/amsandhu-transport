@@ -234,13 +234,23 @@ def make_handler(provider: Provider, token: str, page: str):
     return H
 
 
+class QuietServer(ThreadingHTTPServer):
+    """A browser closing a tab resets its open connection; that is normal, not an error worth a traceback."""
+
+    def handle_error(self, request, client_address):
+        import sys
+        if isinstance(sys.exc_info()[1], (ConnectionResetError, ConnectionAbortedError, BrokenPipeError)):
+            return
+        super().handle_error(request, client_address)
+
+
 def serve(provider: Provider, host: str = "127.0.0.1", port: int = 8765, block: bool = False):
     if host not in ("127.0.0.1", "localhost"):
         raise ValueError("the dashboard only listens on this computer (127.0.0.1)")
     with open(os.path.join(HERE, "dashboard.html"), encoding="utf-8") as fh:
         page = fh.read()
     token = secrets.token_urlsafe(24)
-    httpd = ThreadingHTTPServer((host, port), make_handler(provider, token, page))
+    httpd = QuietServer((host, port), make_handler(provider, token, page))
     httpd.daemon_threads = True
     if block:
         httpd.serve_forever()
