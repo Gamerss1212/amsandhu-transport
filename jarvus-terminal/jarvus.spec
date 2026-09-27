@@ -21,6 +21,7 @@ datas = [
     (os.path.join(STRAT, "catalog.json"), "strategies"),
     (os.path.join(STRAT, "sources.json"), "strategies"),
     (os.path.join(STRAT, "data", "events.json"), "strategies/data"),
+    (os.path.join(STRAT, "results", "evaluation_summary.json.gz"), "strategies/results"),   # the brain's starting knowledge
     ("web", "web"),
     ("engine/strategies/custom", "engine/strategies/custom"),
     # the Brain's trained weights and the measured results the Learn tab teaches from
@@ -39,7 +40,7 @@ hiddenimports = [
     "engine.portfolio", "engine.automation", "engine.broker", "engine.bots",
     "engine.brain", "engine.stocks", "engine.strategies.pro",
     "engine.strategies", "engine.strategies.builtin", "engine.fleet",
-    "mab", "mab.account", "mab.backtest", "mab.broker", "mab.cli", "mab.clock", "mab.costs", "mab.dashboard",
+    "mab", "mab.account", "mab.backtest", "mab.brain", "mab.broker", "mab.cli", "mab.clock", "mab.costs", "mab.dashboard",
     "mab.expr", "mab.frame", "mab.indicators", "mab.instruments", "mab.metrics", "mab.models", "mab.net",
     "mab.replay", "mab.risk", "mab.runtime", "mab.secrets_store", "mab.storage", "mab.strategy",
     "mab.data", "mab.data.adapters", "mab.data.hub", "mab.data.quality",

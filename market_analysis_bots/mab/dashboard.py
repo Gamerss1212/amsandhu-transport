@@ -82,6 +82,42 @@ class Provider:
             r["checks"] = json.loads(r["checks"] or "[]")
         return d
 
+    def brain(self) -> dict:
+        if self.fleet is None:
+            st = self.storage.kv_get("brain") or {}
+            return {"mode": "unknown (fleet not running here)", "trades_learned": (st.get("stats") or {}).get("learned", 0)}
+        names = {br.c.id: br.c.definition.get("name") for br in self.fleet.bots.values()}
+        return self.fleet.brain.summary(names)
+
+    def chart(self, key: str, n: int = 240) -> dict:
+        if self.fleet is None:
+            return {"key": key, "t": [], "c": []}
+        s = self.fleet.hub.series.get(tuple(key.split("/", 2)))
+        if s is None:
+            return {"key": key, "t": [], "c": []}
+        times = s.times[-n:]
+        return {"key": key, "t": times, "c": [s.bars[t].close for t in times], "h": [s.bars[t].high for t in times],
+                "l": [s.bars[t].low for t in times]}
+
+    def tickers(self) -> list:
+        if self.fleet is None:
+            return []
+        out, seen = [], set()
+        prefer = ["BTC-USD", "ETH-USD", "SOL-USD", "SPY", "QQQ", "NVDA", "XXBTZUSD", "BTC-USDT"]
+        keys = sorted(self.fleet.hub.series, key=lambda k: (prefer.index(k[1]) if k[1] in prefer else 99, k[2] != "5m"))
+        for k in keys:
+            if k[1] in seen or len(out) >= 8:
+                continue
+            s = self.fleet.hub.series[k]
+            if len(s.times) < 2:
+                continue
+            last = s.bars[s.times[-1]].close
+            ref = s.bars[s.times[max(0, len(s.times) - 1 - 288 * 300_000 // s.step)]].close
+            seen.add(k[1])
+            out.append({"symbol": k[1], "venue": k[0], "last": last, "change": last / ref - 1 if ref else None,
+                        "key": "/".join(k), "status": s.quality.status})
+        return out
+
     def series(self) -> dict:
         if self.fleet is not None:
             return self.fleet.hub.snapshot()
@@ -160,6 +196,12 @@ def make_handler(provider: Provider, token: str, page: str):
                     return self._send(200, provider.bots())
                 if u.path.startswith("/api/bot/"):
                     return self._send(200, provider.bot(u.path.split("/api/bot/", 1)[1]))
+                if u.path == "/api/brain":
+                    return self._send(200, provider.brain())
+                if u.path == "/api/chart":
+                    return self._send(200, provider.chart(q.get("key", [""])[0]))
+                if u.path == "/api/tickers":
+                    return self._send(200, provider.tickers())
                 if u.path == "/api/series":
                     return self._send(200, provider.series())
                 if u.path == "/api/trades":

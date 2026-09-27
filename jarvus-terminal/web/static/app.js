@@ -9,7 +9,7 @@ const state = { scan: null, detail: null, settings: {}, sort: { key: 'heat', dir
 
 /* ---------------- settings ---------------- */
 const DEFAULTS = {
-  theme: 'auto', accent: 'blue', density: 'normal', fontSize: 14,
+  theme: 'neon', accent: 'blue', density: 'normal', fontSize: 14,
   panels: { tiles: true, explainer: true, howto: true },
   sparklines: true,
   columns: ['market', 'heat', 'state', 'price', 'chg24', 'agree', 'consensus',
@@ -673,7 +673,7 @@ function planHtml(sig, m) {
 function mountTradingView(tvSymbol) {
   const host = $('#tvHost');
   if (!host) return;
-  const dark = document.documentElement.dataset.theme === 'dark' ||
+  const dark = ['dark', 'neon'].includes(document.documentElement.dataset.theme) ||
     (document.documentElement.dataset.theme !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches);
   const id = 'tv_' + Math.random().toString(36).slice(2);
   host.innerHTML = `<div id="${id}" class="tv"></div>
@@ -1733,11 +1733,16 @@ function syncFilterUI() {
 async function boot() {
   try {
     const local = JSON.parse(localStorage.getItem('jarvus-settings') || '{}');
+    if (!local.neonIntroduced) { local.theme = 'neon'; local.neonIntroduced = true; }   // new look, once; Settings can switch back
     state.settings = { ...DEFAULTS, ...local };
   } catch { state.settings = { ...DEFAULTS }; }
   try {
     const server = await api('/api/settings');
     if (server && Object.keys(server).length) state.settings = { ...state.settings, ...server };
+    if (!state.settings.neonIntroduced2) {           // introduce the neon look once; Settings can switch back
+      state.settings.theme = 'neon'; state.settings.neonIntroduced2 = true;
+      try { post('/api/settings', state.settings); } catch {}
+    }
   } catch {}
   applySettings();
 
@@ -1971,7 +1976,7 @@ async function loadFleet() {
     $('#fleetStop').onclick = async () => { await post('/api/fleet/stop', {}); loadFleet(); };
     const cmd = async (c, args) => { const r = await post('/api/fleet/command', { command: c, args }); if (r.error) alert(r.error); loadFleet(); };
     $('#fleetPause').onclick = () => cmd('pause');
-    $('#fleetResume').onclick = () => cmd('resume');
+    $('#fleetResume').onclick = async () => { await cmd('clear_emergency'); cmd('resume'); };
     $('#fleetEmergency').onclick = () => { if (confirm('Emergency stop: close every paper position now and block new trades until you resume?')) cmd('emergency_stop', { reason: 'operator (Jarvus)' }); };
     const amt = () => +$('#fleetAmt').value;
     $('#fleetSet').onclick = () => amt() > 0 && cmd('set_balance', { amount: amt() });
@@ -1991,6 +1996,34 @@ async function loadFleet() {
     tile('Open positions', a.open_positions ?? 0, a.fees != null ? `fees paid ${a.fees.toFixed(2)}` : ''),
     tile('Data series', s.series ?? 0, s.latency_ms_p95 != null ? `decision ${(s.latency_ms_p95 / 1000).toFixed(1)}s after bar close` : '')].join('');
   const fr = $('#fleetFrame');
+  $('#fleetFrameCard').hidden = !s.running; $('#fleetIdle').hidden = !!s.running;
   if (s.running && fr.src === 'about:blank') fr.src = s.dashboard;
   if (!s.running && fr.src !== 'about:blank') fr.src = 'about:blank';
+  // only offer the controls that make sense right now
+  $('#fleetStart').disabled = !!s.running;
+  ['#fleetStop', '#fleetPause', '#fleetResume', '#fleetEmergency', '#fleetSet', '#fleetDep', '#fleetWd']
+    .forEach(id => { $(id).disabled = !s.running; });
+  if (s.running) { $('#fleetPause').disabled = !!s.paused; $('#fleetResume').disabled = !s.paused && !s.emergency; }
+  $('#fleetMeta').textContent = s.running ? (s.emergency ? 'running - EMERGENCY STOP active' : s.paused ? 'running - entries paused' : 'running')
+    : 'stopped';
 }
+
+
+/* ---------------- neon background: drifting particles (neon theme only) ---------------- */
+(function bgfx() {
+  const c = document.getElementById('bgfx'); if (!c) return;
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const P = Array.from({ length: 90 }, () => ({ x: Math.random(), y: Math.random(), v: .00015 + Math.random() * .0005,
+    s: Math.random() * 1.5 + .3, c: Math.random() < .6 ? '255,45,149' : (Math.random() < .5 ? '53,242,154' : '255,77,109') }));
+  function frame() {
+    if (document.documentElement.dataset.theme === 'neon' && !document.hidden) {
+      const d = devicePixelRatio || 1, w = innerWidth, h = innerHeight;
+      if (c.width !== Math.round(w * d) || c.height !== Math.round(h * d)) { c.width = Math.round(w * d); c.height = Math.round(h * d); }
+      const x = c.getContext('2d'); x.setTransform(d, 0, 0, d, 0, 0); x.clearRect(0, 0, w, h);
+      for (const p of P) { if (!reduce) { p.y -= p.v; if (p.y < 0) p.y = 1; }
+        x.fillStyle = `rgba(${p.c},.45)`; x.beginPath(); x.arc(p.x * w, p.y * h, p.s, 0, 7); x.fill(); }
+    }
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();

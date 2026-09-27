@@ -1333,7 +1333,7 @@ def _i_premarket(f):
         if f.day[i] != day:
             day, hi, lo, last, vol, cur = f.day[i], None, None, None, 0.0, None
         if f.sess[i] < 0:
-            if f.sess_open[i] == 0 or f.tod[i] < 570:
+            if f.tod[i] < 570:                  # before the 09:30 open (after-hours bars are ignored)
                 hi = f.h[i] if hi is None else max(hi, f.h[i])
                 lo = f.l[i] if lo is None else min(lo, f.l[i])
                 last, vol = f.c[i], vol + f.v[i]

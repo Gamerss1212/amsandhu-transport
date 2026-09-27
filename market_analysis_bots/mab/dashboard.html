@@ -3,124 +3,257 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Bot Fleet</title>
+<title>Hive Fleet</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 16 16%22%3E%3Crect width=%2216%22 height=%2216%22 rx=%224%22 fill=%22%23ff2d95%22/%3E%3C/svg%3E">
 <style>
-:root{--bg:#f6f7f9;--panel:#fff;--ink:#16181d;--muted:#5d6470;--line:#e2e5ea;--accent:#2f6fde;
---good:#1f8a4c;--warn:#b7791f;--bad:#c2372f;--chip:#eef1f5;--mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
-@media (prefers-color-scheme:dark){:root{--bg:#111318;--panel:#1a1d24;--ink:#e8eaee;--muted:#9aa3b0;--line:#2a2f38;
---accent:#6f9cf0;--good:#4cc27d;--warn:#e0a948;--bad:#ef6b62;--chip:#232833}}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
-header{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--line);background:var(--panel);position:sticky;top:0;z-index:5}
-h1{font-size:17px;margin:0}h2{font-size:14px;margin:0 0 10px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.04em}
-main{padding:16px;max-width:1400px;margin:0 auto;display:grid;gap:14px}
-.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px;min-width:0}
-.row{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
-.tiles{display:grid;gap:8px;grid-template-columns:repeat(auto-fit,minmax(110px,1fr))}
-.tile{border:1px solid var(--line);border-radius:8px;padding:8px 10px;cursor:pointer}.tile b{display:block;font-size:22px}
-.tile span{color:var(--muted);font-size:12px}.tile.sel{outline:2px solid var(--accent)}
-button{font:inherit;border:1px solid var(--line);background:var(--chip);color:var(--ink);border-radius:7px;padding:6px 11px;cursor:pointer}
-button.primary{background:var(--accent);border-color:var(--accent);color:#fff}button.danger{background:var(--bad);border-color:var(--bad);color:#fff}
-input,select{font:inherit;padding:6px 8px;border:1px solid var(--line);border-radius:7px;background:var(--panel);color:var(--ink)}
-table{width:100%;border-collapse:collapse;font-size:13px}th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top}
-th{color:var(--muted);font-weight:600;position:sticky;top:0;background:var(--panel)}
-.scroll{max-height:460px;overflow:auto}.mono{font-family:var(--mono);font-size:12px}
-.pill{display:inline-block;padding:1px 8px;border-radius:99px;font-size:12px;background:var(--chip);white-space:nowrap}
-.s-running{color:var(--good)}.s-degraded,.s-data_unavailable{color:var(--bad)}.s-warming,.s-paused{color:var(--warn)}
-.pass{color:var(--good)}.fail{color:var(--bad)}.unk{color:var(--muted)}
-.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 14px}.kv div:nth-child(odd){color:var(--muted)}
-#drawer{position:fixed;inset:0 0 0 auto;width:min(760px,100%);background:var(--panel);border-left:1px solid var(--line);box-shadow:-8px 0 24px rgba(0,0,0,.15);overflow:auto;padding:16px;display:none;z-index:10}
-#drawer.open{display:block}.muted{color:var(--muted)}.banner{padding:10px 14px;border-radius:8px;background:var(--bad);color:#fff}
-.flex{display:flex;gap:8px;flex-wrap:wrap;align-items:center}svg{display:block;width:100%}
-@media (max-width:640px){main{padding:10px}header{padding:10px}}
+:root{--bg:#07050a;--bg2:#0d0911;--panel:#110c16;--panel2:#160f1c;--line:#2b1a33;--line2:#4a1f45;--ink:#f3e9f5;--mute:#9b8aa3;
+--dim:#6d5c75;--hot:#ff2d95;--hot2:#ff6ec4;--good:#35f29a;--bad:#ff4d6d;--warn:#ffb84d;--cyan:#56d8ff;
+--mono:"JetBrains Mono","Cascadia Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+*{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--ink);font:13px/1.45 var(--mono)}
+body{background:radial-gradient(1200px 600px at 70% -10%,#2a0a26 0,transparent 60%),radial-gradient(900px 500px at -10% 110%,#1a0720 0,transparent 55%),var(--bg);min-height:100vh}
+body::after{content:"";position:fixed;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(255,255,255,.018) 0 1px,transparent 1px 3px);z-index:50}
+a{color:var(--hot2)}
+.top{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:18px;padding:8px 14px;background:rgba(10,6,13,.92);border-bottom:1px solid var(--line2);backdrop-filter:blur(6px);overflow-x:auto;white-space:nowrap}
+.logo{display:flex;align-items:center;gap:8px;font-weight:700;letter-spacing:.08em}.logo i{width:18px;height:18px;border-radius:4px;background:linear-gradient(135deg,var(--hot),#7a1d6b);box-shadow:0 0 12px var(--hot)}
+.logo small{color:var(--mute);font-weight:400;letter-spacing:.04em}
+.tick{display:flex;flex-direction:column;line-height:1.15}.tick b{font-size:13px}.tick span{font-size:10px;color:var(--mute);text-transform:uppercase;letter-spacing:.08em}
+.up{color:var(--good)}.dn{color:var(--bad)}.hotc{color:var(--hot)}
+#clock{margin-left:auto;font-size:15px;color:var(--hot2);text-shadow:0 0 8px rgba(255,45,149,.6)}
+main{padding:12px;display:grid;gap:12px;max-width:1700px;margin:0 auto}
+.row{display:grid;gap:12px;min-width:0}.r3{grid-template-columns:minmax(250px,1fr) minmax(0,2fr) minmax(250px,1fr)}.r3b{grid-template-columns:minmax(0,1.3fr) minmax(0,1.4fr) minmax(0,1fr)}
+@media(max-width:1100px){.r3,.r3b{grid-template-columns:1fr}}
+.p{position:relative;background:linear-gradient(180deg,var(--panel2),var(--panel));border:1px solid var(--line);border-radius:6px;padding:10px 12px;min-width:0;overflow:hidden}
+.p.glow{border-color:var(--hot);box-shadow:0 0 0 1px rgba(255,45,149,.25),0 0 22px rgba(255,45,149,.18) inset}
+.h{display:flex;align-items:center;gap:8px;margin:0 0 8px;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--mute)}
+.h .dot{width:7px;height:7px;border-radius:50%;background:var(--hot);box-shadow:0 0 8px var(--hot);animation:blink 1.6s infinite}
+.h .tag{margin-left:auto;padding:1px 7px;border-radius:3px;background:var(--hot);color:#12020c;font-weight:700;letter-spacing:.06em}
+@keyframes blink{50%{opacity:.25}}
+.big{font-size:34px;font-weight:700;letter-spacing:-.02em;text-shadow:0 0 18px rgba(255,45,149,.35)}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:3px 12px;font-size:12px}.kv div:nth-child(odd){color:var(--mute)}.kv div:nth-child(even){text-align:right}
+button{font:inherit;font-size:11.5px;border:1px solid var(--line2);background:#1b1020;color:var(--ink);border-radius:4px;padding:5px 10px;cursor:pointer;letter-spacing:.03em}
+button:hover{border-color:var(--hot);box-shadow:0 0 10px rgba(255,45,149,.35)}button:disabled{opacity:.45;cursor:default;box-shadow:none}
+button.hot{background:var(--hot);border-color:var(--hot);color:#12020c;font-weight:700}button.bad{background:#3a0a18;border-color:var(--bad);color:#ffd3dc}
+input{font:inherit;background:#0b070e;color:var(--ink);border:1px solid var(--line2);border-radius:4px;padding:5px 8px}
+.flex{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.ctl{display:grid;grid-template-columns:1fr 1fr;gap:6px}.ctl input{min-width:0}
+canvas{display:block;width:100%}
+#net{height:440px;cursor:crosshair}
+.netwrap{position:relative}.over{position:absolute;pointer-events:none;font-size:11px;color:var(--mute)}
+.over b{color:var(--ink)}#netstats{left:14px;top:40px;line-height:1.6}#legend{right:14px;top:40px;text-align:right;line-height:1.6}
+.lg{display:inline-block;width:8px;height:8px;border-radius:50%;margin-left:6px;vertical-align:middle}
+#tip{position:fixed;z-index:60;pointer-events:none;background:#140a18ee;border:1px solid var(--hot);border-radius:4px;padding:6px 8px;font-size:11px;max-width:320px;display:none;box-shadow:0 0 16px rgba(255,45,149,.35)}
+table{width:100%;border-collapse:collapse;font-size:11.5px}th,td{text-align:left;padding:4px 6px;border-bottom:1px solid #1f1426;vertical-align:top;white-space:nowrap}
+th{color:var(--dim);font-weight:400;text-transform:uppercase;font-size:10px;letter-spacing:.1em;position:sticky;top:0;background:var(--panel)}
+td.w{white-space:normal}.scroll{max-height:300px;overflow:auto}.scroll.tall{max-height:480px}
+tr[data-id]:hover td{background:#1d1022;cursor:pointer}
+.pill{display:inline-block;padding:0 6px;border-radius:3px;background:#22152a;font-size:10.5px}
+.s-running{color:var(--good)}.s-idle_no_signal{color:var(--hot2)}.s-warming,.s-paused{color:var(--warn)}.s-data_unavailable,.s-degraded{color:var(--bad)}.s-disabled,.s-stopped{color:var(--dim)}
+.tiles{display:grid;gap:8px;grid-template-columns:repeat(auto-fit,minmax(112px,1fr))}
+.tile{border:1px solid var(--line);border-radius:5px;padding:6px 8px;cursor:pointer;background:#0f0a13}.tile b{display:block;font-size:20px}.tile span{color:var(--mute);font-size:10px;text-transform:uppercase;letter-spacing:.08em}
+.tile.sel{border-color:var(--hot);box-shadow:0 0 12px rgba(255,45,149,.3)}
+#log{height:220px;overflow:auto;font-size:11px;line-height:1.55;background:#08050a;border:1px solid #1d1223;border-radius:4px;padding:6px 8px}
+#log div{white-space:nowrap}#log .t{color:var(--dim)}
+.banner{padding:8px 12px;border-radius:5px;border:1px solid var(--bad);background:#2a0712;color:#ffd6de}
+#drawer{position:fixed;inset:0 0 0 auto;width:min(760px,100%);background:#0e0912f5;border-left:1px solid var(--hot);box-shadow:-10px 0 40px rgba(255,45,149,.2);overflow:auto;padding:16px;display:none;z-index:40}
+#drawer.open{display:block}#drawer h2{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--mute);margin:14px 0 6px}
+.pass{color:var(--good)}.fail{color:var(--bad)}.unk{color:var(--dim)}pre{white-space:pre-wrap;font:inherit;font-size:11px;color:#dccfe3}
+.streak{font-size:42px;font-weight:800;color:var(--hot);text-shadow:0 0 20px rgba(255,45,149,.7)}
+.muted{color:var(--mute)}.small{font-size:11px}
+@media (prefers-reduced-motion:reduce){.h .dot{animation:none}}
 </style>
 </head>
 <body>
-<header>
-  <div><h1>Bot Fleet <span class="pill" id="mode">paper trading</span></h1><div class="muted" id="sub">loading...</div></div>
-  <div class="flex">
-    <button id="bPause">Pause entries</button><button id="bResume">Resume</button>
-    <button class="danger" id="bStop">Emergency stop</button><button id="bClear">Clear emergency</button>
-  </div>
-</header>
+<div class="top">
+  <div class="logo"><i></i>HIVE&nbsp;FLEET <small>paper trading · no real money</small></div>
+  <div id="tickers" class="flex" style="gap:18px;flex-wrap:nowrap"></div>
+  <div class="tick"><b id="tTrades">–</b><span>trades</span></div>
+  <div class="tick"><b id="tWin">–</b><span>win rate</span></div>
+  <div id="clock">--:--:--</div>
+</div>
 <main>
   <div id="emerg"></div>
-  <section class="panel"><h2>Bots by state</h2><div class="tiles" id="tiles"></div></section>
-  <div class="row">
-    <section class="panel"><h2>Paper account</h2><div class="kv" id="acct"></div>
-      <div class="flex" style="margin-top:10px"><input id="amt" type="number" min="0" step="100" placeholder="amount" style="width:130px">
-      <button id="bSet" class="primary">Set balance</button><button id="bDep">Deposit</button><button id="bWd">Withdraw</button></div>
-      <p class="muted" style="font-size:12px">Balance changes are cash flows: returns are time-weighted, so they never count as profit or loss. Real-money trading is disabled in this build.</p>
+  <div class="row r3">
+    <section class="p glow"><div class="h"><span class="dot"></span>Wallet · paper<span class="tag" id="liveTag">LIVE</span></div>
+      <div class="big" id="eqBig">–</div><div class="small muted" id="eqSub"></div>
+      <div class="kv" id="acct" style="margin-top:8px"></div>
+      <div class="ctl" style="margin-top:10px"><button id="bPause">Pause</button><button id="bResume">Resume</button>
+        <button class="bad" id="bStop">Emergency stop</button><button id="bClear">Clear stop</button></div>
+      <div class="ctl" style="margin-top:6px"><input id="amt" type="number" min="0" step="100" placeholder="amount">
+        <button class="hot" id="bSet">Set balance</button><button id="bDep">Deposit</button><button id="bWd">Withdraw</button></div>
     </section>
-    <section class="panel"><h2>Equity</h2><div id="eq"></div></section>
-    <section class="panel"><h2>System</h2><div class="kv" id="sys"></div></section>
+    <section class="p"><div class="h"><span class="dot"></span><span id="chartTitle">Price</span><span style="margin-left:auto" class="flex" id="chartPick"></span></div>
+      <canvas id="chart" height="230"></canvas></section>
+    <section class="p glow"><div class="h"><span class="dot"></span>#1 bot · live streak</div>
+      <div class="flex" style="align-items:baseline;gap:10px"><div class="streak" id="stN">–</div><div><b id="stBot">waiting for closed trades</b><div class="small muted" id="stSub"></div></div></div>
+      <canvas id="stSpark" height="90" style="margin-top:6px"></canvas>
+      <div class="kv" id="stKv" style="margin-top:6px"></div></section>
   </div>
-  <section class="panel"><h2>Bots</h2>
-    <div class="flex" style="margin-bottom:8px"><input id="q" placeholder="filter by id, strategy, instrument, state" style="flex:1;min-width:200px"><span class="muted" id="count"></span></div>
-    <div class="scroll"><table><thead><tr><th>Bot</th><th>Strategy</th><th>Market</th><th>State</th><th>Position</th><th>Last decision</th></tr></thead><tbody id="bots"></tbody></table></div>
+  <section class="p netwrap"><div class="h"><span class="dot"></span>Fleet brain · every bot connected<span style="margin-left:auto" class="muted" id="brainMode"></span></div>
+    <canvas id="net"></canvas>
+    <div class="over" id="netstats"></div>
+    <div class="over" id="legend">long<span class="lg" style="background:var(--good)"></span><br>short<span class="lg" style="background:var(--bad)"></span><br>
+      signal<span class="lg" style="background:var(--hot)"></span><br>scanning<span class="lg" style="background:#7a4d8f"></span><br>warming / no data<span class="lg" style="background:var(--warn)"></span><br>
+      <span class="small">pulses: bot → brain decision · brain → bot lesson</span></div>
   </section>
-  <div class="row">
-    <section class="panel"><h2>Shared data series</h2><div class="scroll"><table><thead><tr><th>Series</th><th>Status</th><th>Bars</th><th>Bots</th><th>Fetches</th></tr></thead><tbody id="series"></tbody></table></div></section>
-    <section class="panel"><h2>Alerts and events</h2><div class="scroll"><table><tbody id="events"></tbody></table></div></section>
+  <div class="row r3b">
+    <section class="p"><div class="h"><span class="dot"></span>Equity · time-weighted</div><canvas id="eq" height="200"></canvas></section>
+    <section class="p"><div class="h"><span class="dot"></span>Recent trades</div><div class="scroll"><table><thead><tr><th>exit</th><th>bot</th><th>mkt</th><th>side</th><th>p&amp;l</th><th>R</th><th>why</th></tr></thead><tbody id="trades"></tbody></table></div></section>
+    <section class="p"><div class="h"><span class="dot"></span>R distribution · brain calibration</div><canvas id="hist" height="110"></canvas><canvas id="calib" height="110" style="margin-top:6px"></canvas>
+      <div class="small muted" id="calibTxt"></div></section>
   </div>
-  <section class="panel"><h2>Recent trades</h2><div class="scroll"><table><thead><tr><th>Exit</th><th>Bot</th><th>Market</th><th>Side</th><th>Entry</th><th>Exit</th><th>P&amp;L</th><th>R</th><th>Why it closed</th></tr></thead><tbody id="trades"></tbody></table></div></section>
+  <div class="row r3b">
+    <section class="p" style="grid-column:span 2"><div class="h"><span class="dot"></span>Execution log · live</div><div id="log"></div></section>
+    <section class="p"><div class="h"><span class="dot"></span>Brain · what it learned</div><div class="kv" id="brainKv"></div>
+      <div class="small muted" style="margin:8px 0 4px">best / worst strategies (learned R per trade)</div><div id="brainBest" class="small"></div></section>
+  </div>
+  <section class="p"><div class="h"><span class="dot"></span>Bots by state</div><div class="tiles" id="tiles"></div></section>
+  <section class="p"><div class="h"><span class="dot"></span>Bots<span style="margin-left:auto" class="flex"><input id="q" placeholder="filter: id, strategy, market, state" style="width:260px"><span class="muted" id="count"></span></span></div>
+    <div class="scroll tall"><table><thead><tr><th>bot</th><th>strategy</th><th>market</th><th>state</th><th>position</th><th>last decision</th></tr></thead><tbody id="bots"></tbody></table></div></section>
+  <div class="row r3b">
+    <section class="p"><div class="h"><span class="dot"></span>Shared data series</div><div class="scroll"><table><thead><tr><th>series</th><th>status</th><th>bars</th><th>bots</th><th>polls</th></tr></thead><tbody id="series"></tbody></table></div></section>
+    <section class="p"><div class="h"><span class="dot"></span>Alerts</div><div class="scroll"><table><tbody id="events"></tbody></table></div></section>
+    <section class="p"><div class="h"><span class="dot"></span>System</div><div class="kv" id="sys"></div></section>
+  </div>
 </main>
-<aside id="drawer"></aside>
+<aside id="drawer"></aside><div id="tip"></div>
 <script>
-const TOKEN="__TOKEN__";let bots=[],stateFilter=null;
-const $=id=>document.getElementById(id);
-const fmt=(v,d=2)=>v==null?"n/a":(typeof v==="number"?v.toLocaleString(undefined,{maximumFractionDigits:d}):String(v));
-const t=ms=>ms?new Date(ms).toLocaleString():"n/a";
-const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const TOKEN="__TOKEN__";const $=id=>document.getElementById(id);
+const RM=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+let S={},BOTS=[],BRAIN={},TR=[],EQ=[],TICK=[],CHART={key:null,data:null},stateFilter=null,seenRecent=0;
+const fmt=(v,d=2)=>v==null||isNaN(v)?"–":Number(v).toLocaleString(undefined,{maximumFractionDigits:d,minimumFractionDigits:d>2?0:Math.min(d,2)});
+const t=ms=>ms?new Date(ms).toLocaleString():"–";const hm=ms=>ms?new Date(ms).toLocaleTimeString():"–";
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 async function get(p){const r=await fetch(p,{cache:"no-store"});return r.json()}
 async function control(command,args={}){const r=await fetch("/api/control",{method:"POST",headers:{"Content-Type":"application/json","X-CSRF-Token":TOKEN},body:JSON.stringify({command,args})});const j=await r.json();if(j.error)alert(j.error);refresh();return j}
 $("bPause").onclick=()=>control("pause");$("bResume").onclick=()=>control("resume");
 $("bStop").onclick=()=>{if(confirm("Emergency stop: close every paper position now and block new trades until cleared?"))control("emergency_stop",{reason:"operator"})};
 $("bClear").onclick=()=>control("clear_emergency");
-const amt=()=>{const v=parseFloat($("amt").value);if(!(v>=0)){alert("Enter an amount");throw 0}return v};
+const amt=()=>{const v=parseFloat($("amt").value);if(!(v>=0)){alert("Enter an amount first");throw new Error("no amount")}return v};
 $("bSet").onclick=()=>control("set_balance",{amount:amt()});$("bDep").onclick=()=>control("deposit",{amount:amt()});$("bWd").onclick=()=>control("withdraw",{amount:amt()});
 $("q").oninput=renderBots;
+setInterval(()=>{$("clock").textContent=new Date().toLocaleTimeString()},1000);
+/* ---------------- canvases ---------------- */
+function fit(c){const r=c.getBoundingClientRect(),d=devicePixelRatio||1;if(!c.dataset.h)c.dataset.h=c.id==="net"?c.clientHeight:(parseFloat(c.getAttribute("height"))||150);const h=+c.dataset.h;
+ if(c.width!==Math.round(r.width*d)){c.width=Math.round(r.width*d);c.height=Math.round(h*d)}const x=c.getContext("2d");x.setTransform(d,0,0,d,0,0);return[x,r.width,h]}
+function area(c,vals,color="#ff2d95",label=true,empty="waiting for data"){const[x,w,h]=fit(c);x.clearRect(0,0,w,h);x.font="11px monospace";if(!vals||vals.length<2){x.fillStyle="#6d5c75";x.fillText(empty,10,20);return}
+ const mn=Math.min(...vals),mx=Math.max(...vals),p=6,px=i=>p+i*(w-2*p-(label?64:0))/(vals.length-1),py=v=>h-p-(mx===mn?.5:(v-mn)/(mx-mn))*(h-2*p-12);
+ x.strokeStyle="#241728";x.lineWidth=1;for(let k=1;k<4;k++){const y=k*h/4;x.beginPath();x.moveTo(0,y);x.lineTo(w,y);x.stroke()}
+ const g=x.createLinearGradient(0,0,0,h);g.addColorStop(0,color+"66");g.addColorStop(1,color+"00");
+ x.beginPath();vals.forEach((v,i)=>i?x.lineTo(px(i),py(v)):x.moveTo(px(i),py(v)));x.lineTo(px(vals.length-1),h);x.lineTo(px(0),h);x.closePath();x.fillStyle=g;x.fill();
+ x.beginPath();vals.forEach((v,i)=>i?x.lineTo(px(i),py(v)):x.moveTo(px(i),py(v)));x.strokeStyle=color;x.lineWidth=1.6;x.shadowColor=color;x.shadowBlur=8;x.stroke();x.shadowBlur=0;
+ if(label){const lv=vals[vals.length-1],y=py(lv);x.fillStyle=color;x.fillRect(w-62,y-9,60,18);x.fillStyle="#12020c";x.font="bold 11px monospace";x.fillText(fmt(lv,lv>100?2:4),w-58,y+4);
+ x.fillStyle="#9b8aa3";x.font="10px monospace";x.fillText("high "+fmt(mx,mx>100?2:4),8,12);x.fillText("low "+fmt(mn,mn>100?2:4),8,h-4)}}
+function bars(c,vals,labels,color,empty){const[x,w,h]=fit(c);x.clearRect(0,0,w,h);x.font="11px monospace";
+ if(empty&&!vals.some(v=>v)){x.fillStyle="#6d5c75";x.fillText(empty,10,20);return}const mx=Math.max(1,...vals.map(v=>v||0)),bw=w/vals.length;
+ vals.forEach((v,i)=>{const bh=(v||0)/mx*(h-16);x.fillStyle=typeof color==="function"?color(i):color;x.shadowColor=x.fillStyle;x.shadowBlur=6;x.fillRect(i*bw+1,h-12-bh,Math.max(1,bw-2),bh)});x.shadowBlur=0;
+ x.fillStyle="#6d5c75";x.font="9px monospace";labels.forEach((l,i)=>{if(l!=null)x.fillText(l,i*bw+2,h-2)})}
+/* ---------------- 3D fleet brain ---------------- */
+const NET={nodes:[],pulses:[],parts:[],rot:0,hover:null,byId:{}};
+function layoutNodes(){const n=BOTS.length;if(NET.nodes.length===n&&n)return;NET.nodes=[];NET.byId={};const g=Math.PI*(3-Math.sqrt(5));
+ BOTS.forEach((b,i)=>{const y=1-(i/(Math.max(1,n-1)))*2,r=Math.sqrt(1-y*y),th=g*i,node={id:b.bot_id,x:Math.cos(th)*r,y,z:Math.sin(th)*r,b};NET.nodes.push(node);NET.byId[b.bot_id]=node});
+ const byInst={};NET.nodes.forEach(n=>(byInst[n.b.instrument]=byInst[n.b.instrument]||[]).push(n));NET.links=[];Object.values(byInst).forEach(g=>{for(let i=1;i<g.length;i++)NET.links.push([g[i-1],g[i]])});
+ if(!NET.parts.length)for(let i=0;i<140;i++)NET.parts.push({x:Math.random(),y:Math.random(),v:.0002+Math.random()*.0006,s:Math.random()*1.6+.3,c:Math.random()<.5?"#ff2d95":(Math.random()<.5?"#35f29a":"#ff4d6d")})}
+function nodeColor(b){if(b.position)return b.position.startsWith("long")?"#35f29a":"#ff4d6d";if(b.state==="running")return"#ff2d95";if(b.state==="idle_no_signal")return"#7a4d8f";
+ if(b.state==="warming"||b.state==="data_unavailable"||b.state==="degraded")return"#ffb84d";return"#3a2b40"}
+function drawNet(ts){const c=$("net"),[x,w,h]=fit(c);x.clearRect(0,0,w,h);
+ NET.parts.forEach(p=>{p.y-=RM?0:p.v;if(p.y<0)p.y=1;x.globalAlpha=.55;x.fillStyle=p.c;x.beginPath();x.arc(p.x*w,p.y*h,p.s,0,7);x.fill()});x.globalAlpha=1;
+ NET.rot+=RM?.0006:.0032;const cx=w/2,cy=h/2,R=Math.min(w*.36,h*.42),F=3.2,tilt=.38,ca=Math.cos(NET.rot),sa=Math.sin(NET.rot),ct=Math.cos(tilt),st=Math.sin(tilt);
+ const P=n=>{let X=n.x*ca-n.z*sa,Z=n.x*sa+n.z*ca,Y=n.y*ct-Z*st;Z=n.y*st+Z*ct;const k=F/(F+Z);return{x:cx+X*R*k,y:cy+Y*R*k,k,z:Z}};
+ NET.nodes.forEach(n=>n.p=P(n));
+ (NET.links||[]).forEach(([a,b])=>{x.strokeStyle=`rgba(255,110,196,${.05+.1*(a.p.k+b.p.k-1.2)})`;x.lineWidth=.6;x.beginPath();x.moveTo(a.p.x,a.p.y);x.lineTo(b.p.x,b.p.y);x.stroke()});
+ NET.nodes.forEach(n=>{const a=Math.max(.04,.28*(n.p.k-.55));x.strokeStyle=`rgba(255,45,149,${a})`;x.lineWidth=.5;x.beginPath();x.moveTo(cx,cy);x.lineTo(n.p.x,n.p.y);x.stroke()});
+ const pulse=1+.08*Math.sin(ts/420);const core=x.createRadialGradient(cx,cy,2,cx,cy,46*pulse);core.addColorStop(0,"#ffe3f3");core.addColorStop(.25,"#ff2d95");core.addColorStop(1,"rgba(255,45,149,0)");
+ x.fillStyle=core;x.beginPath();x.arc(cx,cy,46*pulse,0,7);x.fill();x.strokeStyle="rgba(255,110,196,.5)";x.lineWidth=1;for(let k=0;k<3;k++){x.beginPath();x.ellipse(cx,cy,60+k*18,(60+k*18)*.34,NET.rot*(k%2?-1:1),0,7);x.stroke()}
+ x.fillStyle="#12020c";x.font="bold 10px monospace";x.textAlign="center";x.fillText("BRAIN",cx,cy+3);x.textAlign="start";
+ NET.pulses=NET.pulses.filter(p=>p.t<1);NET.pulses.forEach(p=>{p.t+=RM?1:.018;const n=NET.byId[p.id];if(!n)return;const a=p.dir>0?{x:n.p.x,y:n.p.y}:{x:cx,y:cy},b=p.dir>0?{x:cx,y:cy}:{x:n.p.x,y:n.p.y};
+  const X=a.x+(b.x-a.x)*p.t,Y=a.y+(b.y-a.y)*p.t;x.fillStyle=p.c;x.shadowColor=p.c;x.shadowBlur=12;x.beginPath();x.arc(X,Y,2.6,0,7);x.fill();x.shadowBlur=0});
+ [...NET.nodes].sort((a,b)=>b.p.z-a.p.z).forEach(n=>{const col=nodeColor(n.b),r=1.4+3.2*n.p.k*n.p.k;x.globalAlpha=Math.min(1,.35+.75*(n.p.k-.5));x.fillStyle=col;
+  if(n.b.position||n.b.state==="running"){x.shadowColor=col;x.shadowBlur=10}x.beginPath();x.arc(n.p.x,n.p.y,r,0,7);x.fill();x.shadowBlur=0});x.globalAlpha=1;
+ if(NET.hover){const n=NET.hover;x.strokeStyle="#fff";x.lineWidth=1;x.beginPath();x.arc(n.p.x,n.p.y,8,0,7);x.stroke()}
+ requestAnimationFrame(drawNet)}
+$("net").addEventListener("mousemove",e=>{const r=e.target.getBoundingClientRect(),mx=e.clientX-r.left,my=e.clientY-r.top;let best=null,bd=144;
+ NET.nodes.forEach(n=>{if(!n.p)return;const d=(n.p.x-mx)**2+(n.p.y-my)**2;if(d<bd&&n.p.z<.4){bd=d;best=n}});NET.hover=best;const tp=$("tip");
+ if(best){const b=best.b;tp.style.display="block";tp.style.left=(e.clientX+14)+"px";tp.style.top=(e.clientY+10)+"px";
+  tp.innerHTML=`<b>${esc(b.bot_id)}</b> · ${esc(b.strategy_id)}<br>${esc(b.venue)} ${esc(b.instrument)} ${esc(b.tf)}<br><span class="s-${esc(b.state)}">${esc(b.state)}</span> ${esc(b.position||"")}<br><span class="muted">${esc(b.last_decision||"")}</span>`}else tp.style.display="none"});
+$("net").addEventListener("mouseleave",()=>{$("tip").style.display="none";NET.hover=null});
+$("net").addEventListener("click",()=>{if(NET.hover)openBot(NET.hover.id)});
+function spawnPulses(){const rec=(BRAIN.recent||[]);rec.forEach(r=>{if(r.time<=seenRecent)return;NET.pulses.push({id:r.bot_id,t:0,dir:r.kind==="decision"?1:-1,
+ c:r.kind==="lesson"?(r.r>0?"#35f29a":"#ff4d6d"):(r.action==="veto"?"#ff4d6d":"#ffe3f3")})});if(rec.length)seenRecent=Math.max(seenRecent,...rec.map(r=>r.time));
+ if(!rec.length&&!RM&&NET.nodes.length){for(let k=0;k<3;k++){const n=NET.nodes[(Math.random()*NET.nodes.length)|0];if(n.b.state==="running"||n.b.state==="idle_no_signal")NET.pulses.push({id:n.id,t:0,dir:1,c:"#ff6ec4"})}}}
+/* ---------------- panels ---------------- */
 const STATES=["running","warming","idle_no_signal","data_unavailable","degraded","stopped","disabled","paused"];
-function renderTiles(s){const c=s.bot_states||{};let h=`<div class="tile" data-s=""><b>${fmt(s.configured??s.bots,0)}</b><span>configured</span></div><div class="tile" data-s=""><b>${fmt(s.enabled,0)}</b><span>enabled</span></div>`;
-for(const k of STATES)h+=`<div class="tile ${stateFilter===k?"sel":""}" data-s="${k}"><b class="s-${k}">${fmt(c[k]||0,0)}</b><span>${k.replace(/_/g," ")}</span></div>`;
-$("tiles").innerHTML=h;for(const el of $("tiles").children)el.onclick=()=>{stateFilter=el.dataset.s||null;renderTiles(s);renderBots()}}
-function renderBots(){const q=$("q").value.toLowerCase();const rows=bots.filter(b=>(!stateFilter||b.state===stateFilter)&&(!q||JSON.stringify(b).toLowerCase().includes(q)));
-$("count").textContent=`${rows.length} of ${bots.length}`;
-$("bots").innerHTML=rows.slice(0,400).map(b=>`<tr style="cursor:pointer" data-id="${esc(b.bot_id)}"><td class="mono">${esc(b.bot_id)}</td><td>${esc(b.strategy_id||"")}<div class="muted">${esc(b.family||"")}</div></td><td>${esc(b.venue||"")} ${esc(b.instrument||"")} ${esc(b.tf||"")}</td><td><span class="pill s-${esc(b.state)}">${esc((b.state||"").replace(/_/g," "))}</span><div class="muted">${esc(b.message||"")}</div></td><td>${esc(b.position||"")}</td><td>${esc(b.last_decision||"")}</td></tr>`).join("");
-for(const tr of $("bots").children)tr.onclick=()=>openBot(tr.dataset.id)}
-function spark(rows){if(!rows.length)return'<p class="muted">no equity records yet</p>';const v=rows.map(r=>r.equity),mn=Math.min(...v),mx=Math.max(...v),w=600,h=120,p=4;
-const x=i=>p+i*(w-2*p)/Math.max(1,v.length-1),y=e=>h-p-(mx===mn?0.5:(e-mn)/(mx-mn))*(h-2*p);
-return`<svg viewBox="0 0 ${w} ${h}" role="img" aria-label="equity"><polyline fill="none" stroke="var(--accent)" stroke-width="2" points="${v.map((e,i)=>x(i)+","+y(e)).join(" ")}"/></svg><div class="flex muted" style="justify-content:space-between"><span>${fmt(mn)}</span><span>${t(rows[rows.length-1].time)}</span><span>${fmt(mx)}</span></div>`}
+function renderTiles(){const c=S.bot_states||{};let h=`<div class="tile" data-s=""><b>${fmt(S.configured??S.bots,0)}</b><span>configured</span></div><div class="tile" data-s=""><b>${fmt(S.enabled,0)}</b><span>enabled</span></div>`;
+ for(const k of STATES)h+=`<div class="tile ${stateFilter===k?"sel":""}" data-s="${k}"><b class="s-${k}">${fmt(c[k]||0,0)}</b><span>${k.replace(/_/g," ")}</span></div>`;
+ $("tiles").innerHTML=h;for(const el of $("tiles").children)el.onclick=()=>{stateFilter=el.dataset.s||null;renderTiles();renderBots()}}
+function renderBots(){const q=$("q").value.toLowerCase();const rows=BOTS.filter(b=>(!stateFilter||b.state===stateFilter)&&(!q||JSON.stringify(b).toLowerCase().includes(q)));
+ $("count").textContent=`${rows.length} of ${BOTS.length}`;
+ $("bots").innerHTML=rows.slice(0,400).map(b=>`<tr data-id="${esc(b.bot_id)}"><td>${esc(b.bot_id)}</td><td>${esc(b.strategy_id||"")} <span class="muted">${esc(b.family||"")}</span></td><td>${esc(b.venue||"")} ${esc(b.instrument||"")} ${esc(b.tf||"")}</td><td><span class="pill s-${esc(b.state)}">${esc((b.state||"").replace(/_/g," "))}</span></td><td>${esc(b.position||"")}</td><td class="w">${esc(b.last_decision||b.message||"")}</td></tr>`).join("");
+ for(const tr of $("bots").children)tr.onclick=()=>openBot(tr.dataset.id)}
 async function openBot(id){const d=await get("/api/bot/"+encodeURIComponent(id));const s=d.last_signal||(d.recent_signals||[])[0]||{};
-const rules=(s.rules||[]).map(r=>`<tr><td class="${r.passed===true?"pass":r.passed===false?"fail":"unk"}">${r.passed===true?"pass":r.passed===false?"fail":"unknown"}</td><td class="mono">${esc(r.rule)}</td><td class="mono">${esc(r.detail)}</td><td>${esc(r.group||"")}</td></tr>`).join("");
-const feats=Object.entries(s.features||{}).map(([k,v])=>`<tr><td class="mono">${esc(k)}</td><td class="mono">${esc(fmt(v,6))}</td></tr>`).join("");
-const tr=(d.trades_list||[]).map(x=>`<tr><td>${t(x.exit_time)}</td><td>${x.side>0?"long":"short"}</td><td>${fmt(x.entry_price,6)}</td><td>${fmt(x.exit_price,6)}</td><td>${fmt(x.pnl)}</td><td>${fmt(x.r)}</td><td>${esc(x.exit_reason)}</td></tr>`).join("");
-const risk=(d.risk||[]).map(r=>`<tr><td>${t(r.time)}</td><td>${r.approved?"approved":"blocked"}</td><td>${(r.checks||[]).filter(c=>!c.passed).map(c=>esc(c.check+(c.detail?": "+c.detail:""))).join("; ")||"all checks passed"}</td></tr>`).join("");
-const sig=(d.recent_signals||[]).map(x=>`<tr><td>${t(x.bar_time)}</td><td>${esc(x.action)}</td><td>${esc(x.reason)}</td></tr>`).join("");
-$("drawer").innerHTML=`<div class="flex" style="justify-content:space-between"><h1>${esc(id)}</h1><button onclick="document.getElementById('drawer').classList.remove('open')">Close</button></div>
-<p>${esc(d.strategy_name||"")} <span class="pill">${esc(d.strategy_id||"")}</span> on ${esc(d.venue||"")} ${esc(d.instrument||"")} ${esc(d.timeframe||"")}</p>
-<div class="flex"><span class="pill s-${esc(d.state)}">${esc(d.state||"")}</span><span class="muted">${esc(d.message||"")}</span>
-${d.enabled===false?`<button onclick="control('enable_bot',{bot_id:'${esc(id)}'})">Enable</button>`:`<button onclick="control('disable_bot',{bot_id:'${esc(id)}'})">Disable</button>`}</div>
-<h2 style="margin-top:14px">Latest decision</h2><p><b>${esc(s.action||"none yet")}</b> ${esc(s.reason||"")} <span class="muted">${t(s.bar_time)}</span></p>
-<table><thead><tr><th>Outcome</th><th>Rule</th><th>Values</th><th>Part</th></tr></thead><tbody>${rules||'<tr><td colspan=4 class="muted">rule detail is recorded for entries, exits and skipped signals</td></tr>'}</tbody></table>
-<h2 style="margin-top:14px">Indicator values</h2><table><tbody>${feats||'<tr><td class="muted">none recorded</td></tr>'}</tbody></table>
-<h2 style="margin-top:14px">Position</h2><pre class="mono">${esc(JSON.stringify(d.position,null,1)||"flat")}</pre>
-<h2 style="margin-top:14px">Rules as configured</h2><pre class="mono" style="white-space:pre-wrap">${esc(JSON.stringify(d.rules,null,1)||"")}</pre>
-<h2>Recent decisions</h2><table><tbody>${sig}</tbody></table>
-<h2 style="margin-top:14px">Risk decisions</h2><table><tbody>${risk||'<tr><td class="muted">none</td></tr>'}</tbody></table>
-<h2 style="margin-top:14px">Trades</h2><table><thead><tr><th>Exit</th><th>Side</th><th>Entry</th><th>Exit</th><th>P&amp;L</th><th>R</th><th>Why</th></tr></thead><tbody>${tr||'<tr><td colspan=7 class="muted">no trades yet</td></tr>'}</tbody></table>`;
-$("drawer").classList.add("open")}
-async function refresh(){try{const [s,b,ser,ev,tr,eq]=await Promise.all([get("/api/summary"),get("/api/bots"),get("/api/series"),get("/api/events"),get("/api/trades?limit=100"),get("/api/equity")]);
-bots=b;renderTiles(s);renderBots();const a=s.account||{};
-$("sub").textContent=`${fmt(s.bots,0)} bots on ${fmt(s.series,0)} shared data series · ${s.source||""} · updated ${new Date().toLocaleTimeString()}`;
-$("emerg").innerHTML=s.emergency?`<div class="banner">Emergency stop active: ${esc(s.emergency.reason)} (${t(s.emergency.time)}). New trades are blocked until cleared.</div>`:(s.paused?`<div class="banner" style="background:var(--warn)">Paused: no new entries. Open positions keep their stops and exits.</div>`:"");
-$("acct").innerHTML=[["Equity",fmt(a.equity)+" "+(a.currency||"")],["Free cash",fmt(a.cash)],["Open positions",fmt(a.open_positions,0)],["Gross exposure",fmt(a.gross_exposure)+(a.gross_exposure_pct!=null?` (${fmt(a.gross_exposure_pct,1)}%)`:"")],["Realized P&L",fmt(a.realized_pnl)],["Fees paid",fmt(a.fees)],["Time-weighted return",a.twr!=null?fmt(100*a.twr,3)+"%":"n/a"],["Sizing slot",fmt(a.slot_equity)+` (1/${a.slots})`]].map(([k,v])=>`<div>${k}</div><div>${v}</div>`).join("");
-$("sys").innerHTML=[["Uptime",fmt((s.uptime_s||0)/60,1)+" min"],["Evaluations",`${fmt(s.completed_evaluations,0)} of ${fmt(s.scheduled_evaluations,0)} scheduled`],["Decision time p95",fmt(s.eval_ms_p95,1)+" ms"],["Bar close to decision p95",s.latency_ms_p95!=null?fmt(s.latency_ms_p95/1000,1)+" s":"n/a"],["Data requests",`${fmt(s.requests,0)} (${fmt(100*(s.rate_429||0),2)}% rate-limited)`],["Memory",fmt(s.rss_mb,0)+" MB (peak "+fmt(s.peak_rss_mb,0)+")"],["Database",fmt((s.db_bytes||0)/1048576,1)+" MB"],["Storage",s.storage_ok===false?"FAILING":"ok"]].map(([k,v])=>`<div>${k}</div><div>${v}</div>`).join("");
-$("eq").innerHTML=spark(eq);
-$("series").innerHTML=(ser.series||[]).map(x=>`<tr><td class="mono">${esc(x.key)}</td><td><span class="pill">${esc(x.status)}</span><div class="muted">${esc(x.last_fetch_error||x.last_issue||"")}</div></td><td>${x.bars}/${x.need}</td><td>${x.subscribers}</td><td>${x.fetches}</td></tr>`).join("")||`<tr><td class="muted">${esc(ser.note||"")}</td></tr>`;
-$("events").innerHTML=ev.map(e=>`<tr><td class="muted" style="white-space:nowrap">${t(e.time)}</td><td><span class="pill">${esc(e.level)}</span></td><td>${esc(e.message)}</td></tr>`).join("");
-$("trades").innerHTML=tr.map(x=>`<tr><td>${t(x.exit_time)}</td><td class="mono">${esc(x.bot_id)}</td><td>${esc(x.instrument)}</td><td>${x.side>0?"long":"short"}</td><td>${fmt(x.entry_price,6)}</td><td>${fmt(x.exit_price,6)}</td><td class="${x.pnl>=0?"pass":"fail"}">${fmt(x.pnl)}</td><td>${fmt(x.r)}</td><td>${esc(x.exit_reason)}</td></tr>`).join("")||'<tr><td class="muted">no closed trades yet</td></tr>';
-}catch(e){$("sub").textContent="dashboard cannot reach the fleet: "+e}}
-refresh();setInterval(refresh,5000);
+ const rules=(s.rules||[]).map(r=>`<tr><td class="${r.passed===true?"pass":r.passed===false?"fail":"unk"}">${r.passed===true?"pass":r.passed===false?"fail":"unknown"}</td><td class="w">${esc(r.rule)}</td><td class="w">${esc(r.detail)}</td><td>${esc(r.group||"")}</td></tr>`).join("");
+ const feats=Object.entries(s.features||{}).map(([k,v])=>`<tr><td class="w">${esc(k)}</td><td>${esc(fmt(v,6))}</td></tr>`).join("");
+ const tr=(d.trades_list||[]).map(x=>`<tr><td>${t(x.exit_time)}</td><td>${x.side>0?"long":"short"}</td><td>${fmt(x.entry_price,6)}</td><td>${fmt(x.exit_price,6)}</td><td class="${x.pnl>=0?"up":"dn"}">${fmt(x.pnl)}</td><td>${fmt(x.r)}</td><td class="w">${esc(x.exit_reason)}</td></tr>`).join("");
+ const risk=(d.risk||[]).map(r=>`<tr><td>${t(r.time)}</td><td>${r.approved?"approved":"blocked"}</td><td class="w">${(r.checks||[]).filter(c=>!c.passed).map(c=>esc(c.check+(c.detail?": "+c.detail:""))).join("; ")||"all checks passed"}</td></tr>`).join("");
+ const sig=(d.recent_signals||[]).map(x=>`<tr><td>${t(x.bar_time)}</td><td>${esc(x.action)}</td><td class="w">${esc(x.reason)}</td></tr>`).join("");
+ $("drawer").innerHTML=`<div class="flex" style="justify-content:space-between"><h1 style="font-size:16px;margin:0">${esc(id)}</h1><button onclick="document.getElementById('drawer').classList.remove('open')">Close</button></div>
+ <p>${esc(d.strategy_name||"")} <span class="pill">${esc(d.strategy_id||"")}</span> on ${esc(d.venue||"")} ${esc(d.instrument||"")} ${esc(d.timeframe||"")}</p>
+ <div class="flex"><span class="pill s-${esc(d.state)}">${esc(d.state||"")}</span><span class="muted">${esc(d.message||"")}</span>
+ ${d.enabled===false?`<button onclick="control('enable_bot',{bot_id:'${esc(id)}'}).then(()=>openBot('${esc(id)}'))">Enable</button>`:`<button onclick="control('disable_bot',{bot_id:'${esc(id)}'}).then(()=>openBot('${esc(id)}'))">Disable</button>`}</div>
+ <h2>Latest decision</h2><p><b>${esc(s.action||"none yet")}</b> ${esc(s.reason||"")} <span class="muted">${t(s.bar_time)}</span></p>
+ <table><thead><tr><th>outcome</th><th>rule</th><th>values</th><th>part</th></tr></thead><tbody>${rules||'<tr><td colspan=4 class="muted">rule detail is recorded for entries, exits and skipped signals</td></tr>'}</tbody></table>
+ <h2>Indicator values</h2><table><tbody>${feats||'<tr><td class="muted">none recorded</td></tr>'}</tbody></table>
+ <h2>Position</h2><pre>${esc(JSON.stringify(d.position,null,1)||"flat")}</pre>
+ <h2>Rules as configured</h2><pre>${esc(JSON.stringify(d.rules,null,1)||"")}</pre>
+ <h2>Recent decisions</h2><table><tbody>${sig}</tbody></table>
+ <h2>Risk and brain decisions</h2><table><tbody>${risk||'<tr><td class="muted">none</td></tr>'}</tbody></table>
+ <h2>Trades</h2><table><thead><tr><th>exit</th><th>side</th><th>entry</th><th>exit</th><th>p&amp;l</th><th>R</th><th>why</th></tr></thead><tbody>${tr||'<tr><td colspan=7 class="muted">no trades yet</td></tr>'}</tbody></table>`;
+ $("drawer").classList.add("open")}
+function renderTop(){$("tickers").innerHTML=TICK.map(k=>`<div class="tick" style="cursor:pointer" data-key="${esc(k.key)}"><b>${esc(k.symbol)} <span class="${(k.change||0)>=0?"up":"dn"}">${fmt(k.last,k.last>100?2:4)}</span></b><span>${k.change!=null?((k.change>=0?"+":"")+(100*k.change).toFixed(2)+"%"):""} ${esc(k.venue)}</span></div>`).join("");
+ for(const el of $("tickers").children)el.onclick=()=>{CHART.key=el.dataset.key;loadChart()};
+ const n=TR.length,w=TR.filter(x=>x.pnl>0).length;$("tTrades").textContent=fmt(n,0);$("tWin").textContent=n?(100*w/n).toFixed(1)+"%":"–";
+ $("chartPick").innerHTML=TICK.slice(0,5).map(k=>`<button class="small" data-key="${esc(k.key)}" style="padding:1px 6px;${k.key===CHART.key?"border-color:var(--hot)":""}">${esc(k.symbol)}</button>`).join("");
+ for(const el of $("chartPick").children)el.onclick=()=>{CHART.key=el.dataset.key;loadChart()}}
+async function loadChart(){if(!CHART.key&&TICK.length)CHART.key=TICK[0].key;if(!CHART.key){area($("chart"),[]);return}const d=await get("/api/chart?key="+encodeURIComponent(CHART.key));CHART.data=d;
+ $("chartTitle").textContent=CHART.key.replace(/\//g," · ");area($("chart"),d.c,"#ff2d95",true);renderTop()}
+function renderStreak(){const by={};TR.slice().reverse().forEach(x=>{(by[x.bot_id]=by[x.bot_id]||[]).push(x)});let best=null;
+ Object.entries(by).forEach(([id,l])=>{const pnl=l.reduce((a,x)=>a+x.pnl,0);let st=0;for(let i=l.length-1;i>=0&&l[i].pnl>0;i--)st++;if(!best||pnl>best.pnl)best={id,pnl,st,l}});
+ if(!best){$("stN").textContent="–";area($("stSpark"),[],"#ff2d95",false,"the best bot appears after closed trades");return}
+ $("stN").textContent="× "+best.st;$("stBot").textContent=best.id;$("stSub").textContent=`${best.l.length} trades · ${best.l[0].instrument}`;
+ let acc=0;area($("stSpark"),[0,...best.l.map(x=>acc+=x.pnl)],"#ff2d95",false);
+ $("stKv").innerHTML=[["p&l",`<span class="${best.pnl>=0?"up":"dn"}">${fmt(best.pnl)}</span>`],["win rate",(100*best.l.filter(x=>x.pnl>0).length/best.l.length).toFixed(0)+"%"],["avg R",fmt(best.l.reduce((a,x)=>a+(x.r||0),0)/best.l.length)]].map(([k,v])=>`<div>${k}</div><div>${v}</div>`).join("")}
+function renderBrain(){const b=BRAIN||{};$("brainMode").textContent=`mode: ${b.mode||"–"} · ${fmt(b.connected_bots,0)} bots connected`;
+ $("netstats").innerHTML=`<b>${fmt(b.connected_bots,0)}</b> bots connected<br><b>${fmt(b.trades_learned,0)}</b> trades learned<br><b>${fmt(b.scored,0)}</b> entries scored<br><b>${fmt(b.vetoed,0)}</b> vetoed · <b>${fmt(b.resized,0)}</b> resized<br>priors from <b>${fmt(b.prior_strategies,0)}</b> tested strategies`;
+ $("brainKv").innerHTML=[["trades learned",fmt(b.trades_learned,0)],["learned win rate",b.win_rate!=null?(100*b.win_rate).toFixed(1)+"%":"–"],["avg R learned",fmt(b.avg_r,3)],
+  ["high-score trades",b.high_score_trades?`${b.high_score_trades} · ${fmt(b.high_score_avg_r,3)}R`:"–"],["low-score trades",b.low_score_trades?`${b.low_score_trades} · ${fmt(b.low_score_avg_r,3)}R`:"–"],
+  ["prediction error (Brier)",fmt(b.brier,3)]].map(([k,v])=>`<div>${k}</div><div>${v}</div>`).join("");
+ const row=x=>`<div class="flex" style="justify-content:space-between"><span>${esc(x.strategy_id)} ${esc((x.name||"").slice(0,26))}</span><span class="${x.estimate_r>=0?"up":"dn"}">${fmt(x.estimate_r,3)} (${x.trades})</span></div>`;
+ $("brainBest").innerHTML=(b.best_learned||[]).slice(0,4).map(row).join("")+'<div style="height:6px"></div>'+(b.worst_learned||[]).slice(0,4).map(row).join("")||'<span class="muted">learns from every closed trade</span>';
+ const cal=b.calibration||[];bars($("calib"),cal.map(c=>c.trades?c.actual*100:0),cal.map((c,i)=>i%2?null:(c.predicted*100).toFixed(0)),i=>"#56d8ff","calibration appears after closed trades");
+ $("calibTxt").textContent="bars: actual win % for each predicted win-chance bucket (well calibrated = rising left to right)"}
+function renderHist(){const bins=new Array(12).fill(0);TR.forEach(x=>{if(x.r==null)return;const k=Math.max(0,Math.min(11,Math.floor((x.r+3)*2)));bins[k]++});
+ bars($("hist"),bins,bins.map((_,i)=>i%2?null:(i/2-3).toFixed(0)+"R"),i=>i<6?"#ff4d6d":"#35f29a","R distribution appears after closed trades")}
+function renderLog(ev){const lines=[];(BRAIN.recent||[]).forEach(r=>lines.push({time:r.time,html:r.kind==="decision"?
+  `<span class="${r.action==="veto"?"dn":"hotc"}">${r.action.toUpperCase()}</span> ${esc(r.bot_id)} ${r.side>0?"LONG":"SHORT"} ${esc(r.instrument)} · win ${(100*r.p_win).toFixed(0)}% · edge ${fmt(r.edge,3)}R · size ${fmt(r.size,2)}x`
+  :`<span class="${r.r>0?"up":"dn"}">LEARN</span> ${esc(r.bot_id)} ${esc(r.instrument)} · ${fmt(r.r,2)}R`}));
+ TR.slice(0,40).forEach(x=>lines.push({time:x.exit_time,html:`<span class="${x.pnl>=0?"up":"dn"}">CLOSE</span> ${esc(x.bot_id)} ${esc(x.instrument)} ${x.side>0?"long":"short"} · ${fmt(x.pnl)} · ${esc(x.exit_reason)}`}));
+ (ev||[]).slice(0,40).forEach(e=>lines.push({time:e.time,html:`<span class="${e.level==="critical"||e.level==="error"?"dn":e.level==="warning"?"hotc":"muted"}">${esc(e.level.toUpperCase())}</span> ${esc(e.message)}`}));
+ lines.sort((a,b)=>b.time-a.time);$("log").innerHTML=lines.slice(0,120).map(l=>`<div><span class="t">${hm(l.time)}</span> ${l.html}</div>`).join("")||'<span class="muted">waiting for activity</span>'}
+async function refresh(){try{const[s,b,ser,ev,tr,eq,br,tk]=await Promise.all([get("/api/summary"),get("/api/bots"),get("/api/series"),get("/api/events"),get("/api/trades?limit=300"),get("/api/equity"),get("/api/brain"),get("/api/tickers")]);
+ S=s;BOTS=b;TR=tr;EQ=eq;BRAIN=br;TICK=tk;layoutNodes();NET.nodes.forEach(n=>{const x=BOTS.find(y=>y.bot_id===n.id);if(x)n.b=x});spawnPulses();
+ renderTiles();renderBots();renderTop();renderStreak();renderBrain();renderHist();renderLog(ev);const a=s.account||{};
+ $("eqBig").textContent=a.equity!=null?fmt(a.equity)+" "+(a.currency||""):"–";$("eqSub").innerHTML=a.twr!=null?`<span class="${a.twr>=0?"up":"dn"}">${a.twr>=0?"+":""}${(100*a.twr).toFixed(3)}%</span> time-weighted`:"";
+ $("liveTag").textContent=s.emergency?"HALT":s.paused?"PAUSED":"LIVE";
+ $("emerg").innerHTML=s.emergency?`<div class="banner">Emergency stop active: ${esc(s.emergency.reason)} (${t(s.emergency.time)}). New trades are blocked until cleared.</div>`:(s.paused?`<div class="banner" style="border-color:var(--warn);background:#2a1a05">Paused: no new entries. Open positions keep their stops and exits.</div>`:"");
+ $("acct").innerHTML=[["free cash",fmt(a.cash)],["open positions",fmt(a.open_positions,0)],["exposure",fmt(a.gross_exposure)+(a.gross_exposure_pct!=null?` (${fmt(a.gross_exposure_pct,1)}%)`:"")],["realized p&l",fmt(a.realized_pnl)],["fees paid",fmt(a.fees)],["sizing slot",fmt(a.slot_equity)+` (1/${a.slots})`]].map(([k,v])=>`<div>${k}</div><div>${v}</div>`).join("");
+ $("sys").innerHTML=[["uptime",fmt((s.uptime_s||0)/60,1)+" min"],["evaluations",`${fmt(s.completed_evaluations,0)} / ${fmt(s.scheduled_evaluations,0)}`],["decision p95",fmt(s.eval_ms_p95,1)+" ms"],["bar close → decision",s.latency_ms_p95!=null?fmt(s.latency_ms_p95/1000,1)+" s":"–"],["data requests",`${fmt(s.requests,0)} (${fmt(100*(s.rate_429||0),2)}% limited)`],["memory",fmt(s.rss_mb,0)+" MB"],["database",fmt((s.db_bytes||0)/1048576,1)+" MB"],["storage",s.storage_ok===false?"FAILING":"ok"],["source",esc(s.source||"")]].map(([k,v])=>`<div>${k}</div><div>${v}</div>`).join("");
+ area($("eq"),eq.map(r=>r.equity),"#35f29a",true,"equity is recorded every minute");
+ $("series").innerHTML=(ser.series||[]).map(x=>`<tr><td>${esc(x.key)}</td><td><span class="pill">${esc(x.status)}</span></td><td>${x.bars}/${x.need}</td><td>${x.subscribers}</td><td>${x.fetches}</td></tr>`).join("")||`<tr><td class="muted">${esc(ser.note||"")}</td></tr>`;
+ $("events").innerHTML=ev.slice(0,60).map(e=>`<tr><td class="muted">${hm(e.time)}</td><td class="w">${esc(e.message)}</td></tr>`).join("");
+ $("trades").innerHTML=tr.slice(0,80).map(x=>`<tr><td>${hm(x.exit_time)}</td><td>${esc(x.bot_id)}</td><td>${esc(x.instrument)}</td><td>${x.side>0?"long":"short"}</td><td class="${x.pnl>=0?"up":"dn"}">${fmt(x.pnl)}</td><td>${fmt(x.r)}</td><td class="w">${esc(x.exit_reason)}</td></tr>`).join("")||'<tr><td colspan=7 class="muted">no closed trades yet</td></tr>';
+ if(!CHART.data||Math.random()<.34)loadChart();
+ }catch(e){$("eqSub").textContent="dashboard cannot reach the fleet: "+e}}
+refresh();setInterval(refresh,5000);requestAnimationFrame(drawNet);
+window.addEventListener("resize",()=>{for(const c of document.querySelectorAll("canvas"))c.width=0;refresh()});
 </script>
 </body>
 </html>

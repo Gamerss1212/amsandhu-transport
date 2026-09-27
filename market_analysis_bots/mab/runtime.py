@@ -34,6 +34,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from mab import __version__
 from mab.account import Account
+from mab.brain import FleetBrain
 from mab.broker import PaperBroker
 from mab.clock import tf_ms
 from mab.costs import BacktestFiller, CostModel, tier_for
@@ -56,6 +57,15 @@ def _pctl(vals, p):
         return None
     s = sorted(vals)
     return s[min(len(s) - 1, int(p * len(s)))]
+
+
+def _default_priors(config: dict) -> Optional[str]:
+    """strategies/results/evaluation_summary.json next to the catalog (plain or .gz)."""
+    from mab.cli import catalog_path
+    try:
+        return os.path.join(os.path.dirname(catalog_path(config)), "results", "evaluation_summary.json")
+    except FileNotFoundError:
+        return None
 
 
 def load_events(config: dict) -> Events:
@@ -143,6 +153,14 @@ class Fleet:
         p = config.get("paper", {})
         self.broker = PaperBroker(self.hub, self.account, p.get("latency_ms", 150), p.get("max_slippage_bps", 50))
         self.events = load_events(config)
+        bcfg = config.get("brain", {})
+        self.brain = FleetBrain(mode=bcfg.get("mode", "active"))
+        try:
+            pri = bcfg.get("priors") or _default_priors(config)
+            self.brain.load_priors(pri)
+        except Exception as e:                      # a missing or unreadable priors file only means "start blank"
+            log.warning("brain priors not loaded: %s", e)
+        self.brain.restore(self.storage.kv_get("brain", {}))
         self.bots: Dict[str, BotRunner] = {}
         self.by_series: Dict[Tuple[str, str, str], List[str]] = {}
         self.paused = bool(self.storage.kv_get("paused", False))
@@ -205,6 +223,7 @@ class Fleet:
         elif saved and saved.get("corrupt"):
             self._alert("warning", "state_corrupt", f"{br.id}: saved state was corrupt; starting flat", br.id)
         self.bots[br.id] = br
+        self.brain.connect(br.id)
         if not br.enabled:
             return
         for (sym, tf), need in c.warmup.items():
@@ -317,6 +336,10 @@ class Fleet:
                 entries_ok = (live_bar and status == "ok" and not self.paused and not self.emergency
                               and self.storage_ok and br.id not in self.risk.paused_bots)
                 acts = br.tm.on_bar(rs, i, immediate_market=live_bar, entries_allowed=entries_ok)
+                if live_bar:
+                    el, es = rs.values.get("entry_long"), rs.values.get("entry_short")
+                    state = 1 if (el and el[i]) else (-1 if (es and es[i]) else 0)
+                    self.brain.observe(br.id, br.symbol, state, frame.t[i] + frame.step)
                 if not live_bar and acts:
                     for a in acts:
                         a["catch_up"] = True
@@ -426,9 +449,22 @@ class Fleet:
         return None
 
     def _execute_intent(self, br: BotRunner, frame, i, a: dict) -> str:
+        if a["kind"] == "entry" and not a.get("reduce_only") and self.brain.mode != "off":
+            dec = self.brain.score(br.id, br.c.id, br.symbol, frame, i, a["side"])
+            if dec["action"] == "veto":
+                self.stats["brain_vetoes"] = self.stats.get("brain_vetoes", 0) + 1
+                br.tm.intent_rejected("brain veto: " + dec["reason"])
+                br.last_decision = "brain veto: " + dec["reason"]
+                self._save(lambda: self.storage.save_risk({"intent_id": f"brain-{br.id}-{frame.t[i]}", "bot_id": br.id,
+                                                           "approved": False, "adjusted_quantity": None,
+                                                           "checks": [{"check": "fleet brain", "passed": False,
+                                                                       "detail": dec["reason"]}],
+                                                           "decision_time": now_ms()}))
+                return "vetoed"
+            if dec["size"] != 1.0:
+                a = dict(a, qty=a["qty"] * dec["size"])
         intent = self._intent(br, a, frame.t[i])
         self.stats["intents"] += 1
-        s = self.hub.get(*br.series_keys[0]) if br.series_keys else None
         status, _ = self._series_status(br)
         ex = self.account.exposure()
         positions = [{"bot_id": p["bot_id"], "venue": p["venue"], "instrument": p["instrument"], "qty": p["qty"]}
@@ -504,6 +540,7 @@ class Fleet:
         return "exited"
 
     def _trade_closed(self, br: BotRunner, trade):
+        self.brain.learn(br.id, br.c.id, br.symbol, trade.r)
         td = trade.to_dict()
         self._save(lambda: self.storage.save_trade(br.id, br.venue, td))
         ev = self.risk.on_trade_closed(br.id, trade.pnl, self.account.equity())
@@ -697,6 +734,7 @@ class Fleet:
         self.storage.save_equity(t, eq, self.account.cash, ex["gross"], self.account.twr())
         self._persist_account()
         self.storage.kv_set("risk", self.risk.to_state())
+        self.storage.kv_set("brain", self.brain.to_state())
         if not self.storage_ok:
             self.storage_ok = True
             self._event("info", "storage_recovered", "storage writes succeed again; new entries re-enabled")
@@ -761,7 +799,10 @@ class Fleet:
                 "rss_mb": rss, "peak_rss_mb": self.peak_rss_mb, "db_bytes": self.storage.size_bytes(),
                 "threads": threading.active_count(), "paused": self.paused, "emergency": self.emergency,
                 "storage_ok": self.storage_ok, "stats": dict(self.stats), "version": __version__,
-                "account": self.account.summary(), "broker": dict(self.broker.stats)}
+                "account": self.account.summary(), "broker": dict(self.broker.stats),
+                "brain": {k: v for k, v in self.brain.summary().items() if k in (
+                    "mode", "connected_bots", "trades_learned", "scored", "approved", "vetoed", "resized", "win_rate",
+                    "avg_r", "brier")}}
 
     # ================================================================== persistence helpers
     def _persist_states(self, ids: Optional[List[str]] = None):
