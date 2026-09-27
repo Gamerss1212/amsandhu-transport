@@ -1,0 +1,68 @@
+{
+ "id": "STRAT-128",
+ "key": "absorption",
+ "name": "Absorption of aggressive selling",
+ "family": "order_flow",
+ "subfamily": "trade flow",
+ "hypothesis": "A bar with strongly negative delta that still closes in its top 30% shows passive buyers absorbing supply.",
+ "markets": [
+  "crypto"
+ ],
+ "timeframe": "5m",
+ "data": [
+  "bars",
+  "trades"
+ ],
+ "definition": {
+  "name": "Absorption of aggressive selling",
+  "family": "order_flow",
+  "timeframe": "5m",
+  "direction": "both",
+  "params": {},
+  "entry": {
+   "long": "orderflow().imbalance < -0.4 and close > high - 0.3*(high - low)",
+   "short": "orderflow().imbalance > 0.4 and close < low + 0.3*(high - low)"
+  },
+  "filters": [],
+  "order": {
+   "type": "market"
+  },
+  "stop": {
+   "type": "level",
+   "long": "low",
+   "short": "high",
+   "buffer_atr": 0.1,
+   "n": 14
+  },
+  "target": {
+   "type": "r",
+   "r": 1.5
+  },
+  "trail": {
+   "type": "none"
+  },
+  "exit": {},
+  "max_bars": 6,
+  "session": {
+   "flat_minutes_before_close": 5
+  },
+  "max_trades_per_day": 2,
+  "cooldown_bars": 0,
+  "sizing": {
+   "risk_pct": 0.5,
+   "max_notional_pct": 100.0
+  },
+  "data": [
+   "bars",
+   "trades"
+  ],
+  "id": "STRAT-128",
+  "version": "1.0.0"
+ },
+ "spec": null,
+ "implementation_status": "implemented",
+ "blocked_reason": null,
+ "research_status": "hypothesis",
+ "evidence": [],
+ "variants": []
+}

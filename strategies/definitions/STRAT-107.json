@@ -1,0 +1,78 @@
+{
+ "id": "STRAT-107",
+ "key": "residual_reversion",
+ "name": "Beta-adjusted residual reversion",
+ "family": "cross_asset",
+ "subfamily": "statistical arbitrage",
+ "hypothesis": "When a stock's log price minus beta times SPY's falls two standard deviations below its 60-bar mean, it reverts.",
+ "markets": [
+  "stock"
+ ],
+ "timeframe": "5m",
+ "data": [
+  "bars"
+ ],
+ "definition": {
+  "name": "Beta-adjusted residual reversion",
+  "family": "cross_asset",
+  "timeframe": "5m",
+  "direction": "both",
+  "params": {
+   "bench": "SPY"
+  },
+  "entry": {
+   "long": "spread_z(close, sym($bench, close), 60) < -2",
+   "short": "spread_z(close, sym($bench, close), 60) > 2"
+  },
+  "filters": [],
+  "order": {
+   "type": "market"
+  },
+  "stop": {
+   "type": "atr",
+   "mult": 2.0,
+   "n": 14
+  },
+  "target": {
+   "type": "none"
+  },
+  "trail": {
+   "type": "none"
+  },
+  "exit": {
+   "long": "spread_z(close, sym($bench, close), 60) > 0",
+   "short": "spread_z(close, sym($bench, close), 60) < 0"
+  },
+  "max_bars": 24,
+  "session": {
+   "entry_start": "09:35",
+   "entry_end": "15:30",
+   "flat_minutes_before_close": 5
+  },
+  "max_trades_per_day": 2,
+  "cooldown_bars": 0,
+  "sizing": {
+   "risk_pct": 0.5,
+   "max_notional_pct": 100.0
+  },
+  "data": [
+   "bars"
+  ],
+  "id": "STRAT-107",
+  "version": "1.0.0"
+ },
+ "spec": null,
+ "implementation_status": "implemented",
+ "blocked_reason": null,
+ "research_status": "incompletely sourced",
+ "evidence": [
+  {
+   "source": "SRC-020",
+   "relation": "direct",
+   "note": "daily residual mean reversion with ETF factors; intraday single-leg adaptation"
+  }
+ ],
+ "variants": [
+  "STRAT-V062"
+ ]
+}

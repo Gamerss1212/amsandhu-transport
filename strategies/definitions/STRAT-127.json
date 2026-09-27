@@ -1,0 +1,66 @@
+{
+ "id": "STRAT-127",
+ "key": "cvd_divergence",
+ "name": "Cumulative-delta divergence",
+ "family": "order_flow",
+ "subfamily": "trade flow",
+ "hypothesis": "A new 20-bar price high while cumulative delta is below its 20-bar high is unsupported; short on the next down close.",
+ "markets": [
+  "crypto"
+ ],
+ "timeframe": "5m",
+ "data": [
+  "bars",
+  "trades"
+ ],
+ "definition": {
+  "name": "Cumulative-delta divergence",
+  "family": "order_flow",
+  "timeframe": "5m",
+  "direction": "both",
+  "params": {},
+  "entry": {
+   "short": "high >= highest(high,20) and orderflow().cvd < highest(orderflow().cvd,20)[1] and close < open",
+   "long": "low <= lowest(low,20) and orderflow().cvd > lowest(orderflow().cvd,20)[1] and close > open"
+  },
+  "filters": [],
+  "order": {
+   "type": "market"
+  },
+  "stop": {
+   "type": "atr",
+   "mult": 1.5,
+   "n": 14
+  },
+  "target": {
+   "type": "r",
+   "r": 1.5
+  },
+  "trail": {
+   "type": "none"
+  },
+  "exit": {},
+  "max_bars": 0,
+  "session": {
+   "flat_minutes_before_close": 5
+  },
+  "max_trades_per_day": 2,
+  "cooldown_bars": 0,
+  "sizing": {
+   "risk_pct": 0.5,
+   "max_notional_pct": 100.0
+  },
+  "data": [
+   "bars",
+   "trades"
+  ],
+  "id": "STRAT-127",
+  "version": "1.0.0"
+ },
+ "spec": null,
+ "implementation_status": "implemented",
+ "blocked_reason": null,
+ "research_status": "hypothesis",
+ "evidence": [],
+ "variants": []
+}

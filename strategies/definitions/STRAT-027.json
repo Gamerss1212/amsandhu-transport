@@ -1,0 +1,73 @@
+{
+ "id": "STRAT-027",
+ "key": "session_range_breakout_crypto",
+ "name": "Asia-range breakout at the London open (crypto)",
+ "family": "opening_range",
+ "subfamily": "session range",
+ "hypothesis": "The quiet Asia-hours range is broken with follow-through once European traders arrive (07:00-11:00 UTC).",
+ "markets": [
+  "crypto"
+ ],
+ "timeframe": "15m",
+ "data": [
+  "bars"
+ ],
+ "definition": {
+  "name": "Asia-range breakout at the London open (crypto)",
+  "family": "opening_range",
+  "timeframe": "15m",
+  "direction": "both",
+  "params": {},
+  "entry": {
+   "long": "cross_above(close, window_range(0,420).high) and time_between(\"07:00\", \"11:00\")",
+   "short": "cross_below(close, window_range(0,420).low) and time_between(\"07:00\", \"11:00\")"
+  },
+  "filters": [],
+  "order": {
+   "type": "market"
+  },
+  "stop": {
+   "type": "level",
+   "long": "(window_range(0,420).high + window_range(0,420).low)/2",
+   "short": "(window_range(0,420).high + window_range(0,420).low)/2"
+  },
+  "target": {
+   "type": "r",
+   "r": 1.5
+  },
+  "trail": {
+   "type": "none"
+  },
+  "exit": {},
+  "max_bars": 0,
+  "session": {
+   "flat_minutes_before_close": 5
+  },
+  "max_trades_per_day": 1,
+  "cooldown_bars": 0,
+  "sizing": {
+   "risk_pct": 0.5,
+   "max_notional_pct": 100.0
+  },
+  "data": [
+   "bars"
+  ],
+  "id": "STRAT-027",
+  "version": "1.0.0"
+ },
+ "spec": null,
+ "implementation_status": "implemented",
+ "blocked_reason": null,
+ "research_status": "hypothesis",
+ "evidence": [
+  {
+   "source": "SRC-032",
+   "relation": "mechanism",
+   "note": "Bitcoin volatility highest around major stock-market opens"
+  }
+ ],
+ "variants": [
+  "STRAT-V017",
+  "STRAT-V018"
+ ]
+}

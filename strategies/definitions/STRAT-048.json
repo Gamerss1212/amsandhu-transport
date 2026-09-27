@@ -1,0 +1,73 @@
+{
+ "id": "STRAT-048",
+ "key": "vwap_band_breakout",
+ "name": "VWAP 1-sigma band breakout with volume",
+ "family": "vwap",
+ "subfamily": "VWAP bands",
+ "hypothesis": "After 10:30, a close above the upper 1-sd band with relative volume above 1.5 and a rising VWAP extends; trail at VWAP.",
+ "markets": [
+  "stock",
+  "crypto"
+ ],
+ "timeframe": "5m",
+ "data": [
+  "bars"
+ ],
+ "definition": {
+  "name": "VWAP 1-sigma band breakout with volume",
+  "family": "vwap",
+  "timeframe": "5m",
+  "direction": "both",
+  "params": {},
+  "entry": {
+   "long": "cross_above(close, vwap().upper1) and rvol(20) > 1.5 and vwap() > vwap()[6] and minutes_since_open() >= 60",
+   "short": "cross_below(close, vwap().lower1) and rvol(20) > 1.5 and vwap() < vwap()[6] and minutes_since_open() >= 60"
+  },
+  "filters": [],
+  "order": {
+   "type": "market"
+  },
+  "stop": {
+   "type": "level",
+   "long": "vwap()",
+   "short": "vwap()"
+  },
+  "target": {
+   "type": "none"
+  },
+  "trail": {
+   "type": "level",
+   "long": "vwap()",
+   "short": "vwap()"
+  },
+  "exit": {},
+  "max_bars": 0,
+  "session": {
+   "stock": {
+    "entry_start": "09:35",
+    "entry_end": "15:30",
+    "flat_minutes_before_close": 5
+   },
+   "crypto": {
+    "flat_minutes_before_close": 5
+   }
+  },
+  "max_trades_per_day": 1,
+  "cooldown_bars": 0,
+  "sizing": {
+   "risk_pct": 0.5,
+   "max_notional_pct": 100.0
+  },
+  "data": [
+   "bars"
+  ],
+  "id": "STRAT-048",
+  "version": "1.0.0"
+ },
+ "spec": null,
+ "implementation_status": "implemented",
+ "blocked_reason": null,
+ "research_status": "hypothesis",
+ "evidence": [],
+ "variants": []
+}

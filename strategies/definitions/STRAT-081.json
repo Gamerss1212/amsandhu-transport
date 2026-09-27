@@ -1,0 +1,83 @@
+{
+ "id": "STRAT-081",
+ "key": "double_bottom",
+ "name": "Double bottom / double top",
+ "family": "market_structure",
+ "subfamily": "chart pattern",
+ "hypothesis": "Two swing lows within 0.3 ATR of each other followed by a close above the swing high between them complete a double bottom.",
+ "markets": [
+  "stock",
+  "crypto"
+ ],
+ "timeframe": "5m",
+ "data": [
+  "bars"
+ ],
+ "definition": {
+  "name": "Double bottom / double top",
+  "family": "market_structure",
+  "timeframe": "5m",
+  "direction": "both",
+  "params": {},
+  "entry": {
+   "long": "abs(swings(3).low - swings(3).low_prev) < 0.3*atr(14) and cross_above(close, swings(3).high)",
+   "short": "abs(swings(3).high - swings(3).high_prev) < 0.3*atr(14) and cross_below(close, swings(3).low)"
+  },
+  "filters": [],
+  "order": {
+   "type": "market"
+  },
+  "stop": {
+   "type": "level",
+   "long": "min(swings(3).low, swings(3).low_prev)",
+   "short": "max(swings(3).high, swings(3).high_prev)"
+  },
+  "target": {
+   "type": "r",
+   "r": 2.0
+  },
+  "trail": {
+   "type": "none"
+  },
+  "exit": {},
+  "max_bars": 0,
+  "session": {
+   "stock": {
+    "entry_start": "09:35",
+    "entry_end": "15:30",
+    "flat_minutes_before_close": 5
+   },
+   "crypto": {
+    "flat_minutes_before_close": 5
+   }
+  },
+  "max_trades_per_day": 2,
+  "cooldown_bars": 0,
+  "sizing": {
+   "risk_pct": 0.5,
+   "max_notional_pct": 100.0
+  },
+  "data": [
+   "bars"
+  ],
+  "id": "STRAT-081",
+  "version": "1.0.0"
+ },
+ "spec": null,
+ "implementation_status": "implemented",
+ "blocked_reason": null,
+ "research_status": "incompletely sourced",
+ "evidence": [
+  {
+   "source": "SRC-044",
+   "relation": "origin",
+   "note": "algorithmic chart-pattern definitions"
+  },
+  {
+   "source": "SRC-089",
+   "relation": "origin",
+   "note": ""
+  }
+ ],
+ "variants": []
+}

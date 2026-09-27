@@ -1,0 +1,67 @@
+{
+ "id": "STRAT-031",
+ "key": "buy_on_gap",
+ "name": "Buy-on-gap (Chan)",
+ "family": "gaps",
+ "subfamily": "opening gap",
+ "hypothesis": "Buy when the open is more than one standard deviation of daily returns below the prior low while above the 20-day average; exit at the close.",
+ "markets": [
+  "stock"
+ ],
+ "timeframe": "5m",
+ "data": [
+  "bars"
+ ],
+ "definition": {
+  "name": "Buy-on-gap (Chan)",
+  "family": "gaps",
+  "timeframe": "5m",
+  "direction": "long",
+  "params": {},
+  "entry": {
+   "long": "bar_in_session() == 0 and session().open < session().prev_low * (1 - tf(\"1d\", std(pct(close,1), 90))) and session().open > tf(\"1d\", sma(close,20))"
+  },
+  "filters": [],
+  "order": {
+   "type": "market"
+  },
+  "stop": {
+   "type": "pct",
+   "pct": 4.0
+  },
+  "target": {
+   "type": "none"
+  },
+  "trail": {
+   "type": "none"
+  },
+  "exit": {},
+  "max_bars": 0,
+  "session": {
+   "flat_minutes_before_close": 5
+  },
+  "max_trades_per_day": 1,
+  "cooldown_bars": 0,
+  "sizing": {
+   "risk_pct": 0.5,
+   "max_notional_pct": 100.0
+  },
+  "data": [
+   "bars"
+  ],
+  "id": "STRAT-031",
+  "version": "1.0.0"
+ },
+ "spec": null,
+ "implementation_status": "implemented",
+ "blocked_reason": null,
+ "research_status": "incompletely sourced",
+ "evidence": [
+  {
+   "source": "SRC-073",
+   "relation": "direct",
+   "note": "portfolio of the 10 lowest-return qualifying stocks; single-stock adaptation here"
+  }
+ ],
+ "variants": []
+}

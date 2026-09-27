@@ -1,0 +1,72 @@
+{
+ "id": "STRAT-022",
+ "key": "orb_retest",
+ "name": "Opening-range breakout retest",
+ "family": "opening_range",
+ "subfamily": "opening range",
+ "hypothesis": "After a breakout above the opening range, the first pullback that holds the old range high offers a lower-risk entry than the breakout itself.",
+ "markets": [
+  "stock",
+  "crypto"
+ ],
+ "timeframe": "5m",
+ "data": [
+  "bars"
+ ],
+ "definition": {
+  "name": "Opening-range breakout retest",
+  "family": "opening_range",
+  "timeframe": "5m",
+  "direction": "both",
+  "params": {},
+  "entry": {
+   "long": "since(cross_above(close, opening_range(15).high)) >= 2 and since(cross_above(close, opening_range(15).high)) <= 12 and low <= opening_range(15).high + 0.1*atr(14) and close > opening_range(15).high and close > open",
+   "short": "since(cross_below(close, opening_range(15).low)) >= 2 and since(cross_below(close, opening_range(15).low)) <= 12 and high >= opening_range(15).low - 0.1*atr(14) and close < opening_range(15).low and close < open"
+  },
+  "filters": [],
+  "order": {
+   "type": "market"
+  },
+  "stop": {
+   "type": "level",
+   "long": "opening_range(15).mid",
+   "short": "opening_range(15).mid"
+  },
+  "target": {
+   "type": "r",
+   "r": 2.0
+  },
+  "trail": {
+   "type": "none"
+  },
+  "exit": {},
+  "max_bars": 0,
+  "session": {
+   "stock": {
+    "entry_start": "09:35",
+    "entry_end": "15:30",
+    "flat_minutes_before_close": 5
+   },
+   "crypto": {
+    "flat_minutes_before_close": 5
+   }
+  },
+  "max_trades_per_day": 1,
+  "cooldown_bars": 0,
+  "sizing": {
+   "risk_pct": 0.5,
+   "max_notional_pct": 100.0
+  },
+  "data": [
+   "bars"
+  ],
+  "id": "STRAT-022",
+  "version": "1.0.0"
+ },
+ "spec": null,
+ "implementation_status": "implemented",
+ "blocked_reason": null,
+ "research_status": "hypothesis",
+ "evidence": [],
+ "variants": []
+}

@@ -1,0 +1,70 @@
+{
+ "id": "STRAT-016",
+ "key": "mtf_momentum_alignment",
+ "name": "Multi-horizon momentum alignment breakout",
+ "family": "trend_following",
+ "subfamily": "multi-timeframe",
+ "hypothesis": "A breakout on the trading timeframe works better when 15-minute, 1-hour and 4-hour momentum all point the same way.",
+ "markets": [
+  "crypto"
+ ],
+ "timeframe": "5m",
+ "data": [
+  "bars"
+ ],
+ "definition": {
+  "name": "Multi-horizon momentum alignment breakout",
+  "family": "trend_following",
+  "timeframe": "5m",
+  "direction": "both",
+  "params": {},
+  "entry": {
+   "long": "tf(\"15m\", roc(close,8)) > 0 and tf(\"1h\", roc(close,6)) > 0 and tf(\"4h\", roc(close,6)) > 0 and close > highest(high,12)[1]",
+   "short": "tf(\"15m\", roc(close,8)) < 0 and tf(\"1h\", roc(close,6)) < 0 and tf(\"4h\", roc(close,6)) < 0 and close < lowest(low,12)[1]"
+  },
+  "filters": [],
+  "order": {
+   "type": "market"
+  },
+  "stop": {
+   "type": "atr",
+   "mult": 2.0,
+   "n": 14
+  },
+  "target": {
+   "type": "r",
+   "r": 2.0
+  },
+  "trail": {
+   "type": "none"
+  },
+  "exit": {},
+  "max_bars": 0,
+  "session": {
+   "flat_minutes_before_close": 5
+  },
+  "max_trades_per_day": 2,
+  "cooldown_bars": 0,
+  "sizing": {
+   "risk_pct": 0.5,
+   "max_notional_pct": 100.0
+  },
+  "data": [
+   "bars"
+  ],
+  "id": "STRAT-016",
+  "version": "1.0.0"
+ },
+ "spec": null,
+ "implementation_status": "implemented",
+ "blocked_reason": null,
+ "research_status": "hypothesis",
+ "evidence": [
+  {
+   "source": "SRC-047",
+   "relation": "mechanism",
+   "note": "time-series momentum at 1-12 month horizons (not intraday)"
+  }
+ ],
+ "variants": []
+}

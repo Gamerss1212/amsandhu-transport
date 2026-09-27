@@ -1,0 +1,87 @@
+{
+ "id": "STRAT-076",
+ "key": "pin_bar_at_level",
+ "name": "Hammer / shooting star at prior-session level",
+ "family": "candlestick",
+ "subfamily": "rejection candle",
+ "hypothesis": "A hammer whose low tests yesterday's low (within 0.2 ATR) shows rejection of lower prices.",
+ "markets": [
+  "stock",
+  "crypto"
+ ],
+ "timeframe": "5m",
+ "data": [
+  "bars"
+ ],
+ "definition": {
+  "name": "Hammer / shooting star at prior-session level",
+  "family": "candlestick",
+  "timeframe": "5m",
+  "direction": "both",
+  "params": {},
+  "entry": {
+   "long": "candle().hammer == 1 and abs(low - session().prev_low) < 0.2*atr(14)",
+   "short": "candle().shooting_star == 1 and abs(high - session().prev_high) < 0.2*atr(14)"
+  },
+  "filters": [],
+  "order": {
+   "type": "market"
+  },
+  "stop": {
+   "type": "level",
+   "long": "low",
+   "short": "high",
+   "buffer_atr": 0.1,
+   "n": 14
+  },
+  "target": {
+   "type": "r",
+   "r": 2.0
+  },
+  "trail": {
+   "type": "none"
+  },
+  "exit": {},
+  "max_bars": 24,
+  "session": {
+   "stock": {
+    "entry_start": "09:35",
+    "entry_end": "15:30",
+    "flat_minutes_before_close": 5
+   },
+   "crypto": {
+    "flat_minutes_before_close": 5
+   }
+  },
+  "max_trades_per_day": 2,
+  "cooldown_bars": 0,
+  "sizing": {
+   "risk_pct": 0.5,
+   "max_notional_pct": 100.0
+  },
+  "data": [
+   "bars"
+  ],
+  "id": "STRAT-076",
+  "version": "1.0.0"
+ },
+ "spec": null,
+ "implementation_status": "implemented",
+ "blocked_reason": null,
+ "research_status": "incompletely sourced",
+ "evidence": [
+  {
+   "source": "SRC-088",
+   "relation": "origin",
+   "note": "candlestick definitions (book)"
+  },
+  {
+   "source": "SRC-045",
+   "relation": "contrary",
+   "note": "no value vs random trading on DJIA stocks"
+  }
+ ],
+ "variants": [
+  "STRAT-V051"
+ ]
+}

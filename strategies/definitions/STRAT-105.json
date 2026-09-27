@@ -1,0 +1,80 @@
+{
+ "id": "STRAT-105",
+ "key": "earnings_day_orb",
+ "name": "Earnings-day opening-range breakout",
+ "family": "scheduled_events",
+ "subfamily": "earnings",
+ "hypothesis": "On the session after a company reports, trade the 15-minute opening-range breakout in the gap's direction.",
+ "markets": [
+  "stock"
+ ],
+ "timeframe": "5m",
+ "data": [
+  "bars",
+  "events:earnings"
+ ],
+ "definition": {
+  "name": "Earnings-day opening-range breakout",
+  "family": "scheduled_events",
+  "timeframe": "5m",
+  "direction": "both",
+  "params": {},
+  "entry": {
+   "long": "event(\"earnings\") == 1 and session().gap > 0 and cross_above(close, opening_range(15).high)",
+   "short": "event(\"earnings\") == 1 and session().gap < 0 and cross_below(close, opening_range(15).low)"
+  },
+  "filters": [],
+  "order": {
+   "type": "market"
+  },
+  "stop": {
+   "type": "level",
+   "long": "opening_range(15).low",
+   "short": "opening_range(15).high"
+  },
+  "target": {
+   "type": "none"
+  },
+  "trail": {
+   "type": "none"
+  },
+  "exit": {},
+  "max_bars": 0,
+  "session": {
+   "entry_start": "09:35",
+   "entry_end": "15:30",
+   "flat_minutes_before_close": 5
+  },
+  "max_trades_per_day": 1,
+  "cooldown_bars": 0,
+  "sizing": {
+   "risk_pct": 0.5,
+   "max_notional_pct": 100.0
+  },
+  "data": [
+   "bars",
+   "events:earnings"
+  ],
+  "id": "STRAT-105",
+  "version": "1.0.0"
+ },
+ "spec": null,
+ "implementation_status": "implemented",
+ "blocked_reason": null,
+ "research_status": "hypothesis",
+ "evidence": [
+  {
+   "source": "SRC-013",
+   "relation": "mechanism",
+   "note": "post-earnings drift (multi-day)"
+  },
+  {
+   "source": "SRC-002",
+   "relation": "mechanism",
+   "note": "stocks in play"
+  }
+ ],
+ "variants": [
+  "STRAT-V061"
+ ]
+}

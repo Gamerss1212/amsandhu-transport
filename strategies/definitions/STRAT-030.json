@@ -1,0 +1,81 @@
+{
+ "id": "STRAT-030",
+ "key": "gap_fade_to_close",
+ "name": "Moderate-gap fade to the prior close",
+ "family": "gaps",
+ "subfamily": "opening gap",
+ "hypothesis": "Gaps of 0.3-1.5% whose first 5-minute bar moves against the gap tend to fill toward the prior close.",
+ "markets": [
+  "stock"
+ ],
+ "timeframe": "5m",
+ "data": [
+  "bars"
+ ],
+ "definition": {
+  "name": "Moderate-gap fade to the prior close",
+  "family": "gaps",
+  "timeframe": "5m",
+  "direction": "both",
+  "params": {},
+  "entry": {
+   "short": "bar_in_session() == 0 and session().gap > 0.003 and session().gap < 0.015 and close < open",
+   "long": "bar_in_session() == 0 and session().gap < -0.003 and session().gap > -0.015 and close > open"
+  },
+  "filters": [],
+  "order": {
+   "type": "market"
+  },
+  "stop": {
+   "type": "level",
+   "long": "session().low",
+   "short": "session().high",
+   "buffer_atr": 0.2,
+   "n": 14
+  },
+  "target": {
+   "type": "level",
+   "long": "session().prev_close",
+   "short": "session().prev_close"
+  },
+  "trail": {
+   "type": "none"
+  },
+  "exit": {},
+  "max_bars": 0,
+  "session": {
+   "flat_minutes_before_close": 5
+  },
+  "max_trades_per_day": 1,
+  "cooldown_bars": 0,
+  "sizing": {
+   "risk_pct": 0.5,
+   "max_notional_pct": 100.0
+  },
+  "data": [
+   "bars"
+  ],
+  "id": "STRAT-030",
+  "version": "1.0.0"
+ },
+ "spec": null,
+ "implementation_status": "implemented",
+ "blocked_reason": null,
+ "research_status": "incompletely sourced",
+ "evidence": [
+  {
+   "source": "SRC-007",
+   "relation": "mechanism",
+   "note": "cross-period (overnight vs intraday) reversal"
+  },
+  {
+   "source": "SRC-073",
+   "relation": "mechanism",
+   "note": "intraday mean reversion of gaps"
+  }
+ ],
+ "variants": [
+  "STRAT-V021",
+  "STRAT-V022"
+ ]
+}

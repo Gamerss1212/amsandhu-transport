@@ -1,0 +1,30 @@
+{
+ "id": "STRAT-123",
+ "key": "kimchi_premium",
+ "name": "Korean-premium sentiment signal",
+ "family": "crypto_structure",
+ "subfamily": "cross-country premium",
+ "hypothesis": "A rising Korean premium precedes further gains in global prices.",
+ "markets": [
+  "crypto"
+ ],
+ "timeframe": "15m",
+ "data": [
+  "bars",
+  "upbit",
+  "fx"
+ ],
+ "definition": null,
+ "spec": "long when premium z-score (1 day) > 2; exit when it falls below 0",
+ "implementation_status": "blocked",
+ "blocked_reason": "no Upbit adapter built",
+ "research_status": "incompletely sourced",
+ "evidence": [
+  {
+   "source": "SRC-034",
+   "relation": "mechanism",
+   "note": "country premia co-move with BTC appreciation"
+  }
+ ],
+ "variants": []
+}

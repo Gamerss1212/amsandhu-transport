@@ -1,0 +1,28 @@
+{
+ "id": "STRAT-149",
+ "key": "cross_exchange_arbitrage",
+ "name": "Cross-exchange arbitrage",
+ "family": "market_making_arbitrage",
+ "subfamily": "arbitrage",
+ "hypothesis": "Buy on the cheaper venue and sell on the dearer one.",
+ "markets": [
+  "crypto"
+ ],
+ "timeframe": "1s",
+ "data": [
+  "book"
+ ],
+ "definition": null,
+ "spec": "act when price gap > both taker fees + withdrawal cost",
+ "implementation_status": "blocked",
+ "blocked_reason": "needs funded accounts on both venues and real transfers (real money)",
+ "research_status": "incompletely sourced",
+ "evidence": [
+  {
+   "source": "SRC-034",
+   "relation": "mechanism",
+   "note": ""
+  }
+ ],
+ "variants": []
+}

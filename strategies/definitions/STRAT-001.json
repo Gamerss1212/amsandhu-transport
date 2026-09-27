@@ -1,0 +1,92 @@
+{
+ "id": "STRAT-001",
+ "key": "ema_cross_vwap",
+ "name": "EMA 9/21 crossover with session-VWAP filter",
+ "family": "trend_following",
+ "subfamily": "moving-average crossover",
+ "hypothesis": "When a fast average crosses a slow one, recent returns have been persistently positive; requiring price above VWAP keeps only moves that buyers since the open are winning.",
+ "markets": [
+  "stock",
+  "crypto"
+ ],
+ "timeframe": "1m",
+ "data": [
+  "bars"
+ ],
+ "definition": {
+  "name": "EMA 9/21 crossover with session-VWAP filter",
+  "family": "trend_following",
+  "timeframe": "1m",
+  "direction": "long",
+  "params": {
+   "fast": 9,
+   "slow": 21
+  },
+  "entry": {
+   "long": "cross_above(ema(close,$fast), ema(close,$slow))"
+  },
+  "filters": [
+   "close > vwap()"
+  ],
+  "order": {
+   "type": "market"
+  },
+  "stop": {
+   "type": "atr",
+   "mult": 2.0,
+   "n": 14
+  },
+  "target": {
+   "type": "r",
+   "r": 2.0
+  },
+  "trail": {
+   "type": "none"
+  },
+  "exit": {
+   "long": "cross_below(ema(close,$fast), ema(close,$slow))"
+  },
+  "max_bars": 0,
+  "session": {
+   "flat_minutes_before_close": 5
+  },
+  "max_trades_per_day": 20,
+  "cooldown_bars": 0,
+  "sizing": {
+   "risk_pct": 0.5,
+   "max_notional_pct": 100.0
+  },
+  "data": [
+   "bars"
+  ],
+  "id": "STRAT-001",
+  "version": "1.0.0"
+ },
+ "spec": null,
+ "implementation_status": "implemented",
+ "blocked_reason": null,
+ "research_status": "incompletely sourced",
+ "evidence": [
+  {
+   "source": "SRC-040",
+   "relation": "mechanism",
+   "note": "moving-average rules on daily DJIA data, before costs"
+  },
+  {
+   "source": "SRC-033",
+   "relation": "mechanism",
+   "note": "moving-average rules on high-frequency Bitcoin"
+  },
+  {
+   "source": "SRC-041",
+   "relation": "contrary",
+   "note": "data-snooping adjustment weakens technical-rule evidence"
+  }
+ ],
+ "variants": [
+  "STRAT-V001",
+  "STRAT-V002",
+  "STRAT-V003",
+  "STRAT-V004"
+ ]
+}

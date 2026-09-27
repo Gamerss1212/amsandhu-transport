@@ -1,0 +1,29 @@
+{
+ "id": "STRAT-150",
+ "key": "statarb_pca_portfolio",
+ "name": "PCA statistical-arbitrage portfolio",
+ "family": "market_making_arbitrage",
+ "subfamily": "stat arb",
+ "hypothesis": "Hold many small long/short positions in stocks whose PCA residual is stretched.",
+ "markets": [
+  "stock"
+ ],
+ "timeframe": "15m",
+ "data": [
+  "bars",
+  "universe"
+ ],
+ "definition": null,
+ "spec": "15 PCA factors on 60-day returns; s-score entry +/-1.25, exit +/-0.5 (as in the paper, daily)",
+ "implementation_status": "blocked",
+ "blocked_reason": "needs simultaneous positions in dozens of stocks and shorting; one-instrument bots cannot express it",
+ "research_status": "sourced",
+ "evidence": [
+  {
+   "source": "SRC-020",
+   "relation": "direct",
+   "note": ""
+  }
+ ],
+ "variants": []
+}

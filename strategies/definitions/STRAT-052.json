@@ -1,0 +1,75 @@
+{
+ "id": "STRAT-052",
+ "key": "value_area_80_rule",
+ "name": "Market Profile 80% rule",
+ "family": "market_profile",
+ "subfamily": "value area",
+ "hypothesis": "If the session opens below yesterday's value-area low and then holds inside the value area for 30 minutes, it tends to reach the value-area high.",
+ "markets": [
+  "stock"
+ ],
+ "timeframe": "5m",
+ "data": [
+  "bars"
+ ],
+ "definition": {
+  "name": "Market Profile 80% rule",
+  "family": "market_profile",
+  "timeframe": "5m",
+  "direction": "both",
+  "params": {},
+  "entry": {
+   "long": "session().open < volume_profile(40,0.7).val and persist(close > volume_profile(40,0.7).val, 6)",
+   "short": "session().open > volume_profile(40,0.7).vah and persist(close < volume_profile(40,0.7).vah, 6)"
+  },
+  "filters": [],
+  "order": {
+   "type": "market"
+  },
+  "stop": {
+   "type": "level",
+   "long": "volume_profile(40,0.7).val",
+   "short": "volume_profile(40,0.7).vah",
+   "buffer_atr": 0.5,
+   "n": 14
+  },
+  "target": {
+   "type": "level",
+   "long": "volume_profile(40,0.7).vah",
+   "short": "volume_profile(40,0.7).val"
+  },
+  "trail": {
+   "type": "none"
+  },
+  "exit": {},
+  "max_bars": 0,
+  "session": {
+   "entry_start": "09:35",
+   "entry_end": "15:30",
+   "flat_minutes_before_close": 5
+  },
+  "max_trades_per_day": 1,
+  "cooldown_bars": 0,
+  "sizing": {
+   "risk_pct": 0.5,
+   "max_notional_pct": 100.0
+  },
+  "data": [
+   "bars"
+  ],
+  "id": "STRAT-052",
+  "version": "1.0.0"
+ },
+ "spec": null,
+ "implementation_status": "implemented",
+ "blocked_reason": null,
+ "research_status": "incompletely sourced",
+ "evidence": [
+  {
+   "source": "SRC-078",
+   "relation": "origin",
+   "note": "Market Profile value area"
+  }
+ ],
+ "variants": []
+}

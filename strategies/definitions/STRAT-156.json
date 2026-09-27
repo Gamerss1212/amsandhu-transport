@@ -1,0 +1,29 @@
+{
+ "id": "STRAT-156",
+ "key": "wolfe_wave",
+ "name": "Wolfe waves",
+ "family": "named_systems",
+ "subfamily": "geometric pattern",
+ "hypothesis": "A completed five-point Wolfe wave reverses toward the 1-4 line.",
+ "markets": [
+  "stock",
+  "crypto"
+ ],
+ "timeframe": "15m",
+ "data": [
+  "bars"
+ ],
+ "definition": null,
+ "spec": "points 1-5 alternating swings; 5 beyond the 1-3 line; target line through 1 and 4",
+ "implementation_status": "blocked",
+ "blocked_reason": "five-swing geometric pattern not implemented (engine tracks three swings)",
+ "research_status": "incompletely sourced",
+ "evidence": [
+  {
+   "source": "SRC-071",
+   "relation": "origin",
+   "note": "Wolfe Waves (book)"
+  }
+ ],
+ "variants": []
+}

@@ -1,0 +1,23 @@
+{
+ "id": "STRAT-120",
+ "key": "liquidation_cascade_reversal",
+ "name": "Liquidation-cascade reversal",
+ "family": "crypto_structure",
+ "subfamily": "liquidations",
+ "hypothesis": "After a burst of long liquidations with a >2% drop in 5 minutes, buy the first higher close.",
+ "markets": [
+  "crypto"
+ ],
+ "timeframe": "1m",
+ "data": [
+  "bars",
+  "liquidations"
+ ],
+ "definition": null,
+ "spec": "long: liquidation notional over 5 min > 99th pct and pct(close,5) < -0.02 and close > open; stop below the low; target VWAP",
+ "implementation_status": "blocked",
+ "blocked_reason": "liquidation feeds are recent-only on free endpoints; no history for testing and not wired live",
+ "research_status": "hypothesis",
+ "evidence": [],
+ "variants": []
+}

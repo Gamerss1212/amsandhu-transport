@@ -1,0 +1,29 @@
+{
+ "id": "STRAT-141",
+ "key": "ml_triple_barrier_gbm",
+ "name": "Gradient boosting on triple-barrier labels",
+ "family": "machine_learning",
+ "subfamily": "supervised",
+ "hypothesis": "Boosted trees classify which barrier (target, stop, time) is hit first.",
+ "markets": [
+  "stock",
+  "crypto"
+ ],
+ "timeframe": "5m",
+ "data": [
+  "bars"
+ ],
+ "definition": null,
+ "spec": "barriers at +/-1.5 ATR and 12 bars; features as ml_logistic_direction; purged k-fold CV",
+ "implementation_status": "blocked",
+ "blocked_reason": "no model-training runtime in the bot platform yet (the separate Jarvus Brain trains models offline)",
+ "research_status": "incompletely sourced",
+ "evidence": [
+  {
+   "source": "SRC-064",
+   "relation": "origin",
+   "note": "triple-barrier method"
+  }
+ ],
+ "variants": []
+}

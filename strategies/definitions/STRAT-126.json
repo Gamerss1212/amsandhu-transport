@@ -1,0 +1,71 @@
+{
+ "id": "STRAT-126",
+ "key": "trade_imbalance_persistence",
+ "name": "Aggressor-flow persistence",
+ "family": "order_flow",
+ "subfamily": "trade flow",
+ "hypothesis": "When buyer-initiated volume exceeds seller-initiated volume by 25% over three 5-minute bars, the next bar tends to rise.",
+ "markets": [
+  "crypto"
+ ],
+ "timeframe": "5m",
+ "data": [
+  "bars",
+  "trades"
+ ],
+ "definition": {
+  "name": "Aggressor-flow persistence",
+  "family": "order_flow",
+  "timeframe": "5m",
+  "direction": "both",
+  "params": {},
+  "entry": {
+   "long": "sum(orderflow().delta, 3) / sum(volume, 3) > 0.25",
+   "short": "sum(orderflow().delta, 3) / sum(volume, 3) < -0.25"
+  },
+  "filters": [],
+  "order": {
+   "type": "market"
+  },
+  "stop": {
+   "type": "atr",
+   "mult": 1.5,
+   "n": 14
+  },
+  "target": {
+   "type": "none"
+  },
+  "trail": {
+   "type": "none"
+  },
+  "exit": {},
+  "max_bars": 2,
+  "session": {
+   "flat_minutes_before_close": 5
+  },
+  "max_trades_per_day": 20,
+  "cooldown_bars": 0,
+  "sizing": {
+   "risk_pct": 0.5,
+   "max_notional_pct": 100.0
+  },
+  "data": [
+   "bars",
+   "trades"
+  ],
+  "id": "STRAT-126",
+  "version": "1.0.0"
+ },
+ "spec": null,
+ "implementation_status": "implemented",
+ "blocked_reason": null,
+ "research_status": "incompletely sourced",
+ "evidence": [
+  {
+   "source": "SRC-016",
+   "relation": "mechanism",
+   "note": "lagged imbalance predicts 5-minute NYSE returns"
+  }
+ ],
+ "variants": []
+}

@@ -28,6 +28,8 @@
 
 <nav role="tablist">
   <button role="tab" data-tab="bots" aria-selected="true">Bots<span class="badge on" id="botsBadge" hidden>ON</span></button>
+  <button role="tab" data-tab="fleet" aria-selected="false">Fleet</button>
+  <button role="tab" data-tab="library" aria-selected="false">Library</button>
   <button role="tab" data-tab="brain" aria-selected="false">Brain</button>
   <button role="tab" data-tab="markets" aria-selected="false">Markets</button>
   <button role="tab" data-tab="detail" aria-selected="false">Detail</button>
@@ -122,6 +124,54 @@
   </section>
 
   <!-- ============ BRAIN ============ -->
+
+  <!-- ============ FLEET (250 paper bots) ============ -->
+  <section class="panel" id="panel-fleet" role="tabpanel">
+    <div class="card">
+      <div class="bigrow" style="margin-bottom:8px"><h2>Bot fleet</h2><span class="small muted" id="fleetMeta"></span></div>
+      <p class="small sec" style="margin:0 0 10px">Runs up to 250 rule-based bots on shared live data from Coinbase,
+        Kraken, OKX and Yahoo, with paper money only. Each bot is one strategy from the Library on one market.
+        Stocks trade only in US/Toronto market hours; crypto trades all day and every bot is flat before its session ends.
+        Real-money trading is not available in this version.</p>
+      <div class="bigrow" style="gap:8px;flex-wrap:wrap">
+        <label class="small">Paper balance <input id="fleetBalance" type="number" min="100" step="100" value="100000" style="width:120px"></label>
+        <select id="fleetStage" style="width:190px"><option value="10">10 bots (starter)</option><option value="50">50 bots</option>
+          <option value="250" selected>All 250 bots</option></select>
+        <button class="primary" id="fleetStart">Start fleet</button><button id="fleetStop">Stop</button>
+        <button id="fleetPause">Pause entries</button><button id="fleetResume">Resume</button>
+        <button id="fleetEmergency" style="border-color:var(--bad,#c2372f)">Emergency stop</button>
+      </div>
+      <div class="bigrow small" style="gap:8px;margin-top:8px">
+        <span>Change balance while running:</span><input id="fleetAmt" type="number" min="0" step="100" placeholder="amount" style="width:110px">
+        <button class="sm" id="fleetSet">Set balance</button><button class="sm" id="fleetDep">Deposit</button><button class="sm" id="fleetWd">Withdraw</button>
+      </div>
+    </div>
+    <div class="grid tiles" id="fleetTiles"></div>
+    <div class="card" style="padding:0;overflow:hidden">
+      <iframe id="fleetFrame" title="Fleet dashboard" style="width:100%;height:1400px;border:0;display:block" src="about:blank"></iframe>
+    </div>
+  </section>
+
+  <!-- ============ LIBRARY (strategy catalog) ============ -->
+  <section class="panel" id="panel-library" role="tabpanel">
+    <div class="card">
+      <h2>Strategy library</h2>
+      <p class="small sec" style="margin:4px 0 8px" id="libMeta"></p>
+      <div class="bigrow" style="gap:8px;flex-wrap:wrap">
+        <input id="libSearch" type="search" placeholder="Find a strategy…" style="width:200px">
+        <select id="libFamily" style="width:220px"><option value="">Every family</option></select>
+        <select id="libImpl" style="width:170px"><option value="">Any implementation</option><option>implemented</option><option>blocked</option><option>specified</option></select>
+        <select id="libResearch" style="width:190px"><option value="">Any research status</option><option>sourced</option><option>incompletely sourced</option><option>hypothesis</option></select>
+        <select id="libSort" style="width:200px"><option value="id">By id</option><option value="best">Best measured result</option><option value="name">A to Z</option></select>
+      </div>
+      <p class="small sec" style="margin:8px 0">"Measured" is the average result per trade in R after realistic fees (Kraken's retail
+        fees for crypto, commission-free stocks with spreads), over the full test period on the instrument where it did best.
+        Nothing here is proven: see each strategy's statuses.</p>
+      <div class="tablewrap" id="libTable"></div>
+    </div>
+    <div class="card" id="libDetail" hidden></div>
+  </section>
+
   <section class="panel" id="panel-brain" role="tabpanel">
     <div class="card">
       <div class="bigrow" style="margin-bottom:6px"><h2>The Brain</h2>

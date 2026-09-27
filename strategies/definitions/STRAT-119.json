@@ -1,0 +1,23 @@
+{
+ "id": "STRAT-119",
+ "key": "oi_breakout_confirmation",
+ "name": "Open-interest-confirmed breakout",
+ "family": "crypto_structure",
+ "subfamily": "open interest",
+ "hypothesis": "Only take 20-bar breakouts when open interest rose over the same bars.",
+ "markets": [
+  "crypto"
+ ],
+ "timeframe": "5m",
+ "data": [
+  "bars",
+  "oi"
+ ],
+ "definition": null,
+ "spec": "long: close > donchian(20).upper[1] and oi change over 20 bars > 1%",
+ "implementation_status": "blocked",
+ "blocked_reason": "historical open interest at 5-minute resolution is not available from the free endpoints used",
+ "research_status": "hypothesis",
+ "evidence": [],
+ "variants": []
+}

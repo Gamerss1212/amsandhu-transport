@@ -1,0 +1,23 @@
+{
+ "id": "STRAT-144",
+ "key": "ml_sequence_model",
+ "name": "Recurrent/sequence neural network",
+ "family": "machine_learning",
+ "subfamily": "deep learning",
+ "hypothesis": "An LSTM/Transformer on bar sequences predicts next-hour direction.",
+ "markets": [
+  "stock",
+  "crypto"
+ ],
+ "timeframe": "5m",
+ "data": [
+  "bars"
+ ],
+ "definition": null,
+ "spec": "walk-forward train monthly; purged validation; compare against a no-skill baseline",
+ "implementation_status": "blocked",
+ "blocked_reason": "no model-training runtime in the bot platform yet (the separate Jarvus Brain trains models offline); very high overfitting risk at retail data sizes",
+ "research_status": "hypothesis",
+ "evidence": [],
+ "variants": []
+}

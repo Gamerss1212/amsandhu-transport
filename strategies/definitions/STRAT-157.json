@@ -1,0 +1,23 @@
+{
+ "id": "STRAT-157",
+ "key": "harmonic_patterns",
+ "name": "Harmonic (Gartley/Bat) patterns",
+ "family": "named_systems",
+ "subfamily": "geometric pattern",
+ "hypothesis": "Price reverses at the D point of an XABCD pattern meeting ratio tolerances.",
+ "markets": [
+  "stock",
+  "crypto"
+ ],
+ "timeframe": "15m",
+ "data": [
+  "bars"
+ ],
+ "definition": null,
+ "spec": "Gartley: AB=0.618 XA, BC 0.382-0.886 AB, CD 1.27-1.618 BC, D at 0.786 XA; enter at D with stop beyond X",
+ "implementation_status": "blocked",
+ "blocked_reason": "five-swing pattern matching not implemented",
+ "research_status": "hypothesis",
+ "evidence": [],
+ "variants": []
+}

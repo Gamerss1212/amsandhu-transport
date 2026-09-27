@@ -1,0 +1,29 @@
+{
+ "id": "STRAT-130",
+ "key": "vpin_toxicity_breakout",
+ "name": "Flow-toxicity (VPIN) regime",
+ "family": "order_flow",
+ "subfamily": "toxicity",
+ "hypothesis": "When VPIN is above its 90th percentile, trade breakouts of the 15-minute range; otherwise stand aside.",
+ "markets": [
+  "crypto"
+ ],
+ "timeframe": "1m",
+ "data": [
+  "bars",
+  "trades"
+ ],
+ "definition": null,
+ "spec": "VPIN over 50 volume buckets of 1/50 daily volume; breakout rule as orb_breakout",
+ "implementation_status": "blocked",
+ "blocked_reason": "volume-bucket VPIN is not implemented in the indicator engine",
+ "research_status": "incompletely sourced",
+ "evidence": [
+  {
+   "source": "SRC-018",
+   "relation": "origin",
+   "note": "VPIN definition"
+  }
+ ],
+ "variants": []
+}

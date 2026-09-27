@@ -1,0 +1,112 @@
+# Backlog
+
+## Variants (documented, not counted)
+
+- STRAT-V001 EMA crossover without VWAP filter (of STRAT-001): filter removed
+- STRAT-V002 SMA 20/50 crossover (of STRAT-001): average type and periods
+- STRAT-V003 Hull MA slope turn (of STRAT-001): same template: slope sign change of a low-lag average
+- STRAT-V004 RSI centreline (50) cross (of STRAT-001): same template with an oscillator in place of the average pair
+- STRAT-V005 Supertrend pullback (of STRAT-002): pullback reference changed to the Supertrend line
+- STRAT-V006 Ichimoku base-line bounce (of STRAT-002): pullback reference changed to the Kijun-sen
+- STRAT-V007 Higher-timeframe trend, lower-timeframe RSI pullback (of STRAT-152): Triple Screen template with RSI as the second screen
+- STRAT-V008 MACD zero-line cross (of STRAT-003): trigger moved to the zero line
+- STRAT-V009 TRIX signal cross (of STRAT-003): triple-smoothed momentum in the same template
+- STRAT-V010 Vortex indicator crossover (of STRAT-006): same template with VI+/VI-
+- STRAT-V011 30-minute opening-range breakout (of STRAT-019): range length 30 minutes
+- STRAT-V012 60-minute opening-range breakout (of STRAT-019): range length 60 minutes
+- STRAT-V013 UTC-day opening-range breakout (crypto) (of STRAT-019): market: crypto, range = first hour after 00:00 UTC
+- STRAT-V014 ORB with VWAP confirmation (of STRAT-019): adds price-above-VWAP filter
+- STRAT-V015 ORB only after a narrow opening range (of STRAT-019): adds range-width < 0.35 x daily ATR filter
+- STRAT-V016 First pullback after an opening drive (of STRAT-025): entry on the first EMA(9) pullback instead of the 15-minute close
+- STRAT-V017 London-range breakout at the New York open (of STRAT-027): range 07:00-13:30 UTC, trade 13:30-17:00 UTC
+- STRAT-V018 US-open breakout (crypto) (of STRAT-027): range 12:00-13:30 UTC, trade from 13:30
+- STRAT-V019 Open +/- k x prior day's range (Williams) (of STRAT-028): volatility measure: previous day's range
+- STRAT-V020 Gap-and-go with pre-market volume filter (of STRAT-029): adds pre-market volume threshold (extended-hours data)
+- STRAT-V021 Large-gap intraday reversal (of STRAT-030): gap threshold in units of return volatility
+- STRAT-V022 Early-session reversion to prior close (of STRAT-030): trigger after the first 30 minutes instead of the first bar
+- STRAT-V023 Prior 5-session high/low breakout (of STRAT-035): level: prior 5 sessions' extreme
+- STRAT-V024 Swing-low liquidity sweep reversal (of STRAT-037): reference: last confirmed swing low instead of the 20-bar low
+- STRAT-V025 Camarilla H3/L3 fade (of STRAT-038): levels from the Camarilla formula
+- STRAT-V026 Fibonacci pivot bounce (of STRAT-038): levels from the Fibonacci pivot formula
+- STRAT-V027 Camarilla H4/L4 breakout (of STRAT-039): levels from the Camarilla formula
+- STRAT-V028 First-hour VWAP extension fade (of STRAT-047): time window 10:00-11:00 ET only
+- STRAT-V029 VWAP-distance z-score reversion (of STRAT-047): z-score of close - VWAP instead of VWAP bands
+- STRAT-V030 Weekend band reversion (crypto) (of STRAT-047): only on Saturday/Sunday UTC
+- STRAT-V031 Anchored VWAP from the prior session close (of STRAT-050): anchor at the prior session's last bar
+- STRAT-V032 RSI(14) 30/70 reversal (of STRAT-062): period 14, thresholds 30/70, no trend filter
+- STRAT-V033 ConnorsRSI pullback (of STRAT-062): ConnorsRSI(3,2,100) < 10
+- STRAT-V034 Stochastic oversold cross (of STRAT-062): %K/%D cross below 20
+- STRAT-V035 StochRSI extreme (of STRAT-062): StochRSI %K below 10
+- STRAT-V036 Williams %R reversal (of STRAT-062): %R below -90 turning up
+- STRAT-V037 Fisher transform reversal (of STRAT-062): Fisher(10) crossing its signal below -1.5
+- STRAT-V038 Keltner channel fade (of STRAT-063): Keltner(20,2,10) instead of Bollinger
+- STRAT-V039 Z-score reversion to SMA(20) (of STRAT-063): z-score < -2 instead of band re-entry
+- STRAT-V040 Overextension from EMA(20) fade (of STRAT-063): distance > 3 ATR from EMA(20)
+- STRAT-V041 Double 7s (7-bar low in uptrend) (of STRAT-065): trigger: close at 7-bar low; exit at 7-bar high
+- STRAT-V042 30-minute return percentile reversal (of STRAT-068): trigger on pctrank of 6-bar return < 5
+- STRAT-V043 MACD divergence (of STRAT-070): MACD line instead of RSI
+- STRAT-V044 Ultimate Oscillator divergence (Williams) (of STRAT-070): Ultimate Oscillator with break of divergence high
+- STRAT-V045 TTM Squeeze fire (Carter) (of STRAT-071): compression = Bollinger inside Keltner; direction from squeeze momentum
+- STRAT-V046 Volatility contraction pattern breakout (of STRAT-071): successively smaller pullbacks, then breakout
+- STRAT-V047 Inside-bar breakout bracket (of STRAT-072): trigger: inside bar instead of NR7
+- STRAT-V048 NR4 inside-bar bracket (of STRAT-072): NR4 and inside bar together
+- STRAT-V049 Bollinger band breakout (of STRAT-073): Bollinger(20,2) bands
+- STRAT-V050 Marubozu continuation (of STRAT-074): trigger defined by candle body >= 90% of range
+- STRAT-V051 Doji at prior-session level (of STRAT-076): doji instead of hammer
+- STRAT-V052 Change of character (of STRAT-080): first break against the prior trend
+- STRAT-V053 Accumulation/distribution divergence (of STRAT-091): Chaikin A/D line instead of OBV
+- STRAT-V054 OBV-led breakout (of STRAT-091): OBV at a 50-bar high before price
+- STRAT-V055 Estimated-delta trend (labelled estimate) (of STRAT-093): close-location x volume estimate
+- STRAT-V056 Elder-ray bull-power pullback (of STRAT-094): bull power (high - EMA13) instead of force index
+- STRAT-V057 Bitcoin first-half-hour -> last-half-hour (of STRAT-097): market: crypto, UTC day
+- STRAT-V058 Crypto hour-of-day seasonality (of STRAT-098): market: crypto, 1-hour buckets
+- STRAT-V059 Pre-FOMC bitcoin drift (of STRAT-103): market: crypto
+- STRAT-V060 CPI-day opening-range breakout (of STRAT-104): ORB only on CPI days
+- STRAT-V061 Post-earnings first-day continuation (of STRAT-105): VWAP hold instead of ORB
+- STRAT-V062 QQQ/SPY spread reversion (one leg) (of STRAT-107): pair of ETFs instead of stock vs index
+- STRAT-V063 BTC leads COIN/MSTR (of STRAT-109): follower: US crypto stocks
+- STRAT-V064 SPY leads IWM (of STRAT-109): leader SPY, follower small caps
+- STRAT-V065 Stablecoin premium signal (of STRAT-112): USDT-USD deviation instead of cross-venue premium
+- STRAT-V066 Hurst-exponent regime switch (of STRAT-135): Hurst exponent instead of variance ratio
+
+## Blocked strategies (counted, cannot run yet)
+
+- STRAT-117 Funding-rate extreme contrarian: funding-rate series is fetched by the adapter but not yet wired into the live hub as a rule input
+- STRAT-118 Pre-funding-settlement drift: needs the funding series wired into the hub
+- STRAT-119 Open-interest-confirmed breakout: historical open interest at 5-minute resolution is not available from the free endpoints used
+- STRAT-120 Liquidation-cascade reversal: liquidation feeds are recent-only on free endpoints; no history for testing and not wired live
+- STRAT-121 Implied-volatility spike fade (Deribit DVOL): DVOL adapter exists in research scripts only; not wired into the hub
+- STRAT-122 Deribit expiry max-pain drift: needs per-strike open interest history (not collected)
+- STRAT-123 Korean-premium sentiment signal: no Upbit adapter built
+- STRAT-124 Exchange listing announcement momentum: no machine-readable announcement feed; also front-running risk and very high slippage
+- STRAT-129 Large-print following: per-trade size distribution is not aggregated by the hub
+- STRAT-130 Flow-toxicity (VPIN) regime: volume-bucket VPIN is not implemented in the indicator engine
+- STRAT-131 US stock tape and level-2 reading: no free real-time US quotes, book or trade prints (Yahoo provides bars only)
+- STRAT-132 NYSE closing-auction imbalance: imbalance feed is not free; platform also flattens 5 minutes before the close
+- STRAT-133 Iceberg-order detection: needs level-3 / full order-event data
+- STRAT-134 Microprice / queue-imbalance scalping: tick-level data and queue-position simulation are not available
+- STRAT-138 Kalman local-trend filter: Kalman filter indicator not implemented
+- STRAT-139 Hidden-Markov regime model: no HMM fitting in the platform (would need numpy/hmmlearn)
+- STRAT-140 Walk-forward logistic regression direction model: no model-training runtime in the bot platform yet (the separate Jarvus Brain trains models offline)
+- STRAT-141 Gradient boosting on triple-barrier labels: no model-training runtime in the bot platform yet (the separate Jarvus Brain trains models offline)
+- STRAT-142 Meta-labelling filter on rule signals: no model-training runtime in the bot platform yet (the separate Jarvus Brain trains models offline)
+- STRAT-143 Nearest-neighbour analog forecasting: no model-training runtime in the bot platform yet (the separate Jarvus Brain trains models offline)
+- STRAT-144 Recurrent/sequence neural network: no model-training runtime in the bot platform yet (the separate Jarvus Brain trains models offline); very high overfitting risk at retail data sizes
+- STRAT-145 Reinforcement-learning trading agent: no model-training runtime in the bot platform yet (the separate Jarvus Brain trains models offline); simulator-exploitation risk
+- STRAT-146 Inventory-aware market making: needs tick data and a queue-position fill model; maker fills cannot be simulated honestly from bars
+- STRAT-147 Intraday grid: the trade manager holds one position per bot; multi-order grids are not supported
+- STRAT-148 Triangular arbitrage (BTC-USD / ETH-USD / ETH-BTC): needs simultaneous multi-leg execution and tick data; fees at retail tiers exceed typical deviations
+- STRAT-149 Cross-exchange arbitrage: needs funded accounts on both venues and real transfers (real money)
+- STRAT-150 PCA statistical-arbitrage portfolio: needs simultaneous positions in dozens of stocks and shorting; one-instrument bots cannot express it
+- STRAT-151 Funding-rate carry (spot long / perp short): not day trading: the position is held across funding settlements; also needs two venues
+- STRAT-156 Wolfe waves: five-swing geometric pattern not implemented (engine tracks three swings)
+- STRAT-157 Harmonic (Gartley/Bat) patterns: five-swing pattern matching not implemented
+
+## Ideas not admitted to the catalog
+
+- Elliott wave counting, Gann angles: no objective, testable definition.
+- Zig-zag based rules: the indicator repaints (uses future bars).
+- News/social-sentiment, insider, analyst-revision, on-chain flow, token-unlock strategies: no free machine-readable real-time data and no source verified in this session; candidates for a later sourced review.
+- Overnight holds, dividend capture, multi-day swing systems: out of scope (day trading only).
+- Cross-sectional scanners (top gainers, 52-week-high proximity, in-play ranking over hundreds of symbols): need a universe scanner; the free Yahoo endpoint would be rate-limited. Specified as future work.
+

@@ -1,0 +1,72 @@
+{
+ "id": "STRAT-101",
+ "key": "opex_pinning",
+ "name": "Option-expiration pinning reversion",
+ "family": "time_of_day",
+ "subfamily": "calendar",
+ "hypothesis": "On monthly expiration Fridays after 13:00, fade moves more than 0.5% away from the nearest $5 strike back toward it.",
+ "markets": [
+  "stock"
+ ],
+ "timeframe": "5m",
+ "data": [
+  "bars"
+ ],
+ "definition": {
+  "name": "Option-expiration pinning reversion",
+  "family": "time_of_day",
+  "timeframe": "5m",
+  "direction": "both",
+  "params": {},
+  "entry": {
+   "short": "is_opex() == 1 and tod() >= 780 and close > (floor_to(close,5) + 2.5) and close / (floor_to(close,5) + 5) - 1 > -0.001 and close < open",
+   "long": "is_opex() == 1 and tod() >= 780 and close < (floor_to(close,5) + 2.5) and close / floor_to(close,5) - 1 < 0.001 and close > open"
+  },
+  "filters": [],
+  "order": {
+   "type": "market"
+  },
+  "stop": {
+   "type": "atr",
+   "mult": 1.5,
+   "n": 14
+  },
+  "target": {
+   "type": "r",
+   "r": 1.0
+  },
+  "trail": {
+   "type": "none"
+  },
+  "exit": {},
+  "max_bars": 0,
+  "session": {
+   "entry_start": "09:35",
+   "entry_end": "15:30",
+   "flat_minutes_before_close": 5
+  },
+  "max_trades_per_day": 1,
+  "cooldown_bars": 0,
+  "sizing": {
+   "risk_pct": 0.5,
+   "max_notional_pct": 100.0
+  },
+  "data": [
+   "bars"
+  ],
+  "id": "STRAT-101",
+  "version": "1.0.0"
+ },
+ "spec": null,
+ "implementation_status": "implemented",
+ "blocked_reason": null,
+ "research_status": "incompletely sourced",
+ "evidence": [
+  {
+   "source": "SRC-011",
+   "relation": "mechanism",
+   "note": "closing prices cluster at strikes on expiration dates"
+  }
+ ],
+ "variants": []
+}

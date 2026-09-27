@@ -1,0 +1,73 @@
+{
+ "id": "STRAT-026",
+ "key": "open_rejection_reverse",
+ "name": "Open outside prior range, rejected back inside",
+ "family": "opening_range",
+ "subfamily": "open type",
+ "hypothesis": "An open above yesterday's high that falls back below it within the first hour is a rejected auction; short toward yesterday's close.",
+ "markets": [
+  "stock"
+ ],
+ "timeframe": "5m",
+ "data": [
+  "bars"
+ ],
+ "definition": {
+  "name": "Open outside prior range, rejected back inside",
+  "family": "opening_range",
+  "timeframe": "5m",
+  "direction": "both",
+  "params": {},
+  "entry": {
+   "short": "session().open > session().prev_high and cross_below(close, session().prev_high) and minutes_since_open() <= 60",
+   "long": "session().open < session().prev_low and cross_above(close, session().prev_low) and minutes_since_open() <= 60"
+  },
+  "filters": [],
+  "order": {
+   "type": "market"
+  },
+  "stop": {
+   "type": "level",
+   "long": "session().low",
+   "short": "session().high",
+   "buffer_atr": 0.1,
+   "n": 14
+  },
+  "target": {
+   "type": "level",
+   "long": "session().prev_close",
+   "short": "session().prev_close"
+  },
+  "trail": {
+   "type": "none"
+  },
+  "exit": {},
+  "max_bars": 0,
+  "session": {
+   "flat_minutes_before_close": 5
+  },
+  "max_trades_per_day": 1,
+  "cooldown_bars": 0,
+  "sizing": {
+   "risk_pct": 0.5,
+   "max_notional_pct": 100.0
+  },
+  "data": [
+   "bars"
+  ],
+  "id": "STRAT-026",
+  "version": "1.0.0"
+ },
+ "spec": null,
+ "implementation_status": "implemented",
+ "blocked_reason": null,
+ "research_status": "incompletely sourced",
+ "evidence": [
+  {
+   "source": "SRC-078",
+   "relation": "origin",
+   "note": "open-rejection-reverse type"
+  }
+ ],
+ "variants": []
+}

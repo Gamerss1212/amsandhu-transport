@@ -1,0 +1,24 @@
+{
+ "id": "STRAT-131",
+ "key": "stock_tape_reading",
+ "name": "US stock tape and level-2 reading",
+ "family": "order_flow",
+ "subfamily": "stocks order flow",
+ "hypothesis": "Buy when large bids stack and prints hit the offer repeatedly at a level.",
+ "markets": [
+  "stock"
+ ],
+ "timeframe": "1m",
+ "data": [
+  "bars",
+  "quotes",
+  "trades"
+ ],
+ "definition": null,
+ "spec": "requires consolidated quotes/trades (paid feed); rules as book_imbalance_momentum",
+ "implementation_status": "blocked",
+ "blocked_reason": "no free real-time US quotes, book or trade prints (Yahoo provides bars only)",
+ "research_status": "hypothesis",
+ "evidence": [],
+ "variants": []
+}

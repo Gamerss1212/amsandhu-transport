@@ -37,7 +37,7 @@ from mab import expr
 from mab.expr import Evaluator, ExprError, Node
 from mab.frame import Frame
 
-VALID_DATA = {"bars", "trades", "book", "funding", "oi", "bench", "quotes"}
+VALID_DATA = {"bars", "trades", "book", "funding", "oi", "bench", "quotes", "extended_hours"}
 
 DEFAULTS = {
     "version": "1.0.0", "direction": "both", "params": {}, "filters": [], "order": {"type": "market"},
@@ -88,6 +88,10 @@ def normalise(d: dict) -> dict:
 def compile_strategy(d: dict, overrides: Optional[dict] = None, asset_type: str = "crypto") -> Compiled:
     """Validate a definition and parse every rule with parameters substituted."""
     d = normalise(d)
+    sess = d.get("session") or {}
+    if "stock" in sess or "crypto" in sess:            # market-specific session windows
+        from mab.clock import is_equity
+        d["session"] = sess.get("stock" if is_equity(asset_type) else "crypto", {})
     params = dict(d.get("params") or {})
     for k, v in (overrides or {}).items():
         if k not in params:

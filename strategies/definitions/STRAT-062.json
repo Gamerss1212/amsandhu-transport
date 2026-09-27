@@ -1,0 +1,87 @@
+{
+ "id": "STRAT-062",
+ "key": "rsi2_pullback",
+ "name": "RSI(2) pullback in an uptrend (Connors)",
+ "family": "mean_reversion",
+ "subfamily": "oscillator extreme",
+ "hypothesis": "With price above its 200-bar average, an RSI(2) reading below 5 is a buying opportunity; exit on a close above the 5-bar average.",
+ "markets": [
+  "stock",
+  "crypto"
+ ],
+ "timeframe": "5m",
+ "data": [
+  "bars"
+ ],
+ "definition": {
+  "name": "RSI(2) pullback in an uptrend (Connors)",
+  "family": "mean_reversion",
+  "timeframe": "5m",
+  "direction": "both",
+  "params": {},
+  "entry": {
+   "long": "rsi(close,2) < 5 and close > sma(close,200)",
+   "short": "rsi(close,2) > 95 and close < sma(close,200)"
+  },
+  "filters": [],
+  "order": {
+   "type": "market"
+  },
+  "stop": {
+   "type": "atr",
+   "mult": 3.0,
+   "n": 14
+  },
+  "target": {
+   "type": "none"
+  },
+  "trail": {
+   "type": "none"
+  },
+  "exit": {
+   "long": "close > sma(close,5)",
+   "short": "close < sma(close,5)"
+  },
+  "max_bars": 20,
+  "session": {
+   "stock": {
+    "entry_start": "09:35",
+    "entry_end": "15:30",
+    "flat_minutes_before_close": 5
+   },
+   "crypto": {
+    "flat_minutes_before_close": 5
+   }
+  },
+  "max_trades_per_day": 3,
+  "cooldown_bars": 0,
+  "sizing": {
+   "risk_pct": 0.5,
+   "max_notional_pct": 100.0
+  },
+  "data": [
+   "bars"
+  ],
+  "id": "STRAT-062",
+  "version": "1.0.0"
+ },
+ "spec": null,
+ "implementation_status": "implemented",
+ "blocked_reason": null,
+ "research_status": "incompletely sourced",
+ "evidence": [
+  {
+   "source": "SRC-072",
+   "relation": "origin",
+   "note": "2-period RSI strategies on daily bars (book)"
+  }
+ ],
+ "variants": [
+  "STRAT-V032",
+  "STRAT-V033",
+  "STRAT-V034",
+  "STRAT-V035",
+  "STRAT-V036",
+  "STRAT-V037"
+ ]
+}

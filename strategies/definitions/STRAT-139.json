@@ -1,0 +1,23 @@
+{
+ "id": "STRAT-139",
+ "key": "hmm_regime",
+ "name": "Hidden-Markov regime model",
+ "family": "statistical",
+ "subfamily": "regime",
+ "hypothesis": "Trade trend rules in the high-persistence state and reversion rules in the other.",
+ "markets": [
+  "stock",
+  "crypto"
+ ],
+ "timeframe": "15m",
+ "data": [
+  "bars"
+ ],
+ "definition": null,
+ "spec": "fit 2-state Gaussian HMM on returns walk-forward; map states to rule sets",
+ "implementation_status": "blocked",
+ "blocked_reason": "no HMM fitting in the platform (would need numpy/hmmlearn)",
+ "research_status": "hypothesis",
+ "evidence": [],
+ "variants": []
+}

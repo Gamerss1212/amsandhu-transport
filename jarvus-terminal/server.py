@@ -22,6 +22,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import config
+from engine import fleet
 from engine import http as ehttp
 from engine import automation, bots, learn, news, portfolio, research, scanner, store, swarm
 from engine import indicators as eind
@@ -298,6 +299,13 @@ class Handler(BaseHTTPRequestHandler):
                                 for d in bots.BOT_DEFS]
                 return self._json(data)
 
+            if route == "/api/library":
+                return self._json(fleet.library())
+            if route.startswith("/api/library/"):
+                return self._json(fleet.strategy(route.rsplit("/", 1)[1]))
+            if route == "/api/fleet/status":
+                return self._json(fleet.status())
+
             if route == "/api/bots":
                 eng = bots.get_engine()
                 return self._json(eng.status() if eng else {"error": "bots are not running in this process"})
@@ -314,6 +322,13 @@ class Handler(BaseHTTPRequestHandler):
             parsed = urllib.parse.urlparse(self.path)
             length = int(self.headers.get("Content-Length") or 0)
             payload = json.loads(self.rfile.read(length) or b"{}") if length else {}
+
+            if parsed.path == "/api/fleet/start":
+                return self._json(fleet.start(str(payload.get("stage", "250")), payload.get("balance")))
+            if parsed.path == "/api/fleet/stop":
+                return self._json(fleet.stop())
+            if parsed.path == "/api/fleet/command":
+                return self._json(fleet.command(str(payload.get("command", "")), payload.get("args") or {}))
 
             if parsed.path == "/api/resolve":
                 return self._json(learn.resolve_due(int(payload.get("limit", 100))))

@@ -1,0 +1,29 @@
+{
+ "id": "STRAT-142",
+ "key": "ml_meta_labeling",
+ "name": "Meta-labelling filter on rule signals",
+ "family": "machine_learning",
+ "subfamily": "meta-labelling",
+ "hypothesis": "A classifier trained on the context of past ORB signals skips the ones likely to fail.",
+ "markets": [
+  "stock",
+  "crypto"
+ ],
+ "timeframe": "5m",
+ "data": [
+  "bars"
+ ],
+ "definition": null,
+ "spec": "primary signals from orb_breakout; secondary model predicts win/loss; size by probability",
+ "implementation_status": "blocked",
+ "blocked_reason": "no model-training runtime in the bot platform yet (the separate Jarvus Brain trains models offline)",
+ "research_status": "incompletely sourced",
+ "evidence": [
+  {
+   "source": "SRC-064",
+   "relation": "origin",
+   "note": "meta-labelling"
+  }
+ ],
+ "variants": []
+}

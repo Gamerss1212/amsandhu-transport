@@ -1,0 +1,24 @@
+{
+ "id": "STRAT-133",
+ "key": "iceberg_detection",
+ "name": "Iceberg-order detection",
+ "family": "order_flow",
+ "subfamily": "hidden liquidity",
+ "hypothesis": "Trade off a price level that keeps refilling after being hit.",
+ "markets": [
+  "stock",
+  "crypto"
+ ],
+ "timeframe": "1m",
+ "data": [
+  "bars",
+  "l3"
+ ],
+ "definition": null,
+ "spec": "detect > 5 refills at the same price within 60 s; buy above it with a stop just below",
+ "implementation_status": "blocked",
+ "blocked_reason": "needs level-3 / full order-event data",
+ "research_status": "hypothesis",
+ "evidence": [],
+ "variants": []
+}

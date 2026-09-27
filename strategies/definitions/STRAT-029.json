@@ -1,0 +1,80 @@
+{
+ "id": "STRAT-029",
+ "key": "gap_and_go",
+ "name": "Gap-and-go continuation",
+ "family": "gaps",
+ "subfamily": "opening gap",
+ "hypothesis": "A gap of at least 1% whose first 5-minute bar closes in the gap's direction on at least 1.5x usual volume continues past that bar's extreme.",
+ "markets": [
+  "stock"
+ ],
+ "timeframe": "5m",
+ "data": [
+  "bars"
+ ],
+ "definition": {
+  "name": "Gap-and-go continuation",
+  "family": "gaps",
+  "timeframe": "5m",
+  "direction": "both",
+  "params": {},
+  "entry": {
+   "long": "bar_in_session() == 0 and session().gap > 0.01 and close > open and rvol_tod(14) > 1.5",
+   "short": "bar_in_session() == 0 and session().gap < -0.01 and close < open and rvol_tod(14) > 1.5"
+  },
+  "filters": [],
+  "order": {
+   "type": "stop",
+   "long": "opening_range(5).high",
+   "short": "opening_range(5).low",
+   "ttl_bars": 12
+  },
+  "stop": {
+   "type": "level",
+   "long": "opening_range(5).low",
+   "short": "opening_range(5).high"
+  },
+  "target": {
+   "type": "r",
+   "r": 2.0
+  },
+  "trail": {
+   "type": "none"
+  },
+  "exit": {},
+  "max_bars": 0,
+  "session": {
+   "flat_minutes_before_close": 5
+  },
+  "max_trades_per_day": 1,
+  "cooldown_bars": 0,
+  "sizing": {
+   "risk_pct": 0.5,
+   "max_notional_pct": 100.0
+  },
+  "data": [
+   "bars"
+  ],
+  "id": "STRAT-029",
+  "version": "1.0.0"
+ },
+ "spec": null,
+ "implementation_status": "implemented",
+ "blocked_reason": null,
+ "research_status": "incompletely sourced",
+ "evidence": [
+  {
+   "source": "SRC-077",
+   "relation": "origin",
+   "note": "gap setups (book; rules not read here)"
+  },
+  {
+   "source": "SRC-002",
+   "relation": "mechanism",
+   "note": "stocks in play"
+  }
+ ],
+ "variants": [
+  "STRAT-V020"
+ ]
+}

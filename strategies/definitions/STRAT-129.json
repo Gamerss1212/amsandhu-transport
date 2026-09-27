@@ -1,0 +1,23 @@
+{
+ "id": "STRAT-129",
+ "key": "large_print_following",
+ "name": "Large-print following",
+ "family": "order_flow",
+ "subfamily": "trade size",
+ "hypothesis": "Follow the direction of clusters of very large aggressive prints.",
+ "markets": [
+  "crypto"
+ ],
+ "timeframe": "1m",
+ "data": [
+  "bars",
+  "trades"
+ ],
+ "definition": null,
+ "spec": "long when buy volume from trades > 99.9th size percentile exceeds sell volume by 3x within a minute; hold 5 minutes",
+ "implementation_status": "blocked",
+ "blocked_reason": "per-trade size distribution is not aggregated by the hub",
+ "research_status": "hypothesis",
+ "evidence": [],
+ "variants": []
+}

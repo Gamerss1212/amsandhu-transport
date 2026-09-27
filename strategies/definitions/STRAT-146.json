@@ -1,0 +1,29 @@
+{
+ "id": "STRAT-146",
+ "key": "avellaneda_stoikov_mm",
+ "name": "Inventory-aware market making",
+ "family": "market_making_arbitrage",
+ "subfamily": "market making",
+ "hypothesis": "Quote both sides around an inventory-adjusted reservation price.",
+ "markets": [
+  "crypto"
+ ],
+ "timeframe": "tick",
+ "data": [
+  "ticks",
+  "book"
+ ],
+ "definition": null,
+ "spec": "reservation r = s - q*gamma*sigma^2*(T-t); spread from the paper's formula",
+ "implementation_status": "blocked",
+ "blocked_reason": "needs tick data and a queue-position fill model; maker fills cannot be simulated honestly from bars",
+ "research_status": "incompletely sourced",
+ "evidence": [
+  {
+   "source": "SRC-019",
+   "relation": "origin",
+   "note": "the model"
+  }
+ ],
+ "variants": []
+}

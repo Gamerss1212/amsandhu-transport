@@ -1,0 +1,82 @@
+{
+ "id": "STRAT-041",
+ "key": "round_number_reversal",
+ "name": "Round-number rejection",
+ "family": "reference_levels",
+ "subfamily": "round numbers",
+ "hypothesis": "A bar that pokes through a round number and closes back on the near side with a rejection wick reverses.",
+ "markets": [
+  "stock",
+  "crypto"
+ ],
+ "timeframe": "5m",
+ "data": [
+  "bars"
+ ],
+ "definition": {
+  "name": "Round-number rejection",
+  "family": "reference_levels",
+  "timeframe": "5m",
+  "direction": "both",
+  "params": {
+   "step": 1000
+  },
+  "entry": {
+   "short": "high >= ceil_to(close[1], $step) and close < ceil_to(close[1], $step) and high - max(open, close) > 0.5*(high - low)",
+   "long": "low <= floor_to(close[1], $step) and close > floor_to(close[1], $step) and min(open, close) - low > 0.5*(high - low)"
+  },
+  "filters": [],
+  "order": {
+   "type": "market"
+  },
+  "stop": {
+   "type": "level",
+   "long": "low",
+   "short": "high",
+   "buffer_atr": 0.2,
+   "n": 14
+  },
+  "target": {
+   "type": "r",
+   "r": 1.5
+  },
+  "trail": {
+   "type": "none"
+  },
+  "exit": {},
+  "max_bars": 0,
+  "session": {
+   "stock": {
+    "entry_start": "09:35",
+    "entry_end": "15:30",
+    "flat_minutes_before_close": 5
+   },
+   "crypto": {
+    "flat_minutes_before_close": 5
+   }
+  },
+  "max_trades_per_day": 2,
+  "cooldown_bars": 0,
+  "sizing": {
+   "risk_pct": 0.5,
+   "max_notional_pct": 100.0
+  },
+  "data": [
+   "bars"
+  ],
+  "id": "STRAT-041",
+  "version": "1.0.0"
+ },
+ "spec": null,
+ "implementation_status": "implemented",
+ "blocked_reason": null,
+ "research_status": "incompletely sourced",
+ "evidence": [
+  {
+   "source": "SRC-043",
+   "relation": "mechanism",
+   "note": "take-profit clustering at round numbers"
+  }
+ ],
+ "variants": []
+}

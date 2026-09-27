@@ -1,0 +1,23 @@
+{
+ "id": "STRAT-118",
+ "key": "funding_settlement_drift",
+ "name": "Pre-funding-settlement drift",
+ "family": "crypto_structure",
+ "subfamily": "funding",
+ "hypothesis": "In the hour before a settlement with extreme funding, the paying side reduces positions, pushing price against it.",
+ "markets": [
+  "crypto"
+ ],
+ "timeframe": "5m",
+ "data": [
+  "bars",
+  "funding"
+ ],
+ "definition": null,
+ "spec": "in the 60 minutes before 00:00/08:00/16:00 UTC: if funding > 0.03% short, if < -0.03% long; exit at settlement",
+ "implementation_status": "blocked",
+ "blocked_reason": "needs the funding series wired into the hub",
+ "research_status": "hypothesis",
+ "evidence": [],
+ "variants": []
+}

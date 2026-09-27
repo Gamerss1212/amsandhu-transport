@@ -1,0 +1,64 @@
+{
+ "id": "STRAT-034",
+ "key": "ssr_day_bounce",
+ "name": "Short-sale-restriction day bounce",
+ "family": "gaps",
+ "subfamily": "regulatory",
+ "hypothesis": "The day after a stock falls 10% or more, short sales are restricted to upticks; a break above the first 30 minutes' high tends to squeeze.",
+ "markets": [
+  "stock"
+ ],
+ "timeframe": "5m",
+ "data": [
+  "bars"
+ ],
+ "definition": {
+  "name": "Short-sale-restriction day bounce",
+  "family": "gaps",
+  "timeframe": "5m",
+  "direction": "long",
+  "params": {},
+  "entry": {
+   "long": "session().prev_close / tf(\"1d\", close[1]) - 1 <= -0.10 and cross_above(close, opening_range(30).high)"
+  },
+  "filters": [],
+  "order": {
+   "type": "market"
+  },
+  "stop": {
+   "type": "level",
+   "long": "opening_range(30).low"
+  },
+  "target": {
+   "type": "r",
+   "r": 2.0
+  },
+  "trail": {
+   "type": "none"
+  },
+  "exit": {},
+  "max_bars": 0,
+  "session": {
+   "entry_start": "09:35",
+   "entry_end": "15:30",
+   "flat_minutes_before_close": 5
+  },
+  "max_trades_per_day": 1,
+  "cooldown_bars": 0,
+  "sizing": {
+   "risk_pct": 0.5,
+   "max_notional_pct": 100.0
+  },
+  "data": [
+   "bars"
+  ],
+  "id": "STRAT-034",
+  "version": "1.0.0"
+ },
+ "spec": null,
+ "implementation_status": "implemented",
+ "blocked_reason": null,
+ "research_status": "hypothesis",
+ "evidence": [],
+ "variants": []
+}

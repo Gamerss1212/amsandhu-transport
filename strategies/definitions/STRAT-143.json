@@ -1,0 +1,23 @@
+{
+ "id": "STRAT-143",
+ "key": "ml_knn_analog",
+ "name": "Nearest-neighbour analog forecasting",
+ "family": "machine_learning",
+ "subfamily": "instance-based",
+ "hypothesis": "Average the outcomes of the 20 most similar historical windows.",
+ "markets": [
+  "stock",
+  "crypto"
+ ],
+ "timeframe": "15m",
+ "data": [
+  "bars"
+ ],
+ "definition": null,
+ "spec": "k=20 Euclidean on normalised 20-bar return vectors; trade if mean outcome > costs",
+ "implementation_status": "blocked",
+ "blocked_reason": "no model-training runtime in the bot platform yet (the separate Jarvus Brain trains models offline)",
+ "research_status": "hypothesis",
+ "evidence": [],
+ "variants": []
+}

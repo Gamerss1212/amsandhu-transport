@@ -1,0 +1,71 @@
+{
+ "id": "STRAT-025",
+ "key": "opening_drive",
+ "name": "Opening-drive continuation",
+ "family": "opening_range",
+ "subfamily": "open type",
+ "hypothesis": "If the first 15 minutes cover at least 0.3 daily ATR and close in the top 20% of their range, the drive tends to continue.",
+ "markets": [
+  "stock"
+ ],
+ "timeframe": "5m",
+ "data": [
+  "bars"
+ ],
+ "definition": {
+  "name": "Opening-drive continuation",
+  "family": "opening_range",
+  "timeframe": "5m",
+  "direction": "both",
+  "params": {},
+  "entry": {
+   "long": "bar_in_session() == 2 and opening_range(15).high - opening_range(15).low > 0.3*tf(\"1d\", atr(14)) and close > opening_range(15).high - 0.2*(opening_range(15).high - opening_range(15).low)",
+   "short": "bar_in_session() == 2 and opening_range(15).high - opening_range(15).low > 0.3*tf(\"1d\", atr(14)) and close < opening_range(15).low + 0.2*(opening_range(15).high - opening_range(15).low)"
+  },
+  "filters": [],
+  "order": {
+   "type": "market"
+  },
+  "stop": {
+   "type": "level",
+   "long": "opening_range(15).low",
+   "short": "opening_range(15).high"
+  },
+  "target": {
+   "type": "none"
+  },
+  "trail": {
+   "type": "none"
+  },
+  "exit": {},
+  "max_bars": 0,
+  "session": {
+   "flat_minutes_before_close": 5
+  },
+  "max_trades_per_day": 1,
+  "cooldown_bars": 0,
+  "sizing": {
+   "risk_pct": 0.5,
+   "max_notional_pct": 100.0
+  },
+  "data": [
+   "bars"
+  ],
+  "id": "STRAT-025",
+  "version": "1.0.0"
+ },
+ "spec": null,
+ "implementation_status": "implemented",
+ "blocked_reason": null,
+ "research_status": "incompletely sourced",
+ "evidence": [
+  {
+   "source": "SRC-078",
+   "relation": "origin",
+   "note": "open types (open-drive)"
+  }
+ ],
+ "variants": [
+  "STRAT-V016"
+ ]
+}

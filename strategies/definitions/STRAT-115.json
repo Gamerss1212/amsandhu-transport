@@ -1,0 +1,62 @@
+{
+ "id": "STRAT-115",
+ "key": "stablecoin_peg_reversion",
+ "name": "Stablecoin peg reversion",
+ "family": "crypto_structure",
+ "subfamily": "peg",
+ "hypothesis": "Buy a major stablecoin trading below 0.998 USD; sell at 0.9995 or the session end.",
+ "markets": [
+  "crypto"
+ ],
+ "timeframe": "5m",
+ "data": [
+  "bars"
+ ],
+ "definition": {
+  "name": "Stablecoin peg reversion",
+  "family": "crypto_structure",
+  "timeframe": "5m",
+  "direction": "long",
+  "params": {},
+  "entry": {
+   "long": "close < 0.998"
+  },
+  "filters": [],
+  "order": {
+   "type": "market"
+  },
+  "stop": {
+   "type": "pct",
+   "pct": 1.0
+  },
+  "target": {
+   "type": "level",
+   "long": "0.9995"
+  },
+  "trail": {
+   "type": "none"
+  },
+  "exit": {},
+  "max_bars": 0,
+  "session": {
+   "flat_minutes_before_close": 5
+  },
+  "max_trades_per_day": 2,
+  "cooldown_bars": 0,
+  "sizing": {
+   "risk_pct": 0.5,
+   "max_notional_pct": 100.0
+  },
+  "data": [
+   "bars"
+  ],
+  "id": "STRAT-115",
+  "version": "1.0.0"
+ },
+ "spec": null,
+ "implementation_status": "implemented",
+ "blocked_reason": null,
+ "research_status": "hypothesis",
+ "evidence": [],
+ "variants": []
+}

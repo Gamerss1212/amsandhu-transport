@@ -1,0 +1,23 @@
+{
+ "id": "STRAT-138",
+ "key": "kalman_trend",
+ "name": "Kalman local-trend filter",
+ "family": "statistical",
+ "subfamily": "state space",
+ "hypothesis": "Trade in the direction of the filtered slope when it exceeds two of its standard errors.",
+ "markets": [
+  "stock",
+  "crypto"
+ ],
+ "timeframe": "5m",
+ "data": [
+  "bars"
+ ],
+ "definition": null,
+ "spec": "local linear trend model; long when slope/se > 2; exit when < 0",
+ "implementation_status": "blocked",
+ "blocked_reason": "Kalman filter indicator not implemented",
+ "research_status": "hypothesis",
+ "evidence": [],
+ "variants": []
+}

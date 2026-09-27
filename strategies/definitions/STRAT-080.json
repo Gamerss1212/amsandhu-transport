@@ -1,0 +1,76 @@
+{
+ "id": "STRAT-080",
+ "key": "break_of_structure",
+ "name": "Break of structure after a higher low",
+ "family": "market_structure",
+ "subfamily": "swing structure",
+ "hypothesis": "Once a higher swing low is in place, a close above the most recent swing high starts the next leg.",
+ "markets": [
+  "stock",
+  "crypto"
+ ],
+ "timeframe": "5m",
+ "data": [
+  "bars"
+ ],
+ "definition": {
+  "name": "Break of structure after a higher low",
+  "family": "market_structure",
+  "timeframe": "5m",
+  "direction": "both",
+  "params": {},
+  "entry": {
+   "long": "swings(3).low > swings(3).low_prev and cross_above(close, swings(3).high)",
+   "short": "swings(3).high < swings(3).high_prev and cross_below(close, swings(3).low)"
+  },
+  "filters": [],
+  "order": {
+   "type": "market"
+  },
+  "stop": {
+   "type": "level",
+   "long": "swings(3).low",
+   "short": "swings(3).high",
+   "buffer_atr": 0.1,
+   "n": 14
+  },
+  "target": {
+   "type": "r",
+   "r": 2.0
+  },
+  "trail": {
+   "type": "none"
+  },
+  "exit": {},
+  "max_bars": 0,
+  "session": {
+   "stock": {
+    "entry_start": "09:35",
+    "entry_end": "15:30",
+    "flat_minutes_before_close": 5
+   },
+   "crypto": {
+    "flat_minutes_before_close": 5
+   }
+  },
+  "max_trades_per_day": 2,
+  "cooldown_bars": 0,
+  "sizing": {
+   "risk_pct": 0.5,
+   "max_notional_pct": 100.0
+  },
+  "data": [
+   "bars"
+  ],
+  "id": "STRAT-080",
+  "version": "1.0.0"
+ },
+ "spec": null,
+ "implementation_status": "implemented",
+ "blocked_reason": null,
+ "research_status": "hypothesis",
+ "evidence": [],
+ "variants": [
+  "STRAT-V052"
+ ]
+}

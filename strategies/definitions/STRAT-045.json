@@ -1,0 +1,69 @@
+{
+ "id": "STRAT-045",
+ "key": "ten_am_reversal",
+ "name": "Ten o'clock reversal",
+ "family": "reference_levels",
+ "subfamily": "time-conditioned reversal",
+ "hypothesis": "If the first 30 minutes moved strongly one way, a reversal bar between 10:00 and 10:30 marks the day's first swing extreme.",
+ "markets": [
+  "stock"
+ ],
+ "timeframe": "5m",
+ "data": [
+  "bars"
+ ],
+ "definition": {
+  "name": "Ten o'clock reversal",
+  "family": "reference_levels",
+  "timeframe": "5m",
+  "direction": "both",
+  "params": {},
+  "entry": {
+   "short": "time_between(\"10:00\", \"10:30\") and valuewhen(minutes_since_open() == 25, close) / session().open - 1 > 0.004 and close < low[1]",
+   "long": "time_between(\"10:00\", \"10:30\") and valuewhen(minutes_since_open() == 25, close) / session().open - 1 < -0.004 and close > high[1]"
+  },
+  "filters": [],
+  "order": {
+   "type": "market"
+  },
+  "stop": {
+   "type": "level",
+   "long": "session().low",
+   "short": "session().high",
+   "buffer_atr": 0.1,
+   "n": 14
+  },
+  "target": {
+   "type": "level",
+   "long": "vwap()",
+   "short": "vwap()"
+  },
+  "trail": {
+   "type": "none"
+  },
+  "exit": {},
+  "max_bars": 0,
+  "session": {
+   "entry_start": "09:35",
+   "entry_end": "15:30",
+   "flat_minutes_before_close": 5
+  },
+  "max_trades_per_day": 1,
+  "cooldown_bars": 0,
+  "sizing": {
+   "risk_pct": 0.5,
+   "max_notional_pct": 100.0
+  },
+  "data": [
+   "bars"
+  ],
+  "id": "STRAT-045",
+  "version": "1.0.0"
+ },
+ "spec": null,
+ "implementation_status": "implemented",
+ "blocked_reason": null,
+ "research_status": "hypothesis",
+ "evidence": [],
+ "variants": []
+}

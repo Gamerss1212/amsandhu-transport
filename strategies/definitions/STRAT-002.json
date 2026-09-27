@@ -1,0 +1,77 @@
+{
+ "id": "STRAT-002",
+ "key": "ema_ribbon_pullback",
+ "name": "Aligned EMA ribbon pullback",
+ "family": "trend_following",
+ "subfamily": "pullback in trend",
+ "hypothesis": "With the 8, 21 and 55-period averages stacked in trend order, a dip to the 21 that closes back in the trend direction resumes the trend more often than it reverses it.",
+ "markets": [
+  "stock",
+  "crypto"
+ ],
+ "timeframe": "5m",
+ "data": [
+  "bars"
+ ],
+ "definition": {
+  "name": "Aligned EMA ribbon pullback",
+  "family": "trend_following",
+  "timeframe": "5m",
+  "direction": "both",
+  "params": {},
+  "entry": {
+   "long": "ema(close,8) > ema(close,21) and ema(close,21) > ema(close,55) and low <= ema(close,21) and close > ema(close,21) and close > open",
+   "short": "ema(close,8) < ema(close,21) and ema(close,21) < ema(close,55) and high >= ema(close,21) and close < ema(close,21) and close < open"
+  },
+  "filters": [],
+  "order": {
+   "type": "market"
+  },
+  "stop": {
+   "type": "level",
+   "long": "ema(close,55)",
+   "short": "ema(close,55)",
+   "buffer_atr": 0.25,
+   "n": 14
+  },
+  "target": {
+   "type": "r",
+   "r": 2.0
+  },
+  "trail": {
+   "type": "none"
+  },
+  "exit": {},
+  "max_bars": 0,
+  "session": {
+   "stock": {
+    "entry_start": "09:35",
+    "entry_end": "15:30",
+    "flat_minutes_before_close": 5
+   },
+   "crypto": {
+    "flat_minutes_before_close": 5
+   }
+  },
+  "max_trades_per_day": 3,
+  "cooldown_bars": 0,
+  "sizing": {
+   "risk_pct": 0.5,
+   "max_notional_pct": 100.0
+  },
+  "data": [
+   "bars"
+  ],
+  "id": "STRAT-002",
+  "version": "1.0.0"
+ },
+ "spec": null,
+ "implementation_status": "implemented",
+ "blocked_reason": null,
+ "research_status": "hypothesis",
+ "evidence": [],
+ "variants": [
+  "STRAT-V005",
+  "STRAT-V006"
+ ]
+}

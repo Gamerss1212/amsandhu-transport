@@ -1,0 +1,89 @@
+{
+ "id": "STRAT-028",
+ "key": "open_volatility_breakout",
+ "name": "Open +/- volatility breakout (Crabel stretch / Williams)",
+ "family": "opening_range",
+ "subfamily": "volatility breakout",
+ "hypothesis": "Place a buy stop at the open plus the 10-day average of min(high-open, open-low) and a sell stop the same distance below (one-cancels-other).",
+ "markets": [
+  "stock",
+  "crypto"
+ ],
+ "timeframe": "5m",
+ "data": [
+  "bars"
+ ],
+ "definition": {
+  "name": "Open +/- volatility breakout (Crabel stretch / Williams)",
+  "family": "opening_range",
+  "timeframe": "5m",
+  "direction": "both",
+  "params": {
+   "k": 1.0
+  },
+  "entry": {
+   "long": "bar_in_session() == 0",
+   "short": "bar_in_session() == 0"
+  },
+  "filters": [],
+  "order": {
+   "type": "oco",
+   "long": "session().open + $k*tf(\"1d\", mean(min(high - open, open - low), 10))",
+   "short": "session().open - $k*tf(\"1d\", mean(min(high - open, open - low), 10))",
+   "ttl_bars": 60
+  },
+  "stop": {
+   "type": "atr",
+   "mult": 1.5,
+   "n": 14
+  },
+  "target": {
+   "type": "none"
+  },
+  "trail": {
+   "type": "none"
+  },
+  "exit": {},
+  "max_bars": 0,
+  "session": {
+   "stock": {
+    "entry_start": "09:35",
+    "entry_end": "15:30",
+    "flat_minutes_before_close": 5
+   },
+   "crypto": {
+    "flat_minutes_before_close": 5
+   }
+  },
+  "max_trades_per_day": 1,
+  "cooldown_bars": 0,
+  "sizing": {
+   "risk_pct": 0.5,
+   "max_notional_pct": 100.0
+  },
+  "data": [
+   "bars"
+  ],
+  "id": "STRAT-028",
+  "version": "1.0.0"
+ },
+ "spec": null,
+ "implementation_status": "implemented",
+ "blocked_reason": null,
+ "research_status": "incompletely sourced",
+ "evidence": [
+  {
+   "source": "SRC-070",
+   "relation": "origin",
+   "note": "stretch-based opening range breakouts (book)"
+  },
+  {
+   "source": "SRC-081",
+   "relation": "origin",
+   "note": "volatility breakouts from the open (book)"
+  }
+ ],
+ "variants": [
+  "STRAT-V019"
+ ]
+}

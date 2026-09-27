@@ -1,0 +1,66 @@
+{
+ "id": "STRAT-110",
+ "key": "vix_spike_reversion",
+ "name": "VIX-spike capitulation buy",
+ "family": "cross_asset",
+ "subfamily": "volatility index",
+ "hypothesis": "When VIX is up more than 10% on the day and SPY closes back inside its lower 2-sd VWAP band, buy SPY for a rebound.",
+ "markets": [
+  "stock"
+ ],
+ "timeframe": "5m",
+ "data": [
+  "bars"
+ ],
+ "definition": {
+  "name": "VIX-spike capitulation buy",
+  "family": "cross_asset",
+  "timeframe": "5m",
+  "direction": "long",
+  "params": {},
+  "entry": {
+   "long": "sym(\"^VIX\", close) / sym(\"^VIX\", session().prev_close) - 1 > 0.10 and cross_above(close, vwap().lower2)"
+  },
+  "filters": [],
+  "order": {
+   "type": "market"
+  },
+  "stop": {
+   "type": "level",
+   "long": "session().low",
+   "buffer_atr": 0.2,
+   "n": 14
+  },
+  "target": {
+   "type": "level",
+   "long": "vwap()"
+  },
+  "trail": {
+   "type": "none"
+  },
+  "exit": {},
+  "max_bars": 0,
+  "session": {
+   "entry_start": "09:35",
+   "entry_end": "15:30",
+   "flat_minutes_before_close": 5
+  },
+  "max_trades_per_day": 1,
+  "cooldown_bars": 0,
+  "sizing": {
+   "risk_pct": 0.5,
+   "max_notional_pct": 100.0
+  },
+  "data": [
+   "bars"
+  ],
+  "id": "STRAT-110",
+  "version": "1.0.0"
+ },
+ "spec": null,
+ "implementation_status": "implemented",
+ "blocked_reason": null,
+ "research_status": "hypothesis",
+ "evidence": [],
+ "variants": []
+}

@@ -10,7 +10,17 @@ import os
 
 block_cipher = None
 
+# the bot platform and strategy library: beside this folder in the repository, or copied in for a build
+MAB = os.path.abspath("market_analysis_bots") if os.path.isdir("market_analysis_bots") else os.path.abspath("../market_analysis_bots")
+STRAT = os.path.abspath("strategies") if os.path.isdir("strategies") else os.path.abspath("../strategies")
+
 datas = [
+    (os.path.join(MAB, "mab", "dashboard.html"), "mab"),
+    (os.path.join(MAB, "bots", "registry.json"), "market_analysis_bots/bots"),
+    (os.path.join(MAB, "config", "fleet.example.json"), "market_analysis_bots/config"),
+    (os.path.join(STRAT, "catalog.json"), "strategies"),
+    (os.path.join(STRAT, "sources.json"), "strategies"),
+    (os.path.join(STRAT, "data", "events.json"), "strategies/data"),
     ("web", "web"),
     ("engine/strategies/custom", "engine/strategies/custom"),
     # the Brain's trained weights and the measured results the Learn tab teaches from
@@ -28,12 +38,16 @@ hiddenimports = [
     "engine.indicators", "engine.swarm", "engine.backtest", "engine.research",
     "engine.portfolio", "engine.automation", "engine.broker", "engine.bots",
     "engine.brain", "engine.stocks", "engine.strategies.pro",
-    "engine.strategies", "engine.strategies.builtin",
+    "engine.strategies", "engine.strategies.builtin", "engine.fleet",
+    "mab", "mab.account", "mab.backtest", "mab.broker", "mab.cli", "mab.clock", "mab.costs", "mab.dashboard",
+    "mab.expr", "mab.frame", "mab.indicators", "mab.instruments", "mab.metrics", "mab.models", "mab.net",
+    "mab.replay", "mab.risk", "mab.runtime", "mab.secrets_store", "mab.storage", "mab.strategy",
+    "mab.data", "mab.data.adapters", "mab.data.hub", "mab.data.quality",
 ]
 
 a = Analysis(
     ["desktop.py"],
-    pathex=[os.path.abspath(".")],
+    pathex=[os.path.abspath("."), MAB],
     binaries=[],
     datas=datas,
     hiddenimports=hiddenimports,

@@ -1,0 +1,29 @@
+{
+ "id": "STRAT-117",
+ "key": "funding_extreme_contrarian",
+ "name": "Funding-rate extreme contrarian",
+ "family": "crypto_structure",
+ "subfamily": "funding",
+ "hypothesis": "When the latest funding rate is above +0.05% per 8h, fade intraday strength in the perpetual; below -0.03%, buy weakness.",
+ "markets": [
+  "crypto"
+ ],
+ "timeframe": "15m",
+ "data": [
+  "bars",
+  "funding"
+ ],
+ "definition": null,
+ "spec": "entry short: funding > 0.0005 and close < vwap(); entry long: funding < -0.0003 and close > vwap(); stop 2 ATR; flat by 23:55 UTC",
+ "implementation_status": "blocked",
+ "blocked_reason": "funding-rate series is fetched by the adapter but not yet wired into the live hub as a rule input",
+ "research_status": "hypothesis",
+ "evidence": [
+  {
+   "source": "SRC-035",
+   "relation": "mechanism",
+   "note": "funding ties perp to spot"
+  }
+ ],
+ "variants": []
+}

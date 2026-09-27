@@ -1,0 +1,63 @@
+{
+ "id": "STRAT-116",
+ "key": "perp_volume_lead",
+ "name": "Derivatives-led volume spike fade",
+ "family": "crypto_structure",
+ "subfamily": "venue volume",
+ "hypothesis": "When perpetual volume exceeds 5x its usual ratio to spot volume during a sharp move, fade the move.",
+ "markets": [
+  "crypto"
+ ],
+ "timeframe": "5m",
+ "data": [
+  "bars"
+ ],
+ "definition": {
+  "name": "Derivatives-led volume spike fade",
+  "family": "crypto_structure",
+  "timeframe": "5m",
+  "direction": "both",
+  "params": {},
+  "entry": {
+   "short": "zscore(sym(\"okx:BTC-USDT-SWAP\", volume) / max(volume, 1e-9), 288) > 3 and pct(close,3) > 0.005",
+   "long": "zscore(sym(\"okx:BTC-USDT-SWAP\", volume) / max(volume, 1e-9), 288) > 3 and pct(close,3) < -0.005"
+  },
+  "filters": [],
+  "order": {
+   "type": "market"
+  },
+  "stop": {
+   "type": "atr",
+   "mult": 1.5,
+   "n": 14
+  },
+  "target": {
+   "type": "none"
+  },
+  "trail": {
+   "type": "none"
+  },
+  "exit": {},
+  "max_bars": 6,
+  "session": {
+   "flat_minutes_before_close": 5
+  },
+  "max_trades_per_day": 2,
+  "cooldown_bars": 0,
+  "sizing": {
+   "risk_pct": 0.5,
+   "max_notional_pct": 100.0
+  },
+  "data": [
+   "bars"
+  ],
+  "id": "STRAT-116",
+  "version": "1.0.0"
+ },
+ "spec": null,
+ "implementation_status": "implemented",
+ "blocked_reason": null,
+ "research_status": "hypothesis",
+ "evidence": [],
+ "variants": []
+}

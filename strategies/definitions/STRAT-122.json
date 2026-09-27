@@ -1,0 +1,23 @@
+{
+ "id": "STRAT-122",
+ "key": "options_expiry_max_pain",
+ "name": "Deribit expiry max-pain drift",
+ "family": "crypto_structure",
+ "subfamily": "options expiry",
+ "hypothesis": "On expiry Thursday/Friday, price drifts toward the strike that minimises option-holder payoff.",
+ "markets": [
+  "crypto"
+ ],
+ "timeframe": "1h",
+ "data": [
+  "bars",
+  "options_oi"
+ ],
+ "definition": null,
+ "spec": "compute max-pain from Deribit open interest by strike; trade toward it from Thursday 12:00 UTC; exit 08:00 UTC Friday",
+ "implementation_status": "blocked",
+ "blocked_reason": "needs per-strike open interest history (not collected)",
+ "research_status": "hypothesis",
+ "evidence": [],
+ "variants": []
+}

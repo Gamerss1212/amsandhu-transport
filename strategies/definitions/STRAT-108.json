@@ -1,0 +1,72 @@
+{
+ "id": "STRAT-108",
+ "key": "crypto_pair_ratio_reversion",
+ "name": "ETH/BTC ratio reversion",
+ "family": "cross_asset",
+ "subfamily": "pairs",
+ "hypothesis": "Trade the ETH-BTC product when its log price is more than 2 standard deviations from its 200-bar mean.",
+ "markets": [
+  "crypto"
+ ],
+ "timeframe": "15m",
+ "data": [
+  "bars"
+ ],
+ "definition": {
+  "name": "ETH/BTC ratio reversion",
+  "family": "cross_asset",
+  "timeframe": "15m",
+  "direction": "both",
+  "params": {},
+  "entry": {
+   "long": "zscore(log(close), 200) < -2",
+   "short": "zscore(log(close), 200) > 2"
+  },
+  "filters": [],
+  "order": {
+   "type": "market"
+  },
+  "stop": {
+   "type": "atr",
+   "mult": 2.5,
+   "n": 14
+  },
+  "target": {
+   "type": "none"
+  },
+  "trail": {
+   "type": "none"
+  },
+  "exit": {
+   "long": "zscore(log(close), 200) > 0",
+   "short": "zscore(log(close), 200) < 0"
+  },
+  "max_bars": 0,
+  "session": {
+   "flat_minutes_before_close": 5
+  },
+  "max_trades_per_day": 2,
+  "cooldown_bars": 0,
+  "sizing": {
+   "risk_pct": 0.5,
+   "max_notional_pct": 100.0
+  },
+  "data": [
+   "bars"
+  ],
+  "id": "STRAT-108",
+  "version": "1.0.0"
+ },
+ "spec": null,
+ "implementation_status": "implemented",
+ "blocked_reason": null,
+ "research_status": "incompletely sourced",
+ "evidence": [
+  {
+   "source": "SRC-021",
+   "relation": "mechanism",
+   "note": "distance-method pairs trading in stocks"
+  }
+ ],
+ "variants": []
+}

@@ -1,0 +1,23 @@
+{
+ "id": "STRAT-132",
+ "key": "closing_imbalance",
+ "name": "NYSE closing-auction imbalance",
+ "family": "order_flow",
+ "subfamily": "auction imbalance",
+ "hypothesis": "Trade in the direction of large published buy/sell imbalances at 15:50.",
+ "markets": [
+  "stock"
+ ],
+ "timeframe": "1m",
+ "data": [
+  "bars",
+  "imbalance_feed"
+ ],
+ "definition": null,
+ "spec": "long when buy imbalance > 10% of ADV at 15:50; exit in the closing auction",
+ "implementation_status": "blocked",
+ "blocked_reason": "imbalance feed is not free; platform also flattens 5 minutes before the close",
+ "research_status": "hypothesis",
+ "evidence": [],
+ "variants": []
+}

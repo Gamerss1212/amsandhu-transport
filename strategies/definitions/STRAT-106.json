@@ -1,0 +1,69 @@
+{
+ "id": "STRAT-106",
+ "key": "relative_strength_vs_index",
+ "name": "Intraday relative strength vs the index",
+ "family": "cross_asset",
+ "subfamily": "relative strength",
+ "hypothesis": "A stock up at least 1% more than SPY since the open, holding above VWAP, keeps outperforming into the afternoon.",
+ "markets": [
+  "stock"
+ ],
+ "timeframe": "5m",
+ "data": [
+  "bars"
+ ],
+ "definition": {
+  "name": "Intraday relative strength vs the index",
+  "family": "cross_asset",
+  "timeframe": "5m",
+  "direction": "both",
+  "params": {
+   "bench": "SPY"
+  },
+  "entry": {
+   "long": "close / session().open - sym($bench, close / session().open) > 0.01 and close > vwap() and minutes_since_open() >= 60",
+   "short": "close / session().open - sym($bench, close / session().open) < -0.01 and close < vwap() and minutes_since_open() >= 60"
+  },
+  "filters": [],
+  "order": {
+   "type": "market"
+  },
+  "stop": {
+   "type": "level",
+   "long": "vwap()",
+   "short": "vwap()",
+   "buffer_atr": 0.3,
+   "n": 14
+  },
+  "target": {
+   "type": "none"
+  },
+  "trail": {
+   "type": "none"
+  },
+  "exit": {},
+  "max_bars": 0,
+  "session": {
+   "entry_start": "09:35",
+   "entry_end": "15:30",
+   "flat_minutes_before_close": 5
+  },
+  "max_trades_per_day": 1,
+  "cooldown_bars": 0,
+  "sizing": {
+   "risk_pct": 0.5,
+   "max_notional_pct": 100.0
+  },
+  "data": [
+   "bars"
+  ],
+  "id": "STRAT-106",
+  "version": "1.0.0"
+ },
+ "spec": null,
+ "implementation_status": "implemented",
+ "blocked_reason": null,
+ "research_status": "hypothesis",
+ "evidence": [],
+ "variants": []
+}

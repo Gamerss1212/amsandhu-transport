@@ -1,0 +1,23 @@
+{
+ "id": "STRAT-121",
+ "key": "dvol_spike_fade",
+ "name": "Implied-volatility spike fade (Deribit DVOL)",
+ "family": "crypto_structure",
+ "subfamily": "implied volatility",
+ "hypothesis": "When DVOL jumps more than 15% in a day and price is at a 24-hour low, buy for a rebound.",
+ "markets": [
+  "crypto"
+ ],
+ "timeframe": "1h",
+ "data": [
+  "bars",
+  "dvol"
+ ],
+ "definition": null,
+ "spec": "long: dvol / dvol[24] - 1 > 0.15 and close <= lowest(low,24) and close > open",
+ "implementation_status": "blocked",
+ "blocked_reason": "DVOL adapter exists in research scripts only; not wired into the hub",
+ "research_status": "hypothesis",
+ "evidence": [],
+ "variants": []
+}

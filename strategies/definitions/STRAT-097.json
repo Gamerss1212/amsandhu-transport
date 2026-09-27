@@ -1,0 +1,78 @@
+{
+ "id": "STRAT-097",
+ "key": "intraday_momentum_last_half_hour",
+ "name": "Intraday momentum: first half-hour predicts the last",
+ "family": "time_of_day",
+ "subfamily": "intraday momentum",
+ "hypothesis": "At 15:30 ET, take a position in the direction of the return from the prior close to 10:00 ET; exit at the close.",
+ "markets": [
+  "stock"
+ ],
+ "timeframe": "5m",
+ "data": [
+  "bars"
+ ],
+ "definition": {
+  "name": "Intraday momentum: first half-hour predicts the last",
+  "family": "time_of_day",
+  "timeframe": "5m",
+  "direction": "both",
+  "params": {},
+  "entry": {
+   "long": "tod() == 925 and valuewhen(minutes_since_open() == 25, close) / session().prev_close - 1 > 0",
+   "short": "tod() == 925 and valuewhen(minutes_since_open() == 25, close) / session().prev_close - 1 < 0"
+  },
+  "filters": [],
+  "order": {
+   "type": "market"
+  },
+  "stop": {
+   "type": "atr",
+   "mult": 3.0,
+   "n": 14
+  },
+  "target": {
+   "type": "none"
+  },
+  "trail": {
+   "type": "none"
+  },
+  "exit": {},
+  "max_bars": 0,
+  "session": {
+   "entry_start": "15:25",
+   "entry_end": "15:40",
+   "flat_minutes_before_close": 5
+  },
+  "max_trades_per_day": 1,
+  "cooldown_bars": 0,
+  "sizing": {
+   "risk_pct": 0.5,
+   "max_notional_pct": 100.0
+  },
+  "data": [
+   "bars"
+  ],
+  "id": "STRAT-097",
+  "version": "1.0.0"
+ },
+ "spec": null,
+ "implementation_status": "implemented",
+ "blocked_reason": null,
+ "research_status": "sourced",
+ "evidence": [
+  {
+   "source": "SRC-004",
+   "relation": "direct",
+   "note": "SPY 1993-2013; 11 ETFs"
+  },
+  {
+   "source": "SRC-031",
+   "relation": "mechanism",
+   "note": "same pattern in Bitcoin"
+  }
+ ],
+ "variants": [
+  "STRAT-V057"
+ ]
+}

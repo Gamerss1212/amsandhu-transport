@@ -1,0 +1,82 @@
+{
+ "id": "STRAT-006",
+ "key": "dmi_cross",
+ "name": "Directional-movement crossover (Wilder DMI)",
+ "family": "trend_following",
+ "subfamily": "directional movement",
+ "hypothesis": "A +DI/-DI crossover while ADX shows a trend exists identifies the side controlling new highs/lows.",
+ "markets": [
+  "stock",
+  "crypto"
+ ],
+ "timeframe": "5m",
+ "data": [
+  "bars"
+ ],
+ "definition": {
+  "name": "Directional-movement crossover (Wilder DMI)",
+  "family": "trend_following",
+  "timeframe": "5m",
+  "direction": "both",
+  "params": {},
+  "entry": {
+   "long": "cross_above(adx(14).plus_di, adx(14).minus_di) and adx(14).adx > 20",
+   "short": "cross_above(adx(14).minus_di, adx(14).plus_di) and adx(14).adx > 20"
+  },
+  "filters": [],
+  "order": {
+   "type": "market"
+  },
+  "stop": {
+   "type": "atr",
+   "mult": 2.0,
+   "n": 14
+  },
+  "target": {
+   "type": "none"
+  },
+  "trail": {
+   "type": "none"
+  },
+  "exit": {
+   "long": "cross_above(adx(14).minus_di, adx(14).plus_di)",
+   "short": "cross_above(adx(14).plus_di, adx(14).minus_di)"
+  },
+  "max_bars": 0,
+  "session": {
+   "stock": {
+    "entry_start": "09:35",
+    "entry_end": "15:30",
+    "flat_minutes_before_close": 5
+   },
+   "crypto": {
+    "flat_minutes_before_close": 5
+   }
+  },
+  "max_trades_per_day": 2,
+  "cooldown_bars": 0,
+  "sizing": {
+   "risk_pct": 0.5,
+   "max_notional_pct": 100.0
+  },
+  "data": [
+   "bars"
+  ],
+  "id": "STRAT-006",
+  "version": "1.0.0"
+ },
+ "spec": null,
+ "implementation_status": "implemented",
+ "blocked_reason": null,
+ "research_status": "incompletely sourced",
+ "evidence": [
+  {
+   "source": "SRC-074",
+   "relation": "origin",
+   "note": "DMI system"
+  }
+ ],
+ "variants": [
+  "STRAT-V010"
+ ]
+}

@@ -1,0 +1,74 @@
+{
+ "id": "STRAT-014",
+ "key": "heikin_ashi_trend",
+ "name": "Heikin-Ashi trend run",
+ "family": "trend_following",
+ "subfamily": "smoothed candles",
+ "hypothesis": "Three bullish Heikin-Ashi candles with no lower shadow show uninterrupted buying; exit at the first bearish candle.",
+ "markets": [
+  "stock",
+  "crypto"
+ ],
+ "timeframe": "5m",
+ "data": [
+  "bars"
+ ],
+ "definition": {
+  "name": "Heikin-Ashi trend run",
+  "family": "trend_following",
+  "timeframe": "5m",
+  "direction": "both",
+  "params": {},
+  "entry": {
+   "long": "persist(heikin_ashi().close > heikin_ashi().open and heikin_ashi().low >= heikin_ashi().open, 3)",
+   "short": "persist(heikin_ashi().close < heikin_ashi().open and heikin_ashi().high <= heikin_ashi().open, 3)"
+  },
+  "filters": [],
+  "order": {
+   "type": "market"
+  },
+  "stop": {
+   "type": "atr",
+   "mult": 1.5,
+   "n": 14
+  },
+  "target": {
+   "type": "none"
+  },
+  "trail": {
+   "type": "none"
+  },
+  "exit": {
+   "long": "heikin_ashi().close < heikin_ashi().open",
+   "short": "heikin_ashi().close > heikin_ashi().open"
+  },
+  "max_bars": 0,
+  "session": {
+   "stock": {
+    "entry_start": "09:35",
+    "entry_end": "15:30",
+    "flat_minutes_before_close": 5
+   },
+   "crypto": {
+    "flat_minutes_before_close": 5
+   }
+  },
+  "max_trades_per_day": 2,
+  "cooldown_bars": 0,
+  "sizing": {
+   "risk_pct": 0.5,
+   "max_notional_pct": 100.0
+  },
+  "data": [
+   "bars"
+  ],
+  "id": "STRAT-014",
+  "version": "1.0.0"
+ },
+ "spec": null,
+ "implementation_status": "implemented",
+ "blocked_reason": null,
+ "research_status": "hypothesis",
+ "evidence": [],
+ "variants": []
+}

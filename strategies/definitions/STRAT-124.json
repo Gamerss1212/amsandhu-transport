@@ -1,0 +1,23 @@
+{
+ "id": "STRAT-124",
+ "key": "listing_announcement",
+ "name": "Exchange listing announcement momentum",
+ "family": "crypto_structure",
+ "subfamily": "listings",
+ "hypothesis": "Buy a token on another venue immediately after a major-exchange listing announcement.",
+ "markets": [
+  "crypto"
+ ],
+ "timeframe": "1m",
+ "data": [
+  "bars",
+  "announcements"
+ ],
+ "definition": null,
+ "spec": "on announcement: buy within 1 minute on a venue already listing it; exit after 60 minutes or +20%",
+ "implementation_status": "blocked",
+ "blocked_reason": "no machine-readable announcement feed; also front-running risk and very high slippage",
+ "research_status": "hypothesis",
+ "evidence": [],
+ "variants": []
+}

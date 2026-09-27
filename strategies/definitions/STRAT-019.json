@@ -1,0 +1,96 @@
+{
+ "id": "STRAT-019",
+ "key": "orb_breakout",
+ "name": "Opening-range breakout on a closing basis",
+ "family": "opening_range",
+ "subfamily": "opening range",
+ "hypothesis": "A close beyond the first 15 minutes' range signals one side has won the opening auction; stop at the range midpoint.",
+ "markets": [
+  "stock",
+  "crypto"
+ ],
+ "timeframe": "5m",
+ "data": [
+  "bars"
+ ],
+ "definition": {
+  "name": "Opening-range breakout on a closing basis",
+  "family": "opening_range",
+  "timeframe": "5m",
+  "direction": "both",
+  "params": {
+   "m": 15
+  },
+  "entry": {
+   "long": "cross_above(close, opening_range($m).high)",
+   "short": "cross_below(close, opening_range($m).low)"
+  },
+  "filters": [],
+  "order": {
+   "type": "market"
+  },
+  "stop": {
+   "type": "level",
+   "long": "opening_range($m).mid",
+   "short": "opening_range($m).mid"
+  },
+  "target": {
+   "type": "r",
+   "r": 2.0
+  },
+  "trail": {
+   "type": "none"
+  },
+  "exit": {},
+  "max_bars": 0,
+  "session": {
+   "stock": {
+    "entry_start": "09:35",
+    "entry_end": "12:00",
+    "flat_minutes_before_close": 5
+   },
+   "crypto": {
+    "entry_end": "12:00"
+   }
+  },
+  "max_trades_per_day": 1,
+  "cooldown_bars": 0,
+  "sizing": {
+   "risk_pct": 0.5,
+   "max_notional_pct": 100.0
+  },
+  "data": [
+   "bars"
+  ],
+  "id": "STRAT-019",
+  "version": "1.0.0"
+ },
+ "spec": null,
+ "implementation_status": "implemented",
+ "blocked_reason": null,
+ "research_status": "incompletely sourced",
+ "evidence": [
+  {
+   "source": "SRC-070",
+   "relation": "origin",
+   "note": "opening range breakouts (book; rules not read here)"
+  },
+  {
+   "source": "SRC-002",
+   "relation": "mechanism",
+   "note": "5-minute ORB across US stocks"
+  },
+  {
+   "source": "SRC-040",
+   "relation": "mechanism",
+   "note": "trading-range breaks"
+  }
+ ],
+ "variants": [
+  "STRAT-V011",
+  "STRAT-V012",
+  "STRAT-V013",
+  "STRAT-V014",
+  "STRAT-V015"
+ ]
+}

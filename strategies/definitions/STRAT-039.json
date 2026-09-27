@@ -1,0 +1,75 @@
+{
+ "id": "STRAT-039",
+ "key": "pivot_breakout",
+ "name": "Floor-pivot resistance breakout",
+ "family": "reference_levels",
+ "subfamily": "pivot points",
+ "hypothesis": "A close above R1 with price above the pivot and VWAP continues toward R2.",
+ "markets": [
+  "stock",
+  "crypto"
+ ],
+ "timeframe": "5m",
+ "data": [
+  "bars"
+ ],
+ "definition": {
+  "name": "Floor-pivot resistance breakout",
+  "family": "reference_levels",
+  "timeframe": "5m",
+  "direction": "both",
+  "params": {},
+  "entry": {
+   "long": "cross_above(close, pivots(\"classic\").r1) and close > vwap()",
+   "short": "cross_below(close, pivots(\"classic\").s1) and close < vwap()"
+  },
+  "filters": [],
+  "order": {
+   "type": "market"
+  },
+  "stop": {
+   "type": "level",
+   "long": "pivots(\"classic\").p",
+   "short": "pivots(\"classic\").p"
+  },
+  "target": {
+   "type": "level",
+   "long": "pivots(\"classic\").r2",
+   "short": "pivots(\"classic\").s2"
+  },
+  "trail": {
+   "type": "none"
+  },
+  "exit": {},
+  "max_bars": 0,
+  "session": {
+   "stock": {
+    "entry_start": "09:35",
+    "entry_end": "15:30",
+    "flat_minutes_before_close": 5
+   },
+   "crypto": {
+    "flat_minutes_before_close": 5
+   }
+  },
+  "max_trades_per_day": 1,
+  "cooldown_bars": 0,
+  "sizing": {
+   "risk_pct": 0.5,
+   "max_notional_pct": 100.0
+  },
+  "data": [
+   "bars"
+  ],
+  "id": "STRAT-039",
+  "version": "1.0.0"
+ },
+ "spec": null,
+ "implementation_status": "implemented",
+ "blocked_reason": null,
+ "research_status": "hypothesis",
+ "evidence": [],
+ "variants": [
+  "STRAT-V027"
+ ]
+}

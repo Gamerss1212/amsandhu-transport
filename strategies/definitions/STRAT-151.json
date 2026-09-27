@@ -1,0 +1,28 @@
+{
+ "id": "STRAT-151",
+ "key": "funding_carry",
+ "name": "Funding-rate carry (spot long / perp short)",
+ "family": "market_making_arbitrage",
+ "subfamily": "carry",
+ "hypothesis": "Hold spot long and perp short while funding is positive.",
+ "markets": [
+  "crypto"
+ ],
+ "timeframe": "8h",
+ "data": [
+  "funding"
+ ],
+ "definition": null,
+ "spec": "enter when 7-day average funding > 0.01% per 8h; exit when negative",
+ "implementation_status": "blocked",
+ "blocked_reason": "not day trading: the position is held across funding settlements; also needs two venues",
+ "research_status": "incompletely sourced",
+ "evidence": [
+  {
+   "source": "SRC-035",
+   "relation": "mechanism",
+   "note": ""
+  }
+ ],
+ "variants": []
+}

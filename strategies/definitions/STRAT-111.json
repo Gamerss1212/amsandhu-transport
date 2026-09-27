@@ -1,0 +1,72 @@
+{
+ "id": "STRAT-111",
+ "key": "perp_basis_reversion",
+ "name": "Perpetual-spot basis reversion",
+ "family": "crypto_structure",
+ "subfamily": "basis",
+ "hypothesis": "Short the perpetual when its premium over spot is more than 2.5 standard deviations above its 1-day mean; long when below.",
+ "markets": [
+  "crypto"
+ ],
+ "timeframe": "5m",
+ "data": [
+  "bars"
+ ],
+ "definition": {
+  "name": "Perpetual-spot basis reversion",
+  "family": "crypto_structure",
+  "timeframe": "5m",
+  "direction": "both",
+  "params": {},
+  "entry": {
+   "long": "zscore(close / sym(\"okx:BTC-USDT\", close) - 1, 288) < -2.5",
+   "short": "zscore(close / sym(\"okx:BTC-USDT\", close) - 1, 288) > 2.5"
+  },
+  "filters": [],
+  "order": {
+   "type": "market"
+  },
+  "stop": {
+   "type": "atr",
+   "mult": 2.0,
+   "n": 14
+  },
+  "target": {
+   "type": "none"
+  },
+  "trail": {
+   "type": "none"
+  },
+  "exit": {
+   "long": "zscore(close / sym(\"okx:BTC-USDT\", close) - 1, 288) > 0",
+   "short": "zscore(close / sym(\"okx:BTC-USDT\", close) - 1, 288) < 0"
+  },
+  "max_bars": 0,
+  "session": {
+   "flat_minutes_before_close": 5
+  },
+  "max_trades_per_day": 2,
+  "cooldown_bars": 0,
+  "sizing": {
+   "risk_pct": 0.5,
+   "max_notional_pct": 100.0
+  },
+  "data": [
+   "bars"
+  ],
+  "id": "STRAT-111",
+  "version": "1.0.0"
+ },
+ "spec": null,
+ "implementation_status": "implemented",
+ "blocked_reason": null,
+ "research_status": "incompletely sourced",
+ "evidence": [
+  {
+   "source": "SRC-035",
+   "relation": "mechanism",
+   "note": "perp-spot deviations and no-arbitrage bounds"
+  }
+ ],
+ "variants": []
+}

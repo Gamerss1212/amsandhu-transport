@@ -1,0 +1,77 @@
+{
+ "id": "STRAT-136",
+ "key": "autocorrelation_follow",
+ "name": "Autocorrelation-signed follow/fade",
+ "family": "statistical",
+ "subfamily": "serial dependence",
+ "hypothesis": "If lag-1 autocorrelation over 60 bars is above +0.1, follow the last bar; if below -0.1, fade it; hold 2 bars.",
+ "markets": [
+  "stock",
+  "crypto"
+ ],
+ "timeframe": "5m",
+ "data": [
+  "bars"
+ ],
+ "definition": {
+  "name": "Autocorrelation-signed follow/fade",
+  "family": "statistical",
+  "timeframe": "5m",
+  "direction": "both",
+  "params": {},
+  "entry": {
+   "long": "(autocorr(60,1) > 0.1 and close > close[1]) or (autocorr(60,1) < -0.1 and close < close[1])",
+   "short": "(autocorr(60,1) > 0.1 and close < close[1]) or (autocorr(60,1) < -0.1 and close > close[1])"
+  },
+  "filters": [],
+  "order": {
+   "type": "market"
+  },
+  "stop": {
+   "type": "atr",
+   "mult": 1.5,
+   "n": 14
+  },
+  "target": {
+   "type": "none"
+  },
+  "trail": {
+   "type": "none"
+  },
+  "exit": {},
+  "max_bars": 2,
+  "session": {
+   "stock": {
+    "entry_start": "09:35",
+    "entry_end": "15:30",
+    "flat_minutes_before_close": 5
+   },
+   "crypto": {
+    "flat_minutes_before_close": 5
+   }
+  },
+  "max_trades_per_day": 10,
+  "cooldown_bars": 0,
+  "sizing": {
+   "risk_pct": 0.5,
+   "max_notional_pct": 100.0
+  },
+  "data": [
+   "bars"
+  ],
+  "id": "STRAT-136",
+  "version": "1.0.0"
+ },
+ "spec": null,
+ "implementation_status": "implemented",
+ "blocked_reason": null,
+ "research_status": "hypothesis",
+ "evidence": [
+  {
+   "source": "SRC-046",
+   "relation": "mechanism",
+   "note": "serial correlation"
+  }
+ ],
+ "variants": []
+}

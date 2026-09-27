@@ -1,0 +1,79 @@
+{
+ "id": "STRAT-103",
+ "key": "fomc_pre_announcement",
+ "name": "Pre-FOMC announcement drift (intraday part)",
+ "family": "scheduled_events",
+ "subfamily": "central bank",
+ "hypothesis": "On FOMC announcement days, hold the index long from the first bar's close until 13:55 ET, before the 14:00 statement.",
+ "markets": [
+  "stock"
+ ],
+ "timeframe": "5m",
+ "data": [
+  "bars",
+  "events:fomc"
+ ],
+ "definition": {
+  "name": "Pre-FOMC announcement drift (intraday part)",
+  "family": "scheduled_events",
+  "timeframe": "5m",
+  "direction": "long",
+  "params": {},
+  "entry": {
+   "long": "bar_in_session() == 0 and event(\"fomc\") == 1"
+  },
+  "filters": [],
+  "order": {
+   "type": "market"
+  },
+  "stop": {
+   "type": "atr",
+   "mult": 4.0,
+   "n": 14
+  },
+  "target": {
+   "type": "none"
+  },
+  "trail": {
+   "type": "none"
+  },
+  "exit": {
+   "long": "tod() >= 830"
+  },
+  "max_bars": 0,
+  "session": {
+   "flat_minutes_before_close": 5
+  },
+  "max_trades_per_day": 1,
+  "cooldown_bars": 0,
+  "sizing": {
+   "risk_pct": 0.5,
+   "max_notional_pct": 100.0
+  },
+  "data": [
+   "bars",
+   "events:fomc"
+  ],
+  "id": "STRAT-103",
+  "version": "1.0.0"
+ },
+ "spec": null,
+ "implementation_status": "implemented",
+ "blocked_reason": null,
+ "research_status": "incompletely sourced",
+ "evidence": [
+  {
+   "source": "SRC-006",
+   "relation": "direct",
+   "note": "24-hour pre-announcement window; only the same-day part is traded"
+  },
+  {
+   "source": "SRC-100",
+   "relation": "context",
+   "note": "FOMC dates"
+  }
+ ],
+ "variants": [
+  "STRAT-V059"
+ ]
+}

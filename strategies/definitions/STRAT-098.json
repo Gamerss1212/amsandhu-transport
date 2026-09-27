@@ -1,0 +1,79 @@
+{
+ "id": "STRAT-098",
+ "key": "tod_seasonality",
+ "name": "Same-time-of-day return persistence",
+ "family": "time_of_day",
+ "subfamily": "intraday seasonality",
+ "hypothesis": "Hold for 30 minutes when the average return of this half-hour over the last 20 sessions is significantly positive (t > 2).",
+ "markets": [
+  "stock",
+  "crypto"
+ ],
+ "timeframe": "5m",
+ "data": [
+  "bars"
+ ],
+ "definition": {
+  "name": "Same-time-of-day return persistence",
+  "family": "time_of_day",
+  "timeframe": "5m",
+  "direction": "both",
+  "params": {},
+  "entry": {
+   "long": "tod_return(20,6).t > 2",
+   "short": "tod_return(20,6).t < -2"
+  },
+  "filters": [],
+  "order": {
+   "type": "market"
+  },
+  "stop": {
+   "type": "atr",
+   "mult": 2.0,
+   "n": 14
+  },
+  "target": {
+   "type": "none"
+  },
+  "trail": {
+   "type": "none"
+  },
+  "exit": {},
+  "max_bars": 6,
+  "session": {
+   "stock": {
+    "entry_start": "09:35",
+    "entry_end": "15:30",
+    "flat_minutes_before_close": 5
+   },
+   "crypto": {
+    "flat_minutes_before_close": 5
+   }
+  },
+  "max_trades_per_day": 4,
+  "cooldown_bars": 0,
+  "sizing": {
+   "risk_pct": 0.5,
+   "max_notional_pct": 100.0
+  },
+  "data": [
+   "bars"
+  ],
+  "id": "STRAT-098",
+  "version": "1.0.0"
+ },
+ "spec": null,
+ "implementation_status": "implemented",
+ "blocked_reason": null,
+ "research_status": "incompletely sourced",
+ "evidence": [
+  {
+   "source": "SRC-005",
+   "relation": "direct",
+   "note": "cross-sectional half-hour continuation; time-series use here is an adaptation"
+  }
+ ],
+ "variants": [
+  "STRAT-V058"
+ ]
+}

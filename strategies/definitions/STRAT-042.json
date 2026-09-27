@@ -1,0 +1,73 @@
+{
+ "id": "STRAT-042",
+ "key": "session_open_magnet",
+ "name": "Reversion to the session open",
+ "family": "reference_levels",
+ "subfamily": "session open",
+ "hypothesis": "Mid-session, when price is more than half a daily ATR from the open and RSI(14) is stretched, it tends to rotate back toward the open.",
+ "markets": [
+  "stock",
+  "crypto"
+ ],
+ "timeframe": "5m",
+ "data": [
+  "bars"
+ ],
+ "definition": {
+  "name": "Reversion to the session open",
+  "family": "reference_levels",
+  "timeframe": "5m",
+  "direction": "both",
+  "params": {},
+  "entry": {
+   "short": "close - session().open > 0.5*tf(\"1d\", atr(14)) and rsi(close,14) > 70 and minutes_since_open() >= 90",
+   "long": "session().open - close > 0.5*tf(\"1d\", atr(14)) and rsi(close,14) < 30 and minutes_since_open() >= 90"
+  },
+  "filters": [],
+  "order": {
+   "type": "market"
+  },
+  "stop": {
+   "type": "atr",
+   "mult": 1.5,
+   "n": 14
+  },
+  "target": {
+   "type": "level",
+   "long": "session().open",
+   "short": "session().open"
+  },
+  "trail": {
+   "type": "none"
+  },
+  "exit": {},
+  "max_bars": 0,
+  "session": {
+   "stock": {
+    "entry_start": "09:35",
+    "entry_end": "15:30",
+    "flat_minutes_before_close": 5
+   },
+   "crypto": {
+    "flat_minutes_before_close": 5
+   }
+  },
+  "max_trades_per_day": 1,
+  "cooldown_bars": 0,
+  "sizing": {
+   "risk_pct": 0.5,
+   "max_notional_pct": 100.0
+  },
+  "data": [
+   "bars"
+  ],
+  "id": "STRAT-042",
+  "version": "1.0.0"
+ },
+ "spec": null,
+ "implementation_status": "implemented",
+ "blocked_reason": null,
+ "research_status": "hypothesis",
+ "evidence": [],
+ "variants": []
+}

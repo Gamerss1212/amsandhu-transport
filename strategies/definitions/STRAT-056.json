@@ -1,0 +1,71 @@
+{
+ "id": "STRAT-056",
+ "key": "trend_day_hold",
+ "name": "Trend-day identification and hold",
+ "family": "market_profile",
+ "subfamily": "day type",
+ "hypothesis": "After 11:00, if price is in the top 10% of the day's range, has held above VWAP for 90% of bars and extended above the first hour, hold long to the close.",
+ "markets": [
+  "stock"
+ ],
+ "timeframe": "5m",
+ "data": [
+  "bars"
+ ],
+ "definition": {
+  "name": "Trend-day identification and hold",
+  "family": "market_profile",
+  "timeframe": "5m",
+  "direction": "both",
+  "params": {},
+  "entry": {
+   "long": "tod() >= 660 and close > session().high - 0.1*(session().high - session().low) and count(close > vwap(), 18) >= 16 and session().high > opening_range(60).high",
+   "short": "tod() >= 660 and close < session().low + 0.1*(session().high - session().low) and count(close < vwap(), 18) >= 16 and session().low < opening_range(60).low"
+  },
+  "filters": [],
+  "order": {
+   "type": "market"
+  },
+  "stop": {
+   "type": "level",
+   "long": "vwap()",
+   "short": "vwap()"
+  },
+  "target": {
+   "type": "none"
+  },
+  "trail": {
+   "type": "none"
+  },
+  "exit": {},
+  "max_bars": 0,
+  "session": {
+   "entry_start": "09:35",
+   "entry_end": "15:30",
+   "flat_minutes_before_close": 5
+  },
+  "max_trades_per_day": 1,
+  "cooldown_bars": 0,
+  "sizing": {
+   "risk_pct": 0.5,
+   "max_notional_pct": 100.0
+  },
+  "data": [
+   "bars"
+  ],
+  "id": "STRAT-056",
+  "version": "1.0.0"
+ },
+ "spec": null,
+ "implementation_status": "implemented",
+ "blocked_reason": null,
+ "research_status": "incompletely sourced",
+ "evidence": [
+  {
+   "source": "SRC-078",
+   "relation": "origin",
+   "note": "day types incl. trend day"
+  }
+ ],
+ "variants": []
+}

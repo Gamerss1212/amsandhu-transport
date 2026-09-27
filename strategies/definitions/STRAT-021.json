@@ -1,0 +1,81 @@
+{
+ "id": "STRAT-021",
+ "key": "orb_failed_breakout_fade",
+ "name": "Failed opening-range breakout fade",
+ "family": "opening_range",
+ "subfamily": "opening range",
+ "hypothesis": "A breakout above the opening range that closes back inside within three bars traps buyers; short back toward the range low.",
+ "markets": [
+  "stock",
+  "crypto"
+ ],
+ "timeframe": "5m",
+ "data": [
+  "bars"
+ ],
+ "definition": {
+  "name": "Failed opening-range breakout fade",
+  "family": "opening_range",
+  "timeframe": "5m",
+  "direction": "both",
+  "params": {},
+  "entry": {
+   "short": "within(cross_above(close, opening_range(15).high), 3) and cross_below(close, opening_range(15).high)",
+   "long": "within(cross_below(close, opening_range(15).low), 3) and cross_above(close, opening_range(15).low)"
+  },
+  "filters": [],
+  "order": {
+   "type": "market"
+  },
+  "stop": {
+   "type": "level",
+   "long": "session().low",
+   "short": "session().high",
+   "buffer_atr": 0.1,
+   "n": 14
+  },
+  "target": {
+   "type": "level",
+   "long": "opening_range(15).high",
+   "short": "opening_range(15).low"
+  },
+  "trail": {
+   "type": "none"
+  },
+  "exit": {},
+  "max_bars": 0,
+  "session": {
+   "stock": {
+    "entry_start": "09:35",
+    "entry_end": "15:30",
+    "flat_minutes_before_close": 5
+   },
+   "crypto": {
+    "flat_minutes_before_close": 5
+   }
+  },
+  "max_trades_per_day": 1,
+  "cooldown_bars": 0,
+  "sizing": {
+   "risk_pct": 0.5,
+   "max_notional_pct": 100.0
+  },
+  "data": [
+   "bars"
+  ],
+  "id": "STRAT-021",
+  "version": "1.0.0"
+ },
+ "spec": null,
+ "implementation_status": "implemented",
+ "blocked_reason": null,
+ "research_status": "hypothesis",
+ "evidence": [
+  {
+   "source": "SRC-043",
+   "relation": "mechanism",
+   "note": "reversals at levels where take-profit orders cluster (FX)"
+  }
+ ],
+ "variants": []
+}

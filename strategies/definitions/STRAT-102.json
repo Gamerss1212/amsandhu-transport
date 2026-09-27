@@ -1,0 +1,67 @@
+{
+ "id": "STRAT-102",
+ "key": "lunch_reversal",
+ "name": "Lunchtime reversal of the morning trend",
+ "family": "time_of_day",
+ "subfamily": "time-of-day",
+ "hypothesis": "Between 11:30 and 13:30, fade a morning trend of more than 0.7% when a reversal bar closes back through the 20-bar EMA.",
+ "markets": [
+  "stock"
+ ],
+ "timeframe": "5m",
+ "data": [
+  "bars"
+ ],
+ "definition": {
+  "name": "Lunchtime reversal of the morning trend",
+  "family": "time_of_day",
+  "timeframe": "5m",
+  "direction": "both",
+  "params": {},
+  "entry": {
+   "short": "time_between(\"11:30\", \"13:30\") and close / session().open - 1 > 0.007 and cross_below(close, ema(close,20))",
+   "long": "time_between(\"11:30\", \"13:30\") and close / session().open - 1 < -0.007 and cross_above(close, ema(close,20))"
+  },
+  "filters": [],
+  "order": {
+   "type": "market"
+  },
+  "stop": {
+   "type": "level",
+   "long": "session().low",
+   "short": "session().high"
+  },
+  "target": {
+   "type": "level",
+   "long": "vwap()",
+   "short": "vwap()"
+  },
+  "trail": {
+   "type": "none"
+  },
+  "exit": {},
+  "max_bars": 0,
+  "session": {
+   "entry_start": "09:35",
+   "entry_end": "15:30",
+   "flat_minutes_before_close": 5
+  },
+  "max_trades_per_day": 1,
+  "cooldown_bars": 0,
+  "sizing": {
+   "risk_pct": 0.5,
+   "max_notional_pct": 100.0
+  },
+  "data": [
+   "bars"
+  ],
+  "id": "STRAT-102",
+  "version": "1.0.0"
+ },
+ "spec": null,
+ "implementation_status": "implemented",
+ "blocked_reason": null,
+ "research_status": "hypothesis",
+ "evidence": [],
+ "variants": []
+}

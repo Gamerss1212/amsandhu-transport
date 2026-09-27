@@ -1,0 +1,29 @@
+{
+ "id": "STRAT-140",
+ "key": "ml_logistic_direction",
+ "name": "Walk-forward logistic regression direction model",
+ "family": "machine_learning",
+ "subfamily": "supervised",
+ "hypothesis": "A logistic model re-fit daily on the last 30 days predicts the sign of the next 6-bar return; trade when p > 0.6.",
+ "markets": [
+  "stock",
+  "crypto"
+ ],
+ "timeframe": "5m",
+ "data": [
+  "bars"
+ ],
+ "definition": null,
+ "spec": "label: sign of 6-bar forward return; purge 6 bars and embargo 1 day between train and test; trade top decile of p",
+ "implementation_status": "blocked",
+ "blocked_reason": "no model-training runtime in the bot platform yet (the separate Jarvus Brain trains models offline)",
+ "research_status": "hypothesis",
+ "evidence": [
+  {
+   "source": "SRC-064",
+   "relation": "context",
+   "note": "purged CV and embargo for financial ML"
+  }
+ ],
+ "variants": []
+}

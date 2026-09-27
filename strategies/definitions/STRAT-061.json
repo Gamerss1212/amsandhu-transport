@@ -1,0 +1,71 @@
+{
+ "id": "STRAT-061",
+ "key": "momentum_pinball",
+ "name": "Momentum Pinball (Raschke)",
+ "family": "momentum",
+ "subfamily": "named setup",
+ "hypothesis": "When RSI(3) of the daily 1-day rate of change is below 30, buy a break above the first hour's high.",
+ "markets": [
+  "stock"
+ ],
+ "timeframe": "5m",
+ "data": [
+  "bars"
+ ],
+ "definition": {
+  "name": "Momentum Pinball (Raschke)",
+  "family": "momentum",
+  "timeframe": "5m",
+  "direction": "both",
+  "params": {},
+  "entry": {
+   "long": "tf(\"1d\", rsi(roc(close,1),3)) < 30 and cross_above(close, opening_range(60).high)",
+   "short": "tf(\"1d\", rsi(roc(close,1),3)) > 70 and cross_below(close, opening_range(60).low)"
+  },
+  "filters": [],
+  "order": {
+   "type": "market"
+  },
+  "stop": {
+   "type": "level",
+   "long": "opening_range(60).low",
+   "short": "opening_range(60).high"
+  },
+  "target": {
+   "type": "none"
+  },
+  "trail": {
+   "type": "none"
+  },
+  "exit": {},
+  "max_bars": 0,
+  "session": {
+   "entry_start": "09:35",
+   "entry_end": "15:30",
+   "flat_minutes_before_close": 5
+  },
+  "max_trades_per_day": 1,
+  "cooldown_bars": 0,
+  "sizing": {
+   "risk_pct": 0.5,
+   "max_notional_pct": 100.0
+  },
+  "data": [
+   "bars"
+  ],
+  "id": "STRAT-061",
+  "version": "1.0.0"
+ },
+ "spec": null,
+ "implementation_status": "implemented",
+ "blocked_reason": null,
+ "research_status": "incompletely sourced",
+ "evidence": [
+  {
+   "source": "SRC-071",
+   "relation": "origin",
+   "note": "Momentum Pinball (book; rules not read here)"
+  }
+ ],
+ "variants": []
+}

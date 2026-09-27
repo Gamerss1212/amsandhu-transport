@@ -1,0 +1,23 @@
+{
+ "id": "STRAT-148",
+ "key": "triangular_arbitrage",
+ "name": "Triangular arbitrage (BTC-USD / ETH-USD / ETH-BTC)",
+ "family": "market_making_arbitrage",
+ "subfamily": "arbitrage",
+ "hypothesis": "Trade the three legs when the implied cross rate deviates by more than total fees.",
+ "markets": [
+  "crypto"
+ ],
+ "timeframe": "tick",
+ "data": [
+  "ticks",
+  "book"
+ ],
+ "definition": null,
+ "spec": "deviation = (ETH-USD / BTC-USD) / ETH-BTC - 1; act when |dev| > 3 x taker fee",
+ "implementation_status": "blocked",
+ "blocked_reason": "needs simultaneous multi-leg execution and tick data; fees at retail tiers exceed typical deviations",
+ "research_status": "hypothesis",
+ "evidence": [],
+ "variants": []
+}

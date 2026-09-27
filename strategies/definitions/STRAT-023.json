@@ -1,0 +1,73 @@
+{
+ "id": "STRAT-023",
+ "key": "ib_narrow_extension",
+ "name": "Narrow initial-balance range extension",
+ "family": "opening_range",
+ "subfamily": "initial balance",
+ "hypothesis": "If the first hour's range is under half the 14-day ATR, a close beyond it tends to extend by about one more range.",
+ "markets": [
+  "stock"
+ ],
+ "timeframe": "5m",
+ "data": [
+  "bars"
+ ],
+ "definition": {
+  "name": "Narrow initial-balance range extension",
+  "family": "opening_range",
+  "timeframe": "5m",
+  "direction": "both",
+  "params": {},
+  "entry": {
+   "long": "cross_above(close, opening_range(60).high) and opening_range(60).high - opening_range(60).low < 0.5*tf(\"1d\", atr(14))",
+   "short": "cross_below(close, opening_range(60).low) and opening_range(60).high - opening_range(60).low < 0.5*tf(\"1d\", atr(14))"
+  },
+  "filters": [],
+  "order": {
+   "type": "market"
+  },
+  "stop": {
+   "type": "level",
+   "long": "opening_range(60).mid",
+   "short": "opening_range(60).mid"
+  },
+  "target": {
+   "type": "level",
+   "long": "opening_range(60).high + (opening_range(60).high - opening_range(60).low)",
+   "short": "opening_range(60).low - (opening_range(60).high - opening_range(60).low)"
+  },
+  "trail": {
+   "type": "none"
+  },
+  "exit": {},
+  "max_bars": 0,
+  "session": {
+   "entry_start": "09:35",
+   "entry_end": "15:30",
+   "flat_minutes_before_close": 5
+  },
+  "max_trades_per_day": 1,
+  "cooldown_bars": 0,
+  "sizing": {
+   "risk_pct": 0.5,
+   "max_notional_pct": 100.0
+  },
+  "data": [
+   "bars"
+  ],
+  "id": "STRAT-023",
+  "version": "1.0.0"
+ },
+ "spec": null,
+ "implementation_status": "implemented",
+ "blocked_reason": null,
+ "research_status": "incompletely sourced",
+ "evidence": [
+  {
+   "source": "SRC-078",
+   "relation": "origin",
+   "note": "initial balance and range extension (book)"
+  }
+ ],
+ "variants": []
+}

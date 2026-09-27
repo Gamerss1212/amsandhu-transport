@@ -1,0 +1,74 @@
+{
+ "id": "STRAT-017",
+ "key": "trend_return_sign",
+ "name": "Previous-day return sign (intraday time-series momentum)",
+ "family": "trend_following",
+ "subfamily": "time-series momentum",
+ "hypothesis": "Trade today's session in the direction of the last 24 hours' return, sized to a volatility stop.",
+ "markets": [
+  "crypto"
+ ],
+ "timeframe": "1h",
+ "data": [
+  "bars"
+ ],
+ "definition": {
+  "name": "Previous-day return sign (intraday time-series momentum)",
+  "family": "trend_following",
+  "timeframe": "1h",
+  "direction": "both",
+  "params": {},
+  "entry": {
+   "long": "bar_in_session() == 0 and pct(close,24) > 0",
+   "short": "bar_in_session() == 0 and pct(close,24) < 0"
+  },
+  "filters": [],
+  "order": {
+   "type": "market"
+  },
+  "stop": {
+   "type": "atr",
+   "mult": 2.5,
+   "n": 24
+  },
+  "target": {
+   "type": "none"
+  },
+  "trail": {
+   "type": "none"
+  },
+  "exit": {},
+  "max_bars": 0,
+  "session": {
+   "flat_minutes_before_close": 5
+  },
+  "max_trades_per_day": 1,
+  "cooldown_bars": 0,
+  "sizing": {
+   "risk_pct": 0.5,
+   "max_notional_pct": 100.0
+  },
+  "data": [
+   "bars"
+  ],
+  "id": "STRAT-017",
+  "version": "1.0.0"
+ },
+ "spec": null,
+ "implementation_status": "implemented",
+ "blocked_reason": null,
+ "research_status": "hypothesis",
+ "evidence": [
+  {
+   "source": "SRC-047",
+   "relation": "mechanism",
+   "note": "monthly-horizon time-series momentum in futures"
+  },
+  {
+   "source": "SRC-030",
+   "relation": "mechanism",
+   "note": "intraday momentum and reversal both present in Bitcoin"
+  }
+ ],
+ "variants": []
+}

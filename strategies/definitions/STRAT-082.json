@@ -1,0 +1,85 @@
+{
+ "id": "STRAT-082",
+ "key": "head_and_shoulders",
+ "name": "Head-and-shoulders breakdown",
+ "family": "market_structure",
+ "subfamily": "chart pattern",
+ "hypothesis": "A head at least 0.5 ATR above two shoulders that are within 1 ATR of each other, then a close below the latest swing low, reverses the trend.",
+ "markets": [
+  "stock",
+  "crypto"
+ ],
+ "timeframe": "5m",
+ "data": [
+  "bars"
+ ],
+ "definition": {
+  "name": "Head-and-shoulders breakdown",
+  "family": "market_structure",
+  "timeframe": "5m",
+  "direction": "both",
+  "params": {},
+  "entry": {
+   "short": "swings(3).high_prev > swings(3).high + 0.5*atr(14) and swings(3).high_prev > swings(3).high_prev2 + 0.5*atr(14) and abs(swings(3).high - swings(3).high_prev2) < atr(14) and cross_below(close, swings(3).low)",
+   "long": "swings(3).low_prev < swings(3).low - 0.5*atr(14) and swings(3).low_prev < swings(3).low_prev2 - 0.5*atr(14) and abs(swings(3).low - swings(3).low_prev2) < atr(14) and cross_above(close, swings(3).high)"
+  },
+  "filters": [],
+  "order": {
+   "type": "market"
+  },
+  "stop": {
+   "type": "level",
+   "long": "swings(3).low",
+   "short": "swings(3).high",
+   "buffer_atr": 0.2,
+   "n": 14
+  },
+  "target": {
+   "type": "r",
+   "r": 2.0
+  },
+  "trail": {
+   "type": "none"
+  },
+  "exit": {},
+  "max_bars": 0,
+  "session": {
+   "stock": {
+    "entry_start": "09:35",
+    "entry_end": "15:30",
+    "flat_minutes_before_close": 5
+   },
+   "crypto": {
+    "flat_minutes_before_close": 5
+   }
+  },
+  "max_trades_per_day": 2,
+  "cooldown_bars": 0,
+  "sizing": {
+   "risk_pct": 0.5,
+   "max_notional_pct": 100.0
+  },
+  "data": [
+   "bars"
+  ],
+  "id": "STRAT-082",
+  "version": "1.0.0"
+ },
+ "spec": null,
+ "implementation_status": "implemented",
+ "blocked_reason": null,
+ "research_status": "incompletely sourced",
+ "evidence": [
+  {
+   "source": "SRC-044",
+   "relation": "origin",
+   "note": "kernel-regression pattern definitions"
+  },
+  {
+   "source": "SRC-089",
+   "relation": "origin",
+   "note": ""
+  }
+ ],
+ "variants": []
+}

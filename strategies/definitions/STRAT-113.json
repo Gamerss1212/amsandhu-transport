@@ -1,0 +1,65 @@
+{
+ "id": "STRAT-113",
+ "key": "cme_gap_fill",
+ "name": "Weekend (CME-hours) gap fill",
+ "family": "crypto_structure",
+ "subfamily": "weekend structure",
+ "hypothesis": "If bitcoin re-opens the week more than 1% away from Friday's 21:00 UTC price, trade back toward that level during Monday (UTC).",
+ "markets": [
+  "crypto"
+ ],
+ "timeframe": "15m",
+ "data": [
+  "bars"
+ ],
+ "definition": {
+  "name": "Weekend (CME-hours) gap fill",
+  "family": "crypto_structure",
+  "timeframe": "15m",
+  "direction": "both",
+  "params": {},
+  "entry": {
+   "short": "dow() == 0 and weekend(21,23).gap > 0.01 and close > weekend(21,23).fri_close and close < open",
+   "long": "dow() == 0 and weekend(21,23).gap < -0.01 and close < weekend(21,23).fri_close and close > open"
+  },
+  "filters": [],
+  "order": {
+   "type": "market"
+  },
+  "stop": {
+   "type": "atr",
+   "mult": 2.0,
+   "n": 14
+  },
+  "target": {
+   "type": "level",
+   "long": "weekend(21,23).fri_close",
+   "short": "weekend(21,23).fri_close"
+  },
+  "trail": {
+   "type": "none"
+  },
+  "exit": {},
+  "max_bars": 0,
+  "session": {
+   "flat_minutes_before_close": 5
+  },
+  "max_trades_per_day": 1,
+  "cooldown_bars": 0,
+  "sizing": {
+   "risk_pct": 0.5,
+   "max_notional_pct": 100.0
+  },
+  "data": [
+   "bars"
+  ],
+  "id": "STRAT-113",
+  "version": "1.0.0"
+ },
+ "spec": null,
+ "implementation_status": "implemented",
+ "blocked_reason": null,
+ "research_status": "hypothesis",
+ "evidence": [],
+ "variants": []
+}

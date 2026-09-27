@@ -1,0 +1,75 @@
+{
+ "id": "STRAT-018",
+ "key": "orb_first_candle",
+ "name": "5-minute opening-range breakout in the first candle's direction",
+ "family": "opening_range",
+ "subfamily": "opening range",
+ "hypothesis": "Trade in the direction of the first 5-minute candle from the second candle's open; stop at the first candle's opposite extreme; target 10R or the close.",
+ "markets": [
+  "stock"
+ ],
+ "timeframe": "5m",
+ "data": [
+  "bars"
+ ],
+ "definition": {
+  "name": "5-minute opening-range breakout in the first candle's direction",
+  "family": "opening_range",
+  "timeframe": "5m",
+  "direction": "both",
+  "params": {},
+  "entry": {
+   "long": "bar_in_session() == 0 and close > open",
+   "short": "bar_in_session() == 0 and close < open"
+  },
+  "filters": [],
+  "order": {
+   "type": "market"
+  },
+  "stop": {
+   "type": "level",
+   "long": "opening_range(5).low",
+   "short": "opening_range(5).high"
+  },
+  "target": {
+   "type": "r",
+   "r": 10.0
+  },
+  "trail": {
+   "type": "none"
+  },
+  "exit": {},
+  "max_bars": 0,
+  "session": {
+   "flat_minutes_before_close": 5
+  },
+  "max_trades_per_day": 1,
+  "cooldown_bars": 0,
+  "sizing": {
+   "risk_pct": 0.5,
+   "max_notional_pct": 100.0
+  },
+  "data": [
+   "bars"
+  ],
+  "id": "STRAT-018",
+  "version": "1.0.0"
+ },
+ "spec": null,
+ "implementation_status": "implemented",
+ "blocked_reason": null,
+ "research_status": "sourced",
+ "evidence": [
+  {
+   "source": "SRC-001",
+   "relation": "direct",
+   "note": "QQQ 2016-2023: ~24% hit rate, ~+0.13R/trade before costs"
+  },
+  {
+   "source": "SRC-003",
+   "relation": "contrary",
+   "note": "independent replication: gross +0.131R, net of 2.5-4 point costs ~0R on 5 indices"
+  }
+ ],
+ "variants": []
+}

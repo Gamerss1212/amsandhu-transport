@@ -1,0 +1,22 @@
+{
+ "id": "STRAT-147",
+ "key": "grid_trading",
+ "name": "Intraday grid",
+ "family": "market_making_arbitrage",
+ "subfamily": "grid",
+ "hypothesis": "Buy every 0.5% down and sell every 0.5% up inside the day's expected range.",
+ "markets": [
+  "crypto"
+ ],
+ "timeframe": "1m",
+ "data": [
+  "bars"
+ ],
+ "definition": null,
+ "spec": "10 levels, 0.5% apart around the session open; flat by 23:55 UTC",
+ "implementation_status": "blocked",
+ "blocked_reason": "the trade manager holds one position per bot; multi-order grids are not supported",
+ "research_status": "hypothesis",
+ "evidence": [],
+ "variants": []
+}

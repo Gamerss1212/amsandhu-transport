@@ -1,0 +1,68 @@
+{
+ "id": "STRAT-099",
+ "key": "turn_of_month",
+ "name": "Turn-of-the-month intraday long",
+ "family": "time_of_day",
+ "subfamily": "calendar",
+ "hypothesis": "Hold SPY long from the first bar's close to the close on the last trading day of the month and the first three days of the next.",
+ "markets": [
+  "stock"
+ ],
+ "timeframe": "5m",
+ "data": [
+  "bars"
+ ],
+ "definition": {
+  "name": "Turn-of-the-month intraday long",
+  "family": "time_of_day",
+  "timeframe": "5m",
+  "direction": "long",
+  "params": {},
+  "entry": {
+   "long": "bar_in_session() == 0 and (dom() <= 3 or days_to_month_end() <= 2)"
+  },
+  "filters": [],
+  "order": {
+   "type": "market"
+  },
+  "stop": {
+   "type": "atr",
+   "mult": 4.0,
+   "n": 14
+  },
+  "target": {
+   "type": "none"
+  },
+  "trail": {
+   "type": "none"
+  },
+  "exit": {},
+  "max_bars": 0,
+  "session": {
+   "flat_minutes_before_close": 5
+  },
+  "max_trades_per_day": 1,
+  "cooldown_bars": 0,
+  "sizing": {
+   "risk_pct": 0.5,
+   "max_notional_pct": 100.0
+  },
+  "data": [
+   "bars"
+  ],
+  "id": "STRAT-099",
+  "version": "1.0.0"
+ },
+ "spec": null,
+ "implementation_status": "implemented",
+ "blocked_reason": null,
+ "research_status": "incompletely sourced",
+ "evidence": [
+  {
+   "source": "SRC-009",
+   "relation": "direct",
+   "note": "daily close-to-close monthly effect; intraday-only here"
+  }
+ ],
+ "variants": []
+}

@@ -58,6 +58,24 @@ def _pctl(vals, p):
     return s[min(len(s) - 1, int(p * len(s)))]
 
 
+def load_events(config: dict) -> Events:
+    """Scheduled-event calendars (FOMC, CPI) from strategies/data/events.json, as session-date ordinals."""
+    from datetime import date as _date
+    ev = Events()
+    here = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    for p in (config.get("events_file"), os.path.join(os.path.dirname(here), "strategies", "data", "events.json"),
+              os.path.join(here, "catalog", "events.json")):
+        if p and os.path.exists(p):
+            with open(p) as fh:
+                d = json.load(fh)
+            for name, days in d.items():
+                if name.startswith("_"):
+                    continue
+                ev.global_days[name] = {_date.fromisoformat(x).toordinal() for x in days}
+            break
+    return ev
+
+
 class LiveFiller(BacktestFiller):
     """Resting stops/targets/limits in live paper trading use the same model as backtests."""
 
@@ -124,7 +142,7 @@ class Fleet:
                        on_bars=self._on_bars)
         p = config.get("paper", {})
         self.broker = PaperBroker(self.hub, self.account, p.get("latency_ms", 150), p.get("max_slippage_bps", 50))
-        self.events = Events()
+        self.events = load_events(config)
         self.bots: Dict[str, BotRunner] = {}
         self.by_series: Dict[Tuple[str, str, str], List[str]] = {}
         self.paused = bool(self.storage.kv_get("paused", False))
@@ -144,7 +162,9 @@ class Fleet:
 
     # ================================================================== setup
     def setup(self, stocks: List[str] = ()):
-        venues = sorted({b["venue"] for b in self.bot_cfgs if b["venue"] != "yahoo"})
+        venues = sorted({b["venue"] for b in self.bot_cfgs if b["venue"] != "yahoo"} |
+                        {r.split(":", 1)[0] for b in self.bot_cfgs for r in (b.get("refs") or [])
+                         if not r.startswith("yahoo:")})
         stock_syms = sorted({b["instrument"] for b in self.bot_cfgs if b["venue"] == "yahoo"} | set(stocks))
         for b in self.bot_cfgs:
             for extra in (b.get("refs") or []):

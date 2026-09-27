@@ -1,0 +1,66 @@
+{
+ "id": "STRAT-044",
+ "key": "midday_range_breakout",
+ "name": "Midday-range breakout",
+ "family": "reference_levels",
+ "subfamily": "session range",
+ "hypothesis": "A close beyond the 11:30-13:30 range after 13:30 starts the afternoon move.",
+ "markets": [
+  "stock"
+ ],
+ "timeframe": "5m",
+ "data": [
+  "bars"
+ ],
+ "definition": {
+  "name": "Midday-range breakout",
+  "family": "reference_levels",
+  "timeframe": "5m",
+  "direction": "both",
+  "params": {},
+  "entry": {
+   "long": "cross_above(close, window_range(690,810).high) and tod() >= 810",
+   "short": "cross_below(close, window_range(690,810).low) and tod() >= 810"
+  },
+  "filters": [],
+  "order": {
+   "type": "market"
+  },
+  "stop": {
+   "type": "level",
+   "long": "(window_range(690,810).high + window_range(690,810).low)/2",
+   "short": "(window_range(690,810).high + window_range(690,810).low)/2"
+  },
+  "target": {
+   "type": "r",
+   "r": 2.0
+  },
+  "trail": {
+   "type": "none"
+  },
+  "exit": {},
+  "max_bars": 0,
+  "session": {
+   "entry_start": "13:30",
+   "entry_end": "15:15",
+   "flat_minutes_before_close": 5
+  },
+  "max_trades_per_day": 1,
+  "cooldown_bars": 0,
+  "sizing": {
+   "risk_pct": 0.5,
+   "max_notional_pct": 100.0
+  },
+  "data": [
+   "bars"
+  ],
+  "id": "STRAT-044",
+  "version": "1.0.0"
+ },
+ "spec": null,
+ "implementation_status": "implemented",
+ "blocked_reason": null,
+ "research_status": "hypothesis",
+ "evidence": [],
+ "variants": []
+}

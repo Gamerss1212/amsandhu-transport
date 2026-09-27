@@ -1,0 +1,73 @@
+{
+ "id": "STRAT-054",
+ "key": "poc_magnet",
+ "name": "Reversion to the prior point of control",
+ "family": "market_profile",
+ "subfamily": "point of control",
+ "hypothesis": "Mid-session, more than 1 ATR away from yesterday's POC with RSI turning, price rotates back toward the POC.",
+ "markets": [
+  "stock",
+  "crypto"
+ ],
+ "timeframe": "5m",
+ "data": [
+  "bars"
+ ],
+ "definition": {
+  "name": "Reversion to the prior point of control",
+  "family": "market_profile",
+  "timeframe": "5m",
+  "direction": "both",
+  "params": {},
+  "entry": {
+   "long": "volume_profile(40,0.7).poc - close > atr(14) * 3 and cross_above(rsi(close,14), 35)",
+   "short": "close - volume_profile(40,0.7).poc > atr(14) * 3 and cross_below(rsi(close,14), 65)"
+  },
+  "filters": [],
+  "order": {
+   "type": "market"
+  },
+  "stop": {
+   "type": "atr",
+   "mult": 1.5,
+   "n": 14
+  },
+  "target": {
+   "type": "level",
+   "long": "volume_profile(40,0.7).poc",
+   "short": "volume_profile(40,0.7).poc"
+  },
+  "trail": {
+   "type": "none"
+  },
+  "exit": {},
+  "max_bars": 0,
+  "session": {
+   "stock": {
+    "entry_start": "09:35",
+    "entry_end": "15:30",
+    "flat_minutes_before_close": 5
+   },
+   "crypto": {
+    "flat_minutes_before_close": 5
+   }
+  },
+  "max_trades_per_day": 1,
+  "cooldown_bars": 0,
+  "sizing": {
+   "risk_pct": 0.5,
+   "max_notional_pct": 100.0
+  },
+  "data": [
+   "bars"
+  ],
+  "id": "STRAT-054",
+  "version": "1.0.0"
+ },
+ "spec": null,
+ "implementation_status": "implemented",
+ "blocked_reason": null,
+ "research_status": "hypothesis",
+ "evidence": [],
+ "variants": []
+}

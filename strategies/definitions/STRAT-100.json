@@ -1,0 +1,68 @@
+{
+ "id": "STRAT-100",
+ "key": "pre_holiday",
+ "name": "Pre-holiday session long",
+ "family": "time_of_day",
+ "subfamily": "calendar",
+ "hypothesis": "Hold the index long intraday on the last session before a market holiday.",
+ "markets": [
+  "stock"
+ ],
+ "timeframe": "5m",
+ "data": [
+  "bars"
+ ],
+ "definition": {
+  "name": "Pre-holiday session long",
+  "family": "time_of_day",
+  "timeframe": "5m",
+  "direction": "long",
+  "params": {},
+  "entry": {
+   "long": "bar_in_session() == 0 and pre_holiday() == 1"
+  },
+  "filters": [],
+  "order": {
+   "type": "market"
+  },
+  "stop": {
+   "type": "atr",
+   "mult": 4.0,
+   "n": 14
+  },
+  "target": {
+   "type": "none"
+  },
+  "trail": {
+   "type": "none"
+  },
+  "exit": {},
+  "max_bars": 0,
+  "session": {
+   "flat_minutes_before_close": 5
+  },
+  "max_trades_per_day": 1,
+  "cooldown_bars": 0,
+  "sizing": {
+   "risk_pct": 0.5,
+   "max_notional_pct": 100.0
+  },
+  "data": [
+   "bars"
+  ],
+  "id": "STRAT-100",
+  "version": "1.0.0"
+ },
+ "spec": null,
+ "implementation_status": "implemented",
+ "blocked_reason": null,
+ "research_status": "incompletely sourced",
+ "evidence": [
+  {
+   "source": "SRC-010",
+   "relation": "direct",
+   "note": "daily pre-holiday returns 1963-1982"
+  }
+ ],
+ "variants": []
+}

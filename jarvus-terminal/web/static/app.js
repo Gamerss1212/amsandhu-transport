@@ -1716,6 +1716,8 @@ function showTab(name) {
   if (name === 'bots') loadBots();
   if (name === 'brain') loadBrain();
   if (name === 'learn') loadLearn();
+  if (name === 'library') loadLibrary();
+  if (name === 'fleet') loadFleet();
 }
 
 function syncFilterUI() {
@@ -1895,3 +1897,100 @@ async function boot() {
   }, 5000);
 }
 boot();
+
+
+/* ---------------- Library (strategy catalog) ---------------- */
+const LIB = { rows: null };
+const hx = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const nf = (v, d = 2) => v == null ? '–' : Number(v).toFixed(d);
+async function loadLibrary() {
+  if (!LIB.rows) {
+    const d = await api('/api/library');
+    LIB.rows = d.strategies; LIB.counts = d.counts;
+    const fams = [...new Set(d.strategies.map(r => r.family))].sort();
+    $('#libFamily').innerHTML = '<option value="">Every family</option>' + fams.map(f => `<option>${hx(f)}</option>`).join('');
+    const c = d.counts;
+    $('#libMeta').innerHTML = `${c.counted_strategies} distinct strategies (${c.implemented} run on the bots, ${c.blocked} blocked by missing data or features),
+      ${c.variants_not_counted} variants not counted, ${c.sources} verified sources. Research: ${c.research_status.sourced} sourced,
+      ${c.research_status['incompletely sourced']} incompletely sourced, ${c.research_status.hypothesis} hypotheses. Built ${hx(d.generated)}.`;
+    ['#libSearch', '#libFamily', '#libImpl', '#libResearch', '#libSort'].forEach(id => $(id).oninput = renderLibrary);
+  }
+  renderLibrary();
+}
+function renderLibrary() {
+  const q = $('#libSearch').value.toLowerCase(), fam = $('#libFamily').value, im = $('#libImpl').value, rs = $('#libResearch').value;
+  let rows = LIB.rows.filter(r => (!q || (r.id + ' ' + r.name).toLowerCase().includes(q)) && (!fam || r.family === fam) &&
+    (!im || r.impl === im) && (!rs || r.research === rs));
+  const s = $('#libSort').value;
+  if (s === 'best') rows.sort((a, b) => (b.best_r ?? -99) - (a.best_r ?? -99));
+  if (s === 'name') rows.sort((a, b) => a.name.localeCompare(b.name));
+  $('#libTable').innerHTML = `<table><thead><tr><th>ID</th><th>Strategy</th><th>Family</th><th>Markets</th><th>Research</th><th>Runs on bots</th>
+    <th>Evaluation</th><th>Measured (R/trade)</th><th>Before costs</th></tr></thead><tbody>${rows.map(r => `<tr tabindex="0" data-id="${r.id}" style="cursor:pointer">
+    <td class="mono">${r.id}</td><td>${hx(r.name)}</td><td class="small">${hx(r.family)}</td><td class="small">${r.markets.join(', ')} · ${r.tf}</td>
+    <td class="small">${hx(r.research)}</td><td class="small">${hx(r.impl)}</td><td class="small">${hx(r.eval)}</td>
+    <td class="mono">${nf(r.best_r)}${r.best_inst ? ' <span class="muted small">' + hx(r.best_inst) + '</span>' : ''}</td><td class="mono">${nf(r.gross_r)}</td></tr>`).join('')}</tbody></table>`;
+  $$('#libTable tr[data-id]').forEach(tr => { tr.onclick = () => showStrategy(tr.dataset.id); tr.onkeydown = e => { if (e.key === 'Enter') showStrategy(tr.dataset.id); }; });
+}
+async function showStrategy(id) {
+  const s = await api('/api/library/' + id);
+  const d = s.definition;
+  const rules = d ? [...Object.entries(d.entry).map(([k, v]) => `${k} entry: ${v}`), ...(d.filters || []).map(f => 'filter: ' + f),
+    'stop: ' + JSON.stringify(d.stop), d.target.type !== 'none' ? 'target: ' + JSON.stringify(d.target) : '',
+    d.trail.type !== 'none' ? 'trail: ' + JSON.stringify(d.trail) : '', ...Object.entries(d.exit || {}).map(([k, v]) => `${k} exit: ${v}`),
+    d.order.type !== 'market' ? 'order: ' + JSON.stringify(d.order) : '', d.max_bars ? `time stop: ${d.max_bars} bars` : '']
+    .filter(Boolean).join('\n') : (s.spec || '');
+  const ev = s.evaluation || {};
+  const res = (ev.results || []).filter(x => x.cost_mult !== 'gross').slice(0, 30).map(x => `<tr><td>${hx(x.instrument)}</td><td>${hx(x.period)}</td><td>${hx(x.cost_mult)}</td>
+    <td class="mono">${x.metrics.trades ?? 0}</td><td class="mono">${nf(x.metrics.win_rate != null ? 100 * x.metrics.win_rate : null, 1)}%</td>
+    <td class="mono">${nf(x.metrics.expectancy_r)}</td><td class="mono">${nf(x.metrics.net_return != null ? 100 * x.metrics.net_return : null)}%</td></tr>`).join('');
+  $('#libDetail').hidden = false;
+  $('#libDetail').innerHTML = `<div class="bigrow"><h2>${hx(s.id)} · ${hx(s.name)}</h2><button class="sm" style="margin-left:auto" onclick="this.closest('.card').hidden=true">Close</button></div>
+    <p class="small"><span class="pill">${hx(s.research_status)}</span> <span class="pill">${hx(s.implementation_status)}</span>
+    <span class="pill">${hx(s.evaluation_status)}</span> <span class="pill">live evidence: ${hx(s.live_evidence)}</span></p>
+    <p><strong>Idea.</strong> ${hx(s.hypothesis)}</p><p class="small sec"><strong>Mechanism:</strong> ${hx(s.mechanism)} · <strong>Logic:</strong> ${hx(s.logic)}
+    · <strong>Anchor:</strong> ${hx(s.anchor)} · <strong>Markets:</strong> ${s.markets.join(', ')} · <strong>Timeframe:</strong> ${hx(s.timeframe)}
+    · <strong>Data:</strong> ${s.data.join(', ')}</p>
+    ${s.blocked_reason ? `<p class="small"><strong>Blocked:</strong> ${hx(s.blocked_reason)}</p>` : ''}
+    <h3>Exact rules</h3><pre class="mono small" style="white-space:pre-wrap">${hx(rules)}</pre>
+    ${s.failure_modes && s.failure_modes.length ? `<p class="small"><strong>How it fails:</strong> ${s.failure_modes.map(hx).join('; ')}</p>` : ''}
+    <h3>Evidence</h3>${s.sources.length ? `<ul class="small">${s.sources.map(x => `<li><strong>${hx(x.relation)}</strong> · ${hx(x.authors)} (${hx(x.year)}).
+      <a href="${hx(x.url)}" target="_blank" rel="noopener noreferrer">${hx(x.title)}</a>. ${hx(x.note || x.supports)} <span class="muted">accessed ${hx(x.accessed)}</span></li>`).join('')}</ul>`
+      : '<p class="small muted">No source: this is a hypothesis.</p>'}
+    <h3>Measured results</h3>${res ? `<div class="tablewrap"><table><thead><tr><th>Instrument</th><th>Period</th><th>Costs</th><th>Trades</th><th>Win rate</th>
+      <th>R/trade</th><th>Return</th></tr></thead><tbody>${res}</tbody></table></div>` : '<p class="small muted">Not evaluated (live-only data or blocked).</p>'}
+    ${s.variant_rows.length ? `<h3>Variants (not counted)</h3><ul class="small">${s.variant_rows.map(v => `<li>${hx(v.id)} ${hx(v.name)}: ${hx(v.what_changes)}</li>`).join('')}</ul>` : ''}`;
+  $('#libDetail').scrollIntoView({ behavior: 'smooth' });
+}
+
+/* ---------------- Fleet (250 paper bots) ---------------- */
+let fleetTimer = null;
+async function loadFleet() {
+  if (!fleetTimer) {
+    $('#fleetStart').onclick = async () => { const r = await post('/api/fleet/start', { stage: $('#fleetStage').value, balance: +$('#fleetBalance').value || null });
+      if (r.error) alert(r.error); setTimeout(loadFleet, 4000); };
+    $('#fleetStop').onclick = async () => { await post('/api/fleet/stop', {}); loadFleet(); };
+    const cmd = async (c, args) => { const r = await post('/api/fleet/command', { command: c, args }); if (r.error) alert(r.error); loadFleet(); };
+    $('#fleetPause').onclick = () => cmd('pause');
+    $('#fleetResume').onclick = () => cmd('resume');
+    $('#fleetEmergency').onclick = () => { if (confirm('Emergency stop: close every paper position now and block new trades until you resume?')) cmd('emergency_stop', { reason: 'operator (Jarvus)' }); };
+    const amt = () => +$('#fleetAmt').value;
+    $('#fleetSet').onclick = () => amt() > 0 && cmd('set_balance', { amount: amt() });
+    $('#fleetDep').onclick = () => amt() > 0 && cmd('deposit', { amount: amt() });
+    $('#fleetWd').onclick = () => amt() > 0 && cmd('withdraw', { amount: amt() });
+    fleetTimer = setInterval(() => { if ($('#panel-fleet').classList.contains('on')) loadFleet(); }, 10000);
+  }
+  let s;
+  try { s = await api('/api/fleet/status'); } catch (e) { $('#fleetMeta').textContent = String(e); return; }
+  const st = s.bot_states || {}, a = s.account || {};
+  $('#fleetMeta').textContent = s.running ? 'running' : 'stopped';
+  const tile = (k, v, sub = '') => `<div class="tile"><div class="k">${k}</div><div class="v">${v}</div><div class="s">${sub}</div></div>`;
+  $('#fleetTiles').innerHTML = [tile('Bots', s.bots ?? 0, s.running ? 'running' : 'not running'),
+    tile('Evaluating', (st.running || 0) + (st.idle_no_signal || 0), `${st.warming || 0} warming · ${st.data_unavailable || 0} no data`),
+    tile('Paused / disabled', (st.paused || 0) + (st.disabled || 0), `${st.degraded || 0} degraded`),
+    tile('Paper equity', a.equity != null ? Math.round(a.equity).toLocaleString() : '–', a.twr != null ? `${(100 * a.twr).toFixed(2)}% time-weighted` : ''),
+    tile('Open positions', a.open_positions ?? 0, a.fees != null ? `fees paid ${a.fees.toFixed(2)}` : ''),
+    tile('Data series', s.series ?? 0, s.latency_ms_p95 != null ? `decision ${(s.latency_ms_p95 / 1000).toFixed(1)}s after bar close` : '')].join('');
+  const fr = $('#fleetFrame');
+  if (s.running && fr.src === 'about:blank') fr.src = s.dashboard;
+  if (!s.running && fr.src !== 'about:blank') fr.src = 'about:blank';
+}

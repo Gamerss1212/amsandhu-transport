@@ -141,7 +141,8 @@ def make_handler(provider: Provider, token: str, page: str):
             self.send_header("Content-Length", str(len(data)))
             self.send_header("Cache-Control", "no-store")
             self.send_header("X-Content-Type-Options", "nosniff")
-            self.send_header("X-Frame-Options", "SAMEORIGIN")
+            # embeddable only by pages on this computer (the Jarvus Terminal Fleet tab)
+            self.send_header("Content-Security-Policy", "frame-ancestors 'self' http://127.0.0.1:* http://localhost:*")
             self.end_headers()
             self.wfile.write(data)
 

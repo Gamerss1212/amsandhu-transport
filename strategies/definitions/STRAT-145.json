@@ -1,0 +1,23 @@
+{
+ "id": "STRAT-145",
+ "key": "ml_reinforcement_agent",
+ "name": "Reinforcement-learning trading agent",
+ "family": "machine_learning",
+ "subfamily": "reinforcement learning",
+ "hypothesis": "An agent trained in the paper simulator learns entry/exit timing.",
+ "markets": [
+  "stock",
+  "crypto"
+ ],
+ "timeframe": "5m",
+ "data": [
+  "bars"
+ ],
+ "definition": null,
+ "spec": "PPO on the platform's backtester with costs; evaluate only on untouched data",
+ "implementation_status": "blocked",
+ "blocked_reason": "no model-training runtime in the bot platform yet (the separate Jarvus Brain trains models offline); simulator-exploitation risk",
+ "research_status": "hypothesis",
+ "evidence": [],
+ "variants": []
+}

@@ -1,0 +1,73 @@
+{
+ "id": "STRAT-125",
+ "key": "book_imbalance_momentum",
+ "name": "Order-book imbalance momentum",
+ "family": "order_flow",
+ "subfamily": "book depth",
+ "hypothesis": "When bid depth exceeds ask depth by 30% and aggressive buying dominates the bar, price drifts up over the next few bars.",
+ "markets": [
+  "crypto"
+ ],
+ "timeframe": "1m",
+ "data": [
+  "bars",
+  "trades",
+  "book"
+ ],
+ "definition": {
+  "name": "Order-book imbalance momentum",
+  "family": "order_flow",
+  "timeframe": "1m",
+  "direction": "both",
+  "params": {},
+  "entry": {
+   "long": "book().imbalance > 0.3 and orderflow().imbalance > 0.2",
+   "short": "book().imbalance < -0.3 and orderflow().imbalance < -0.2"
+  },
+  "filters": [],
+  "order": {
+   "type": "market"
+  },
+  "stop": {
+   "type": "atr",
+   "mult": 1.5,
+   "n": 14
+  },
+  "target": {
+   "type": "none"
+  },
+  "trail": {
+   "type": "none"
+  },
+  "exit": {},
+  "max_bars": 3,
+  "session": {
+   "flat_minutes_before_close": 5
+  },
+  "max_trades_per_day": 20,
+  "cooldown_bars": 0,
+  "sizing": {
+   "risk_pct": 0.5,
+   "max_notional_pct": 100.0
+  },
+  "data": [
+   "bars",
+   "trades",
+   "book"
+  ],
+  "id": "STRAT-125",
+  "version": "1.0.0"
+ },
+ "spec": null,
+ "implementation_status": "implemented",
+ "blocked_reason": null,
+ "research_status": "incompletely sourced",
+ "evidence": [
+  {
+   "source": "SRC-017",
+   "relation": "mechanism",
+   "note": "order-flow imbalance drives contemporaneous price changes (NYSE)"
+  }
+ ],
+ "variants": []
+}

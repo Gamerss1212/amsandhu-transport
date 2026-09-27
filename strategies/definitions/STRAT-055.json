@@ -1,0 +1,73 @@
+{
+ "id": "STRAT-055",
+ "key": "poc_migration_trend",
+ "name": "Developing POC migration (trend day)",
+ "family": "market_profile",
+ "subfamily": "point of control",
+ "hypothesis": "When the developing POC has risen over the last hour and price holds above it and VWAP, the session is trending; hold to the close.",
+ "markets": [
+  "stock",
+  "crypto"
+ ],
+ "timeframe": "5m",
+ "data": [
+  "bars"
+ ],
+ "definition": {
+  "name": "Developing POC migration (trend day)",
+  "family": "market_profile",
+  "timeframe": "5m",
+  "direction": "both",
+  "params": {},
+  "entry": {
+   "long": "volume_profile(40,0.7).dev_poc > volume_profile(40,0.7).dev_poc[12] and close > volume_profile(40,0.7).dev_poc and close > vwap() and minutes_since_open() >= 120",
+   "short": "volume_profile(40,0.7).dev_poc < volume_profile(40,0.7).dev_poc[12] and close < volume_profile(40,0.7).dev_poc and close < vwap() and minutes_since_open() >= 120"
+  },
+  "filters": [],
+  "order": {
+   "type": "market"
+  },
+  "stop": {
+   "type": "level",
+   "long": "volume_profile(40,0.7).dev_poc",
+   "short": "volume_profile(40,0.7).dev_poc",
+   "buffer_atr": 0.3,
+   "n": 14
+  },
+  "target": {
+   "type": "none"
+  },
+  "trail": {
+   "type": "none"
+  },
+  "exit": {},
+  "max_bars": 0,
+  "session": {
+   "stock": {
+    "entry_start": "09:35",
+    "entry_end": "15:30",
+    "flat_minutes_before_close": 5
+   },
+   "crypto": {
+    "flat_minutes_before_close": 5
+   }
+  },
+  "max_trades_per_day": 1,
+  "cooldown_bars": 0,
+  "sizing": {
+   "risk_pct": 0.5,
+   "max_notional_pct": 100.0
+  },
+  "data": [
+   "bars"
+  ],
+  "id": "STRAT-055",
+  "version": "1.0.0"
+ },
+ "spec": null,
+ "implementation_status": "implemented",
+ "blocked_reason": null,
+ "research_status": "hypothesis",
+ "evidence": [],
+ "variants": []
+}
