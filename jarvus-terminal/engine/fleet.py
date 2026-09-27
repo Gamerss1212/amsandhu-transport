@@ -114,7 +114,9 @@ def start(stage: str = "250", balance: float = None, auto: bool = False) -> dict
     if running():
         return {"ok": True, "already_running": True, "dashboard": f"http://127.0.0.1:{PORT}/"}
     cfg = _prepare(balance)
-    _proc = multiprocessing.Process(target=_run, args=(cfg, str(stage)), name="mab-fleet", daemon=True)
+    # a fresh interpreter ("spawn", the Windows default everywhere): forking a process that already
+    # runs threads (the Jarvus bots) can copy a held lock into the child and freeze it
+    _proc = multiprocessing.get_context("spawn").Process(target=_run, args=(cfg, str(stage)), name="mab-fleet", daemon=True)
     _proc.start()
     if not auto:
         _save_autopilot({"enabled": True, "stage": str(stage)})
@@ -268,11 +270,12 @@ def status() -> dict:
             # pause and emergency are written the moment a command applies; the health snapshot lags
             out["paused"] = bool(st.kv_get("paused", False))
             out["emergency"] = st.kv_get("emergency", None)
-            if not out["running"]:
-                acct = st.kv_get("account")
-                if acct:
-                    from mab.account import Account
-                    out["account"] = Account.from_state(acct).summary()
+            # the saved account is written on every fill, balance change and health check, so it is
+            # never older than the health snapshot (and a balance change shows at once)
+            acct = st.kv_get("account")
+            if acct:
+                from mab.account import Account
+                out["account"] = Account.from_state(acct).summary()
         except Exception as e:                                          # noqa: BLE001
             out["error"] = str(e)
     return out

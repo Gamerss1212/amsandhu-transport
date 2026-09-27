@@ -34,7 +34,9 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from mab import __version__
 from mab.account import Account
-from mab.brain import FleetBrain
+from mab.brain import LOW_FEE, FleetBrain
+
+LOW_FEE_VENUES = ("okx",)       # taker fee 0.10% (vs 0.80% Kraken retail, 1.20% Coinbase retail)
 from mab.broker import PaperBroker
 from mab.clock import tf_ms
 from mab.costs import BacktestFiller, CostModel, tier_for
@@ -223,7 +225,7 @@ class Fleet:
         elif saved and saved.get("corrupt"):
             self._alert("warning", "state_corrupt", f"{br.id}: saved state was corrupt; starting flat", br.id)
         self.bots[br.id] = br
-        self.brain.connect(br.id)
+        self.brain.connect(br.id, self._bkey(br), br.c.definition.get("family"), br.c.definition.get("name"), br.symbol)
         if not br.enabled:
             return
         for (sym, tf), need in c.warmup.items():
@@ -335,11 +337,13 @@ class Fleet:
                 live_bar = t == latest
                 entries_ok = (live_bar and status == "ok" and not self.paused and not self.emergency
                               and self.storage_ok and br.id not in self.risk.paused_bots)
+                for text in self.brain.shadow_step(br.id, frame, i):      # vetoed trades followed on paper
+                    self._event("info", "brain_insight", text, br.id)
                 acts = br.tm.on_bar(rs, i, immediate_market=live_bar, entries_allowed=entries_ok)
                 if live_bar:
                     el, es = rs.values.get("entry_long"), rs.values.get("entry_short")
                     state = 1 if (el and el[i]) else (-1 if (es and es[i]) else 0)
-                    self.brain.observe(br.id, br.symbol, state, frame.t[i] + frame.step)
+                    self.brain.observe(br.id, br.symbol, state, frame.t[i] + frame.step, frame, i)
                 if not live_bar and acts:
                     for a in acts:
                         a["catch_up"] = True
@@ -450,7 +454,7 @@ class Fleet:
 
     def _execute_intent(self, br: BotRunner, frame, i, a: dict) -> str:
         if a["kind"] == "entry" and not a.get("reduce_only") and self.brain.mode != "off":
-            dec = self.brain.score(br.id, br.c.id, br.symbol, frame, i, a["side"])
+            dec = self.brain.score(br.id, self._bkey(br), br.symbol, frame, i, a["side"])
             if dec["action"] == "veto":
                 self.stats["brain_vetoes"] = self.stats.get("brain_vetoes", 0) + 1
                 br.tm.intent_rejected("brain veto: " + dec["reason"])
@@ -460,6 +464,15 @@ class Fleet:
                                                            "checks": [{"check": "fleet brain", "passed": False,
                                                                        "detail": dec["reason"]}],
                                                            "decision_time": now_ms()}))
+                # follow the blocked trade on paper so the brain learns what the veto was worth
+                try:
+                    ref, stop = a["ref_price"], a.get("stop")
+                    cost_r = ((2 * br.filler.fee(1.0, "taker") + 2 * br.filler.cm.slip) * ref / abs(ref - stop)
+                              if stop and ref != stop else 0.0)
+                    self.brain.shadow_open(br.id, dec, ref, stop, a.get("target"), cost_r, frame.t[i],
+                                           int(br.c.definition.get("max_bars") or 48), frame.sess_close[i])
+                except Exception as e:                                    # noqa: BLE001
+                    log.debug("shadow trade not opened for %s: %s", br.id, e)
                 return "vetoed"
             if dec["size"] != 1.0:
                 a = dict(a, qty=a["qty"] * dec["size"])
@@ -539,8 +552,14 @@ class Fleet:
         self._trade_closed(br, out["trade"])
         return "exited"
 
+    @staticmethod
+    def _bkey(br: BotRunner) -> str:
+        """The brain judges a strategy separately on low-fee venues, where its costs and results differ."""
+        return br.c.id + (LOW_FEE if br.venue in LOW_FEE_VENUES else "")
+
     def _trade_closed(self, br: BotRunner, trade):
-        self.brain.learn(br.id, br.c.id, br.symbol, trade.r)
+        for text in self.brain.learn(br.id, self._bkey(br), br.symbol, trade.r):
+            self._event("info", "brain_insight", text, br.id)
         td = trade.to_dict()
         self._save(lambda: self.storage.save_trade(br.id, br.venue, td))
         ev = self.risk.on_trade_closed(br.id, trade.pnl, self.account.equity())

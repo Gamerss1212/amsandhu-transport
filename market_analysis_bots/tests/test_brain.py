@@ -63,3 +63,71 @@ def test_learning_updates_model_and_state_round_trips():
     b2 = FleetBrain(seed=5)
     b2.restore(json.loads(json.dumps(b.to_state())))
     assert b2.summary()["trades_learned"] == 100 and b2.w == b.w
+
+
+def test_regime_detection_is_causal_and_sensible():
+    from mab.brain import regime_of, regime_key
+    up = [100 + k for k in range(300)]
+    flat = [100 + (1 if k % 2 else -1) for k in range(300)]
+    assert regime_of(up, 250)["trend"] == "up" and regime_of(flat, 250)["trend"] == "range"
+    assert regime_key(regime_of(up, 250), 1).startswith("with") and regime_key(regime_of(up, 250), -1).startswith("against")
+    # no look-ahead: the regime at bar i does not change when later bars are appended
+    xs = F.c
+    assert regime_of(xs[:401], 400) == regime_of(xs, 400)
+
+
+def test_hierarchy_transfers_family_evidence_to_a_new_strategy():
+    b = FleetBrain(seed=6)
+    b.connect("B1", "OLD", "gaps", "Old gap strategy")
+    b.connect("B2", "NEW", "gaps", "New gap strategy")
+    for _ in range(60):
+        b.learn("B1", "OLD", "TST", -1.0)
+    est = b._combined("NEW", "TST")
+    assert est["mean"] < -0.5 and est["n_eff"] == 0          # pulled down by its family, with no evidence of its own
+    b.connect("B3", "OTHER", "vwap")
+    assert abs(b._combined("OTHER", "TST")["mean"]) < 0.5     # another family is not dragged down as much
+
+
+def test_shadow_trades_learn_from_vetoes_and_insights_are_written():
+    b = FleetBrain(seed=8)
+    b.connect("B1", "BAD", "gaps", "Bad gaps")
+    for _ in range(40):
+        b.score("B1", "BAD", "TST", F, 500, 1)
+        b.learn("B1", "BAD", "TST", -1.0)
+    d = b.score("B1", "BAD", "TST", F, 500, 1)
+    assert d["action"] == "veto" and d["benched"]
+    assert b.summary()["benched_now"] == 1
+    assert any("Learned: Bad gaps loses" in x["text"] for x in b.summary()["insights"])
+    # a long shadow with the stop just under the next bar's low and a target at its high hits the target
+    i = 450
+    entry = F.c[i]
+    b.shadow_open("B1", d, entry, entry - 10 * (F.h[i + 1] - F.l[i + 1] + 1), F.h[i + 1], 0.0, F.t[i])
+    n0 = b.post["S:BAD"]["n"]
+    b.shadow_step("B1", F, i + 1)
+    s = b.summary()
+    assert s["shadow_trades"] == 1 and s["shadow_avg_r"] >= 0 and b.post["S:BAD"]["n"] == n0 + 0.5
+    assert "B1" not in b.shadows
+
+
+def test_restore_keeps_learning_across_an_upgrade_that_adds_features():
+    b = FleetBrain(seed=9)
+    for k in range(60):
+        d = b.score("B", "S", "TST", F, 400 + k, 1)
+        b.learn("B", "S", "TST", 1.0, d)
+    st = json.loads(json.dumps(b.to_state()))
+    old_names = st["features"][:11]
+    st["w"], st["features"] = st["w"][:11], old_names             # a state saved by the previous version
+    b2 = FleetBrain(seed=9)
+    b2.restore(st)
+    assert b2.w[:11] == b.w[:11] and b2.w[11:] == [0.0, 0.0] and b2.summary()["trades_learned"] == 60
+
+
+def test_priors_follow_each_venue_costs(tmp_path):
+    p = tmp_path / "ev.json"
+    p.write_text(json.dumps({"strategies": {"S1": {"runs": [
+        {"cost": "retail_kraken", "instrument": "BTC-USD", "full": {"trades": 100, "expectancy_r": -1.5}},
+        {"cost": "low_fee_venue", "instrument": "BTC-USD", "full": {"trades": 100, "expectancy_r": 0.2}}]}}}))
+    b = FleetBrain(seed=10)
+    b.load_priors(str(p))
+    assert b.estimate("S:S1")["mean"] < -1 and b.estimate("S:S1@low")["mean"] > 0
+    assert b._combined("S1@low", "BTC-USDT")["mean"] > 0 > b._combined("S1", "BTC-USD")["mean"]

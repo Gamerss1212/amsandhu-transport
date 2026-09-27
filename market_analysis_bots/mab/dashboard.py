@@ -35,6 +35,8 @@ class Provider:
     def __init__(self, storage: Storage, fleet=None):
         self.storage = storage
         self.fleet = fleet
+        self._books: dict = {}
+        self._book_lock = threading.Lock()
 
     def summary(self) -> dict:
         if self.fleet is not None:
@@ -96,8 +98,33 @@ class Provider:
         if s is None:
             return {"key": key, "t": [], "c": []}
         times = s.times[-n:]
-        return {"key": key, "t": times, "c": [s.bars[t].close for t in times], "h": [s.bars[t].high for t in times],
-                "l": [s.bars[t].low for t in times]}
+        return {"key": key, "t": times, "o": [s.bars[t].open for t in times], "c": [s.bars[t].close for t in times],
+                "h": [s.bars[t].high for t in times], "l": [s.bars[t].low for t in times], "step": s.step}
+
+    def book(self, key: str, depth: int = 8) -> dict:
+        """Live top of the order book for a crypto series (cached a few seconds, one request at most)."""
+        if self.fleet is None:
+            return {"key": key, "bids": [], "asks": [], "note": "fleet not running"}
+        venue, symbol = (key.split("/") + ["", ""])[:2]
+        ad = self.fleet.hub.adapters.get(venue)
+        if ad is None or venue == "yahoo":
+            return {"key": key, "bids": [], "asks": [], "note": "no free order book for stocks: stock fills are synthetic"}
+        now = time.time()
+        hit = self._books.get(key)
+        if hit and now - hit[0] < 4.0:
+            return hit[1]
+        with self._book_lock:
+            hit = self._books.get(key)
+            if hit and time.time() - hit[0] < 4.0:
+                return hit[1]
+            try:
+                bk = ad.book(symbol, depth=depth)
+                out = {"key": key, "bids": bk.bids[:depth], "asks": bk.asks[:depth], "time": bk.event_time} if bk else \
+                    {"key": key, "bids": [], "asks": [], "note": "order book unavailable"}
+            except Exception as e:                                      # noqa: BLE001
+                out = {"key": key, "bids": [], "asks": [], "note": f"order book unavailable ({type(e).__name__})"}
+            self._books[key] = (time.time(), out)
+            return out
 
     def tickers(self) -> list:
         if self.fleet is None:
@@ -200,6 +227,8 @@ def make_handler(provider: Provider, token: str, page: str):
                     return self._send(200, provider.brain())
                 if u.path == "/api/chart":
                     return self._send(200, provider.chart(q.get("key", [""])[0]))
+                if u.path == "/api/book":
+                    return self._send(200, provider.book(q.get("key", [""])[0]))
                 if u.path == "/api/tickers":
                     return self._send(200, provider.tickers())
                 if u.path == "/api/series":
