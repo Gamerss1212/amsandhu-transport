@@ -415,10 +415,18 @@ class Handler(BaseHTTPRequestHandler):
                     return self._json({"ok": True})
                 if action == "reset":
                     money = float(payload.get("practice_money") or bots.load_settings()["practice_money"])
-                    if not 100 <= money <= 10_000_000:
-                        return self._json({"error": "practice money must be between $100 and $10,000,000"}, 400)
+                    if not 0 < money <= 1e12:
+                        return self._json({"error": "practice money must be more than $0"}, 400)
                     eng.close_all("reset")
                     return self._json(eng.reset(money))
+                if action == "set-money":
+                    try:
+                        money = float(payload.get("practice_money"))
+                    except (TypeError, ValueError):
+                        return self._json({"error": "type an amount"}, 400)
+                    if not 0 < money <= 1e12:
+                        return self._json({"error": "practice money must be more than $0"}, 400)
+                    return self._json(eng.set_money(money, bool(payload.get("close_trades"))))
                 if action == "settings":
                     bots.save_settings(payload)
                     return self._json(eng.status())
@@ -462,15 +470,16 @@ def serve():
     # the app that fails to bind can never trade the same practice account twice.
     engine = bots.get_engine(lambda: _scan_for_scheduler()[0])
     engine.boot()
+    fleet.boot()
     url = f"http://{config.HOST}:{config.PORT}"
     print(f"\n  Jarvus Terminal is running at  {url}\n", flush=True)
     print(f"  {len(estrat.REGISTRY)} strategies | {len(eind.CATALOG)} indicators | "
           f"top {config.DEEP_SCAN_N} of every liquid market | fee tier '{config.DEFAULT_FEE_TIER}'", flush=True)
     print("  Ctrl-C to stop.\n", flush=True)
     if bots.load_settings()["running"]:
-        print("  Bots were running when the app last closed, so they have resumed.\n", flush=True)
+        print("  Autopilot: the seven Jarvus bots are running by themselves.\n", flush=True)
     else:
-        print("  Bots are ready. Open the Bots tab and press Run bots.\n", flush=True)
+        print("  The Jarvus bots are stopped (you pressed Stop). Press Run bots to turn them back on.\n", flush=True)
     try:
         httpd.serve_forever()
     except KeyboardInterrupt:

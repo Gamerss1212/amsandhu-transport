@@ -135,17 +135,23 @@
         Stocks trade only in US/Toronto market hours; crypto trades all day and every bot is flat before its session ends.
         Real-money trading is not available in this version.</p>
       <div class="bigrow" style="gap:8px;flex-wrap:wrap">
-        <label class="small" id="fleetBalanceLbl">Starting balance <input id="fleetBalance" type="number" min="100" step="100" value="100000" style="width:120px"></label>
         <select id="fleetStage" style="width:190px"><option value="10">10 bots (starter)</option><option value="50">50 bots</option>
           <option value="250" selected>All 250 bots</option></select>
         <button class="primary" id="fleetStart">Start fleet</button><button id="fleetStop">Stop</button>
         <button id="fleetPause">Pause entries</button><button id="fleetResume">Resume</button>
         <button id="fleetEmergency" style="border-color:var(--bad,#c2372f)">Emergency stop</button>
+        <span class="small muted" id="fleetAuto"></span>
       </div>
-      <div class="bigrow small" style="gap:8px;margin-top:8px">
-        <span>Change balance while running:</span><input id="fleetAmt" type="number" min="0" step="100" placeholder="amount" style="width:110px">
-        <button class="sm" id="fleetSet">Set balance</button><button class="sm" id="fleetDep">Deposit</button><button class="sm" id="fleetWd">Withdraw</button>
+      <div class="bigrow small" style="gap:8px;margin-top:10px;flex-wrap:wrap">
+        <label>Paper balance <input id="fleetBalance" type="number" min="0.01" step="any" placeholder="any amount" style="width:140px"></label>
+        <button class="sm primary" id="fleetSet">Set balance</button>
+        <span style="width:14px"></span>
+        <label>Amount <input id="fleetAmt" type="number" min="0.01" step="any" placeholder="amount" style="width:110px"></label>
+        <button class="sm" id="fleetDep">Deposit</button><button class="sm" id="fleetWd">Withdraw</button>
+        <span class="muted" id="fleetMoneyMsg"></span>
       </div>
+      <p class="tiny muted" style="margin:6px 0 0">Change the balance to any amount at any time, running or stopped. The bots
+        keep their open trades and close them on their own; if money is tied up in open trades, new entries wait until it is free.</p>
     </div>
     <div class="grid tiles" id="fleetTiles"></div>
     <div class="card" id="fleetIdle"><p class="sec" style="margin:0">Start the fleet to see its live dashboard here: every bot on a

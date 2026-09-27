@@ -176,7 +176,8 @@ LIMITS: Dict[str, Tuple[float, float]] = {
 }
 
 GLOBAL_DEFAULTS: Dict = {
-    "running": False,
+    # the bots run by themselves from the first start; only the Stop button turns them off
+    "running": True,
     "practice_money": 10_000.0,
     "scan_interval_s": 300,
     "manage_interval_s": 15,
@@ -673,7 +674,7 @@ class Engine:
             for t in self._threads:
                 t.start()
         if load_settings()["running"]:
-            log("system", "Bots resumed automatically: they were running when the app last closed.")
+            log("system", "Bots are running on autopilot (press Stop bots to turn them off).")
             self._wake.set()
 
     def run(self) -> Dict:
@@ -1299,6 +1300,39 @@ class Engine:
             con.commit()
         self._benched_seen = set()
         log("system", f"Practice account reset to ${money:,.0f} (${each:,.0f} per bot).")
+        return self.status()
+
+    def set_money(self, amount: float, close_trades: bool = False) -> Dict:
+        """Make the practice balance `amount` and keep the trade history: the difference is paid in
+        or taken out as cash, spread over the bots by their size. Returns {"needs_close": ...} when
+        the new balance is smaller than what open trades hold and close_trades is False."""
+        amount = float(amount)
+        if not amount > 0:
+            return {"error": "the balance must be more than 0"}
+        with self._lock:
+            bots_ = all_bots()
+            opens = open_positions()
+            eq = {b["id"]: _equity(b, [p for p in opens if p["bot_id"] == b["id"]]) for b in bots_}
+            total = sum(eq.values())
+            diff = amount - total
+            cash = sum(b["cash"] for b in bots_)
+            if diff < 0 and cash + diff < 0:
+                if not close_trades:
+                    return {"needs_close": True, "held": round(total - cash, 2),
+                            "error": f"open trades hold ${total - cash:,.2f}, more than the new balance allows"}
+                self.close_all("balance change")
+                return self.set_money(amount, close_trades=False)
+            con = store.conn()
+            for b in bots_:
+                # a withdrawal comes out of cash in proportion; a deposit goes in by each bot's size
+                share = (b["cash"] / cash if cash > 0 else 1 / len(bots_)) if diff < 0 else \
+                        (eq[b["id"]] / total if total > 0 else 1 / len(bots_))
+                d = diff * share
+                con.execute("UPDATE bots SET cash=cash+?, starting_cash=MAX(0.01, starting_cash+?) WHERE id=?",
+                            (d, d, b["id"]))
+            con.commit()
+            save_settings({"practice_money": amount})
+        log("system", f"Practice balance set to ${amount:,.2f} (was ${total:,.2f}); trade history kept.")
         return self.status()
 
     def set_bot(self, key: str, enabled: bool = None, overrides: Dict = None) -> Dict:

@@ -91,18 +91,21 @@ class Account:
         if amount <= 0:
             raise ValueError("withdrawal must be positive")
         with self.lock:
-            if amount > self.cash:
-                raise ValueError(f"only {self.cash:,.2f} {self.currency} is free cash; close positions first")
+            if amount >= self.equity():
+                raise ValueError(f"the account holds {self.equity():,.2f} {self.currency}; withdraw less than that")
+            # money tied up in open positions stays there: the bots close their own trades, and new
+            # entries wait until there is free cash again
             return self._flow("withdraw", -float(amount), note)
 
     def set_balance(self, equity: float, note: str = "") -> dict:
         """Make total equity equal `equity` by an adjusting cash flow."""
-        if equity < 0:
-            raise ValueError("balance cannot be negative")
+        if not equity > 0:
+            raise ValueError("the balance must be more than 0")
         with self.lock:
+            # any amount is allowed. If it is below the value of open positions, cash goes negative for
+            # a while: the bots keep managing (and closing) their own trades and new entries wait for
+            # free cash. Nothing is closed on the operator's behalf.
             diff = float(equity) - self.equity()
-            if self.cash + diff < 0:
-                raise ValueError("that balance is below the value of open positions; close positions first")
             return self._flow("set_balance", diff, note or f"balance set to {equity:,.2f}")
 
     # ------------------------------------------------------------------ fills

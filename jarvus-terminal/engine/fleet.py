@@ -109,14 +109,69 @@ def _run(cfg_path: str, stage: str):
     run_fleet(stage=stage, dashboard=True, port=PORT, config_path=cfg_path, quiet=False)
 
 
-def start(stage: str = "250", balance: float = None) -> dict:
+def start(stage: str = "250", balance: float = None, auto: bool = False) -> dict:
     global _proc
     if running():
         return {"ok": True, "already_running": True, "dashboard": f"http://127.0.0.1:{PORT}/"}
     cfg = _prepare(balance)
     _proc = multiprocessing.Process(target=_run, args=(cfg, str(stage)), name="mab-fleet", daemon=True)
     _proc.start()
+    if not auto:
+        _save_autopilot({"enabled": True, "stage": str(stage)})
     return {"ok": True, "pid": _proc.pid, "stage": stage, "dashboard": f"http://127.0.0.1:{PORT}/"}
+
+
+# ------------------------------------------------------------------ autopilot
+# The fleet runs by itself: it starts when Jarvus starts and is restarted if it ever stops
+# unexpectedly. Only the Stop button turns this off (Start turns it back on).
+_AUTOPILOT = os.path.join(HOME, "autopilot.json")
+_restarts: list = []
+_watchdog = None
+
+
+def _load_autopilot() -> dict:
+    try:
+        with open(_AUTOPILOT, encoding="utf-8") as fh:
+            return {"enabled": True, "stage": "250", **json.load(fh)}
+    except (OSError, ValueError):
+        return {"enabled": True, "stage": "250"}
+
+
+def _save_autopilot(d: dict):
+    os.makedirs(HOME, exist_ok=True)
+    with open(_AUTOPILOT, "w", encoding="utf-8") as fh:
+        json.dump(d, fh)
+
+
+def boot():
+    """Called once when Jarvus starts: start the fleet if autopilot is on, and watch over it."""
+    global _watchdog
+    ap = _load_autopilot()
+    if ap["enabled"]:
+        print(f"  Autopilot: starting the bot fleet ({ap['stage']} bots, paper money).", flush=True)
+        start(ap["stage"], auto=True)
+    if _watchdog is None:
+        import threading
+        _watchdog = threading.Thread(target=_watch, name="fleet-watchdog", daemon=True)
+        _watchdog.start()
+
+
+def _watch():
+    while True:
+        time.sleep(30)
+        try:
+            ap = _load_autopilot()
+            if not ap["enabled"] or running():
+                continue
+            now = time.time()
+            _restarts[:] = [t for t in _restarts if now - t < 3600]
+            if len(_restarts) >= 5:                      # something keeps failing: stop retrying for a while
+                continue
+            _restarts.append(now)
+            print("  Autopilot: the fleet had stopped; restarting it.", flush=True)
+            start(ap["stage"], auto=True)
+        except Exception as e:                            # noqa: BLE001
+            print(f"  Autopilot watchdog: {e}", flush=True)
 
 
 def running() -> bool:
@@ -130,10 +185,41 @@ def _storage():
     return Storage(os.path.join(HOME, "data", "mab.db"))
 
 
+def _money_offline(cmd: str, amount: float) -> dict:
+    """Change the saved paper account while the fleet is not running (it carries on from it)."""
+    cfg_path = _prepare()
+    with open(cfg_path, encoding="utf-8") as fh:
+        a = json.load(fh).get("account", {})
+    os.makedirs(os.path.join(HOME, "data"), exist_ok=True)
+    from mab.account import Account
+    st = _storage()
+    state = st.kv_get("account")
+    acc = Account.from_state(state) if state else Account(a.get("balance", 100_000.0), a.get("slots", 20),
+                                                          a.get("currency", "USD"))
+    if not state:
+        st.save_cash_flow(acc.flows[0])
+    try:
+        rec = getattr(acc, cmd)(float(amount), "set in Jarvus while the fleet was stopped")
+    except ValueError as e:
+        return {"error": str(e)}
+    st.save_cash_flow(rec)
+    st.kv_set("account", acc.to_state())
+    return {"status": "done", "result": rec, "account": acc.summary()}
+
+
 def command(cmd: str, args: dict = None, wait: float = 6.0) -> dict:
     allowed = {"pause", "resume", "emergency_stop", "clear_emergency", "set_balance", "deposit", "withdraw", "stop"}
     if cmd not in allowed:
         return {"error": "command not allowed"}
+    if cmd in ("set_balance", "deposit", "withdraw"):
+        try:
+            amount = float((args or {}).get("amount"))
+        except (TypeError, ValueError):
+            return {"error": "type an amount"}
+        if not 0 < amount <= 1e12:
+            return {"error": "the amount must be more than 0"}
+        if not running():
+            return _money_offline(cmd, amount)
     if not os.path.exists(os.path.join(HOME, "data", "mab.db")):
         return {"error": "the fleet has not been started yet"}
     st = _storage()
@@ -142,13 +228,22 @@ def command(cmd: str, args: dict = None, wait: float = 6.0) -> dict:
     while time.time() < t_end:
         r = st.command_result(cid)
         if r and r["status"] != "pending":
-            return {"status": r["status"], "result": json.loads(r["result"]) if r["result"] else None}
+            try:
+                res = json.loads(r["result"]) if r["result"] else None
+            except ValueError:
+                res = r["result"]
+            out = {"status": r["status"], "result": res}
+            if r["status"] == "failed":
+                out["error"] = str(res)
+            return out
         time.sleep(0.25)
     return {"status": "queued", "note": "applies when the fleet is running"}
 
 
 def stop() -> dict:
     global _proc
+    ap = _load_autopilot()
+    _save_autopilot({**ap, "enabled": False})                # the operator stopped it: stay stopped
     res = command("stop", wait=3.0) if running() else {"status": "not running"}
     if _proc is not None:
         _proc.join(15)
@@ -159,7 +254,7 @@ def stop() -> dict:
 
 
 def status() -> dict:
-    out = {"running": running(), "dashboard": f"http://127.0.0.1:{PORT}/", "home": HOME}
+    out = {"running": running(), "dashboard": f"http://127.0.0.1:{PORT}/", "home": HOME, "autopilot": _load_autopilot()}
     db = os.path.join(HOME, "data", "mab.db")
     if os.path.exists(db):
         try:
@@ -173,6 +268,11 @@ def status() -> dict:
             # pause and emergency are written the moment a command applies; the health snapshot lags
             out["paused"] = bool(st.kv_get("paused", False))
             out["emergency"] = st.kv_get("emergency", None)
+            if not out["running"]:
+                acct = st.kv_get("account")
+                if acct:
+                    from mab.account import Account
+                    out["account"] = Account.from_state(acct).summary()
         except Exception as e:                                          # noqa: BLE001
             out["error"] = str(e)
     return out

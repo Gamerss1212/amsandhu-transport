@@ -1295,8 +1295,9 @@ function buildBotSettings(s) {
       <button id="defaultBotSet">Back to measured defaults</button>
       <span style="margin-left:auto"></span>
       <label class="small sec" style="display:flex;align-items:center;gap:6px">Practice money
-        <input type="number" id="setPractice" min="100" step="100" value="${s.settings.practice_money}" style="width:110px"></label>
-      <button id="resetBots" class="ghost">Reset practice account</button>
+        <input type="number" id="setPractice" min="0.01" step="any" value="${Math.round((s.totals && s.totals.equity) || s.settings.practice_money)}" style="width:130px"></label>
+      <button id="setMoney" class="primary" title="Change the balance to this amount and keep every trade">Set balance</button>
+      <button id="resetBots" class="ghost" title="Wipe the trade history and start again with this amount">Reset practice account</button>
     </div>
     <p class="tiny muted" style="margin:8px 0 0">Every setting is clamped to a safe range, so a typo cannot bet the account.
       Changes apply to new trades; open trades keep the rules they were opened with.</p>`;
@@ -1309,6 +1310,17 @@ function buildBotSettings(s) {
   });
   $('#defaultBotSet').addEventListener('click', async () => {
     const r = await post('/api/bots/settings', { shared: { ...s.defaults }, scan_interval_s: 300 });
+    box.dataset.built = ''; renderBots(r);
+  });
+  $('#setMoney').addEventListener('click', async () => {
+    const amt = Number($('#setPractice').value);
+    if (!(amt > 0)) { alert('Type the balance you want, for example 25000.'); return; }
+    let r = await post('/api/bots/set-money', { practice_money: amt });
+    if (r.needs_close) {
+      if (!confirm(`Open trades hold ${money(r.held, 2)}, more than a ${money(amt, 2)} balance allows. Close every open practice trade and set the balance?`)) return;
+      r = await post('/api/bots/set-money', { practice_money: amt, close_trades: true });
+    }
+    if (r.error) { alert(r.error); return; }
     box.dataset.built = ''; renderBots(r);
   });
   $('#resetBots').addEventListener('click', async () => {
@@ -1971,46 +1983,53 @@ async function showStrategy(id) {
 let fleetTimer = null;
 async function loadFleet() {
   if (!fleetTimer) {
-    $('#fleetStart').onclick = async () => { const r = await post('/api/fleet/start', { stage: $('#fleetStage').value, balance: +$('#fleetBalance').value || null });
+    const msg = t => { $('#fleetMoneyMsg').textContent = t; setTimeout(() => { if ($('#fleetMoneyMsg').textContent === t) $('#fleetMoneyMsg').textContent = ''; }, 8000); };
+    $('#fleetStart').onclick = async () => { const r = await post('/api/fleet/start', { stage: $('#fleetStage').value });
       if (r.error) alert(r.error); setTimeout(loadFleet, 4000); };
-    $('#fleetStop').onclick = async () => { await post('/api/fleet/stop', {}); loadFleet(); };
-    const cmd = async (c, args) => { const r = await post('/api/fleet/command', { command: c, args }); if (r.error) alert(r.error); loadFleet(); };
+    $('#fleetStop').onclick = async () => {
+      if (!confirm('Stop the fleet? Autopilot stays off until you press Start fleet again.')) return;
+      await post('/api/fleet/stop', {}); loadFleet(); };
+    const cmd = async (c, args) => { const r = await post('/api/fleet/command', { command: c, args }); if (r.error) alert(r.error); loadFleet(); return r; };
     $('#fleetPause').onclick = () => cmd('pause');
     $('#fleetResume').onclick = async () => { await cmd('clear_emergency'); cmd('resume'); };
     $('#fleetEmergency').onclick = () => { if (confirm('Emergency stop: close every paper position now and block new trades until you resume?')) cmd('emergency_stop', { reason: 'operator (Jarvus)' }); };
-    const amt = () => +$('#fleetAmt').value;
-    $('#fleetSet').onclick = () => amt() > 0 && cmd('set_balance', { amount: amt() });
-    $('#fleetDep').onclick = () => amt() > 0 && cmd('deposit', { amount: amt() });
-    $('#fleetWd').onclick = () => amt() > 0 && cmd('withdraw', { amount: amt() });
+    const money$ = async (c, el) => {
+      const amt = Number($(el).value);
+      if (!(amt > 0)) { alert('Type an amount, for example 25000.'); return; }
+      const r = await cmd(c, { amount: amt });
+      if (!r.error) { $(el).dataset.dirty = ''; msg(`done: balance now ${Math.round(((r.result || {}).equity_after) ?? amt).toLocaleString()}`); }
+    };
+    $('#fleetBalance').addEventListener('input', e => { e.target.dataset.dirty = '1'; });
+    $('#fleetSet').onclick = () => money$('set_balance', '#fleetBalance');
+    $('#fleetDep').onclick = () => money$('deposit', '#fleetAmt');
+    $('#fleetWd').onclick = () => money$('withdraw', '#fleetAmt');
     fleetTimer = setInterval(() => { if ($('#panel-fleet').classList.contains('on')) loadFleet(); }, 10000);
   }
   let s;
   try { s = await api('/api/fleet/status'); } catch (e) { $('#fleetMeta').textContent = String(e); return; }
   const st = s.bot_states || {}, a = s.account || {};
-  $('#fleetMeta').textContent = s.running ? 'running' : 'stopped';
   const tile = (k, v, sub = '') => `<div class="tile"><div class="k">${k}</div><div class="v">${v}</div><div class="s">${sub}</div></div>`;
-  $('#fleetTiles').innerHTML = [tile('Bots', s.bots ?? 0, s.running ? 'running' : 'not running'),
-    tile('Evaluating', (st.running || 0) + (st.idle_no_signal || 0), `${st.warming || 0} warming · ${st.data_unavailable || 0} no data`),
-    tile('Paused / disabled', (st.paused || 0) + (st.disabled || 0), `${st.degraded || 0} degraded`),
+  $('#fleetTiles').innerHTML = [tile('Bots', s.running ? (s.bots ?? 0) : 0, s.running ? 'running' : 'not running'),
+    tile('Evaluating', s.running ? (st.running || 0) + (st.idle_no_signal || 0) : 0, s.running ? `${st.warming || 0} warming · ${st.data_unavailable || 0} no data` : ''),
+    tile('Paused / disabled', s.running ? (st.paused || 0) + (st.disabled || 0) : 0, s.running ? `${st.degraded || 0} degraded` : ''),
     tile('Paper equity', a.equity != null ? Math.round(a.equity).toLocaleString() : '–', a.twr != null ? `${(100 * a.twr).toFixed(2)}% time-weighted` : ''),
     tile('Open positions', a.open_positions ?? 0, a.fees != null ? `fees paid ${a.fees.toFixed(2)}` : ''),
-    tile('Data series', s.series ?? 0, s.latency_ms_p95 != null ? `decision ${(s.latency_ms_p95 / 1000).toFixed(1)}s after bar close` : '')].join('');
+    tile('Data series', s.running ? (s.series ?? 0) : 0, s.running && s.latency_ms_p95 != null ? `decision ${(s.latency_ms_p95 / 1000).toFixed(1)}s after bar close` : '')].join('');
   const fr = $('#fleetFrame');
   $('#fleetFrameCard').hidden = !s.running; $('#fleetIdle').hidden = !!s.running;
   if (s.running && fr.src === 'about:blank') fr.src = s.dashboard;
   if (!s.running && fr.src !== 'about:blank') fr.src = 'about:blank';
-  // only offer the controls that make sense right now
+  // the balance box shows the account's balance unless you are typing in it
+  const bal = $('#fleetBalance');
+  if (a.equity != null && !bal.dataset.dirty && document.activeElement !== bal) bal.value = Math.round(a.equity * 100) / 100;
+  // only offer the controls that make sense right now; balance changes always work
   $('#fleetStart').disabled = !!s.running;
-  ['#fleetStop', '#fleetPause', '#fleetResume', '#fleetEmergency', '#fleetSet', '#fleetDep', '#fleetWd']
-    .forEach(id => { $(id).disabled = !s.running; });
-  // the starting balance only applies to a brand-new paper account; a saved one carries on
-  const saved = a.equity != null;
-  $('#fleetBalance').disabled = saved;
-  if (saved) $('#fleetBalance').value = Math.round(a.equity);
-  $('#fleetBalanceLbl').title = saved ? 'Your saved paper account carries on. Change it any time with Set balance, Deposit or Withdraw while the fleet runs.' : 'Paper money the new account starts with';
+  ['#fleetStop', '#fleetPause', '#fleetResume', '#fleetEmergency'].forEach(id => { $(id).disabled = !s.running; });
   if (s.running) { $('#fleetPause').disabled = !!s.paused; $('#fleetResume').disabled = !s.paused && !s.emergency; }
+  const ap = s.autopilot || {};
+  $('#fleetAuto').textContent = ap.enabled ? `autopilot on: starts with Jarvus and restarts itself (${ap.stage} bots)` : 'autopilot off (you pressed Stop)';
   $('#fleetMeta').textContent = s.running ? (s.emergency ? 'running - EMERGENCY STOP active' : s.paused ? 'running - entries paused' : 'running')
-    : 'stopped';
+    : (ap.enabled ? 'starting...' : 'stopped');
 }
 
 
