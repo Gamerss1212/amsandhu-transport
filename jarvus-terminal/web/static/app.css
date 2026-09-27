@@ -314,3 +314,4 @@ tr.ctrl td { color: var(--text-secondary); font-style: italic; }
 tr.encx td { background: var(--surface-2); }
 /* anything marked hidden stays hidden, whatever display its class sets */
 [hidden] { display: none !important; }
+.setgrid label.chk span:first-child { display: flex; align-items: center; gap: 7px; }

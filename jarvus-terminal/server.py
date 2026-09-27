@@ -281,7 +281,7 @@ class Handler(BaseHTTPRequestHandler):
                 return self._json({"summary": ebrain.get().summary(), "agents": ebrain.get().agents(),
                                    "votes": (eng.brain_last[-60:][::-1] if eng else []),
                                    "vote_count": eng.brain_votes if eng else 0,
-                                   "mode": st.get("brain_mode"), "min_r": st.get("brain_min_r")})
+                                   "mode": st.get("brain_mode")})
 
             if route == "/api/learn":
                 book = os.path.join(os.path.dirname(os.path.abspath(bots.__file__)), "research_book.json")
@@ -335,15 +335,10 @@ class Handler(BaseHTTPRequestHandler):
                 return self._json({"ok": True, "changed": n, "roster": swarm.roster()})
 
             if parsed.path == "/api/research/run":
-                def go():
-                    try:
-                        research.run(bars=int(payload.get("bars", 3000)),
-                                     market_count=int(payload.get("markets", 12)),
-                                     split=float(payload.get("split", 0.6)),
-                                     asset="stock" if payload.get("asset") == "stock" else "crypto")
-                    except Exception:                # noqa: BLE001
-                        traceback.print_exc()
-                threading.Thread(target=go, name="jarvus-research", daemon=True).start()
+                research.run_background(bars=int(payload.get("bars", 3000)),
+                                        market_count=int(payload.get("markets", 12)),
+                                        split=float(payload.get("split", 0.6)),
+                                        asset="stock" if payload.get("asset") == "stock" else "crypto")
                 return self._json({"ok": True, "started": True,
                                    "note": "Running in the background. It backtests every strategy "
                                            "on every market over deep history, so it takes minutes, "

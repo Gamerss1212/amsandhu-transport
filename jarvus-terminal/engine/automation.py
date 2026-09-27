@@ -47,10 +47,18 @@ CREATE INDEX IF NOT EXISTS idx_alerts_time ON alerts(fired_at DESC);
 """
 
 
+_INIT_DONE: set = set()
+
+
 def _init():
+    """Create this module's tables, once per database (not on every read: on a busy app
+    those calls add up to seconds)."""
+    if config.DB_PATH in _INIT_DONE:
+        return
     c = store.conn()
     c.executescript(SCHEMA)
     c.commit()
+    _INIT_DONE.add(config.DB_PATH)
 
 
 # --- rules -------------------------------------------------------------------

@@ -46,13 +46,21 @@ CREATE INDEX IF NOT EXISTS idx_rr_strategy ON research_rows(strategy);
 """
 
 
+_INIT_DONE: set = set()
+
+
 def _init():
+    """Create this module's tables, once per database (not on every read: on a busy app
+    those calls add up to seconds)."""
+    if config.DB_PATH in _INIT_DONE:
+        return
     c = store.conn()
     c.executescript(SCHEMA)
     cols = {r[1] for r in c.execute("PRAGMA table_info(research_runs)").fetchall()}
     if "asset" not in cols:                       # databases from before stocks existed
         c.execute("ALTER TABLE research_runs ADD COLUMN asset TEXT NOT NULL DEFAULT 'crypto'")
     c.commit()
+    _INIT_DONE.add(config.DB_PATH)
 
 
 def run(symbols: List[str] = None, bars: int = 3000, split: float = 0.6,
@@ -128,6 +136,26 @@ def run(symbols: List[str] = None, bars: int = 3000, split: float = 0.6,
             "judged": g.get("strategies_judged"),
             "elapsed_s": round(time.time() - t0, 1),
             "by_strategy": g["by_strategy"]}
+
+
+def run_in_child(kwargs: Dict) -> None:
+    """Entry point of the separate research process."""
+    run(**kwargs)
+
+
+def run_background(**kwargs):
+    """Start a research run in its own process and return it.
+
+    A research run is minutes of pure computation. Run as threads inside the app it would
+    compete with the web server for Python's interpreter lock, and every page refresh
+    would wait tens of seconds behind it. In its own process it uses its own core and
+    the app stays responsive.
+    """
+    import multiprocessing
+    p = multiprocessing.get_context("spawn").Process(target=run_in_child, args=(kwargs,),
+                                                     name="jarvus-research", daemon=True)
+    p.start()
+    return p
 
 
 def latest_run() -> Optional[Dict]:

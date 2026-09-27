@@ -1077,7 +1077,7 @@ function refreshViewSelect() {
 const money = (v, d = 2) => v == null || !isFinite(v) ? '—'
   : `${v < 0 ? '-' : ''}$${Math.abs(v).toLocaleString(undefined, { minimumFractionDigits: d, maximumFractionDigits: d })}`;
 const signedMoney = v => v == null || !isFinite(v) ? '—' : `${v >= 0 ? '+' : '-'}$${Math.abs(v).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-const rFmt = v => v == null || !isFinite(v) ? '—' : `${v >= 0 ? '+' : ''}${v.toFixed(2)}R`;
+const rFmt = v => v == null || !isFinite(v) ? '—' : Math.abs(v) < 0.005 ? '0.00R' : `${v >= 0 ? '+' : ''}${v.toFixed(2)}R`;
 const localTime = iso => { if (!iso) return ''; const d = new Date(iso);
   return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); };
 const KIND_LABEL = { enter: 'bought', exit: 'sold', manage: 'managed', cycle: 'scan', learn: 'learned',
@@ -1282,6 +1282,10 @@ function buildBotSettings(s) {
       <label><span>${esc(label)}</span>
         <input type="number" data-set="${k}" min="${lo}" max="${hi}" step="${step}" value="${shared[k]}">
         ${help ? `<span class="h">${esc(help)}</span>` : ''}</label>`).join('')}
+      <label class="chk"><span><input type="checkbox" data-flag="trade_crypto" ${shared.trade_crypto !== false ? 'checked' : ''}> Trade crypto</span></label>
+      <label class="chk"><span><input type="checkbox" data-flag="trade_stocks" ${shared.trade_stocks !== false ? 'checked' : ''}> Trade US stocks (market hours only)</span></label>
+      <label class="chk"><span><input type="checkbox" data-flag="stocks_flat_at_close" ${shared.stocks_flat_at_close ? 'checked' : ''}> Stocks: out by the close (true day trade)</span>
+        <span class="h">Measured break-even at best on 30 stocks; holding up to 4 days did better. Off by default.</span></label>
       <label><span>Scan every (minutes)</span>
         <input type="number" id="setScanMin" min="2" max="60" step="1" value="${Math.round(s.settings.scan_interval_s / 60)}">
         <span class="h">Setups are built on hourly candles, so faster than 5 minutes adds load, not trades.</span></label>
@@ -1299,6 +1303,7 @@ function buildBotSettings(s) {
   $('#saveBotSet').addEventListener('click', async () => {
     const shared = {};
     $$('#botsSettings [data-set]').forEach(i => { if (i.value !== '') shared[i.dataset.set] = Number(i.value); });
+    $$('#botsSettings [data-flag]').forEach(i => { shared[i.dataset.flag] = i.checked; });
     const r = await post('/api/bots/settings', { shared, scan_interval_s: Number($('#setScanMin').value) * 60 });
     box.dataset.built = ''; renderBots(r);
   });
@@ -1323,6 +1328,7 @@ const TEST_ROWS = [
   ['brain_positive', 'The Brain predicts a profit'],
   ['brain_top10pct', "The Brain's top 10% of picks"],
   ['rule_and_brain', 'Backtest rule and the Brain agree'],
+  ['rule_minus_worst', "Backtest rule, minus the Brain's vetoes"],
 ];
 
 function decileChart(vals) {
@@ -1375,7 +1381,6 @@ async function loadBrain() {
     : 'not trained yet';
   $('#agentCount').textContent = s.agents;
   $('#brainMode').value = r.mode || 'veto';
-  $('#brainMin').value = r.min_r ?? 0;
 
   const tw = $('#brainTest');
   const models = Object.entries(s.models || {});
@@ -1385,9 +1390,14 @@ async function loadBrain() {
       <div class="small muted" style="margin-bottom:6px">Trained on ${(mdl.trained_examples || 0).toLocaleString()} moments from
         ${mdl.markets} markets. Correlation between prediction and result on unseen data: <strong>${(t.test_ic >= 0 ? '+' : '') + (t.test_ic ?? 0).toFixed(3)}</strong>
         ${mdl.online_updates ? ` · ${mdl.online_updates} lessons from the bots' own trades since` : ''}</div>
+      <div class="note ${mdl.skilled ? 'good' : 'warn'}" style="margin:0 0 8px">${mdl.skilled
+        ? `It showed skill here, so it votes: in veto mode it blocks trades it predicts below ${rFmt(mdl.veto_below)}
+           (its most pessimistic ${mdl.veto_q}%, a cut-off chosen on a validation period, then confirmed on the unseen test).`
+        : 'It showed no reliable skill here on unseen data, so on these markets it abstains: it never blocks or reorders a trade.'}</div>
       <div class="tablewrap"><table><thead><tr><th>How trades were chosen</th><th class="n">Trades</th><th class="n">Win rate</th>
         <th class="n">Average</th></tr></thead><tbody>${TEST_ROWS.map(([key, lbl]) => {
-          const x = t[key] || {};
+          const x = key === 'rule_minus_worst' ? ((t.rule_minus_worst || {})[String(t.veto_q)] || {}) : (t[key] || {});
+          if (key === 'rule_minus_worst' && !t.veto_q) return '';
           return `<tr><td>${esc(lbl)}</td><td class="n">${(x.n || 0).toLocaleString()}</td>
             <td class="n">${x.win != null ? x.win.toFixed(1) + '%' : '—'}</td>
             <td class="n ${x.exp > 0 ? 'up' : x.exp < 0 ? 'down' : ''}">${esc(rFmt(x.exp))}</td></tr>`;
@@ -1498,8 +1508,10 @@ function buildLessons(b) {
       <th class="n">Avg win</th><th class="n">Avg loss</th><th class="n">Per trade</th></tr></thead><tbody>
       ${['0.5', '1.0', '2.0', '3.0'].map(t => statRow(`${t}R target, 4 ATR stop`, wl(A, t))).join('')}</tbody></table></div>`;
   out.push(lesson('2. Win rate is a dial you set with your exit, not a skill', `
-    <p>Take every trade all 95 strategies found and change only the profit target. Watch the win rate move and the
-      average result barely care:</p>
+    <p><strong>Can you have a high win rate and big profits at the same time?</strong> Only by having a real edge,
+      and even then the two pull against each other: the exit that raises the win rate shrinks each win. Take every
+      trade all 95 strategies found and change only the profit target. Watch the win rate move and the average result
+      barely care:</p>
     <h3>Crypto</h3>${tbl(C)}<h3 style="margin-top:10px">US stocks</h3>${tbl(K)}
     <p>A closer target is hit more often, so the win rate climbs, but every win shrinks while every loss stays full size.
       This is why "95% win rate" systems are easy to build and usually lose money: they take tiny profits and hold the
@@ -1598,11 +1610,42 @@ function buildLessons(b) {
       A strategy whose result flips between halves was probably lucky. One that holds up in both, and beats random buying in
       most markets, is the kind worth paying attention to.</p>
     <h3>Crypto</h3>${tlist(C, 'A')}<h3 style="margin-top:10px">US stocks</h3>${tlist(K, 'A')}
-    <p>Even the best numbers here are small: a few tenths of R per trade. That is what a real edge looks like. Anything that
-      promises much more is either taking hidden risk or has not been measured this way.</p>`));
+    ${(() => {
+      const cBest = top(C, 'A', 1)[0], kBest = top(K, 'A', 1)[0];
+      const cPos = Object.entries(C.cards || {}).filter(([n, c]) => !n.startsWith('_') && c.A && c.A.n >= 60 && c.A.exp > 0).length;
+      const kPos = Object.entries(K.cards || {}).filter(([n, c]) => !n.startsWith('_') && c.A && c.A.n >= 60 && c.A.exp > 0).length;
+      return `<p><strong>Crypto and stocks behaved very differently.</strong> On crypto, after a 0.26% taker fee and slippage,
+        only ${cPos} strateg${cPos === 1 ? 'y was' : 'ies were'} above zero on its own over this period${cBest ? ` (best: ${esc(cBest[0])}, ${rFmt(cBest[1].A.exp)})` : ''};
+        buying at random lost ${rFmt(ctlC && ctlC.exp)} per trade because the period included a long fall. On stocks, with almost no
+        fees and a rising market, ${kPos} were positive${kBest ? ` (best: ${esc(kBest[0])}, ${rFmt(kBest[1].A.exp)})` : ''}, but random
+        buying made ${rFmt(ctlK && ctlK.exp)} too, so the real edge is the gap between the two.</p>
+        <p>Even the best numbers are small: a few hundredths to a tenth of R per trade. That is what a real edge looks like.
+        Anything that promises much more is taking hidden risk or has not been measured this way. It is also why the bots
+        only use a strategy where it has recently worked on that exact market, and refuse trades where fees are too big.</p>`;
+    })()}`));
 
-  // 9. rules
-  out.push(lesson('9. Ten rules the bots follow, and you should too', `<ol>
+  // 9. what the Brain can and cannot do
+  const bC = ((C.brain || {}).A) || {}, bK = ((K.brain || {}).A) || {};
+  const brow = (lbl, x) => x && x.n ? `<tr><td>${esc(lbl)}</td><td class="n">${x.n.toLocaleString()}</td><td class="n">${x.win}%</td>
+      <td class="n ${x.exp > 0 ? 'up' : 'down'}">${rFmt(x.exp)}</td></tr>` : '';
+  const btab = (e) => `<div class="tablewrap"><table><thead><tr><th>Trades chosen by</th><th class="n">Trades</th><th class="n">Win</th>
+      <th class="n">Per trade</th></tr></thead><tbody>
+      ${brow('Every moment any strategy fired', e.all_candidates)}${brow("The bots' backtest rule", e.bots_rule)}
+      ${e.veto_q ? brow(`Backtest rule, minus the Brain's worst ${e.veto_q}%`, (e.rule_minus_worst || {})[String(e.veto_q)]) : ''}
+      ${brow("The Brain's own top 10%", e.brain_top10pct)}</tbody></table></div>`;
+  out.push(lesson('9. What 120 agents and a learned brain can and cannot do', `
+    <p>The Brain reads every strategy plus 25 context signals and learns, from hundreds of thousands of past moments, which
+      combinations tended to end well. It was trained on the first 60% of history and judged on the last 40%, which it never saw.</p>
+    <h3>Crypto: correlation with the real outcome ${rFmt(bC.test_ic).replace('R', '')}</h3>${btab(bC)}
+    <h3 style="margin-top:10px">US stocks: correlation ${rFmt(bK.test_ic).replace('R', '')}</h3>${btab(bK)}
+    <p>${[['crypto', bC], ['stocks', bK]].map(([nm, e]) => e.skilled
+        ? `On ${nm} it learned something small but real, mostly how to spot the trades most likely to lose, so it is allowed to veto those.`
+        : `On ${nm} it found nothing reliable enough on unseen data, so there it abstains and never blocks a trade.`).join(' ')}
+      That is an honest result: more agents and more data do not create an edge where the market does not offer one. A system
+      that claims otherwise has usually been tested on the same data it learned from.</p>`));
+
+  // 10. rules
+  out.push(lesson('10. Ten rules the bots follow, and you should too', `<ol>
       <li>Know your stop before you enter. The stop decides your size, not the other way round.</li>
       <li>Risk 1% or less per trade. You will have ten losses in a row eventually.</li>
       <li>Judge by average result per trade after fees, never by win rate.</li>
@@ -1831,7 +1874,7 @@ async function boot() {
   $('#agentSearch').addEventListener('input', renderAgents);
   $('#agentKind').addEventListener('change', renderAgents);
   $('#brainSave').addEventListener('click', async () => {
-    await post('/api/bots/settings', { brain_mode: $('#brainMode').value, brain_min_r: Number($('#brainMin').value) || 0 });
+    await post('/api/bots/settings', { brain_mode: $('#brainMode').value });
     loadBrain();
   });
   ['#encSearch', '#encFamily', '#encSort'].forEach(id => $(id).addEventListener(id === '#encSearch' ? 'input' : 'change', renderEncyclopedia));

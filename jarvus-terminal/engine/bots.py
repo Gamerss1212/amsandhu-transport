@@ -182,8 +182,10 @@ GLOBAL_DEFAULTS: Dict = {
     "manage_interval_s": 15,
     "max_bots_per_coin": 2,
     "auto_research_h": 24,
-    "brain_mode": "veto",          # "veto": the Brain can block a trade; "rank": it only reorders; "off"
-    "brain_min_r": 0.0,            # the Brain's predicted R must be above this to trade in veto mode
+    # "veto": the Brain can block the trades it is most confident will lose; "rank": it only
+    # reorders; "off". Either way it only acts on markets where it showed skill on data it
+    # never saw in training (crypto, as measured); elsewhere it abstains.
+    "brain_mode": "veto",
     "shared": {},
 }
 
@@ -439,13 +441,21 @@ class Verifier:
 # the ledger
 # =============================================================================
 
+_INIT_DONE: set = set()
+
+
 def _init():
+    """Create this module's tables, once per database (not on every read: on a busy app
+    those calls add up to seconds)."""
+    if config.DB_PATH in _INIT_DONE:
+        return
     c = store.conn()
     c.executescript(SCHEMA)
     cols = {r[1] for r in c.execute("PRAGMA table_info(bot_positions)").fetchall()}
     if "brain" not in cols:
         c.execute("ALTER TABLE bot_positions ADD COLUMN brain TEXT")
     c.commit()
+    _INIT_DONE.add(config.DB_PATH)
 
 
 def ensure_bots(practice_money: float = None) -> List[Dict]:
@@ -981,9 +991,12 @@ class Engine:
                         brain_views[m["symbol"]] = None
                         self.last_error = f"brain: {exc}"
                 bv = brain_views[m["symbol"]]
-                if bv and bv.get("pred") is not None:
+                if bv and bv.get("pred") is not None and not BR.get().skilled(bv["asset"]):
+                    bv = {**bv, "abstained": True}
+                if bv and bv.get("pred") is not None and not bv.get("abstained"):
                     self.brain_votes += 1
-                    if st["brain_mode"] == "veto" and bv["pred"] <= st.get("brain_min_r", 0.0):
+                    thr = BR.get().veto_threshold(bv["asset"])
+                    if st["brain_mode"] == "veto" and thr is not None and bv["pred"] < thr:
                         reasons["the Brain voted no"] += 1
                         per_bot[bot["key"]]["brain_no"] = per_bot[bot["key"]].get("brain_no", 0) + 1
                         self.brain_last.append({"symbol": m.get("base"), "bot": bot["name"], "pred": round(bv["pred"], 3),
@@ -1084,9 +1097,11 @@ class Engine:
                       + (f" vs random buying at {ver['control_exp']:+.2f}R" if ver.get("control_exp") is not None
                          else "") + ". " if ver.get("edge") is not None else "Backtest check is switched off. ")
                    + f"Market is {(m.get('gate') or {}).get('label', '?')}."
-                   + (f" The Brain ({c['brain']['agents']} agents) predicts {c['brain']['pred']:+.2f}R: "
+                   + (f" The Brain ({len(BR.agent_names()) - 1} agents, {c['brain']['agents']} active here) predicts "
+                      f"{c['brain']['pred']:+.2f}R: "
                       + ", ".join(f"{e['agent']} {e['effect']:+.2f}" for e in c["brain"]["explain"][:3]) + "."
-                      if c.get("brain") and c["brain"].get("pred") is not None else "")
+                      if c.get("brain") and c["brain"].get("pred") is not None and not c["brain"].get("abstained")
+                      else "")
                    + (f" Risk cut to {mult:.0%} after recent losses." if mult < 1 else ""))
             pol = {**self._policy_for(cfg, m), "slip_bps": slip_bps, "fee_bps": fee_bps}
             brain_rec = (json.dumps({"asset": c["brain"]["asset"], "ctx": c["brain"]["ctx"],
@@ -1328,7 +1343,11 @@ class Engine:
                 log("research", f"Re-measuring every strategy on the major {label} markets (deep backtest). "
                                 f"This runs in the background and takes a few minutes.")
                 try:
-                    r = research.run(market_count=12, bars=3000, asset=asset)
+                    proc = research.run_background(market_count=12, bars=3000, asset=asset)
+                    proc.join()
+                    r = research.latest_runs().get(asset) or {}
+                    if proc.exitcode != 0 or not r:
+                        raise RuntimeError(f"research process ended with code {proc.exitcode}")
                     log("research", f"{label.capitalize()} research finished: {r.get('beating_control', '?')} of "
                                     f"{r.get('judged', '?')} strategies beat random buying. Strategy weights "
                                     f"updated for every bot.")
@@ -1416,7 +1435,7 @@ class Engine:
             "settings": st, "defaults": SHARED_DEFAULTS, "limits": LIMITS,
             "research_running": bool(self._research_thread and self._research_thread.is_alive()),
             "brain": {**BR.get().summary(), "votes": self.brain_votes, "last": self.brain_last[-25:][::-1],
-                      "mode": st.get("brain_mode"), "min_r": st.get("brain_min_r")},
+                      "mode": st.get("brain_mode")},
         }
 
 

@@ -100,4 +100,6 @@ def main() -> int:
 
 
 if __name__ == "__main__":
+    import multiprocessing
+    multiprocessing.freeze_support()     # lets the packaged exe start the research process
     sys.exit(main())

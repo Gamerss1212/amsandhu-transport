@@ -340,6 +340,16 @@ class Brain:
             total += w.get("s:" + n, 0.0) * st
         return total
 
+    def skilled(self, asset: str) -> bool:
+        """Did this model show skill on data it never saw? Only then may it vote."""
+        m = self._model(asset)
+        return bool(m and m.get("skilled"))
+
+    def veto_threshold(self, asset: str) -> Optional[float]:
+        """Predictions below this are the model's most confident 'this will lose' calls."""
+        m = self._model(asset)
+        return m.get("veto_below") if (m and m.get("skilled")) else None
+
     def explain(self, asset: str, context: Dict[str, float], fired: List[Tuple[str, float]],
                 top: int = 6) -> List[Dict]:
         """The agents that pushed this prediction most, up or down."""

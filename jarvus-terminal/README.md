@@ -156,9 +156,12 @@ public chart API, with no key and no account.
   charges half a basis point for regulatory fees plus liquidity-scaled slippage. That is
   roughly fifty times cheaper than a crypto taker trade, and it matters: see lesson 6 in
   Learn trading.
-* **Day trading or not.** Stock trades can be held up to four days (the default) or
-  closed by the bell like a true day trade: switch on *Stocks: out by the close* in Bot
-  settings. The Learn tab shows what each choice measured.
+* **Day trading or not.** Stock trades are held up to four days by default. Measured on
+  30 stocks over two years, the same entries closed by the bell like a true day trade
+  were break-even at best even with no commission (random entries: -0.01R; best
+  strategy: +0.01R), while holding up to four days let the best strategies reach
+  +0.07R to +0.13R per trade. The day-trade exit is still available: tick *Stocks: out
+  by the close* in Bot settings on the Bots tab.
 * **Research** runs separately for crypto and stocks, each with its own costs, and the
   bots use the latest weights for each.
 
@@ -193,7 +196,26 @@ the Brain tab. Switch the Brain to *rank only* or *off* there.
 were active in it toward what really happened. The learned weights are saved beside the
 app and survive restarts.
 
-Its measured results on data it never saw are on the Brain tab.
+**What it measured.** Trained on the first 60% of each market's history (45 markets,
+about 190,000 moments), judged on the last 40%, which it never saw:
+
+| Unseen test period | Moments | Win rate | Avg per trade |
+|---|---|---|---|
+| Crypto: the bots' backtest rule alone | 2,782 | 46.6% | +0.18R |
+| **Crypto: the rule, minus the Brain's most pessimistic 20%** | **1,010** | **55.5%** | **+0.39R** |
+| Stocks: the bots' backtest rule alone | 25,675 | 49.1% | -0.00R |
+| Stocks: the rule, minus the Brain's vetoes | no cut-off helped | | |
+
+On crypto the Brain learned something small but real (correlation with the outcome
++0.06 on unseen data), mostly how to recognise the trades most likely to lose, and vetoing
+them roughly doubled the rule's average result. The 20% cut-off was chosen on a separate
+validation period, not on the test. These are overlapping hourly moments rather than
+separate trades, the test period was a rising market, and the veto cuts trading to about
+a third, so read it as "a real improvement in selection", not as a promise.
+
+On stocks it showed no skill at all (correlation -0.002). So it **abstains on stocks**: it
+never blocks or reorders a stock trade. More agents and more data do not create an edge
+where the market does not offer one.
 
 ---
 
