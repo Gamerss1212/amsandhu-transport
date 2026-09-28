@@ -1,0 +1,3 @@
+integrity check: ok
+bot states: 1 saved, 0 unreadable []
+positions reconcile against fills: OK

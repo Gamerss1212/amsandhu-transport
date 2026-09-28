@@ -131,3 +131,30 @@ def test_priors_follow_each_venue_costs(tmp_path):
     b.load_priors(str(p))
     assert b.estimate("S:S1")["mean"] < -1 and b.estimate("S:S1@low")["mean"] > 0
     assert b._combined("S1@low", "BTC-USDT")["mean"] > 0 > b._combined("S1", "BTC-USD")["mean"]
+
+
+def test_resting_orders_go_through_the_brain_and_the_risk_layer(tmp_path, monkeypatch):
+    """A stop/limit/bracket entry fills inside the bar, so it must be accepted when it is placed."""
+    from types import SimpleNamespace
+    from mab import runtime
+    from mab.runtime import Fleet
+    from mab.strategy import Pending
+    fl = Fleet({"data_dir": str(tmp_path / "d"), "brain": {"mode": "active"}}, {}, [], str(tmp_path))
+    i = 500
+    monkeypatch.setattr(runtime, "now_ms", lambda: F.t[i] + F.step + 2000)     # the bar just closed
+
+    def bot(bid, sid):
+        p = Pending(1, "stop", F.c[i] * 1.001, F.t[i], F.t[i] + F.step, F.c[i] * 0.99, False, None, False, "long entry")
+        tm = SimpleNamespace(pending=p, _plan=lambda pp, px: (10.0 * pp.size, F.c[i] * 0.99, None))
+        return SimpleNamespace(id=bid, venue="coinbase", symbol="TST", c=SimpleNamespace(id=sid, definition={}),
+                               tm=tm, enabled=True, series_keys=[], last_decision="")
+    for _ in range(40):
+        fl.brain.learn("B0", "BAD", "TST", -1.0)
+    bad = bot("B1", "BAD")
+    assert fl._accept_resting(bad, F, i) == "vetoed" and bad.tm.pending is None
+    good = bot("B2", "NEW")
+    r = fl._accept_resting(good, F, i)
+    assert r == "order_placed" and good.tm.pending is not None, good.last_decision
+    fl.paused = True                                   # the risk layer refuses entries while paused
+    held = bot("B3", "NEW")
+    assert fl._accept_resting(held, F, i) == "blocked" and held.tm.pending is None

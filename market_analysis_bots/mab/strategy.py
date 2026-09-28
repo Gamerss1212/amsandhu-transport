@@ -231,6 +231,7 @@ class Pending:
     reason: str
     exit: bool = False           # a market exit, not an entry
     other: Optional[dict] = None # oco: the opposite stop leg {"side", "price", "stop_ref", "target_ref"}
+    size: float = 1.0            # size multiplier set when the order was accepted (the fleet brain's resize)
 
 
 @dataclass
@@ -532,7 +533,7 @@ class TradeManager:
             return None
         eq = self.equity_fn()
         sz = self.d.get("sizing") or {}
-        qty = eq * float(sz.get("risk_pct", 0.5)) / 100.0 / risk
+        qty = eq * float(sz.get("risk_pct", 0.5)) / 100.0 / risk * float(p.size or 1.0)
         qty = min(qty, eq * float(sz.get("max_notional_pct", 100.0)) / 100.0 / px)
         if self.lot:
             qty = math.floor(qty / self.lot + 1e-9) * self.lot
@@ -598,7 +599,7 @@ class TradeManager:
             return [{"action": "skip", "bar": t, "reason": "fill price already beyond the stop", "side": side}]
         eq = self.equity_fn()
         sz = self.d.get("sizing") or {}
-        qty = eq * float(sz.get("risk_pct", 0.5)) / 100.0 / risk
+        qty = eq * float(sz.get("risk_pct", 0.5)) / 100.0 / risk * float(p.size or 1.0)
         qty = min(qty, eq * float(sz.get("max_notional_pct", 100.0)) / 100.0 / px)
         if self.lot:
             qty = math.floor(qty / self.lot + 1e-9) * self.lot

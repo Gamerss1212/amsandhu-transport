@@ -431,6 +431,8 @@ class Fleet:
         act = a["action"]
         if act == "intent":
             return self._execute_intent(br, frame, i, a)
+        if act == "order_placed":
+            return self._accept_resting(br, frame, i)
         if act in ("entry", "exit"):
             # a resting order (stop / limit / target) filled inside the bar
             side = a.get("side", 0) if act == "entry" else (-1 if a["trade"].side > 0 else 1)
@@ -478,16 +480,7 @@ class Fleet:
                 a = dict(a, qty=a["qty"] * dec["size"])
         intent = self._intent(br, a, frame.t[i])
         self.stats["intents"] += 1
-        status, _ = self._series_status(br)
-        ex = self.account.exposure()
-        positions = [{"bot_id": p["bot_id"], "venue": p["venue"], "instrument": p["instrument"], "qty": p["qty"]}
-                     for p in self.account.positions.values()]
-        ctx = {"equity": self.account.equity(), "positions": positions, "gross": ex["gross"],
-               "net_by_instrument": ex["net_by_instrument"], "paused": self.paused, "emergency": bool(self.emergency),
-               "bot_enabled": br.enabled, "data_status": status,
-               "price_age_ms": now_ms() - (frame.t[i] + frame.step), "bar_ms": frame.step,
-               "ref_price": a["ref_price"]}
-        dec = self.risk.check(intent, ctx)
+        dec = self.risk.check(intent, self._risk_ctx(br, frame, i, a["ref_price"]))
         self._save(lambda: self.storage.save_intent(intent.to_dict()))
         self._save(lambda: self.storage.save_risk(dec.to_dict()))
         if not dec.approved:
@@ -524,6 +517,54 @@ class Fleet:
         out = br.tm.apply_exit_fill(frame, i, res["avg_price"], res["fee"], a["reason"])
         self._trade_closed(br, out["trade"])
         return "exited"
+
+    def _risk_ctx(self, br: BotRunner, frame, i, ref_price: float) -> dict:
+        status, _ = self._series_status(br)
+        ex = self.account.exposure()
+        positions = [{"bot_id": p["bot_id"], "venue": p["venue"], "instrument": p["instrument"], "qty": p["qty"]}
+                     for p in self.account.positions.values()]
+        return {"equity": self.account.equity(), "positions": positions, "gross": ex["gross"],
+                "net_by_instrument": ex["net_by_instrument"], "paused": self.paused, "emergency": bool(self.emergency),
+                "bot_enabled": br.enabled, "data_status": status,
+                "price_age_ms": now_ms() - (frame.t[i] + frame.step), "bar_ms": frame.step, "ref_price": ref_price}
+
+    def _accept_resting(self, br: BotRunner, frame, i) -> str:
+        """A strategy placed a resting entry (stop, limit or bracket). Like a broker accepting the order, the
+        fleet brain scores it (it can cancel or resize it) and the portfolio risk layer must approve it, at
+        its estimated size, before it can fill; otherwise it is cancelled."""
+        p = br.tm.pending
+        if p is None or p.exit:
+            return "order_placed"
+        if self.brain.mode != "off":
+            dec = self.brain.score(br.id, self._bkey(br), br.symbol, frame, i, p.side)
+            if dec["action"] == "veto":
+                br.tm.pending = None
+                self.stats["brain_vetoes"] = self.stats.get("brain_vetoes", 0) + 1
+                br.last_decision = "brain cancelled the resting order: " + dec["reason"]
+                self._save(lambda: self.storage.save_risk({"intent_id": f"brain-{br.id}-{frame.t[i]}", "bot_id": br.id,
+                                                           "approved": False, "adjusted_quantity": None,
+                                                           "checks": [{"check": "fleet brain (resting order)",
+                                                                       "passed": False, "detail": dec["reason"]}],
+                                                           "decision_time": now_ms()}))
+                return "vetoed"
+            p.size = dec["size"]
+        px = p.price or frame.c[i]
+        plan = br.tm._plan(p, px)
+        if plan is None or plan[0] <= 0:
+            return "order_placed"                          # sized at fill time; nothing to pre-check yet
+        qty, stop, target = plan
+        a = {"kind": "entry", "side": p.side, "qty": qty, "ref_price": px, "stop": stop, "target": target,
+             "reason": p.reason + f" ({p.kind} order)", "reduce_only": False}
+        intent = self._intent(br, a, frame.t[i])
+        dec = self.risk.check(intent, self._risk_ctx(br, frame, i, px))
+        self._save(lambda: self.storage.save_risk(dec.to_dict()))
+        if not dec.approved:
+            br.tm.pending = None
+            self.stats["risk_blocks"] += 1
+            failed = [c["check"] + (f" ({c['detail']})" if c["detail"] else "") for c in dec.checks if not c["passed"]]
+            br.last_decision = f"resting order cancelled by risk: {'; '.join(failed)}"
+            return "blocked"
+        return "order_placed"
 
     def _fallback_exit(self, br: BotRunner, frame, i, a, why: str, already: Optional[dict] = None) -> str:
         """Exits must not fail. If the book walk could not fill an exit, the remainder is closed

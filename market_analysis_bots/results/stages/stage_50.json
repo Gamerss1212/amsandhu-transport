@@ -1,0 +1,103 @@
+{
+ "time": 1790548773651,
+ "uptime_s": 1805.081,
+ "bots": 50,
+ "bot_states": {
+  "running": 0,
+  "warming": 0,
+  "idle_no_signal": 0,
+  "data_unavailable": 0,
+  "degraded": 0,
+  "stopped": 50,
+  "disabled": 0,
+  "paused": 0
+ },
+ "series": 36,
+ "series_status": {
+  "ok": 20,
+  "market_closed": 16
+ },
+ "hub": {
+  "polls": 142,
+  "new_bars": 11608,
+  "backpressure_deferrals": 0,
+  "fetch_errors": 0,
+  "orderflow_polls": 0,
+  "orderflow_gaps": 0,
+  "book_snapshots": 0,
+  "callback_errors": 0
+ },
+ "queue": 0,
+ "eval_ms_p50": 1.6304820001096232,
+ "eval_ms_p95": 7.850113000131387,
+ "latency_ms_p50": 3629,
+ "latency_ms_p95": 4452,
+ "scheduled_evaluations": 236,
+ "completed_evaluations": 236,
+ "completion_rate": 1.0,
+ "requests": 156,
+ "http_429": 0,
+ "rate_429": 0.0,
+ "rss_mb": 67.09375,
+ "peak_rss_mb": 67.09375,
+ "db_bytes": 5746168,
+ "threads": 1,
+ "paused": false,
+ "emergency": null,
+ "storage_ok": true,
+ "stats": {
+  "events": 142,
+  "evaluations": 236,
+  "intents": 0,
+  "orders": 0,
+  "fills": 0,
+  "rejections": 0,
+  "risk_blocks": 0,
+  "bot_errors": 0,
+  "auto_disabled": 0,
+  "storage_failures": 0,
+  "dropped_events": 0
+ },
+ "version": "1.0.0",
+ "account": {
+  "equity": 100000.0,
+  "cash": 100000.0,
+  "currency": "USD",
+  "realized_pnl": 0.0,
+  "fees": 0.0,
+  "open_positions": 0,
+  "gross_exposure": 0.0,
+  "gross_exposure_pct": 0.0,
+  "twr": 0.0,
+  "slots": 20,
+  "slot_equity": 5000.0,
+  "deposits": 100000.0,
+  "withdrawals": 0
+ },
+ "broker": {
+  "orders": 0,
+  "filled": 0,
+  "partial": 0,
+  "rejected": 0,
+  "book_walks": 0,
+  "synthetic": 0
+ },
+ "events": [
+  {
+   "time": 1790546968570,
+   "level": "info",
+   "kind": "fleet_start",
+   "message": "fleet started with 50 enabled bots on 36 shared series"
+  },
+  {
+   "time": 1790548768856,
+   "level": "info",
+   "kind": "fleet_stop",
+   "message": "fleet stopping"
+  }
+ ],
+ "trades": 0,
+ "fills": 0,
+ "signals": 236,
+ "health_rows": 1550
+}
