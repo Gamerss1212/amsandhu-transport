@@ -226,7 +226,26 @@ def main():
     with open(os.path.join(ROOT, "results", "system_backtest.json"), "w") as fh:
         json.dump(out, fh, default=str)
     write_report(out)
+    write_summary(out)
     print(json.dumps({k: out[k] for k in ("runs", "simulations", "candidates", "minutes")}, indent=1))
+
+
+def write_summary(o, bins=24):
+    """results/system_backtest_summary.json: everything but the per-run rows, plus return histograms for the app."""
+    s = {k: v for k, v in o.items() if k != "per_run"}
+    rets = {arm: [r[arm]["return"] for r in o["per_run"]] for arm in ("none", "gates", "brain")}
+    # zoomed on the two gated arms (the ungated arm loses far more and would squash them into one bar);
+    # values beyond the 1st-99th percentile range are counted in the end bins
+    allv = sorted(rets["gates"] + rets["brain"])
+    lo, hi = min(allv[int(0.01 * len(allv))], 0.0), max(allv[int(0.99 * len(allv)) - 1], 0.0)
+    w = (hi - lo) / bins or 1e-9
+    s["histogram"] = {"lo": lo, "hi": hi, "bins": bins, "arms": ["gates", "brain"],
+                      "counts": {arm: [sum(1 for v in rets[arm] if lo + i * w <= min(max(v, lo), hi - 1e-12) < lo + (i + 1) * w)
+                                       for i in range(bins)] for arm in ("gates", "brain")}}
+    s["paired_returns"] = [[round(r["none"]["return"], 6), round(r["gates"]["return"], 6), round(r["brain"]["return"], 6)]
+                           for r in o["per_run"]]
+    with open(os.path.join(ROOT, "results", "system_backtest_summary.json"), "w") as fh:
+        json.dump(s, fh, default=str)
 
 
 def pct(x, d=2):
@@ -261,10 +280,15 @@ def write_report(o):
     p = P["brain_vs_none_drawdown"]
     L.append(f"| drawdown: none minus brain | {pct(p['mean_diff'], 3)} | {pct(p['ci95'][0], 3)} to {pct(p['ci95'][1], 3)} | "
              f"{100 * p['share_better']:.0f}% (brain shallower) |")
-    L.append("\n## What the blocked trades would have made\n\n| Veto reason | Blocked trades | Their average result |\n|---|---|---|")
+    L.append("\n## What the blocked trades would have made\n\nCounted across all runs (a trade blocked in several runs counts each "
+             "time).\n\n| Veto reason | Blocked trades | Their average result |\n|---|---|---|")
     for k, v in o["vetoed_trades_avg_r"].items():
         L.append(f"| {k} | {v['trades']:,} | " + (f"{v['avg_r']:+.3f}R" if v["avg_r"] is not None else "-") + " |")
     L.append("\nA negative average means the vetoes avoided losing trades.\n")
+    L.append("## Reading\n\nThe gates and the brain make the software lose far less than trading every signal, mostly by refusing "
+             "trades whose costs are larger than their expected edge. They do not turn it into a money maker: the mean window "
+             "return stays at or below zero in every arm. That matches the strategy tests, where nothing survived the correction "
+             "for the number of ideas tried.\n")
     L.append("## Limits\n\n- Candidate trades come from each bot's own unfiltered backtest: when a trade is vetoed, the bot does not get "
              "the other entries it might have taken while flat.\n- Kraken and OKX bots use Coinbase price history with their own "
              "venue's fees.\n- Consensus between bots is not modelled here (it is live).\n- Paper simulation: fills are modelled, not "
@@ -278,4 +302,10 @@ def write_report(o):
 
 
 if __name__ == "__main__":
-    main()
+    if sys.argv[1:] == ["--report-only"]:                 # rewrite the report and summary from results/system_backtest.json
+        with open(os.path.join(ROOT, "results", "system_backtest.json")) as fh:
+            saved = json.load(fh)
+        write_report(saved)
+        write_summary(saved)
+    else:
+        main()

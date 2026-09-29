@@ -187,6 +187,12 @@ class NDAX(Broker):
                 raise BrokerError(f"NDAX does not list {sym}")
         return self._instruments[sym]
 
+    def price(self, instrument):
+        m = self.market(instrument)
+        l1 = self._call("GetLevel1", {"OMSId": OMS, "InstrumentId": m["id"]}) or {}
+        return {"bid": float(l1.get("BestBid") or 0) or None, "ask": float(l1.get("BestOffer") or 0) or None,
+                "last": float(l1.get("LastTradedPx") or 0) or None}
+
     @staticmethod
     def _cid(client_id: str) -> int:
         return zlib.crc32(client_id.encode()) & 0x7FFFFFFF

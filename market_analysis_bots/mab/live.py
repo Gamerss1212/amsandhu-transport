@@ -169,11 +169,28 @@ class LiveExecutor:
                 return {"status": "skipped", "reason": "no valid protective stop below the entry"}
             if bot_id in self.positions:
                 return {"status": "skipped", "reason": "this bot already has a live position"}
+            # Prices come from the broker's own market, in its own currency (a USD-priced bot can trade a CAD
+            # market): the bot's stop is converted with the ratio of the two prices, and limits are in the
+            # broker's currency.
+            try:
+                self.broker.market(instrument)
+                q = self.broker.price(instrument)
+            except BrokerError as e:
+                return {"status": "skipped", "reason": f"{self.broker.name} cannot trade {instrument}: {e}"}
+            ask = q.get("ask") or q.get("last")
+            if not ask or ask <= 0:
+                return {"status": "skipped", "reason": f"no current price for {instrument} on {self.broker.name}"}
+            ratio = ask / ref_price
+            if not 0.5 < ratio < 2.0:
+                return {"status": "skipped", "reason": f"{self.broker.name} price {ask:.6g} does not match the bot's {ref_price:.6g}"}
+            stop = stop * ratio
+            if stop >= ask:
+                return {"status": "skipped", "reason": "the protective stop would be above the broker's price"}
             room = self.cfg["max_total"] - self.open_notional()
-            notional = min(paper_qty * ref_price, self.cfg["max_per_trade"], room)
+            notional = min(paper_qty * ask, self.cfg["max_per_trade"], room)
             if notional <= 0:
                 return {"status": "skipped", "reason": "total live exposure limit reached"}
-            limit = ref_price * (1 + self.cfg["slippage_bps"] / 1e4)
+            limit = ask * (1 + self.cfg["slippage_bps"] / 1e4)
             qty = notional / limit
             cid = f"{intent_id}:in"
             try:
@@ -187,7 +204,8 @@ class LiveExecutor:
             if o.status == "rejected" or not o.filled_qty:
                 return {"status": "none", "reason": o.reason or f"not filled ({o.status})"}
             pos = {"bot_id": bot_id, "instrument": instrument, "qty": o.filled_qty, "entry": o.avg_price or limit,
-                   "fee": o.fee, "stop": stop, "stop_order": None, "intent": intent_id, "time": int(self.clock() * 1000)}
+                   "fee": o.fee, "stop": stop, "stop_order": None, "intent": intent_id, "time": int(self.clock() * 1000),
+                   "ratio": ratio}
             self.positions[bot_id] = pos
             self._save()
             try:
@@ -203,7 +221,9 @@ class LiveExecutor:
                 return {"status": "closed", "reason": "stop failed, position sold", "exit": res}
             self.alert("warning", "live_entry", f"LIVE BUY {instrument} {o.filled_qty:g} @ {pos['entry']:.6g} for {bot_id}; "
                                                 f"exchange stop {stop:.6g}")
-            return {"status": "filled", "qty": o.filled_qty, "avg_price": pos["entry"], "fee": o.fee, "order": o.to_dict()}
+            # avg_price and fee in the bot's own currency (for its position); broker_price in the broker's
+            return {"status": "filled", "qty": o.filled_qty, "avg_price": pos["entry"] / ratio, "fee": o.fee / ratio,
+                    "broker_price": pos["entry"], "broker_fee": o.fee, "order": o.to_dict()}
 
     def exit(self, bot_id: str, ref_price: float, reason: str) -> dict:
         with self.lock:
@@ -213,6 +233,11 @@ class LiveExecutor:
 
     def _close(self, bot_id: str, ref_price: float, reason: str, market: bool = False) -> dict:
         pos = self.positions[bot_id]
+        try:                                                           # the broker's own bid, in its currency
+            q = self.broker.price(pos["instrument"])
+            ref_price = q.get("bid") or q.get("last") or ref_price * pos.get("ratio", 1.0)
+        except BrokerError:
+            ref_price = ref_price * pos.get("ratio", 1.0)
         if pos.get("stop_order"):
             so = self.broker.order(order_id=pos["stop_order"])
             if so and so.status == "filled":                          # the exchange stop already sold it
@@ -257,7 +282,9 @@ class LiveExecutor:
         self.alert("warning", "live_exit", f"LIVE SELL {pos['instrument']} {qty:g} @ {px:.6g} for {bot_id} ({reason}); P&L {pnl:+.2f}")
         if self._today_pnl() <= -self.cfg["daily_loss_limit"]:
             self.disarm(f"daily loss limit of {self.cfg['daily_loss_limit']:g} reached")
-        return {"status": "filled", "qty": qty, "avg_price": px, "fee": fee, "pnl": pnl}
+        ratio = pos.get("ratio") or 1.0
+        return {"status": "filled", "qty": qty, "avg_price": px / ratio, "fee": fee / ratio, "pnl": pnl,
+                "broker_price": px, "broker_fee": fee}
 
     def poll_stops(self) -> list:
         """Positions whose exchange stop has filled (returned so the runtime can close the bot's trade)."""

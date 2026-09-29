@@ -3,3 +3,4 @@ __pycache__/
 *.pyc
 strategies/.cache/
 strategies/results/evaluation_summary.json
+market_analysis_bots/results/system_backtest.json

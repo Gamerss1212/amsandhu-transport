@@ -15,6 +15,7 @@ from typing import Dict
 from mab.brokers.base import Broker, BrokerError, Order, round_step
 
 URLS = {"paper": "https://paper-api.alpaca.markets", "live": "https://api.alpaca.markets"}
+DATA = "https://data.alpaca.markets"             # market data (same keys, paper or live)
 STATUS = {"new": "open", "accepted": "open", "pending_new": "open", "partially_filled": "open", "filled": "filled",
           "done_for_day": "canceled", "canceled": "canceled", "expired": "canceled", "replaced": "canceled",
           "pending_cancel": "open", "pending_replace": "open", "rejected": "rejected", "suspended": "open",
@@ -53,6 +54,13 @@ class Alpaca(Broker):
             self._assets[sym] = {"symbol": sym, "min_qty": 0.0 if a.get("fractionable") else 1.0,
                                  "qty_step": 1e-9 if a.get("fractionable") else 1.0, "price_step": 0.01, "min_notional": 1.0}
         return self._assets[sym]
+
+    def price(self, instrument):
+        sym = self.market(instrument)["symbol"]
+        headers = {"APCA-API-KEY-ID": self.key, "APCA-API-SECRET-KEY": self.secret}
+        status, raw = self.http("GET", f"{DATA}/v2/stocks/{urllib.parse.quote(sym)}/quotes/latest", headers, None)
+        q = self._json(status, raw, "Alpaca quote").get("quote") or {}
+        return {"bid": float(q.get("bp") or 0) or None, "ask": float(q.get("ap") or 0) or None, "last": None}
 
     def _order(self, instrument, side, kind, qty, price, client_id, tif) -> Order:
         m = self.market(instrument)

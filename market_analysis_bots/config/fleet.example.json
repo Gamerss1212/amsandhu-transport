@@ -21,5 +21,5 @@
   "health_interval_s": 60,
   "backup_interval_h": 6,
   "dashboard": {"port": 8765},
-  "live_trading": {"enabled": false, "note": "Real-money order submission is not available in this build."}
+  "live_trading": {"note": "Real money is OFF. It is armed only in the app (Live money page): a tested broker, your limits and a typed acknowledgement. Nothing in this file can arm it."}
 }

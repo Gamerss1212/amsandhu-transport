@@ -100,6 +100,11 @@ class Kraken(Broker):
                                 "min_notional": float(p.get("costmin") or 0), "base": p.get("base"), "quote": p.get("quote")}
         return self._pairs[alt]
 
+    def price(self, instrument: str) -> dict:
+        m = self.market(instrument)
+        t = next(iter(self._public("Ticker", {"pair": m["altname"]}).values()))
+        return {"bid": float(t["b"][0]), "ask": float(t["a"][0]), "last": float(t["c"][0])}
+
     def _price(self, x: float, instrument: str) -> str:
         step = self.market(instrument)["price_step"]
         decimals = max(0, len(f"{step:.10f}".rstrip("0").split(".")[1])) if step < 1 else 0

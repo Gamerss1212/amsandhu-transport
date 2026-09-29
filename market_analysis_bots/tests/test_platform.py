@@ -20,7 +20,8 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from mab import expr, indicators as I  # noqa: E402
 from mab.account import Account  # noqa: E402
-from mab.broker import LiveBroker, LiveTradingDisabled, PaperBroker  # noqa: E402
+from mab.broker import PaperBroker  # noqa: E402
+from mab.live import LiveExecutor  # noqa: E402
 from mab.clock import MINUTE, nyse_holidays, ny_to_utc_ms, tsx_holidays  # noqa: E402
 from mab.data.quality import SeriesQuality  # noqa: E402
 from mab.frame import Frame  # noqa: E402
@@ -334,9 +335,11 @@ def test_paper_broker_partial_fill_and_rejections():
     assert res["status"] == "rejected" and "minimum" in res["reason"]
 
 
-def test_live_trading_is_disabled():
-    with pytest.raises(LiveTradingDisabled):
-        LiveBroker()
+def test_live_trading_is_off_until_armed(tmp_path):
+    st = Storage(str(tmp_path / "t.db"))
+    ex = LiveExecutor(st, broker=object(), eligible=lambda b: (True, ""))
+    assert not ex.armed and not ex.handles("any-bot")
+    assert ex.check("any-bot") == (False, "live trading is not armed")
 
 
 # ------------------------------------------------------------------ account: customizable balance, TWR

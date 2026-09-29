@@ -1,4 +1,4 @@
-"""Order execution: the broker interface, the paper engine, and the (disabled) live path.
+"""Order execution: the broker interface and the paper engine.
 
 Paper execution model
 ---------------------
@@ -20,9 +20,9 @@ Paper execution model
 
 Real money
 ----------
-No code in this package can submit an order to a real broker or exchange. `LiveBroker` exists
-so the interface is complete and refuses every call. Enabling real-money trading requires a
-separate, explicitly authorised change that adds a venue adapter, reviewed on its own.
+This module never touches a real exchange. Real-money orders exist only in mab.live (with the
+exchange adapters in mab.brokers), which is off until the owner connects a broker, sets limits and
+types the acknowledgement in the app; see mab/live.py for the rules it enforces.
 """
 
 from __future__ import annotations
@@ -49,21 +49,6 @@ class BrokerAdapter:
 
     def execute(self, intent: OrderIntent, ref_price: float, instrument: dict) -> OrderResult:
         raise NotImplementedError
-
-
-class LiveTradingDisabled(RuntimeError):
-    pass
-
-
-class LiveBroker(BrokerAdapter):
-    """Placeholder for real-money brokers. Every call is refused in this build."""
-    name = "live"
-    real_money = True
-
-    def __init__(self, *_, **__):
-        raise LiveTradingDisabled(
-            "Real-money order submission is disabled in this build. It can only be enabled by a separate, "
-            "explicitly authorised change that adds and reviews a broker adapter. Paper trading is unaffected.")
 
 
 def _oid(*parts) -> str:

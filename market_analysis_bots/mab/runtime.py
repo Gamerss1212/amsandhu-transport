@@ -600,8 +600,10 @@ class Fleet:
                 self._save(lambda: self.storage.save_fill({"fill_id": f"live-{intent.intent_id}", "order_id": (r.get("order") or {}).get("id", ""),
                                                           "intent_id": intent.intent_id, "bot_id": br.id, "instrument": br.symbol,
                                                           "venue": "LIVE:" + self.live.broker.name, "side": "buy", "quantity": r["qty"],
-                                                          "price": r["avg_price"], "fee": r["fee"], "liquidity": "taker",
-                                                          "event_time": now_ms(), "simulated": False, "model": "real order"}))
+                                                          "price": r.get("broker_price", r["avg_price"]),
+                                                          "fee": r.get("broker_fee", r["fee"]), "liquidity": "taker",
+                                                          "event_time": now_ms(), "simulated": False,
+                                                          "model": "real order (broker's currency)"}))
                 return "entered"
             if r["status"] == "closed":
                 br.tm.intent_rejected("live: protective stop failed, position sold")
@@ -814,7 +816,8 @@ class Fleet:
             for bid, br in self.bots.items():
                 ok, why = self._live_eligible(bid)
                 out.append({"bot_id": bid, "strategy_id": br.c.id, "name": br.c.definition.get("name"), "venue": br.venue,
-                            "instrument": br.symbol, "eligible": ok, "why": why})
+                            "instrument": br.symbol, "asset": "stock" if br.venue == "yahoo" else "crypto",
+                            "eligible": ok, "why": why})
             return out
         if command == "live_arm":
             name = args.get("broker")

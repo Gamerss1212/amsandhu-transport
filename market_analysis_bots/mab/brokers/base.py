@@ -3,6 +3,7 @@
 Every adapter speaks the same small language, so the live executor cannot tell them apart:
     test()                      read-only check: can we sign requests, what are the balances, may we trade
     market(instrument)          venue symbol, minimum size, size and price steps
+    price(instrument)           best bid, best ask and last trade, in the market's own quote currency
     buy / sell(...)             a marketable limit order (immediate-or-cancel) with a price cap
     stop(...)                   a protective stop-loss sell resting ON THE EXCHANGE
     cancel(order_id)
@@ -88,6 +89,9 @@ class Broker:
         raise NotImplementedError
 
     def market(self, instrument: str) -> dict:
+        raise NotImplementedError
+
+    def price(self, instrument: str) -> dict:
         raise NotImplementedError
 
     def buy(self, instrument: str, qty: float, limit_price: float, client_id: str) -> Order:

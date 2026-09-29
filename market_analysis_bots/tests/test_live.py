@@ -149,14 +149,20 @@ class Store:
 class FakeBroker(Broker):
     name = "fake"
 
-    def __init__(self, fill_ratio=1.0, stop_fails=False, lose_first=False, stop_fills=False):
+    def __init__(self, fill_ratio=1.0, stop_fails=False, lose_first=False, stop_fills=False, px=100.0):
         super().__init__("k", "s", transport=lambda *a: (200, b"{}"))
         self.orders, self.fill_ratio, self.stop_fails, self.lose_first, self.stop_fills = {}, fill_ratio, stop_fails, lose_first, stop_fills
         self.hold = {}
         self.n = 0
+        self.px = px                                       # the broker's own price, in its own currency
 
     def market(self, inst):
+        if inst == "NOPE-USD":
+            raise BrokerError("unknown pair")
         return {"base": inst.split("-")[0], "min_qty": 0.0}
+
+    def price(self, inst):
+        return {"bid": self.px, "ask": self.px, "last": self.px}
 
     def _new(self, inst, side, kind, qty, price, cid):
         self.n += 1
@@ -269,9 +275,35 @@ def test_exit_cancels_the_stop_and_books_pnl_and_daily_limit_disarms():
     arm(ex, daily_loss_limit=1.0)
     ex.enter("BOT-1", "BTC-USD", 1, 1.0, 100.0, 95.0, "i1")
     stop_id = ex.positions["BOT-1"]["stop_order"]
+    b.px = 90.0
     r = ex.exit("BOT-1", 90.0, "stop hit")                              # sold at 90*(1-0.3%) after buying ~100
     assert r["status"] == "filled" and r["pnl"] < -1 and b.orders[stop_id].status == "canceled"
     assert not ex.armed and "daily loss" in ex.cfg["disarmed_reason"]
+
+
+def test_broker_in_another_currency_uses_its_own_prices():
+    b = FakeBroker(px=137.0)                                          # a CAD market for a USD-priced bot
+    ex, _ = executor(b)
+    arm(ex)
+    r = ex.enter("BOT-1", "BTC-USD", 1, 5.0, 100.0, 95.0, "i1")
+    pos = ex.positions["BOT-1"]
+    assert r["status"] == "filled" and abs(r["broker_price"] - 137.0 * 1.003) < 1e-6
+    assert abs(r["avg_price"] - 100.3) < 1e-6                          # the bot's position stays in its own currency
+    assert abs(pos["stop"] - 95.0 * 1.37) < 1e-6 and b.orders[pos["stop_order"]].avg_price == pos["stop"]
+    assert pos["qty"] * pos["entry"] <= 50 + 1e-6                     # the per-trade limit is in the broker's currency
+    b.px = 150.0
+    out = ex.exit("BOT-1", 109.0, "target")
+    assert abs(out["broker_price"] - 150.0 * 0.997) < 1e-6 and abs(out["avg_price"] - 150.0 * 0.997 / 1.37) < 1e-6
+    assert out["pnl"] > 0
+
+
+def test_unknown_market_or_mismatched_price_is_skipped_not_disarmed():
+    b = FakeBroker(px=300.0)
+    ex, _ = executor(b)
+    arm(ex)
+    assert "cannot trade" in ex.enter("BOT-1", "NOPE-USD", 1, 1.0, 100.0, 95.0, "a")["reason"]
+    assert "does not match" in ex.enter("BOT-1", "BTC-USD", 1, 1.0, 100.0, 95.0, "b")["reason"]
+    assert ex.armed and not b.orders
 
 
 def test_exchange_stop_fill_is_detected_and_booked():
