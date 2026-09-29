@@ -4,3 +4,6 @@ __pycache__/
 strategies/.cache/
 strategies/results/evaluation_summary.json
 market_analysis_bots/results/system_backtest.json
+market_analysis_bots/results/system_backtest_*.json
+!market_analysis_bots/results/system_backtest_summary.json
+!market_analysis_bots/results/system_backtest_profiles.json
