@@ -57,7 +57,11 @@ from typing import Dict, List, Optional
 from mab import expr
 
 FEATURES = ["bias", "trend_aligned", "rsi_aligned", "vol_percentile", "vwap_distance", "rel_volume", "tod_sin",
-            "tod_cos", "consensus_aligned", "is_stock", "is_long", "trend_strength", "vol_expansion"]
+            "tod_cos", "consensus_aligned", "is_stock", "is_long", "trend_strength", "vol_expansion",
+            "weekend", "cost_r", "p_loud", "p_quiet"]
+COST_VETO_R = 0.33           # round-trip costs above a third of the risk: no trade
+COST_HALF_R = 0.20           # 20-33%: half size
+LOUD_SIZE = 0.6              # volatility gate LOUD: 0.6x size (bigger swings against the same stop)
 R_CLIP = 3.0                 # trade R is winsorised before learning, so one extreme trade cannot dominate
 PRIOR_WEIGHT = 0.5           # pseudo-trades per backtest trade
 PRIOR_CAP = 25.0             # at most this many pseudo-trades from history
@@ -118,6 +122,7 @@ class FleetBrain:
         self.calib = [[0, 0] for _ in range(10)]          # predicted win-probability decile -> [trades, wins]
         self.consensus: Dict[str, Dict[str, tuple]] = {}   # instrument -> bot -> (state, time)
         self.market: Dict[str, dict] = {}                  # instrument -> latest regime
+        self.gates: Dict[str, dict] = {}                   # instrument -> latest volatility gate reading
         self.pending: Dict[str, dict] = {}                 # bot -> context of its open entry
         self.shadows: Dict[str, dict] = {}                 # bot -> vetoed entry followed as a shadow trade
         self.bench: Dict[str, str] = {}                    # bot -> why the brain benched it
@@ -136,7 +141,9 @@ class FleetBrain:
         self.connected: set = set()
 
     # ------------------------------------------------------------------ priors from the batch evaluation
-    def load_priors(self, path: str) -> int:
+    def load_priors(self, path: str, segment: str = "full") -> int:
+        """Priors from the batch evaluation. segment="train" uses only the first 60% of each dataset
+        (the system backtest does, so the brain never starts with knowledge of the period it is tested on)."""
         if not path or not os.path.exists(path):
             gz = (path or "") + ".gz"
             if not os.path.exists(gz):
@@ -151,16 +158,16 @@ class FleetBrain:
                 # costs decide most results, so each bot starts from the runs priced like its own venue:
                 # retail fees (Kraken/Coinbase crypto, stocks) or a low-fee venue (key suffix "@low")
                 for suffix, costs in (("", ("retail_kraken", "base")), (LOW_FEE, ("low_fee_venue", "base"))):
-                    rows = [x for x in s.get("runs", []) if x.get("cost") in costs and x["full"].get("trades")]
+                    rows = [x for x in s.get("runs", []) if x.get("cost") in costs and (x.get(segment) or {}).get("trades")]
                     if not rows:
                         continue
                     key = sid + suffix
-                    tot = sum(x["full"]["trades"] for x in rows)
-                    mean = sum(max(-R_CLIP, min(R_CLIP, x["full"]["expectancy_r"] or 0)) * x["full"]["trades"] for x in rows) / tot
+                    tot = sum(x[segment]["trades"] for x in rows)
+                    mean = sum(max(-R_CLIP, min(R_CLIP, x[segment]["expectancy_r"] or 0)) * x[segment]["trades"] for x in rows) / tot
                     self._set_prior(f"S:{key}", mean, tot)
                     for x in rows:
                         self._set_prior(f"SI:{key}|{x['instrument']}",
-                                        max(-R_CLIP, min(R_CLIP, x["full"]["expectancy_r"] or 0)), x["full"]["trades"])
+                                        max(-R_CLIP, min(R_CLIP, x[segment]["expectancy_r"] or 0)), x[segment]["trades"])
                 n += 1
             self.stats["prior_strategies"] = n
         return n
@@ -258,7 +265,8 @@ class FleetBrain:
 
     # ------------------------------------------------------------------ context features
     @staticmethod
-    def features(frame, i: int, side: int, consensus_net: float, reg: Optional[dict] = None) -> List[float]:
+    def features(frame, i: int, side: int, consensus_net: float, reg: Optional[dict] = None,
+                 cost_r: Optional[float] = None, gate: Optional[dict] = None) -> List[float]:
         ev = expr.Evaluator(frame)
 
         def v(e):
@@ -279,7 +287,11 @@ class FleetBrain:
                 1.0 if frame.asset_type.startswith("stock") else -1.0,
                 1.0 if side > 0 else -1.0,
                 0.0 if not reg else max(-1.0, min(1.0, reg["er"] * side)),
-                0.0 if not reg or reg["vr"] <= 0 else max(-1.0, min(1.0, math.log(reg["vr"])))]
+                0.0 if not reg or reg["vr"] <= 0 else max(-1.0, min(1.0, math.log(reg["vr"]))),
+                1.0 if ((frame.t[i] // 86_400_000) + 3) % 7 >= 5 else 0.0,
+                0.0 if cost_r is None else min(1.0, cost_r),
+                0.0 if not gate or gate.get("p_loud") is None else gate["p_loud"] - 0.33,
+                0.0 if not gate or gate.get("p_quiet") is None else gate["p_quiet"] - 0.33]
 
     def p_win(self, f: List[float]) -> float:
         z = sum(w * x for w, x in zip(self.w, f))
@@ -290,17 +302,28 @@ class FleetBrain:
         return (self.stats["wins"] + 1) / (n + 2)
 
     # ------------------------------------------------------------------ decide
-    def score(self, bot_id: str, strategy_id: str, instrument: str, frame, i: int, side: int) -> dict:
-        """Decision for an entry intent: {"action": approve|resize|veto, "size": multiplier, ...}."""
+    def score(self, bot_id: str, strategy_id: str, instrument: str, frame, i: int, side: int,
+              cost_r: Optional[float] = None, gate: Optional[dict] = None) -> dict:
+        """Decision for an entry intent: {"action": approve|resize|veto, "size": multiplier, ...}.
+
+        cost_r: round-trip costs as a fraction of the trade's risk (1R); gate: the volatility gate
+        reading for this market. Both are hard rules in active mode, applied before the learned score."""
         with self.lock:
             cons = self.consensus_of(instrument, exclude=bot_id)
             reg = None
             try:
                 reg = regime_of(frame.c, i)
-                f = self.features(frame, i, side, cons["smart_net"], reg)
+                f = self.features(frame, i, side, cons["smart_net"], reg, cost_r, gate)
             except Exception:
                 f = [1.0] + [0.0] * (len(FEATURES) - 1)
-            rkey = regime_key(reg, side)
+            return self.decide(bot_id, strategy_id, instrument, side, f, regime_key(reg, side), cons, cost_r, gate)
+
+    def decide(self, bot_id: str, strategy_id: str, instrument: str, side: int, f: List[float], rkey: Optional[str],
+               cons: Optional[dict] = None, cost_r: Optional[float] = None, gate: Optional[dict] = None) -> dict:
+        """The decision itself, from precomputed context features (used live via score() and by the
+        system backtest, which computes each candidate's features once)."""
+        with self.lock:
+            cons = cons or {"bots": 0, "long": 0, "short": 0, "net": 0.0, "smart_net": 0.0}
             p = self.p_win(f)
             est = self._combined(strategy_id, instrument, rkey)
             ctx = (p - self._base_rate()) if self.stats["learned"] >= 30 else 0.0
@@ -314,15 +337,30 @@ class FleetBrain:
             reason = (f"learned edge {edge:+.2f}R (+/-{sd:.2f}, evidence {n_eff:.0f} trades, {regime_text(rkey)}); "
                       f"win chance {100 * p:.0f}%; fleet {cons['long']} long / {cons['short']} short of {cons['bots']} "
                       f"(track-record weighted {cons['smart_net']:+.2f})")
+            kind = None
+            gstate = (gate or {}).get("state")
             if self.mode == "active":
-                if benched:
-                    action, size = "veto", 0.0
+                if cost_r is not None and cost_r > COST_VETO_R:
+                    action, size, kind = "veto", 0.0, "cost"
+                    reason = f"costs would take {100 * cost_r:.0f}% of the risk on this trade (limit {100 * COST_VETO_R:.0f}%); " + reason
+                elif gstate == "QUIET":
+                    action, size, kind = "veto", 0.0, "quiet"
+                    reason = f"volatility gate QUIET ({100 * gate['p_quiet']:.0f}%): the next hours are likely too quiet to pay the costs; " + reason
+                elif benched:
+                    action, size, kind = "veto", 0.0, "benched"
                     reason = "benched: this strategy keeps losing here (95% confident), so the brain sits it out " \
                              "and follows its signals as shadow trades until they improve; " + reason
                 elif n_eff >= self.min_evidence and sample < self.veto_edge:
-                    action, size = "veto", 0.0
+                    action, size, kind = "veto", 0.0, "learned"
                 else:
                     size = max(0.5, min(1.5, 1.0 + 1.5 * edge))
+                    if cost_r is not None and cost_r > COST_HALF_R:
+                        size *= 0.5
+                        reason = f"half size: costs are {100 * cost_r:.0f}% of the risk; " + reason
+                    if gstate == "LOUD":
+                        size *= LOUD_SIZE
+                        reason = f"volatility gate LOUD: {LOUD_SIZE}x size; " + reason
+                    size = max(0.25, min(1.5, size))
                     if abs(size - 1.0) > 0.05:
                         action = "resize"
             if benched and bot_id not in self.bench:
@@ -339,10 +377,11 @@ class FleetBrain:
                    "side": side, "p_win": round(p, 4), "edge": round(edge, 4), "sample": round(sample, 4),
                    "sd": round(sd, 4), "evidence": round(n_eff, 1), "action": action, "size": round(size, 3),
                    "mode": self.mode, "reason": reason, "features": [round(x, 4) for x in f], "z": [round(x, 5) for x in z],
-                   "regime": rkey, "parts": est["parts"], "benched": benched}
+                   "regime": rkey, "parts": est["parts"], "benched": benched, "veto_kind": kind,
+                   "cost_r": None if cost_r is None else round(cost_r, 4), "gate": gstate}
             self.recent.append({"kind": "decision", **{k: dec[k] for k in ("time", "bot_id", "strategy_id", "instrument",
                                                                           "side", "p_win", "edge", "action", "size",
-                                                                          "regime", "benched")}})
+                                                                          "regime", "benched", "veto_kind", "gate")}})
             if action != "veto":
                 self.pending[bot_id] = dec
             return dec
@@ -440,13 +479,21 @@ class FleetBrain:
             if r is None:
                 return []
             del self.shadows[bot_id]
-            rc = max(-R_CLIP, min(R_CLIP, r - sh["cost_r"]))
-            dec = sh["dec"]
+            return self.learn_counterfactual(bot_id, sh["dec"], r - sh["cost_r"], why)
+
+    def learn_counterfactual(self, bot_id: str, dec: dict, r: float, why: str = "") -> List[str]:
+        """Learn, at half weight, from what a blocked entry would have made (r net of costs)."""
+        with self.lock:
+            rc = max(-R_CLIP, min(R_CLIP, r))
             keys = self._update(dec["strategy_id"], dec["instrument"], dec.get("regime"), rc, SHADOW_WEIGHT)
             self._step_models(dec, rc, SHADOW_WEIGHT)
             self.stats["shadow_trades"] += 1
             self.stats["shadow_sum_r"] += rc
             self.stats["shadow_wins"] += int(rc > 0)
+            k = dec.get("veto_kind") or "learned"
+            by = self.stats.setdefault("shadow_by_kind", {}).setdefault(k, [0, 0.0])
+            by[0] += 1
+            by[1] += rc
             self.recent.append({"kind": "shadow", "time": int(time.time() * 1000), "bot_id": bot_id,
                                 "strategy_id": dec["strategy_id"], "instrument": dec["instrument"], "r": round(rc, 3),
                                 "exit": why, "regime": dec.get("regime")})
@@ -570,6 +617,9 @@ class FleetBrain:
                     "benched_now": len(self.bench), "benched_bots": sorted(self.bench),
                     "shadow_trades": sh, "shadow_avg_r": self.stats["shadow_sum_r"] / sh if sh else None,
                     "shadow_win_rate": self.stats["shadow_wins"] / sh if sh else None, "shadows_open": len(self.shadows),
+                    "shadow_by_kind": {k: {"trades": v[0], "avg_r": round(v[1] / v[0], 4) if v[0] else None}
+                                       for k, v in self.stats.get("shadow_by_kind", {}).items()},
+                    "gates": dict(self.gates),
                     "trust": {"base": round(self.a[0], 3), "history": round(self.a[1], 3), "context": round(self.a[2], 3)},
                     "brier": self.stats["brier_sum"] / max(1, sum(c[0] for c in self.calib)) if any(c[0] for c in self.calib) else None,
                     "calibration": [{"predicted": (b + 0.5) / 10, "trades": c[0], "actual": c[1] / c[0] if c[0] else None}

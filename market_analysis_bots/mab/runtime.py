@@ -35,6 +35,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from mab import __version__
 from mab.account import Account
 from mab.brain import LOW_FEE, FleetBrain
+from mab.volgate import HORIZON as GATE_HORIZON, Bars as GateBars, VolGate
 
 LOW_FEE_VENUES = ("okx",)       # taker fee 0.10% (vs 0.80% Kraken retail, 1.20% Coinbase retail)
 from mab.broker import PaperBroker
@@ -163,6 +164,8 @@ class Fleet:
         except Exception as e:                      # a missing or unreadable priors file only means "start blank"
             log.warning("brain priors not loaded: %s", e)
         self.brain.restore(self.storage.kv_get("brain", {}))
+        self.volgate = VolGate() if bcfg.get("volatility_gate", True) else None
+        self._gate_cache: Dict[tuple, tuple] = {}
         self.bots: Dict[str, BotRunner] = {}
         self.by_series: Dict[Tuple[str, str, str], List[str]] = {}
         self.paused = bool(self.storage.kv_get("paused", False))
@@ -239,6 +242,13 @@ class Fleet:
                                    orderflow=br.orderflow and sym is None and tf == c.tf,
                                    extended_hours=bool(b.get("extended_hours")))
             br.series_keys.append(s.key)
+        if self.volgate is not None and self.volgate.ready(self._gate_asset(br)):
+            try:
+                g = self.hub.subscribe(b["venue"], b["instrument"], "1h", 200, br.id, inst["asset_type"],
+                                       extended_hours=bool(b.get("extended_hours")))
+                br.gate_key = g.key
+            except Exception as e:                                          # noqa: BLE001
+                log.warning("volatility gate series for %s not available: %s", br.id, e)
         base = (b["venue"], b["instrument"], c.tf)
         if base not in br.series_keys:
             s = self.hub.subscribe(*base, need=max(c.warmup.values()) + 5, subscriber=br.id,
@@ -456,7 +466,8 @@ class Fleet:
 
     def _execute_intent(self, br: BotRunner, frame, i, a: dict) -> str:
         if a["kind"] == "entry" and not a.get("reduce_only") and self.brain.mode != "off":
-            dec = self.brain.score(br.id, self._bkey(br), br.symbol, frame, i, a["side"])
+            dec = self.brain.score(br.id, self._bkey(br), br.symbol, frame, i, a["side"],
+                                   cost_r=self._cost_r(br, a["ref_price"], a.get("stop")), gate=self._gate(br))
             if dec["action"] == "veto":
                 self.stats["brain_vetoes"] = self.stats.get("brain_vetoes", 0) + 1
                 br.tm.intent_rejected("brain veto: " + dec["reason"])
@@ -469,8 +480,7 @@ class Fleet:
                 # follow the blocked trade on paper so the brain learns what the veto was worth
                 try:
                     ref, stop = a["ref_price"], a.get("stop")
-                    cost_r = ((2 * br.filler.fee(1.0, "taker") + 2 * br.filler.cm.slip) * ref / abs(ref - stop)
-                              if stop and ref != stop else 0.0)
+                    cost_r = self._cost_r(br, ref, stop) or 0.0
                     self.brain.shadow_open(br.id, dec, ref, stop, a.get("target"), cost_r, frame.t[i],
                                            int(br.c.definition.get("max_bars") or 48), frame.sess_close[i])
                 except Exception as e:                                    # noqa: BLE001
@@ -536,7 +546,10 @@ class Fleet:
         if p is None or p.exit:
             return "order_placed"
         if self.brain.mode != "off":
-            dec = self.brain.score(br.id, self._bkey(br), br.symbol, frame, i, p.side)
+            px0 = p.price or frame.c[i]
+            plan0 = br.tm._plan(p, px0)
+            dec = self.brain.score(br.id, self._bkey(br), br.symbol, frame, i, p.side,
+                                   cost_r=self._cost_r(br, px0, plan0[1] if plan0 else None), gate=self._gate(br))
             if dec["action"] == "veto":
                 br.tm.pending = None
                 self.stats["brain_vetoes"] = self.stats.get("brain_vetoes", 0) + 1
@@ -592,6 +605,37 @@ class Fleet:
             out = br.tm.apply_exit_fill(frame, i, px_close, fee, a["reason"] + " (fallback price)")
         self._trade_closed(br, out["trade"])
         return "exited"
+
+    @staticmethod
+    def _cost_r(br: BotRunner, ref: float, stop: Optional[float]) -> Optional[float]:
+        """Round-trip costs (two taker fees plus two slippages) as a fraction of the trade's risk."""
+        if not stop or not ref or ref == stop:
+            return None
+        return (2 * br.filler.fee(1.0, "taker") + 2 * br.filler.cm.slip) * ref / abs(ref - stop)
+
+    @staticmethod
+    def _gate_asset(br: BotRunner) -> str:
+        return "stock" if br.venue == "yahoo" else "crypto"
+
+    def _gate(self, br: BotRunner) -> Optional[dict]:
+        """The volatility gate reading for this bot's market (one computation per market per hour)."""
+        key = getattr(br, "gate_key", None)
+        if self.volgate is None or key is None:
+            return None
+        s = self.hub.get(*key)
+        if s is None or len(s.times) < 200:
+            return None
+        last = s.times[-1]
+        hit = self._gate_cache.get(key)
+        if hit and hit[0] == last:
+            return hit[1]
+        f = s.frame()
+        asset = self._gate_asset(br)
+        reading = self.volgate.read(GateBars.from_frame(f, GATE_HORIZON[asset]), f.n - 1, asset)
+        reading["time"] = last + s.step
+        self._gate_cache[key] = (last, reading)
+        self.brain.gates[br.symbol] = dict(reading, venue=br.venue)
+        return reading
 
     @staticmethod
     def _bkey(br: BotRunner) -> str:

@@ -119,7 +119,8 @@ def test_restore_keeps_learning_across_an_upgrade_that_adds_features():
     st["w"], st["features"] = st["w"][:11], old_names             # a state saved by the previous version
     b2 = FleetBrain(seed=9)
     b2.restore(st)
-    assert b2.w[:11] == b.w[:11] and b2.w[11:] == [0.0, 0.0] and b2.summary()["trades_learned"] == 60
+    from mab.brain import FEATURES
+    assert b2.w[:11] == b.w[:11] and b2.w[11:] == [0.0] * (len(FEATURES) - 11) and b2.summary()["trades_learned"] == 60
 
 
 def test_priors_follow_each_venue_costs(tmp_path):
@@ -146,8 +147,9 @@ def test_resting_orders_go_through_the_brain_and_the_risk_layer(tmp_path, monkey
     def bot(bid, sid):
         p = Pending(1, "stop", F.c[i] * 1.001, F.t[i], F.t[i] + F.step, F.c[i] * 0.99, False, None, False, "long entry")
         tm = SimpleNamespace(pending=p, _plan=lambda pp, px: (10.0 * pp.size, F.c[i] * 0.99, None))
+        filler = SimpleNamespace(fee=lambda notional, liq: notional * 0.001, cm=SimpleNamespace(slip=0.0005))
         return SimpleNamespace(id=bid, venue="coinbase", symbol="TST", c=SimpleNamespace(id=sid, definition={}),
-                               tm=tm, enabled=True, series_keys=[], last_decision="")
+                               tm=tm, enabled=True, series_keys=[], last_decision="", filler=filler)
     for _ in range(40):
         fl.brain.learn("B0", "BAD", "TST", -1.0)
     bad = bot("B1", "BAD")
@@ -158,3 +160,43 @@ def test_resting_orders_go_through_the_brain_and_the_risk_layer(tmp_path, monkey
     fl.paused = True                                   # the risk layer refuses entries while paused
     held = bot("B3", "NEW")
     assert fl._accept_resting(held, F, i) == "blocked" and held.tm.pending is None
+
+
+
+def test_cost_and_volatility_gates():
+    b = FleetBrain(seed=11)
+    assert b.score("B", "S", "TST", F, 500, 1, cost_r=0.5)["veto_kind"] == "cost"
+    half = b.score("B", "S", "TST", F, 500, 1, cost_r=0.25)
+    assert half["action"] == "resize" and half["size"] <= 0.5 + 1e-9
+    q = b.score("B", "S", "TST", F, 500, 1, cost_r=0.05, gate={"state": "QUIET", "p_loud": 0.1, "p_quiet": 0.9})
+    assert q["action"] == "veto" and q["veto_kind"] == "quiet"
+    loud = b.score("B", "S", "TST", F, 500, 1, cost_r=0.05, gate={"state": "LOUD", "p_loud": 0.9, "p_quiet": 0.1})
+    assert loud["action"] == "resize" and abs(loud["size"] - 0.6) < 1e-9
+    ok = b.score("B", "S", "TST", F, 500, 1, cost_r=0.05, gate={"state": "NORMAL", "p_loud": 0.4, "p_quiet": 0.2})
+    assert ok["action"] == "approve" and ok["size"] == 1.0
+    adv = FleetBrain(mode="advisory", seed=11)          # advisory never blocks, even on costs
+    assert adv.score("B", "S", "TST", F, 500, 1, cost_r=0.9)["action"] == "approve"
+    # shadow results are tracked per veto reason
+    d = b.score("B", "S", "TST", F, 450, 1, cost_r=0.5)
+    b.shadow_open("B", d, F.c[450], F.c[450] * 0.9, None, 0.0, F.t[450], max_bars=1)
+    b.shadow_step("B", F, 451)
+    assert b.summary()["shadow_by_kind"]["cost"]["trades"] == 1
+
+
+def test_volatility_gate_reads_states():
+    from mab import volgate as VG
+    import math as m
+    n = 600
+    t = [1_700_000_000_000 + k * 3_600_000 for k in range(n)]
+    c = [100 + 5 * m.sin(k / 9) + (k % 7) * 0.1 for k in range(n)]
+    bars = VG.Bars(t, c, [x + 0.5 for x in c], [x - 0.5 for x in c], c, [1000.0] * n)
+    f = VG.features(bars, n - 1)
+    assert f is not None and len(f) == len(VG.FEATURES)
+    assert VG.features(bars, 10) is None                   # not enough history yet
+    k = len(VG.FEATURES)
+    model = {"crypto": {"mean": [0.0] * k, "std": [1.0] * k, "w_loud": [5.0] + [0.0] * (k - 1),
+                        "w_quiet": [-5.0] + [0.0] * (k - 1), "t_loud": 0.8, "t_quiet": 0.8}}
+    assert VG.VolGate(model).read(bars, n - 1)["state"] == "LOUD"
+    model["crypto"]["w_loud"][0], model["crypto"]["w_quiet"][0] = -5.0, 5.0
+    assert VG.VolGate(model).read(bars, n - 1)["state"] == "QUIET"
+    assert VG.VolGate({}).read(bars, n - 1)["state"] == "UNKNOWN"

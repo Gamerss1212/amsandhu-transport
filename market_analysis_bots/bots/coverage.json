@@ -1,187 +1,149 @@
 {
- "strategies_implemented": 127,
- "strategies_with_bots": 127,
- "bots": 250,
+ "strategies_implemented": 147,
+ "strategies_with_bots": 147,
+ "bots": 296,
  "strategy_to_bots": {
   "STRAT-001": [
    "BOT-001",
-   "BOT-002",
-   "BOT-213"
+   "BOT-002"
   ],
   "STRAT-002": [
    "BOT-003",
-   "BOT-004",
-   "BOT-214"
+   "BOT-004"
   ],
   "STRAT-003": [
    "BOT-005",
-   "BOT-006",
-   "BOT-215"
+   "BOT-006"
   ],
   "STRAT-004": [
    "BOT-007",
-   "BOT-008",
-   "BOT-216"
+   "BOT-008"
   ],
   "STRAT-005": [
    "BOT-009",
-   "BOT-010",
-   "BOT-217"
+   "BOT-010"
   ],
   "STRAT-006": [
    "BOT-011",
-   "BOT-012",
-   "BOT-218"
+   "BOT-012"
   ],
   "STRAT-007": [
    "BOT-013",
-   "BOT-014",
-   "BOT-219"
+   "BOT-014"
   ],
   "STRAT-008": [
    "BOT-015",
-   "BOT-016",
-   "BOT-220"
+   "BOT-016"
   ],
   "STRAT-009": [
    "BOT-017",
-   "BOT-018",
-   "BOT-221"
+   "BOT-018"
   ],
   "STRAT-010": [
    "BOT-019",
-   "BOT-020",
-   "BOT-222"
+   "BOT-020"
   ],
   "STRAT-011": [
    "BOT-021",
-   "BOT-022",
-   "BOT-223"
+   "BOT-022"
   ],
   "STRAT-012": [
    "BOT-023",
-   "BOT-024",
-   "BOT-224"
+   "BOT-024"
   ],
   "STRAT-013": [
    "BOT-025",
-   "BOT-026",
-   "BOT-225"
+   "BOT-026"
   ],
   "STRAT-014": [
    "BOT-027",
-   "BOT-028",
-   "BOT-226"
+   "BOT-028"
   ],
   "STRAT-015": [
    "BOT-029",
-   "BOT-030",
-   "BOT-227"
+   "BOT-030"
   ],
   "STRAT-016": [
    "BOT-031",
    "BOT-032"
   ],
   "STRAT-017": [
-   "BOT-033",
-   "BOT-228"
+   "BOT-033"
   ],
   "STRAT-018": [
-   "BOT-034",
-   "BOT-229"
+   "BOT-034"
   ],
   "STRAT-019": [
    "BOT-035",
-   "BOT-036",
-   "BOT-230"
+   "BOT-036"
   ],
   "STRAT-020": [
-   "BOT-037",
-   "BOT-231"
+   "BOT-037"
   ],
   "STRAT-021": [
    "BOT-038",
-   "BOT-039",
-   "BOT-232"
+   "BOT-039"
   ],
   "STRAT-022": [
    "BOT-040",
-   "BOT-041",
-   "BOT-233"
+   "BOT-041"
   ],
   "STRAT-023": [
-   "BOT-042",
-   "BOT-234"
+   "BOT-042"
   ],
   "STRAT-024": [
-   "BOT-043",
-   "BOT-235"
+   "BOT-043"
   ],
   "STRAT-025": [
-   "BOT-044",
-   "BOT-236"
+   "BOT-044"
   ],
   "STRAT-026": [
-   "BOT-045",
-   "BOT-237"
+   "BOT-045"
   ],
   "STRAT-027": [
-   "BOT-046",
-   "BOT-238"
+   "BOT-046"
   ],
   "STRAT-028": [
    "BOT-047",
-   "BOT-048",
-   "BOT-239"
+   "BOT-048"
   ],
   "STRAT-029": [
-   "BOT-049",
-   "BOT-240"
+   "BOT-049"
   ],
   "STRAT-030": [
-   "BOT-050",
-   "BOT-241"
+   "BOT-050"
   ],
   "STRAT-031": [
-   "BOT-051",
-   "BOT-242"
+   "BOT-051"
   ],
   "STRAT-032": [
-   "BOT-052",
-   "BOT-243"
+   "BOT-052"
   ],
   "STRAT-033": [
-   "BOT-053",
-   "BOT-244"
+   "BOT-053"
   ],
   "STRAT-034": [
-   "BOT-054",
-   "BOT-245"
+   "BOT-054"
   ],
   "STRAT-035": [
    "BOT-055",
-   "BOT-056",
-   "BOT-246"
+   "BOT-056"
   ],
   "STRAT-036": [
    "BOT-057",
-   "BOT-058",
-   "BOT-247"
+   "BOT-058"
   ],
   "STRAT-037": [
    "BOT-059",
-   "BOT-060",
-   "BOT-248"
+   "BOT-060"
   ],
   "STRAT-038": [
    "BOT-061",
-   "BOT-062",
-   "BOT-249"
+   "BOT-062"
   ],
   "STRAT-039": [
    "BOT-063",
-   "BOT-064",
-   "BOT-250"
+   "BOT-064"
   ],
   "STRAT-040": [
    "BOT-065",
@@ -506,6 +468,130 @@
   "STRAT-155": [
    "BOT-211",
    "BOT-212"
+  ],
+  "STRAT-158": [
+   "BOT-213",
+   "BOT-214"
+  ],
+  "STRAT-159": [
+   "BOT-215",
+   "BOT-216"
+  ],
+  "STRAT-160": [
+   "BOT-217",
+   "BOT-218"
+  ],
+  "STRAT-161": [
+   "BOT-219"
+  ],
+  "STRAT-162": [
+   "BOT-220",
+   "BOT-221"
+  ],
+  "STRAT-163": [
+   "BOT-222",
+   "BOT-223"
+  ],
+  "STRAT-164": [
+   "BOT-224",
+   "BOT-225",
+   "BOT-226",
+   "BOT-227",
+   "BOT-228",
+   "BOT-229"
+  ],
+  "STRAT-165": [
+   "BOT-230"
+  ],
+  "STRAT-166": [
+   "BOT-231",
+   "BOT-232",
+   "BOT-233",
+   "BOT-234",
+   "BOT-235"
+  ],
+  "STRAT-167": [
+   "BOT-236",
+   "BOT-237",
+   "BOT-238",
+   "BOT-239",
+   "BOT-240"
+  ],
+  "STRAT-168": [
+   "BOT-241",
+   "BOT-242",
+   "BOT-243",
+   "BOT-244",
+   "BOT-245",
+   "BOT-246"
+  ],
+  "STRAT-169": [
+   "BOT-247",
+   "BOT-248",
+   "BOT-249",
+   "BOT-250",
+   "BOT-251",
+   "BOT-252"
+  ],
+  "STRAT-170": [
+   "BOT-253",
+   "BOT-254",
+   "BOT-255",
+   "BOT-256",
+   "BOT-257",
+   "BOT-258"
+  ],
+  "STRAT-171": [
+   "BOT-259",
+   "BOT-260",
+   "BOT-261",
+   "BOT-262",
+   "BOT-263",
+   "BOT-264"
+  ],
+  "STRAT-172": [
+   "BOT-265",
+   "BOT-266",
+   "BOT-267",
+   "BOT-268",
+   "BOT-269",
+   "BOT-270"
+  ],
+  "STRAT-173": [
+   "BOT-271",
+   "BOT-272",
+   "BOT-273",
+   "BOT-274",
+   "BOT-275",
+   "BOT-276"
+  ],
+  "STRAT-174": [
+   "BOT-277",
+   "BOT-278"
+  ],
+  "STRAT-175": [
+   "BOT-279",
+   "BOT-280",
+   "BOT-281",
+   "BOT-282",
+   "BOT-283",
+   "BOT-284"
+  ],
+  "STRAT-176": [
+   "BOT-285",
+   "BOT-286",
+   "BOT-287",
+   "BOT-288",
+   "BOT-289",
+   "BOT-290"
+  ],
+  "STRAT-177": [
+   "BOT-291",
+   "BOT-292",
+   "BOT-293",
+   "BOT-294",
+   "BOT-295",
+   "BOT-296"
   ]
  }
 }

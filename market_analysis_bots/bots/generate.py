@@ -64,6 +64,11 @@ def main(target=250):
                 refs = ["okx:BTC-USDT"] if s["key"] == "coinbase_premium" else None
                 add(s, v, sym, {"refs": refs} if refs else None)
             continue
+        crypto_insts = [x for x in (s.get("instruments") or []) if x.endswith("-USD") and "crypto" in s["markets"]]
+        if crypto_insts:                     # rules written for named coins (the knowledge-pack memecoin set)
+            for sym in crypto_insts:
+                add(s, "coinbase", sym)
+            continue
         if "crypto" in s["markets"]:
             if s["key"] == "lead_lag_catch_up":
                 for sym in ("ETH-USD", "SOL-USD"):
@@ -88,7 +93,7 @@ def main(target=250):
     while len(bots) < target:
         s = strats[k % len(strats)]
         k += 1
-        if s["key"] in pinned or s["key"] == "lead_lag_catch_up":
+        if s["key"] in pinned or s["key"] == "lead_lag_catch_up" or s.get("instruments"):
             continue
         data = set(s["data"])
         if "crypto" in s["markets"] and (len(bots) % 2 == 0 or "stock" not in s["markets"]):

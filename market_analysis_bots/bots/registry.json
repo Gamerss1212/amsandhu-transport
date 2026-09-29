@@ -2422,8 +2422,8 @@
   },
   {
    "bot_id": "BOT-213",
-   "name": "EMA 9/21 crossover with session-VWAP filter | LINK-USD",
-   "strategy_id": "STRAT-001",
+   "name": "Range-boundary breakout retest | LINK-USD",
+   "strategy_id": "STRAT-158",
    "venue": "coinbase",
    "instrument": "LINK-USD",
    "enabled": true,
@@ -2433,8 +2433,8 @@
   },
   {
    "bot_id": "BOT-214",
-   "name": "Aligned EMA ribbon pullback | META",
-   "strategy_id": "STRAT-002",
+   "name": "Range-boundary breakout retest | META",
+   "strategy_id": "STRAT-158",
    "venue": "yahoo",
    "instrument": "META",
    "enabled": true,
@@ -2444,8 +2444,8 @@
   },
   {
    "bot_id": "BOT-215",
-   "name": "MACD signal-line crossover | AVAX-USD",
-   "strategy_id": "STRAT-003",
+   "name": "Volatility-normalized time-series momentum | AVAX-USD",
+   "strategy_id": "STRAT-159",
    "venue": "coinbase",
    "instrument": "AVAX-USD",
    "enabled": true,
@@ -2455,8 +2455,8 @@
   },
   {
    "bot_id": "BOT-216",
-   "name": "MACD histogram turn below zero | IWM",
-   "strategy_id": "STRAT-004",
+   "name": "Volatility-normalized time-series momentum | IWM",
+   "strategy_id": "STRAT-159",
    "venue": "yahoo",
    "instrument": "IWM",
    "enabled": true,
@@ -2466,8 +2466,8 @@
   },
   {
    "bot_id": "BOT-217",
-   "name": "ADX trend-strength breakout | LTC-USD",
-   "strategy_id": "STRAT-005",
+   "name": "RSI extreme recovery | LTC-USD",
+   "strategy_id": "STRAT-160",
    "venue": "coinbase",
    "instrument": "LTC-USD",
    "enabled": true,
@@ -2477,8 +2477,8 @@
   },
   {
    "bot_id": "BOT-218",
-   "name": "Directional-movement crossover (Wilder DMI) | COIN",
-   "strategy_id": "STRAT-006",
+   "name": "RSI extreme recovery | COIN",
+   "strategy_id": "STRAT-160",
    "venue": "yahoo",
    "instrument": "COIN",
    "enabled": true,
@@ -2488,8 +2488,19 @@
   },
   {
    "bot_id": "BOT-219",
-   "name": "Supertrend direction flip | XXBTZUSD",
-   "strategy_id": "STRAT-007",
+   "name": "FOMC post-announcement drift | SPY",
+   "strategy_id": "STRAT-161",
+   "venue": "yahoo",
+   "instrument": "SPY",
+   "enabled": true,
+   "stages": [
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-220",
+   "name": "Liquidity sweep then structure shift | XXBTZUSD",
+   "strategy_id": "STRAT-162",
    "venue": "kraken",
    "instrument": "XXBTZUSD",
    "enabled": true,
@@ -2498,20 +2509,20 @@
    ]
   },
   {
-   "bot_id": "BOT-220",
-   "name": "Parabolic SAR reversal | SHOP.TO",
-   "strategy_id": "STRAT-008",
+   "bot_id": "BOT-221",
+   "name": "Liquidity sweep then structure shift | RY.TO",
+   "strategy_id": "STRAT-162",
    "venue": "yahoo",
-   "instrument": "SHOP.TO",
+   "instrument": "RY.TO",
    "enabled": true,
    "stages": [
     "250"
    ]
   },
   {
-   "bot_id": "BOT-221",
-   "name": "Ichimoku Tenkan/Kijun cross above the cloud | XETHZUSD",
-   "strategy_id": "STRAT-009",
+   "bot_id": "BOT-222",
+   "name": "Order-block retest | XETHZUSD",
+   "strategy_id": "STRAT-163",
    "venue": "kraken",
    "instrument": "XETHZUSD",
    "enabled": true,
@@ -2520,31 +2531,9 @@
    ]
   },
   {
-   "bot_id": "BOT-222",
-   "name": "Ichimoku cloud breakout | RY.TO",
-   "strategy_id": "STRAT-010",
-   "venue": "yahoo",
-   "instrument": "RY.TO",
-   "enabled": true,
-   "stages": [
-    "250"
-   ]
-  },
-  {
    "bot_id": "BOT-223",
-   "name": "Donchian channel breakout (intraday Turtle) | BTC-USDT",
-   "strategy_id": "STRAT-011",
-   "venue": "okx",
-   "instrument": "BTC-USDT",
-   "enabled": true,
-   "stages": [
-    "250"
-   ]
-  },
-  {
-   "bot_id": "BOT-224",
-   "name": "Regression-slope trend with R-squared filter | SPY",
-   "strategy_id": "STRAT-012",
+   "name": "Order-block retest | SPY",
+   "strategy_id": "STRAT-163",
    "venue": "yahoo",
    "instrument": "SPY",
    "enabled": true,
@@ -2553,163 +2542,9 @@
    ]
   },
   {
-   "bot_id": "BOT-225",
-   "name": "Kaufman adaptive-average cross in efficient markets | ETH-USDT",
-   "strategy_id": "STRAT-013",
-   "venue": "okx",
-   "instrument": "ETH-USDT",
-   "enabled": true,
-   "stages": [
-    "250"
-   ]
-  },
-  {
-   "bot_id": "BOT-226",
-   "name": "Heikin-Ashi trend run | QQQ",
-   "strategy_id": "STRAT-014",
-   "venue": "yahoo",
-   "instrument": "QQQ",
-   "enabled": true,
-   "stages": [
-    "250"
-   ]
-  },
-  {
-   "bot_id": "BOT-227",
-   "name": "Aroon trend emergence | BTC-USD",
-   "strategy_id": "STRAT-015",
-   "venue": "coinbase",
-   "instrument": "BTC-USD",
-   "enabled": true,
-   "stages": [
-    "250"
-   ]
-  },
-  {
-   "bot_id": "BOT-228",
-   "name": "Previous-day return sign (intraday time-series momentum) | ETH-USD",
-   "strategy_id": "STRAT-017",
-   "venue": "coinbase",
-   "instrument": "ETH-USD",
-   "enabled": true,
-   "stages": [
-    "250"
-   ]
-  },
-  {
-   "bot_id": "BOT-229",
-   "name": "5-minute opening-range breakout in the first candle's direction | AAPL",
-   "strategy_id": "STRAT-018",
-   "venue": "yahoo",
-   "instrument": "AAPL",
-   "enabled": true,
-   "stages": [
-    "250"
-   ]
-  },
-  {
-   "bot_id": "BOT-230",
-   "name": "Opening-range breakout on a closing basis | NVDA",
-   "strategy_id": "STRAT-019",
-   "venue": "yahoo",
-   "instrument": "NVDA",
-   "enabled": true,
-   "stages": [
-    "250"
-   ]
-  },
-  {
-   "bot_id": "BOT-231",
-   "name": "Stocks-in-play 5-minute ORB with ATR stop | MSFT",
-   "strategy_id": "STRAT-020",
-   "venue": "yahoo",
-   "instrument": "MSFT",
-   "enabled": true,
-   "stages": [
-    "250"
-   ]
-  },
-  {
-   "bot_id": "BOT-232",
-   "name": "Failed opening-range breakout fade | TSLA",
-   "strategy_id": "STRAT-021",
-   "venue": "yahoo",
-   "instrument": "TSLA",
-   "enabled": true,
-   "stages": [
-    "250"
-   ]
-  },
-  {
-   "bot_id": "BOT-233",
-   "name": "Opening-range breakout retest | SOL-USD",
-   "strategy_id": "STRAT-022",
-   "venue": "coinbase",
-   "instrument": "SOL-USD",
-   "enabled": true,
-   "stages": [
-    "250"
-   ]
-  },
-  {
-   "bot_id": "BOT-234",
-   "name": "Narrow initial-balance range extension | AMZN",
-   "strategy_id": "STRAT-023",
-   "venue": "yahoo",
-   "instrument": "AMZN",
-   "enabled": true,
-   "stages": [
-    "250"
-   ]
-  },
-  {
-   "bot_id": "BOT-235",
-   "name": "Initial-balance double-extension fade | AMD",
-   "strategy_id": "STRAT-024",
-   "venue": "yahoo",
-   "instrument": "AMD",
-   "enabled": true,
-   "stages": [
-    "250"
-   ]
-  },
-  {
-   "bot_id": "BOT-236",
-   "name": "Opening-drive continuation | META",
-   "strategy_id": "STRAT-025",
-   "venue": "yahoo",
-   "instrument": "META",
-   "enabled": true,
-   "stages": [
-    "250"
-   ]
-  },
-  {
-   "bot_id": "BOT-237",
-   "name": "Open outside prior range, rejected back inside | IWM",
-   "strategy_id": "STRAT-026",
-   "venue": "yahoo",
-   "instrument": "IWM",
-   "enabled": true,
-   "stages": [
-    "250"
-   ]
-  },
-  {
-   "bot_id": "BOT-238",
-   "name": "Asia-range breakout at the London open (crypto) | XRP-USD",
-   "strategy_id": "STRAT-027",
-   "venue": "coinbase",
-   "instrument": "XRP-USD",
-   "enabled": true,
-   "stages": [
-    "250"
-   ]
-  },
-  {
-   "bot_id": "BOT-239",
-   "name": "Open +/- volatility breakout (Crabel stretch / Williams) | DOGE-USD",
-   "strategy_id": "STRAT-028",
+   "bot_id": "BOT-224",
+   "name": "Memecoin breadth-led momentum | DOGE-USD",
+   "strategy_id": "STRAT-164",
    "venue": "coinbase",
    "instrument": "DOGE-USD",
    "enabled": true,
@@ -2718,11 +2553,176 @@
    ]
   },
   {
+   "bot_id": "BOT-225",
+   "name": "Memecoin breadth-led momentum | SHIB-USD",
+   "strategy_id": "STRAT-164",
+   "venue": "coinbase",
+   "instrument": "SHIB-USD",
+   "enabled": true,
+   "stages": [
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-226",
+   "name": "Memecoin breadth-led momentum | PEPE-USD",
+   "strategy_id": "STRAT-164",
+   "venue": "coinbase",
+   "instrument": "PEPE-USD",
+   "enabled": true,
+   "stages": [
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-227",
+   "name": "Memecoin breadth-led momentum | BONK-USD",
+   "strategy_id": "STRAT-164",
+   "venue": "coinbase",
+   "instrument": "BONK-USD",
+   "enabled": true,
+   "stages": [
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-228",
+   "name": "Memecoin breadth-led momentum | WIF-USD",
+   "strategy_id": "STRAT-164",
+   "venue": "coinbase",
+   "instrument": "WIF-USD",
+   "enabled": true,
+   "stages": [
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-229",
+   "name": "Memecoin breadth-led momentum | FLOKI-USD",
+   "strategy_id": "STRAT-164",
+   "venue": "coinbase",
+   "instrument": "FLOKI-USD",
+   "enabled": true,
+   "stages": [
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-230",
+   "name": "Memecoin leader pullback | DOGE-USD",
+   "strategy_id": "STRAT-165",
+   "venue": "coinbase",
+   "instrument": "DOGE-USD",
+   "enabled": true,
+   "stages": [
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-231",
+   "name": "Memecoin laggard catch-up breakout | SHIB-USD",
+   "strategy_id": "STRAT-166",
+   "venue": "coinbase",
+   "instrument": "SHIB-USD",
+   "enabled": true,
+   "stages": [
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-232",
+   "name": "Memecoin laggard catch-up breakout | PEPE-USD",
+   "strategy_id": "STRAT-166",
+   "venue": "coinbase",
+   "instrument": "PEPE-USD",
+   "enabled": true,
+   "stages": [
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-233",
+   "name": "Memecoin laggard catch-up breakout | BONK-USD",
+   "strategy_id": "STRAT-166",
+   "venue": "coinbase",
+   "instrument": "BONK-USD",
+   "enabled": true,
+   "stages": [
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-234",
+   "name": "Memecoin laggard catch-up breakout | WIF-USD",
+   "strategy_id": "STRAT-166",
+   "venue": "coinbase",
+   "instrument": "WIF-USD",
+   "enabled": true,
+   "stages": [
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-235",
+   "name": "Memecoin laggard catch-up breakout | FLOKI-USD",
+   "strategy_id": "STRAT-166",
+   "venue": "coinbase",
+   "instrument": "FLOKI-USD",
+   "enabled": true,
+   "stages": [
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-236",
+   "name": "Memecoin leader-to-follower transmission | SHIB-USD",
+   "strategy_id": "STRAT-167",
+   "venue": "coinbase",
+   "instrument": "SHIB-USD",
+   "enabled": true,
+   "stages": [
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-237",
+   "name": "Memecoin leader-to-follower transmission | PEPE-USD",
+   "strategy_id": "STRAT-167",
+   "venue": "coinbase",
+   "instrument": "PEPE-USD",
+   "enabled": true,
+   "stages": [
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-238",
+   "name": "Memecoin leader-to-follower transmission | BONK-USD",
+   "strategy_id": "STRAT-167",
+   "venue": "coinbase",
+   "instrument": "BONK-USD",
+   "enabled": true,
+   "stages": [
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-239",
+   "name": "Memecoin leader-to-follower transmission | WIF-USD",
+   "strategy_id": "STRAT-167",
+   "venue": "coinbase",
+   "instrument": "WIF-USD",
+   "enabled": true,
+   "stages": [
+    "250"
+   ]
+  },
+  {
    "bot_id": "BOT-240",
-   "name": "Gap-and-go continuation | COIN",
-   "strategy_id": "STRAT-029",
-   "venue": "yahoo",
-   "instrument": "COIN",
+   "name": "Memecoin leader-to-follower transmission | FLOKI-USD",
+   "strategy_id": "STRAT-167",
+   "venue": "coinbase",
+   "instrument": "FLOKI-USD",
    "enabled": true,
    "stages": [
     "250"
@@ -2730,10 +2730,10 @@
   },
   {
    "bot_id": "BOT-241",
-   "name": "Moderate-gap fade to the prior close | SHOP.TO",
-   "strategy_id": "STRAT-030",
-   "venue": "yahoo",
-   "instrument": "SHOP.TO",
+   "name": "Bitcoin risk-on memecoin participation | DOGE-USD",
+   "strategy_id": "STRAT-168",
+   "venue": "coinbase",
+   "instrument": "DOGE-USD",
    "enabled": true,
    "stages": [
     "250"
@@ -2741,10 +2741,10 @@
   },
   {
    "bot_id": "BOT-242",
-   "name": "Buy-on-gap (Chan) | RY.TO",
-   "strategy_id": "STRAT-031",
-   "venue": "yahoo",
-   "instrument": "RY.TO",
+   "name": "Bitcoin risk-on memecoin participation | SHIB-USD",
+   "strategy_id": "STRAT-168",
+   "venue": "coinbase",
+   "instrument": "SHIB-USD",
    "enabled": true,
    "stages": [
     "250"
@@ -2752,10 +2752,10 @@
   },
   {
    "bot_id": "BOT-243",
-   "name": "Gap holds above prior high, then new session high | SPY",
-   "strategy_id": "STRAT-032",
-   "venue": "yahoo",
-   "instrument": "SPY",
+   "name": "Bitcoin risk-on memecoin participation | PEPE-USD",
+   "strategy_id": "STRAT-168",
+   "venue": "coinbase",
+   "instrument": "PEPE-USD",
    "enabled": true,
    "stages": [
     "250"
@@ -2763,10 +2763,10 @@
   },
   {
    "bot_id": "BOT-244",
-   "name": "Pre-market high breakout | QQQ",
-   "strategy_id": "STRAT-033",
-   "venue": "yahoo",
-   "instrument": "QQQ",
+   "name": "Bitcoin risk-on memecoin participation | BONK-USD",
+   "strategy_id": "STRAT-168",
+   "venue": "coinbase",
+   "instrument": "BONK-USD",
    "enabled": true,
    "stages": [
     "250"
@@ -2774,10 +2774,10 @@
   },
   {
    "bot_id": "BOT-245",
-   "name": "Short-sale-restriction day bounce | AAPL",
-   "strategy_id": "STRAT-034",
-   "venue": "yahoo",
-   "instrument": "AAPL",
+   "name": "Bitcoin risk-on memecoin participation | WIF-USD",
+   "strategy_id": "STRAT-168",
+   "venue": "coinbase",
+   "instrument": "WIF-USD",
    "enabled": true,
    "stages": [
     "250"
@@ -2785,10 +2785,10 @@
   },
   {
    "bot_id": "BOT-246",
-   "name": "Prior-day high/low breakout | NVDA",
-   "strategy_id": "STRAT-035",
-   "venue": "yahoo",
-   "instrument": "NVDA",
+   "name": "Bitcoin risk-on memecoin participation | FLOKI-USD",
+   "strategy_id": "STRAT-168",
+   "venue": "coinbase",
+   "instrument": "FLOKI-USD",
    "enabled": true,
    "stages": [
     "250"
@@ -2796,10 +2796,10 @@
   },
   {
    "bot_id": "BOT-247",
-   "name": "Prior-day extreme rejection | LINK-USD",
-   "strategy_id": "STRAT-036",
+   "name": "Selloff-resilient memecoin rebound | DOGE-USD",
+   "strategy_id": "STRAT-169",
    "venue": "coinbase",
-   "instrument": "LINK-USD",
+   "instrument": "DOGE-USD",
    "enabled": true,
    "stages": [
     "250"
@@ -2807,10 +2807,10 @@
   },
   {
    "bot_id": "BOT-248",
-   "name": "Turtle Soup (failed 20-bar breakdown) | MSFT",
-   "strategy_id": "STRAT-037",
-   "venue": "yahoo",
-   "instrument": "MSFT",
+   "name": "Selloff-resilient memecoin rebound | SHIB-USD",
+   "strategy_id": "STRAT-169",
+   "venue": "coinbase",
+   "instrument": "SHIB-USD",
    "enabled": true,
    "stages": [
     "250"
@@ -2818,10 +2818,10 @@
   },
   {
    "bot_id": "BOT-249",
-   "name": "Floor-pivot support bounce | AVAX-USD",
-   "strategy_id": "STRAT-038",
+   "name": "Selloff-resilient memecoin rebound | PEPE-USD",
+   "strategy_id": "STRAT-169",
    "venue": "coinbase",
-   "instrument": "AVAX-USD",
+   "instrument": "PEPE-USD",
    "enabled": true,
    "stages": [
     "250"
@@ -2829,10 +2829,516 @@
   },
   {
    "bot_id": "BOT-250",
-   "name": "Floor-pivot resistance breakout | TSLA",
-   "strategy_id": "STRAT-039",
-   "venue": "yahoo",
-   "instrument": "TSLA",
+   "name": "Selloff-resilient memecoin rebound | BONK-USD",
+   "strategy_id": "STRAT-169",
+   "venue": "coinbase",
+   "instrument": "BONK-USD",
+   "enabled": true,
+   "stages": [
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-251",
+   "name": "Selloff-resilient memecoin rebound | WIF-USD",
+   "strategy_id": "STRAT-169",
+   "venue": "coinbase",
+   "instrument": "WIF-USD",
+   "enabled": true,
+   "stages": [
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-252",
+   "name": "Selloff-resilient memecoin rebound | FLOKI-USD",
+   "strategy_id": "STRAT-169",
+   "venue": "coinbase",
+   "instrument": "FLOKI-USD",
+   "enabled": true,
+   "stages": [
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-253",
+   "name": "Memecoin residual reversion vs bitcoin | DOGE-USD",
+   "strategy_id": "STRAT-170",
+   "venue": "coinbase",
+   "instrument": "DOGE-USD",
+   "enabled": true,
+   "stages": [
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-254",
+   "name": "Memecoin residual reversion vs bitcoin | SHIB-USD",
+   "strategy_id": "STRAT-170",
+   "venue": "coinbase",
+   "instrument": "SHIB-USD",
+   "enabled": true,
+   "stages": [
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-255",
+   "name": "Memecoin residual reversion vs bitcoin | PEPE-USD",
+   "strategy_id": "STRAT-170",
+   "venue": "coinbase",
+   "instrument": "PEPE-USD",
+   "enabled": true,
+   "stages": [
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-256",
+   "name": "Memecoin residual reversion vs bitcoin | BONK-USD",
+   "strategy_id": "STRAT-170",
+   "venue": "coinbase",
+   "instrument": "BONK-USD",
+   "enabled": true,
+   "stages": [
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-257",
+   "name": "Memecoin residual reversion vs bitcoin | WIF-USD",
+   "strategy_id": "STRAT-170",
+   "venue": "coinbase",
+   "instrument": "WIF-USD",
+   "enabled": true,
+   "stages": [
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-258",
+   "name": "Memecoin residual reversion vs bitcoin | FLOKI-USD",
+   "strategy_id": "STRAT-170",
+   "venue": "coinbase",
+   "instrument": "FLOKI-USD",
+   "enabled": true,
+   "stages": [
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-259",
+   "name": "Memecoin volatility contraction release | DOGE-USD",
+   "strategy_id": "STRAT-171",
+   "venue": "coinbase",
+   "instrument": "DOGE-USD",
+   "enabled": true,
+   "stages": [
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-260",
+   "name": "Memecoin volatility contraction release | SHIB-USD",
+   "strategy_id": "STRAT-171",
+   "venue": "coinbase",
+   "instrument": "SHIB-USD",
+   "enabled": true,
+   "stages": [
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-261",
+   "name": "Memecoin volatility contraction release | PEPE-USD",
+   "strategy_id": "STRAT-171",
+   "venue": "coinbase",
+   "instrument": "PEPE-USD",
+   "enabled": true,
+   "stages": [
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-262",
+   "name": "Memecoin volatility contraction release | BONK-USD",
+   "strategy_id": "STRAT-171",
+   "venue": "coinbase",
+   "instrument": "BONK-USD",
+   "enabled": true,
+   "stages": [
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-263",
+   "name": "Memecoin volatility contraction release | WIF-USD",
+   "strategy_id": "STRAT-171",
+   "venue": "coinbase",
+   "instrument": "WIF-USD",
+   "enabled": true,
+   "stages": [
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-264",
+   "name": "Memecoin volatility contraction release | FLOKI-USD",
+   "strategy_id": "STRAT-171",
+   "venue": "coinbase",
+   "instrument": "FLOKI-USD",
+   "enabled": true,
+   "stages": [
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-265",
+   "name": "Memecoin session-handover continuation | DOGE-USD",
+   "strategy_id": "STRAT-172",
+   "venue": "coinbase",
+   "instrument": "DOGE-USD",
+   "enabled": true,
+   "stages": [
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-266",
+   "name": "Memecoin session-handover continuation | SHIB-USD",
+   "strategy_id": "STRAT-172",
+   "venue": "coinbase",
+   "instrument": "SHIB-USD",
+   "enabled": true,
+   "stages": [
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-267",
+   "name": "Memecoin session-handover continuation | PEPE-USD",
+   "strategy_id": "STRAT-172",
+   "venue": "coinbase",
+   "instrument": "PEPE-USD",
+   "enabled": true,
+   "stages": [
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-268",
+   "name": "Memecoin session-handover continuation | BONK-USD",
+   "strategy_id": "STRAT-172",
+   "venue": "coinbase",
+   "instrument": "BONK-USD",
+   "enabled": true,
+   "stages": [
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-269",
+   "name": "Memecoin session-handover continuation | WIF-USD",
+   "strategy_id": "STRAT-172",
+   "venue": "coinbase",
+   "instrument": "WIF-USD",
+   "enabled": true,
+   "stages": [
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-270",
+   "name": "Memecoin session-handover continuation | FLOKI-USD",
+   "strategy_id": "STRAT-172",
+   "venue": "coinbase",
+   "instrument": "FLOKI-USD",
+   "enabled": true,
+   "stages": [
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-271",
+   "name": "Memecoin liquidation-aftershock reclaim | DOGE-USD",
+   "strategy_id": "STRAT-173",
+   "venue": "coinbase",
+   "instrument": "DOGE-USD",
+   "enabled": true,
+   "stages": [
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-272",
+   "name": "Memecoin liquidation-aftershock reclaim | SHIB-USD",
+   "strategy_id": "STRAT-173",
+   "venue": "coinbase",
+   "instrument": "SHIB-USD",
+   "enabled": true,
+   "stages": [
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-273",
+   "name": "Memecoin liquidation-aftershock reclaim | PEPE-USD",
+   "strategy_id": "STRAT-173",
+   "venue": "coinbase",
+   "instrument": "PEPE-USD",
+   "enabled": true,
+   "stages": [
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-274",
+   "name": "Memecoin liquidation-aftershock reclaim | BONK-USD",
+   "strategy_id": "STRAT-173",
+   "venue": "coinbase",
+   "instrument": "BONK-USD",
+   "enabled": true,
+   "stages": [
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-275",
+   "name": "Memecoin liquidation-aftershock reclaim | WIF-USD",
+   "strategy_id": "STRAT-173",
+   "venue": "coinbase",
+   "instrument": "WIF-USD",
+   "enabled": true,
+   "stages": [
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-276",
+   "name": "Memecoin liquidation-aftershock reclaim | FLOKI-USD",
+   "strategy_id": "STRAT-173",
+   "venue": "coinbase",
+   "instrument": "FLOKI-USD",
+   "enabled": true,
+   "stages": [
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-277",
+   "name": "Memecoin native-price range breakout | BONK-USD",
+   "strategy_id": "STRAT-174",
+   "venue": "coinbase",
+   "instrument": "BONK-USD",
+   "enabled": true,
+   "stages": [
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-278",
+   "name": "Memecoin native-price range breakout | WIF-USD",
+   "strategy_id": "STRAT-174",
+   "venue": "coinbase",
+   "instrument": "WIF-USD",
+   "enabled": true,
+   "stages": [
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-279",
+   "name": "Two-stage compression breakout | DOGE-USD",
+   "strategy_id": "STRAT-175",
+   "venue": "coinbase",
+   "instrument": "DOGE-USD",
+   "enabled": true,
+   "stages": [
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-280",
+   "name": "Two-stage compression breakout | SHIB-USD",
+   "strategy_id": "STRAT-175",
+   "venue": "coinbase",
+   "instrument": "SHIB-USD",
+   "enabled": true,
+   "stages": [
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-281",
+   "name": "Two-stage compression breakout | PEPE-USD",
+   "strategy_id": "STRAT-175",
+   "venue": "coinbase",
+   "instrument": "PEPE-USD",
+   "enabled": true,
+   "stages": [
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-282",
+   "name": "Two-stage compression breakout | BONK-USD",
+   "strategy_id": "STRAT-175",
+   "venue": "coinbase",
+   "instrument": "BONK-USD",
+   "enabled": true,
+   "stages": [
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-283",
+   "name": "Two-stage compression breakout | WIF-USD",
+   "strategy_id": "STRAT-175",
+   "venue": "coinbase",
+   "instrument": "WIF-USD",
+   "enabled": true,
+   "stages": [
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-284",
+   "name": "Two-stage compression breakout | FLOKI-USD",
+   "strategy_id": "STRAT-175",
+   "venue": "coinbase",
+   "instrument": "FLOKI-USD",
+   "enabled": true,
+   "stages": [
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-285",
+   "name": "Selloff-range midpoint acceptance | DOGE-USD",
+   "strategy_id": "STRAT-176",
+   "venue": "coinbase",
+   "instrument": "DOGE-USD",
+   "enabled": true,
+   "stages": [
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-286",
+   "name": "Selloff-range midpoint acceptance | SHIB-USD",
+   "strategy_id": "STRAT-176",
+   "venue": "coinbase",
+   "instrument": "SHIB-USD",
+   "enabled": true,
+   "stages": [
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-287",
+   "name": "Selloff-range midpoint acceptance | PEPE-USD",
+   "strategy_id": "STRAT-176",
+   "venue": "coinbase",
+   "instrument": "PEPE-USD",
+   "enabled": true,
+   "stages": [
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-288",
+   "name": "Selloff-range midpoint acceptance | BONK-USD",
+   "strategy_id": "STRAT-176",
+   "venue": "coinbase",
+   "instrument": "BONK-USD",
+   "enabled": true,
+   "stages": [
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-289",
+   "name": "Selloff-range midpoint acceptance | WIF-USD",
+   "strategy_id": "STRAT-176",
+   "venue": "coinbase",
+   "instrument": "WIF-USD",
+   "enabled": true,
+   "stages": [
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-290",
+   "name": "Selloff-range midpoint acceptance | FLOKI-USD",
+   "strategy_id": "STRAT-176",
+   "venue": "coinbase",
+   "instrument": "FLOKI-USD",
+   "enabled": true,
+   "stages": [
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-291",
+   "name": "Memecoin relative-momentum leader | DOGE-USD",
+   "strategy_id": "STRAT-177",
+   "venue": "coinbase",
+   "instrument": "DOGE-USD",
+   "enabled": true,
+   "stages": [
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-292",
+   "name": "Memecoin relative-momentum leader | SHIB-USD",
+   "strategy_id": "STRAT-177",
+   "venue": "coinbase",
+   "instrument": "SHIB-USD",
+   "enabled": true,
+   "stages": [
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-293",
+   "name": "Memecoin relative-momentum leader | PEPE-USD",
+   "strategy_id": "STRAT-177",
+   "venue": "coinbase",
+   "instrument": "PEPE-USD",
+   "enabled": true,
+   "stages": [
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-294",
+   "name": "Memecoin relative-momentum leader | BONK-USD",
+   "strategy_id": "STRAT-177",
+   "venue": "coinbase",
+   "instrument": "BONK-USD",
+   "enabled": true,
+   "stages": [
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-295",
+   "name": "Memecoin relative-momentum leader | WIF-USD",
+   "strategy_id": "STRAT-177",
+   "venue": "coinbase",
+   "instrument": "WIF-USD",
+   "enabled": true,
+   "stages": [
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-296",
+   "name": "Memecoin relative-momentum leader | FLOKI-USD",
+   "strategy_id": "STRAT-177",
+   "venue": "coinbase",
+   "instrument": "FLOKI-USD",
    "enabled": true,
    "stages": [
     "250"

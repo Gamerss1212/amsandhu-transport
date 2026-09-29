@@ -28,6 +28,7 @@ from mab.frame import Frame  # noqa: E402
 from mab.models import Bar  # noqa: E402
 
 CRYPTO_SYMS = ["BTC-USD", "ETH-USD", "SOL-USD"]
+MEME_SYMS = ["DOGE-USD", "SHIB-USD", "PEPE-USD", "BONK-USD", "WIF-USD", "FLOKI-USD"]
 STOCK_SYMS = ["SPY", "QQQ", "NVDA", "AAPL", "TSLA"]
 PINNED = {"crypto_pair_ratio_reversion": [("coinbase", "ETH-BTC")], "stablecoin_peg_reversion": [("coinbase", "USDT-USD")],
           "perp_basis_reversion": [("okx", "BTC-USDT-SWAP")], "perp_volume_lead": [("okx", "BTC-USDT")],
@@ -39,17 +40,24 @@ STOCK_COSTS = [("gross", "yahoo", 0.0), ("base", "yahoo", 1.0), ("stress_2x", "y
 
 
 # ------------------------------------------------------------------ data
-def download(cache):
+def download(cache, refresh_crypto=False):
+    """Fetch every dataset that is not in the cache yet (so a new instrument does not re-download the rest).
+    refresh_crypto re-fetches all Coinbase 5-minute series so that cross-instrument rules see aligned history."""
     from mab.data.adapters import Coinbase, OKX, Yahoo
     from mab.net import Http
     os.makedirs(cache, exist_ok=True)
     path = os.path.join(cache, "eval_data.pkl")
+    data = {}
     if os.path.exists(path):
         with open(path, "rb") as fh:
-            return pickle.load(fh)
+            data = pickle.load(fh)
+        if refresh_crypto:
+            for k in [k for k in data if k[0] == "coinbase" and k[2] == "5m"]:
+                del data[k]
+        if all(("coinbase", s, "5m") in data for s in CRYPTO_SYMS + MEME_SYMS):
+            return data
     http = Http(limits={"api.exchange.coinbase.com": (2.0, 3), "query1.finance.yahoo.com": (1.0, 2), "www.okx.com": (3.0, 5)})
     cb, okx, yh = Coinbase(http), OKX(http), Yahoo(http)
-    data = {}
 
     def page(ad, sym, tf, days, step_back):
         need = int(days * 86_400_000 / tf_ms(tf))
@@ -70,21 +78,28 @@ def download(cache):
             end = oldest if step_back == "okx" else oldest - 1
         return [out[k] for k in sorted(out)]
 
-    for s in CRYPTO_SYMS:
-        data[("coinbase", s, "5m")] = page(cb, s, "5m", 120, "cb")
-        print("coinbase", s, len(data[("coinbase", s, "5m")]))
-    data[("coinbase", "BTC-USD", "1m")] = page(cb, "BTC-USD", "1m", 14, "cb")
+    def need(k):
+        return k not in data or not data[k]
+    for s in CRYPTO_SYMS + MEME_SYMS:
+        if need(("coinbase", s, "5m")):
+            data[("coinbase", s, "5m")] = page(cb, s, "5m", 120, "cb")
+            print("coinbase", s, len(data[("coinbase", s, "5m")]), flush=True)
+    if need(("coinbase", "BTC-USD", "1m")):
+        data[("coinbase", "BTC-USD", "1m")] = page(cb, "BTC-USD", "1m", 14, "cb")
     for s in ("ETH-BTC", "USDT-USD"):
-        data[("coinbase", s, "5m")] = page(cb, s, "5m", 60, "cb")
+        if need(("coinbase", s, "5m")):
+            data[("coinbase", s, "5m")] = page(cb, s, "5m", 60, "cb")
     for s in ("BTC-USDT", "BTC-USDT-SWAP"):
-        data[("okx", s, "5m")] = page(okx, s, "5m", 30, "okx")
-        print("okx", s, len(data[("okx", s, "5m")]))
+        if need(("okx", s, "5m")):
+            data[("okx", s, "5m")] = page(okx, s, "5m", 30, "okx")
+            print("okx", s, len(data[("okx", s, "5m")]))
     for s in STOCK_SYMS + ["IWM", "^VIX"]:
         for tf in ("5m", "1h", "1d"):
-            try:
-                data[("yahoo", s, tf)] = yh.bars(s, tf, limit=10 ** 6)
-            except Exception as e:
-                print("yahoo error", s, tf, e)
+            if need(("yahoo", s, tf)):
+                try:
+                    data[("yahoo", s, tf)] = yh.bars(s, tf, limit=10 ** 6)
+                except Exception as e:
+                    print("yahoo error", s, tf, e)
         print("yahoo", s, len(data.get(("yahoo", s, "5m"), [])))
     with open(path, "wb") as fh:
         pickle.dump(data, fh)
@@ -147,7 +162,8 @@ def jobs_for(strats):
             targets = PINNED[s["key"]]
         else:
             if "crypto" in s["markets"]:
-                targets += [("coinbase", x) for x in CRYPTO_SYMS]
+                insts = [x for x in (s.get("instruments") or []) if x in CRYPTO_SYMS + MEME_SYMS]
+                targets += [("coinbase", x) for x in (insts or CRYPTO_SYMS)]
             if "stock" in s["markets"]:
                 insts = [x for x in (s.get("instruments") or []) if x in STOCK_SYMS]
                 targets += [("yahoo", x) for x in (insts or STOCK_SYMS)]
@@ -286,9 +302,13 @@ def main():
     ap.add_argument("--cache", default=os.environ.get("MAB_EVAL_CACHE", os.path.join(ROOT, ".cache")))
     ap.add_argument("--workers", type=int, default=3)
     ap.add_argument("--only", default=None)
+    ap.add_argument("--refresh-crypto", action="store_true")
+    ap.add_argument("--download-only", action="store_true")
     a = ap.parse_args()
     started = time.time()
-    download(a.cache)
+    download(a.cache, a.refresh_crypto)
+    if a.download_only:
+        return
     with open(os.path.join(ROOT, "catalog.json")) as fh:
         cat = json.load(fh)
     strats = [s for s in cat["strategies"] if s["implementation_status"] == "implemented"
