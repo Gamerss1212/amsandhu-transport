@@ -23,7 +23,7 @@ import struct
 import threading
 import time
 import zlib
-from typing import Dict, Optional
+from typing import Dict
 from urllib.parse import urlparse
 
 from mab.brokers.base import Broker, BrokerError, Order, OrderUnknown, round_step

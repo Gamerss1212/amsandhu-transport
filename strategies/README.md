@@ -10,9 +10,9 @@ Generated 2026-09-29. 406 distinct strategies after duplicate review (target was
 | Research: sourced | 3 |
 | Research: incompletely sourced | 67 |
 | Research: hypothesis | 336 |
-| Evaluation: untested | 283 |
-| Evaluation: backtested | 91 |
-| Evaluation: out-of-sample tested | 32 |
+| Evaluation: untested | 263 |
+| Evaluation: backtested | 109 |
+| Evaluation: out-of-sample tested | 34 |
 | Evaluation: paper observed | 0 |
 
 No strategy here is labelled proven. Statuses are separate on purpose: a strategy can be sourced yet untested, or backtested yet a hypothesis.

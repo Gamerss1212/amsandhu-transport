@@ -294,3 +294,43 @@ def test_reconciliation_shortfall_disarms_and_state_survives_restart():
     b.hold["BTC"] = 0.0                                                # someone sold the coins outside the fleet
     rep = again.reconcile()
     assert not rep["ok"] and not again.armed
+
+
+def test_fleet_routes_listed_bots_to_the_live_broker_and_falls_back_to_paper(tmp_path):
+    from types import SimpleNamespace
+    from mab.runtime import Fleet
+    from mab.strategy import Trade
+    fl = Fleet({"data_dir": str(tmp_path / "d")}, {}, [], str(tmp_path))
+    b = FakeBroker()
+    fl.live = LiveExecutor(fl.storage, b, eligible=lambda x: (True, ""), alert=lambda *a: None, sleep=lambda s: None)
+    fl.live.arm(ACK_TEXT, {"max_per_trade": 50, "max_total": 100, "daily_loss_limit": 20}, ["B1"])
+    got = {}
+
+    class TM:
+        pos = None
+
+        def apply_entry_fill(self, px, qty, fee, t):
+            got["entry"] = (px, qty)
+            self.pos = SimpleNamespace(reason="long entry rule true", qty=qty)
+
+        def apply_exit_fill(self, frame, i, px, fee, reason):
+            got["exit"] = (px, reason)
+            self.pos = None
+            return {"trade": Trade("S1", "BTC-USD", 1, got["entry"][1], 0, got["entry"][0], 1, px, fee, (px - got["entry"][0]) * got["entry"][1], -0.5,
+                                   3, "[LIVE] long", reason, 0.1, -0.6)}
+
+        def intent_rejected(self, why):
+            got["rejected"] = why
+
+    br = SimpleNamespace(id="B1", symbol="BTC-USD", venue="coinbase", tf="5m", c=SimpleNamespace(id="S1", definition={"order": {"type": "market"}}),
+                         tm=TM(), last_decision="")
+    intent = SimpleNamespace(quantity=2.0, intent_id="int-1")
+    assert fl._live_route(br, None, 0, {"kind": "entry", "side": 1, "ref_price": 100.0, "stop": 95.0}, intent) == "entered"
+    assert br.tm.pos.reason.startswith("[LIVE]") and "B1" in fl.live.positions and got["entry"][1] * got["entry"][0] <= 51
+    assert fl._live_route(br, None, 0, {"kind": "exit", "ref_price": 98.0, "reason": "time stop"}, intent) == "exited"
+    assert "B1" not in fl.live.positions and got["exit"][1] == "time stop (live)"
+    assert fl.storage.query("SELECT COUNT(*) n FROM trades")[0]["n"] == 1
+    br2 = SimpleNamespace(id="B2", symbol="ETH-USD", venue="coinbase", tf="5m", c=br.c, tm=TM(), last_decision="")
+    assert fl._live_route(br2, None, 0, {"kind": "entry", "side": 1, "ref_price": 100.0, "stop": 95.0}, intent) is None  # not listed: paper
+    fl.live.disarm("test")
+    assert fl._live_route(br, None, 0, {"kind": "entry", "side": 1, "ref_price": 100.0, "stop": 95.0}, intent) is None   # disarmed: paper

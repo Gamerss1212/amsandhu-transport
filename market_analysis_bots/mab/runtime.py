@@ -36,21 +36,22 @@ from mab import __version__
 from mab.account import Account
 from mab.brain import LOW_FEE, FleetBrain
 from mab.volgate import HORIZON as GATE_HORIZON, Bars as GateBars, VolGate
-
-LOW_FEE_VENUES = ("okx",)       # taker fee 0.10% (vs 0.80% Kraken retail, 1.20% Coinbase retail)
+from mab import broker_setup
+from mab.live import LiveExecutor
 from mab.broker import PaperBroker
-from mab.clock import tf_ms
 from mab.costs import BacktestFiller, CostModel, tier_for
 from mab.data.hub import Hub
 from mab.expr import Events
 from mab.instruments import InstrumentRegistry
-from mab.models import BotHealth, OrderIntent, iso, now_ms
+from mab.models import BotHealth, OrderIntent, now_ms
 from mab.net import Http
 from mab.risk import RiskLimits, RiskManager
 from mab.storage import Storage, StorageError
 from mab.strategy import Compiled, TradeManager, compile_strategy, evaluate, explain
 
 log = logging.getLogger("mab.runtime")
+
+LOW_FEE_VENUES = ("okx",)       # taker fee 0.10% (vs 0.80% Kraken retail, 1.20% Coinbase retail)
 
 BOT_STATES = ("running", "warming", "idle_no_signal", "data_unavailable", "degraded", "stopped", "disabled", "paused")
 
@@ -166,6 +167,8 @@ class Fleet:
         self.brain.restore(self.storage.kv_get("brain", {}))
         self.volgate = VolGate() if bcfg.get("volatility_gate", True) else None
         self._gate_cache: Dict[tuple, tuple] = {}
+        self._evaluation = None
+        self.live = self._make_live()
         self.bots: Dict[str, BotRunner] = {}
         self.by_series: Dict[Tuple[str, str, str], List[str]] = {}
         self.paused = bool(self.storage.kv_get("paused", False))
@@ -502,6 +505,10 @@ class Fleet:
             br.last_decision = f"blocked by risk: {'; '.join(failed)}"
             return "blocked"
         intent.quantity = dec.adjusted_quantity or intent.quantity
+        if self.live.handles(br.id) or br.id in self.live.positions:
+            routed = self._live_route(br, frame, i, a, intent)
+            if routed is not None:
+                return routed
         res = self.broker.execute(intent, a["ref_price"], self.registry.get(br.venue, br.symbol))
         self.stats["orders"] += 1
         self._save(lambda: self.storage.save_order(dict(res), intent.to_dict()))
@@ -527,6 +534,105 @@ class Fleet:
         out = br.tm.apply_exit_fill(frame, i, res["avg_price"], res["fee"], a["reason"])
         self._trade_closed(br, out["trade"])
         return "exited"
+
+    # ================================================================== real money (off unless armed)
+    def _make_live(self) -> LiveExecutor:
+        cfg = self.storage.kv_get("live", {}) or {}
+        broker = None
+        if cfg.get("broker"):
+            try:
+                broker = broker_setup.load(self.storage, cfg["broker"])
+            except Exception as e:                                          # noqa: BLE001
+                log.warning("live broker %s not loaded: %s", cfg.get("broker"), e)
+        ex = LiveExecutor(self.storage, broker, eligible=self._live_eligible,
+                          alert=lambda level, kind, msg: self._alert(level, kind, msg))
+        if cfg.get("armed") and broker is None:
+            ex.disarm("the broker's saved keys could not be loaded at start")
+        return ex
+
+    def _evaluation_rows(self, sid: str) -> list:
+        if self._evaluation is None:
+            path = _default_priors(self.cfg) or ""
+            self._evaluation = {}
+            for p in (path, path + ".gz"):
+                if p and os.path.exists(p):
+                    import gzip
+                    with (gzip.open(p, "rt") if p.endswith(".gz") else open(p)) as fh:
+                        self._evaluation = json.load(fh).get("strategies", {})
+                    break
+        return (self._evaluation.get(sid) or {}).get("runs", [])
+
+    def _live_eligible(self, bot_id: str) -> tuple:
+        """(eligible, why): has this bot earned real money? Out-of-sample positive at its venue's costs AND at
+        least 20 paper trades with a positive average R, market orders only, not benched by the brain."""
+        br = self.bots.get(bot_id)
+        if br is None:
+            return False, "unknown bot"
+        if (br.c.definition.get("order") or {}).get("type", "market") != "market":
+            return False, "uses resting stop/limit entries, which live trading does not support"
+        if br.id in self.brain.bench:
+            return False, "benched by the brain"
+        cost = "base" if br.venue == "yahoo" else ("low_fee_venue" if br.venue == "okx" else "retail_kraken")
+        rows = [x for x in self._evaluation_rows(br.c.id) if x.get("cost") == cost]
+        good = [x for x in rows if x.get("candidate") and (x["test"].get("expectancy_r") or -1) > 0 and (x["test"].get("trades") or 0) >= 10]
+        if not good:
+            best = max((x["test"].get("expectancy_r") or -9 for x in rows), default=None)
+            return False, "no out-of-sample positive result at this venue's costs" + (f" (best test {best:+.2f}R)" if best is not None else "")
+        paper = self.storage.query("SELECT r FROM trades WHERE bot_id=? AND r IS NOT NULL AND entry_reason NOT LIKE '[LIVE]%'", (bot_id,))
+        if len(paper) < 20:
+            return False, f"{len(paper)} of 20 paper trades so far"
+        avg = sum(x["r"] for x in paper) / len(paper)
+        if avg <= 0:
+            return False, f"paper record {avg:+.2f}R per trade over {len(paper)} trades"
+        return True, f"test {good[0]['test']['expectancy_r']:+.2f}R; paper {avg:+.2f}R over {len(paper)} trades"
+
+    def _live_route(self, br: BotRunner, frame, i, a: dict, intent) -> Optional[str]:
+        """Send this bot's order to the real broker; None means: carry on with paper for this signal."""
+        if a["kind"] == "entry":
+            if br.id not in self.live.cfg.get("bots", []):
+                return None
+            r = self.live.enter(br.id, br.symbol, a["side"], intent.quantity, a["ref_price"], a.get("stop"), intent.intent_id)
+            if r["status"] == "filled":
+                br.tm.apply_entry_fill(r["avg_price"], r["qty"], r["fee"], now_ms())
+                if br.tm.pos is not None:
+                    br.tm.pos.reason = "[LIVE] " + (br.tm.pos.reason or "")
+                br.last_decision = f"LIVE entry {r['qty']:g} @ {r['avg_price']:.6g} on {self.live.broker.name}"
+                self._save(lambda: self.storage.save_fill({"fill_id": f"live-{intent.intent_id}", "order_id": (r.get("order") or {}).get("id", ""),
+                                                          "intent_id": intent.intent_id, "bot_id": br.id, "instrument": br.symbol,
+                                                          "venue": "LIVE:" + self.live.broker.name, "side": "buy", "quantity": r["qty"],
+                                                          "price": r["avg_price"], "fee": r["fee"], "liquidity": "taker",
+                                                          "event_time": now_ms(), "simulated": False, "model": "real order"}))
+                return "entered"
+            if r["status"] == "closed":
+                br.tm.intent_rejected("live: protective stop failed, position sold")
+                return "rejected"
+            br.last_decision = f"live entry not sent ({r.get('reason')}); this signal trades on paper"
+            return None
+        if br.id in self.live.positions and br.tm.pos is not None:
+            r = self.live.exit(br.id, a["ref_price"], a.get("reason", "exit"))
+            if r.get("status") != "filled":
+                return None
+            out = br.tm.apply_exit_fill(frame, i, r["avg_price"], r["fee"], a.get("reason", "exit") + " (live)")
+            self._trade_closed(br, out["trade"])
+            return "exited"
+        return None
+
+    def _live_poll(self):
+        """Exchange-side stops that filled: close the bots' trades to match; reconcile every 10 cycles."""
+        if not self.live.positions and not self.live.armed:
+            return
+        for bot_id, res in self.live.poll_stops():
+            br = self.bots.get(bot_id)
+            if br is None or br.tm.pos is None:
+                continue
+            s = self.hub.get(br.venue, br.symbol, br.tf)
+            fr = s.frame() if s else None
+            if fr is None or fr.n == 0:
+                continue
+            out = br.tm.apply_exit_fill(fr, fr.n - 1, res["avg_price"], res["fee"], "exchange stop filled (live)")
+            self._trade_closed(br, out["trade"])
+        if self.cycle % 10 == 0:
+            self.live.reconcile()
 
     def _risk_ctx(self, br: BotRunner, frame, i, ref_price: float) -> dict:
         status, _ = self._series_status(br)
@@ -698,6 +804,45 @@ class Fleet:
             self._event("info", "cash_flow", f"{command} {amt:,.2f}: equity {rec['equity_before']:,.2f} -> "
                                              f"{rec['equity_after']:,.2f}")
             return rec
+        if command == "live_status":
+            st = self.live.status()
+            st["eligibility"] = {b: dict(zip(("eligible", "why"), self._live_eligible(b))) for b in
+                                 (args.get("bots") or st["config"].get("bots") or [])}
+            return st
+        if command == "live_eligibility":
+            out = []
+            for bid, br in self.bots.items():
+                ok, why = self._live_eligible(bid)
+                out.append({"bot_id": bid, "strategy_id": br.c.id, "name": br.c.definition.get("name"), "venue": br.venue,
+                            "instrument": br.symbol, "eligible": ok, "why": why})
+            return out
+        if command == "live_arm":
+            name = args.get("broker")
+            broker = broker_setup.load(self.storage, name) if name else None
+            last = ((self.storage.kv_get("brokers", {}) or {}).get(name) or {}).get("last_test") or {}
+            if broker is None or not last.get("ok"):
+                raise ValueError("connect the broker and pass its connection test first")
+            self.live.broker = broker
+            return self.live.arm(args.get("ack", ""), args.get("limits") or {}, args.get("bots") or [], args.get("overrides") or [])
+        if command == "live_disarm":
+            return self.live.disarm(args.get("reason") or "owner")
+        if command == "live_close_all":
+            prices = {}
+            for p in self.live.positions.values():
+                s = next((self.hub.get(*k) for k in self.hub.series if k[1] == p["instrument"]), None)
+                if s is not None and s.times:
+                    prices[p["instrument"]] = s.bars[s.times[-1]].close
+            closed = self.live.close_all(prices)
+            for bot_id, res in closed:
+                br = self.bots.get(bot_id)
+                if br is not None and br.tm.pos is not None and res.get("status") == "filled":
+                    s = self.hub.get(br.venue, br.symbol, br.tf)
+                    fr = s.frame() if s else None
+                    if fr is not None and fr.n:
+                        out = br.tm.apply_exit_fill(fr, fr.n - 1, res["avg_price"], res["fee"], "owner closed live positions")
+                        self._trade_closed(br, out["trade"])
+            self.live.disarm("owner closed all live positions")
+            return {"closed": len(closed)}
         if command in ("enable_bot", "disable_bot"):
             br = self.bots[args["bot_id"]]
             br.enabled = command == "enable_bot"
@@ -760,6 +905,8 @@ class Fleet:
     def emergency_stop(self, reason: str) -> dict:
         self.emergency = {"time": now_ms(), "reason": reason}
         self.storage.kv_set("emergency", self.emergency)
+        if self.live.armed:
+            self.live.disarm(f"emergency stop: {reason}")
         closed = 0
         for br in self.bots.values():
             br.tm.pending = None
@@ -796,6 +943,7 @@ class Fleet:
             self.cycle += 1
             try:
                 self.health_cycle()
+                self._live_poll()
                 day = time.strftime("%Y-%m-%d", time.gmtime())
                 if day != last_prune_day:
                     self.storage.prune()

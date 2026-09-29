@@ -10,7 +10,8 @@ Values are entered through a hidden prompt (`python -m mab secret set NAME`), ne
 chat, config files or command-line arguments, and are never printed. A logging filter masks
 any stored value that would otherwise appear in a log line.
 
-Nothing in this build uses these credentials to place orders: real-money trading is disabled.
+Broker API keys saved here (mab.broker_setup) are read only by the live executor (mab.live), which
+places no order until the user arms live trading in the app with a typed acknowledgement and limits.
 """
 
 from __future__ import annotations
