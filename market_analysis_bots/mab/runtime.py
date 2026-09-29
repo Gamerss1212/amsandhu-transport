@@ -169,7 +169,9 @@ class Fleet:
                 self.brain.load_priors(os.path.join(os.path.dirname(pri), "swing_eval.json"), add=True)
         except Exception as e:                      # a missing or unreadable priors file only means "start blank"
             log.warning("brain priors not loaded: %s", e)
+        n_priors = self.brain.stats.get("prior_strategies", 0)
         self.brain.restore(self.storage.kv_get("brain", {}))
+        self.brain.stats["prior_strategies"] = n_priors          # what this version ships, not the saved count
         self.volgate = VolGate() if bcfg.get("volatility_gate", True) else None
         self._gate_cache: Dict[tuple, tuple] = {}
         self._evaluation = None
