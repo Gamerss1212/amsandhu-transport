@@ -1,0 +1,36 @@
+{
+ "id": "STRAT-184",
+ "key": "pack_st039_cross_sectional_intraday_momentum_basket",
+ "name": "Cross-sectional intraday momentum basket",
+ "family": "cross_asset",
+ "subfamily": "relative",
+ "hypothesis": "Buy leaders and optionally short laggards if predicted edge exceeds turnover cost.",
+ "markets": [
+  "stock",
+  "crypto"
+ ],
+ "timeframe": "5m",
+ "data": [
+  "synchronized multi-instrument quotes and bars",
+  "borrow/financing data",
+  "point-in-time universe"
+ ],
+ "definition": null,
+ "spec": "Setup: Rank volatility-adjusted recent returns within a causal universe. Entry: Buy leaders and optionally short laggards if predicted edge exceeds turnover cost. Exit: Exit on rank decay or a fixed rebalance/flat deadline. Parameters to pre-register: lookback, rank_cutoff, beta_neutralization, rebalance_interval.",
+ "implementation_status": "blocked",
+ "blocked_reason": "needs simultaneous two-leg or basket execution with short legs; the engine trades one instrument per bot",
+ "research_status": "hypothesis",
+ "evidence": [
+  {
+   "source": "PK-S29",
+   "relation": "context",
+   "note": "pack ST039: Family-level definitions, mechanics or research context only. Exact rules below are original research templates, not a replication or source-endorsed strategy."
+  },
+  {
+   "source": "PK-S32",
+   "relation": "context",
+   "note": "pack ST039: Family-level definitions, mechanics or research context only. Exact rules below are original research templates, not a replication or source-endorsed strategy."
+  }
+ ],
+ "variants": []
+}

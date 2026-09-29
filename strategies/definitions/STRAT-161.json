@@ -1,0 +1,86 @@
+{
+ "id": "STRAT-161",
+ "key": "fomc_post_reaction",
+ "name": "FOMC post-announcement drift",
+ "family": "scheduled_events",
+ "subfamily": "central bank",
+ "hypothesis": "On FOMC days, at 14:30 ET enter in the direction of the move since 13:55 ET if it exceeds 3 five-minute ATRs; hold to 5 minutes before the close; 3-ATR stop.",
+ "markets": [
+  "stock"
+ ],
+ "timeframe": "5m",
+ "data": [
+  "bars",
+  "events:fomc"
+ ],
+ "definition": {
+  "name": "FOMC post-announcement drift",
+  "family": "scheduled_events",
+  "timeframe": "5m",
+  "direction": "both",
+  "params": {},
+  "entry": {
+   "long": "event(\"fomc\") == 1 and tod() == 870 and close - valuewhen(tod() == 835, close) > 3*atr(14)",
+   "short": "event(\"fomc\") == 1 and tod() == 870 and close - valuewhen(tod() == 835, close) < -3*atr(14)"
+  },
+  "filters": [],
+  "order": {
+   "type": "market"
+  },
+  "stop": {
+   "type": "atr",
+   "mult": 3.0,
+   "n": 14
+  },
+  "target": {
+   "type": "none"
+  },
+  "trail": {
+   "type": "none"
+  },
+  "exit": {},
+  "max_bars": 0,
+  "session": {
+   "flat_minutes_before_close": 5
+  },
+  "max_trades_per_day": 1,
+  "cooldown_bars": 0,
+  "sizing": {
+   "risk_pct": 0.5,
+   "max_notional_pct": 100.0
+  },
+  "data": [
+   "bars",
+   "events:fomc"
+  ],
+  "id": "STRAT-161",
+  "version": "1.0.0"
+ },
+ "spec": null,
+ "implementation_status": "implemented",
+ "blocked_reason": null,
+ "research_status": "hypothesis",
+ "evidence": [
+  {
+   "source": "PK-S04",
+   "relation": "context",
+   "note": "pack ST045: Family-level definitions, mechanics or research context only. Exact rules below are original research templates, not a replication or source-endorsed strategy."
+  },
+  {
+   "source": "PK-S06",
+   "relation": "context",
+   "note": "pack ST045: Family-level definitions, mechanics or research context only. Exact rules below are original research templates, not a replication or source-endorsed strategy."
+  },
+  {
+   "source": "PK-S42",
+   "relation": "context",
+   "note": "pack ST045: Family-level definitions, mechanics or research context only. Exact rules below are original research templates, not a replication or source-endorsed strategy."
+  },
+  {
+   "source": "PK-S43",
+   "relation": "context",
+   "note": "pack ST045: Family-level definitions, mechanics or research context only. Exact rules below are original research templates, not a replication or source-endorsed strategy."
+  }
+ ],
+ "variants": []
+}

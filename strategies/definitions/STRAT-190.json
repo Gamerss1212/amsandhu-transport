@@ -1,0 +1,46 @@
+{
+ "id": "STRAT-190",
+ "key": "pack_st048_halt_resumption_response",
+ "name": "Halt-resumption response",
+ "family": "scheduled_events",
+ "subfamily": "event",
+ "hypothesis": "Enter only after tradability is restored and an approved post-resumption trigger occurs.",
+ "markets": [
+  "stock"
+ ],
+ "timeframe": "5m",
+ "data": [
+  "publication and receipt timestamps",
+  "licensed event/news feed",
+  "executable quotes",
+  "session and halt status"
+ ],
+ "definition": null,
+ "spec": "Setup: The official feed confirms a halt and later a resumption auction or continuous reopening. Entry: Enter only after tradability is restored and an approved post-resumption trigger occurs. Exit: Apply gap stress, hard exposure caps and a short holding limit. Parameters to pre-register: halt_types, post_resume_delay, spread_limit, exposure_cap.",
+ "implementation_status": "blocked",
+ "blocked_reason": "needs a licensed event feed (earnings surprises, consensus, filings, auction or halt data) with receipt times",
+ "research_status": "hypothesis",
+ "evidence": [
+  {
+   "source": "PK-S04",
+   "relation": "context",
+   "note": "pack ST048: Family-level definitions, mechanics or research context only. Exact rules below are original research templates, not a replication or source-endorsed strategy."
+  },
+  {
+   "source": "PK-S06",
+   "relation": "context",
+   "note": "pack ST048: Family-level definitions, mechanics or research context only. Exact rules below are original research templates, not a replication or source-endorsed strategy."
+  },
+  {
+   "source": "PK-S42",
+   "relation": "context",
+   "note": "pack ST048: Family-level definitions, mechanics or research context only. Exact rules below are original research templates, not a replication or source-endorsed strategy."
+  },
+  {
+   "source": "PK-S43",
+   "relation": "context",
+   "note": "pack ST048: Family-level definitions, mechanics or research context only. Exact rules below are original research templates, not a replication or source-endorsed strategy."
+  }
+ ],
+ "variants": []
+}

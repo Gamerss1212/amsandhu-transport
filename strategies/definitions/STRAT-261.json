@@ -1,0 +1,46 @@
+{
+ "id": "STRAT-261",
+ "key": "pack_st158_native_denominated_volume_expansion",
+ "name": "Native-denominated volume expansion",
+ "family": "memecoin",
+ "subfamily": "flow momentum",
+ "hypothesis": "Buy a token/native breakout only when native-unit net buying also exceeds its historical baseline.",
+ "markets": [
+  "crypto"
+ ],
+ "timeframe": "5m",
+ "data": [
+  "deduplicated economic swaps",
+  "quote-notional flow",
+  "initiating traders",
+  "receipt timestamps"
+ ],
+ "definition": null,
+ "spec": "Setup: USD volume can rise mechanically with the native coin. Entry: Buy a token/native breakout only when native-unit net buying also exceeds its historical baseline. Evaluate only information available at decision time; attempt execution afterward. Exit: Exit on native-unit flow reversal or breakout failure. Always apply the earlier of the registered maximum holding time and hard risk invalidation; fills can be delayed or unavailable. Parameters to pre-register: eligible universe and point-in-time membership, observation window and completed-event/bar rule, numerical threshold(s) named by the signal, entry order and maximum price/quote deviation, initial invalidation level and target if used, H_max and explicit session definition, cost, impact, latency, failed-attempt, and leg-risk models, position/notional/exit-capacity caps, baseline and out-of-sample rejection thresholds.",
+ "implementation_status": "blocked",
+ "blocked_reason": "needs deduplicated swap-level flow history; exchange aggressor flow is captured live only",
+ "research_status": "hypothesis",
+ "evidence": [
+  {
+   "source": "PK-S30",
+   "relation": "context",
+   "note": "pack ST158: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  },
+  {
+   "source": "PK-S51",
+   "relation": "context",
+   "note": "pack ST158: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  },
+  {
+   "source": "PK-S67",
+   "relation": "context",
+   "note": "pack ST158: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  },
+  {
+   "source": "PK-S72",
+   "relation": "context",
+   "note": "pack ST158: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  }
+ ],
+ "variants": []
+}

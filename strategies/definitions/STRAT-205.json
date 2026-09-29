@@ -1,0 +1,51 @@
+{
+ "id": "STRAT-205",
+ "key": "pack_st102_second_buyer_cohort_expansion",
+ "name": "Second buyer-cohort expansion",
+ "family": "memecoin",
+ "subfamily": "launch discovery",
+ "hypothesis": "Buy a range break only when later-window buyers are mostly absent from the first cohort and funded from diverse sources.",
+ "markets": [
+  "crypto"
+ ],
+ "timeframe": "5m",
+ "data": [
+  "creation events",
+  "decoded swaps",
+  "real and virtual reserves",
+  "buyer clusters"
+ ],
+ "definition": null,
+ "spec": "Setup: A second distinct cohort may matter more than first-block activity. Entry: Buy a range break only when later-window buyers are mostly absent from the first cohort and funded from diverse sources. Evaluate only information available at decision time; attempt execution afterward. Exit: Exit on second-cohort net selling or a failed range break. Always apply the earlier of the registered maximum holding time and hard risk invalidation; fills can be delayed or unavailable. Parameters to pre-register: eligible universe and point-in-time membership, observation window and completed-event/bar rule, numerical threshold(s) named by the signal, entry order and maximum price/quote deviation, initial invalidation level and target if used, H_max and explicit session definition, cost, impact, latency, failed-attempt, and leg-risk models, position/notional/exit-capacity caps, baseline and out-of-sample rejection thresholds.",
+ "implementation_status": "blocked",
+ "blocked_reason": "needs launchpad creation events, bonding-curve state and decoded swaps (on-chain history not connected)",
+ "research_status": "hypothesis",
+ "evidence": [
+  {
+   "source": "PK-S52",
+   "relation": "context",
+   "note": "pack ST102: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  },
+  {
+   "source": "PK-S56",
+   "relation": "context",
+   "note": "pack ST102: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  },
+  {
+   "source": "PK-S57",
+   "relation": "context",
+   "note": "pack ST102: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  },
+  {
+   "source": "PK-S67",
+   "relation": "context",
+   "note": "pack ST102: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  },
+  {
+   "source": "PK-S68",
+   "relation": "context",
+   "note": "pack ST102: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  }
+ ],
+ "variants": []
+}

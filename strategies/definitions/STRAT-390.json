@@ -1,0 +1,62 @@
+{
+ "id": "STRAT-390",
+ "key": "pack_st304_dividend_adjusted_opening_dislocation",
+ "name": "Dividend-adjusted opening dislocation",
+ "family": "equity_events",
+ "subfamily": "equity microevents",
+ "hypothesis": "Trade only the residual opening deviation after correct cash-dividend and market adjustments, with price reversal confirmation.",
+ "markets": [
+  "stock",
+  "crypto"
+ ],
+ "timeframe": "5m",
+ "data": [
+  "primary issuer filings",
+  "point-in-time estimates",
+  "corporate actions",
+  "official event times"
+ ],
+ "definition": null,
+ "spec": "Setup: An ex-dividend mechanical price change should be separated from abnormal movement. Entry: Trade only the residual opening deviation after correct cash-dividend and market adjustments, with price reversal confirmation. Evaluate only information available at decision time; attempt execution afterward. Exit: Exit at residual normalization or a widening stop before session end. Always apply the earlier of the registered maximum holding time and hard risk invalidation; fills can be delayed or unavailable. Parameters to pre-register: eligible universe and point-in-time membership, observation window and completed-event/bar rule, numerical threshold(s) named by the signal, entry order and maximum price/quote deviation, initial invalidation level and target if used, H_max and explicit session definition, cost, impact, latency, failed-attempt, and leg-risk models, position/notional/exit-capacity caps, baseline and out-of-sample rejection thresholds.",
+ "implementation_status": "blocked",
+ "blocked_reason": "needs primary filings / corporate-event data with receipt times (licensed feed)",
+ "research_status": "hypothesis",
+ "evidence": [
+  {
+   "source": "PK-S03",
+   "relation": "context",
+   "note": "pack ST304: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  },
+  {
+   "source": "PK-S04",
+   "relation": "context",
+   "note": "pack ST304: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  },
+  {
+   "source": "PK-S06",
+   "relation": "context",
+   "note": "pack ST304: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  },
+  {
+   "source": "PK-S07",
+   "relation": "context",
+   "note": "pack ST304: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  },
+  {
+   "source": "PK-S08",
+   "relation": "context",
+   "note": "pack ST304: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  },
+  {
+   "source": "PK-S42",
+   "relation": "context",
+   "note": "pack ST304: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  },
+  {
+   "source": "PK-S43",
+   "relation": "context",
+   "note": "pack ST304: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  }
+ ],
+ "variants": []
+}

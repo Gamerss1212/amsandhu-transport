@@ -1,0 +1,51 @@
+{
+ "id": "STRAT-200",
+ "key": "pack_st069_dex_versus_cex_dislocation",
+ "name": "DEX-versus-CEX dislocation",
+ "family": "market_making_arbitrage",
+ "subfamily": "arbitrage",
+ "hypothesis": "Use authorized inventory and a bounded route; reject stale or untrusted pools.",
+ "markets": [
+  "crypto"
+ ],
+ "timeframe": "5m",
+ "data": [
+  "synchronized executable depth on every leg",
+  "inventory",
+  "financing",
+  "fee tiers"
+ ],
+ "definition": null,
+ "spec": "Setup: A pool quote and an exchange executable book differ after gas, swap and hedge costs. Entry: Use authorized inventory and a bounded route; reject stale or untrusted pools. Exit: Reconcile confirmed chain execution and hedge residual inventory; stop on failed settlement. Parameters to pre-register: chain, pool_version, gas_budget, confirmation_policy.",
+ "implementation_status": "blocked",
+ "blocked_reason": "needs prefunded inventory on several venues and synchronized multi-leg execution",
+ "research_status": "hypothesis",
+ "evidence": [
+  {
+   "source": "PK-S20",
+   "relation": "context",
+   "note": "pack ST069: Family-level definitions, mechanics or research context only. Exact rules below are original research templates, not a replication or source-endorsed strategy."
+  },
+  {
+   "source": "PK-S21",
+   "relation": "context",
+   "note": "pack ST069: Family-level definitions, mechanics or research context only. Exact rules below are original research templates, not a replication or source-endorsed strategy."
+  },
+  {
+   "source": "PK-S22",
+   "relation": "context",
+   "note": "pack ST069: Family-level definitions, mechanics or research context only. Exact rules below are original research templates, not a replication or source-endorsed strategy."
+  },
+  {
+   "source": "PK-S23",
+   "relation": "context",
+   "note": "pack ST069: Family-level definitions, mechanics or research context only. Exact rules below are original research templates, not a replication or source-endorsed strategy."
+  },
+  {
+   "source": "PK-S32",
+   "relation": "context",
+   "note": "pack ST069: Family-level definitions, mechanics or research context only. Exact rules below are original research templates, not a replication or source-endorsed strategy."
+  }
+ ],
+ "variants": []
+}

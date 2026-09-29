@@ -1,0 +1,51 @@
+{
+ "id": "STRAT-195",
+ "key": "pack_st063_spot_perpetual_basis_convergence",
+ "name": "Spot-perpetual basis convergence",
+ "family": "market_making_arbitrage",
+ "subfamily": "arbitrage",
+ "hypothesis": "Enter hedged legs against the basis with verified contract units.",
+ "markets": [
+  "crypto"
+ ],
+ "timeframe": "5m",
+ "data": [
+  "synchronized executable depth on every leg",
+  "inventory",
+  "financing",
+  "fee tiers"
+ ],
+ "definition": null,
+ "spec": "Setup: Spot and perpetual exposure differ beyond fee, borrow and funding-adjusted bounds. Entry: Enter hedged legs against the basis with verified contract units. Exit: Close on basis normalization, funding/collateral breach or deadline. Parameters to pre-register: hedge_ratio, basis_threshold, funding_model, max_hold.",
+ "implementation_status": "blocked",
+ "blocked_reason": "needs prefunded inventory on several venues and synchronized multi-leg execution",
+ "research_status": "hypothesis",
+ "evidence": [
+  {
+   "source": "PK-S20",
+   "relation": "context",
+   "note": "pack ST063: Family-level definitions, mechanics or research context only. Exact rules below are original research templates, not a replication or source-endorsed strategy."
+  },
+  {
+   "source": "PK-S21",
+   "relation": "context",
+   "note": "pack ST063: Family-level definitions, mechanics or research context only. Exact rules below are original research templates, not a replication or source-endorsed strategy."
+  },
+  {
+   "source": "PK-S22",
+   "relation": "context",
+   "note": "pack ST063: Family-level definitions, mechanics or research context only. Exact rules below are original research templates, not a replication or source-endorsed strategy."
+  },
+  {
+   "source": "PK-S23",
+   "relation": "context",
+   "note": "pack ST063: Family-level definitions, mechanics or research context only. Exact rules below are original research templates, not a replication or source-endorsed strategy."
+  },
+  {
+   "source": "PK-S32",
+   "relation": "context",
+   "note": "pack ST063: Family-level definitions, mechanics or research context only. Exact rules below are original research templates, not a replication or source-endorsed strategy."
+  }
+ ],
+ "variants": []
+}

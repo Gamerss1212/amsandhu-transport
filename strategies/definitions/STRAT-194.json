@@ -1,0 +1,42 @@
+{
+ "id": "STRAT-194",
+ "key": "pack_st059_replenishment_persistence",
+ "name": "Replenishment persistence",
+ "family": "order_flow",
+ "subfamily": "orderflow",
+ "hypothesis": "Use a tested persistence/reversal rule only after sufficient observed events.",
+ "markets": [
+  "stock",
+  "crypto"
+ ],
+ "timeframe": "5m",
+ "data": [
+  "sequenced L2 or L3 feed",
+  "trades with reliable aggressor labeling",
+  "receipt timestamps",
+  "order acknowledgments"
+ ],
+ "definition": null,
+ "spec": "Setup: Repeated displayed replenishment is measured from feed updates at a fixed price region. Entry: Use a tested persistence/reversal rule only after sufficient observed events. Exit: Exit when replenishment fails or the holding/risk limit is reached. Parameters to pre-register: region_width, event_count, replenishment_metric, expiry.",
+ "implementation_status": "blocked",
+ "blocked_reason": "needs a sequenced L2/L3 order-book feed; the free venues give periodic snapshots only",
+ "research_status": "hypothesis",
+ "evidence": [
+  {
+   "source": "PK-S14",
+   "relation": "context",
+   "note": "pack ST059: Family-level definitions, mechanics or research context only. Exact rules below are original research templates, not a replication or source-endorsed strategy."
+  },
+  {
+   "source": "PK-S15",
+   "relation": "context",
+   "note": "pack ST059: Family-level definitions, mechanics or research context only. Exact rules below are original research templates, not a replication or source-endorsed strategy."
+  },
+  {
+   "source": "PK-S30",
+   "relation": "context",
+   "note": "pack ST059: Family-level definitions, mechanics or research context only. Exact rules below are original research templates, not a replication or source-endorsed strategy."
+  }
+ ],
+ "variants": []
+}

@@ -1,0 +1,42 @@
+{
+ "id": "STRAT-192",
+ "key": "pack_st056_book_depletion_breakout",
+ "name": "Book-depletion breakout",
+ "family": "order_flow",
+ "subfamily": "orderflow",
+ "hypothesis": "Enter a bounded order in the depletion direction when a causal trigger fires.",
+ "markets": [
+  "stock",
+  "crypto"
+ ],
+ "timeframe": "5m",
+ "data": [
+  "sequenced L2 or L3 feed",
+  "trades with reliable aggressor labeling",
+  "receipt timestamps",
+  "order acknowledgments"
+ ],
+ "definition": null,
+ "spec": "Setup: Liquidity at a known boundary is consumed and the next levels are thin. Entry: Enter a bounded order in the depletion direction when a causal trigger fires. Exit: Exit quickly on refill/reversal or a predefined loss/time limit. Parameters to pre-register: depth_levels, depletion_rate, maximum_sweep_cost, horizon.",
+ "implementation_status": "blocked",
+ "blocked_reason": "needs a sequenced L2/L3 order-book feed; the free venues give periodic snapshots only",
+ "research_status": "hypothesis",
+ "evidence": [
+  {
+   "source": "PK-S14",
+   "relation": "context",
+   "note": "pack ST056: Family-level definitions, mechanics or research context only. Exact rules below are original research templates, not a replication or source-endorsed strategy."
+  },
+  {
+   "source": "PK-S15",
+   "relation": "context",
+   "note": "pack ST056: Family-level definitions, mechanics or research context only. Exact rules below are original research templates, not a replication or source-endorsed strategy."
+  },
+  {
+   "source": "PK-S30",
+   "relation": "context",
+   "note": "pack ST056: Family-level definitions, mechanics or research context only. Exact rules below are original research templates, not a replication or source-endorsed strategy."
+  }
+ ],
+ "variants": []
+}

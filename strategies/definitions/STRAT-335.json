@@ -1,0 +1,56 @@
+{
+ "id": "STRAT-335",
+ "key": "pack_st245_treasury_distribution_completion_rebound",
+ "name": "Treasury-distribution completion rebound",
+ "family": "memecoin",
+ "subfamily": "supply events",
+ "hypothesis": "Buy after verified planned distribution completes and independent purchases reclaim the sale-window midpoint.",
+ "markets": [
+  "crypto"
+ ],
+ "timeframe": "5m",
+ "data": [
+  "primary event times",
+  "mint/burn/vesting state",
+  "treasury labels",
+  "authority graph"
+ ],
+ "definition": null,
+ "spec": "Setup: A finite public treasury sale can temporarily depress price. Entry: Buy after verified planned distribution completes and independent purchases reclaim the sale-window midpoint. Evaluate only information available at decision time; attempt execution afterward. Exit: Exit on additional treasury sales or loss of the new base. Always apply the earlier of the registered maximum holding time and hard risk invalidation; fills can be delayed or unavailable. Parameters to pre-register: eligible universe and point-in-time membership, observation window and completed-event/bar rule, numerical threshold(s) named by the signal, entry order and maximum price/quote deviation, initial invalidation level and target if used, H_max and explicit session definition, cost, impact, latency, failed-attempt, and leg-risk models, position/notional/exit-capacity caps, baseline and out-of-sample rejection thresholds.",
+ "implementation_status": "blocked",
+ "blocked_reason": "needs unlock / supply event feeds (not connected)",
+ "research_status": "hypothesis",
+ "evidence": [
+  {
+   "source": "PK-S52",
+   "relation": "context",
+   "note": "pack ST245: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  },
+  {
+   "source": "PK-S53",
+   "relation": "context",
+   "note": "pack ST245: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  },
+  {
+   "source": "PK-S54",
+   "relation": "context",
+   "note": "pack ST245: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  },
+  {
+   "source": "PK-S55",
+   "relation": "context",
+   "note": "pack ST245: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  },
+  {
+   "source": "PK-S65",
+   "relation": "context",
+   "note": "pack ST245: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  },
+  {
+   "source": "PK-S75",
+   "relation": "context",
+   "note": "pack ST245: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  }
+ ],
+ "variants": []
+}

@@ -1,0 +1,46 @@
+{
+ "id": "STRAT-253",
+ "key": "pack_st150_capacity_adjusted_wallet_basket",
+ "name": "Capacity-adjusted wallet basket",
+ "family": "memecoin",
+ "subfamily": "wallet follow",
+ "hypothesis": "Build a bounded basket from independent qualified purchases, weighting by stressed exit capacity and deduplicating tokens.",
+ "markets": [
+  "crypto"
+ ],
+ "timeframe": "5m",
+ "data": [
+  "complete prior wallet fills and fees",
+  "transfers",
+  "realized and open positions",
+  "follower delay"
+ ],
+ "definition": null,
+ "spec": "Setup: Diversifying source wallets may reduce single-wallet dependence without multiplying token exposure. Entry: Build a bounded basket from independent qualified purchases, weighting by stressed exit capacity and deduplicating tokens. Evaluate only information available at decision time; attempt execution afterward. Exit: Exit each component on source reversal or a basket risk breach. Always apply the earlier of the registered maximum holding time and hard risk invalidation; fills can be delayed or unavailable. Parameters to pre-register: eligible universe and point-in-time membership, observation window and completed-event/bar rule, numerical threshold(s) named by the signal, entry order and maximum price/quote deviation, initial invalidation level and target if used, H_max and explicit session definition, cost, impact, latency, failed-attempt, and leg-risk models, position/notional/exit-capacity caps, baseline and out-of-sample rejection thresholds.",
+ "implementation_status": "blocked",
+ "blocked_reason": "needs labelled wallet histories (on-chain, not connected)",
+ "research_status": "hypothesis",
+ "evidence": [
+  {
+   "source": "PK-S67",
+   "relation": "context",
+   "note": "pack ST150: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  },
+  {
+   "source": "PK-S68",
+   "relation": "context",
+   "note": "pack ST150: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  },
+  {
+   "source": "PK-S69",
+   "relation": "context",
+   "note": "pack ST150: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  },
+  {
+   "source": "PK-S72",
+   "relation": "context",
+   "note": "pack ST150: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  }
+ ],
+ "variants": []
+}

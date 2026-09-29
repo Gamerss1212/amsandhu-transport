@@ -1,0 +1,420 @@
+{
+  "terms": [
+    {
+      "term": "Alpha",
+      "definition": "Expected return beyond an explicitly chosen benchmark or model; not a synonym for a profitable-looking chart."
+    },
+    {
+      "term": "Adverse selection",
+      "definition": "Receiving a fill just before the market moves against that position, often because the counterparty has better information or timing."
+    },
+    {
+      "term": "Ask",
+      "definition": "The lowest currently displayed offer to sell on the specified book or consolidated feed."
+    },
+    {
+      "term": "Bid",
+      "definition": "The highest currently displayed offer to buy on the specified book or consolidated feed."
+    },
+    {
+      "term": "Basis point",
+      "definition": "One hundredth of a percentage point; 100 basis points equals 1 percent."
+    },
+    {
+      "term": "Borrow locate",
+      "definition": "A broker's required process for establishing a basis to expect shares can be borrowed where applicable; not an eternal guarantee of borrow availability."
+    },
+    {
+      "term": "Borrow recall",
+      "definition": "A demand to return borrowed securities, which can force a short position to be closed."
+    },
+    {
+      "term": "Buying power",
+      "definition": "Broker-calculated available capacity under account, margin and house rules; not the same as cash balance."
+    },
+    {
+      "term": "Capacity",
+      "definition": "The capital or order size a strategy can absorb before its costs and market impact materially change results."
+    },
+    {
+      "term": "Cointegration",
+      "definition": "A statistical relationship in which a combination of nonstationary series can be stationary under a specified model and sample."
+    },
+    {
+      "term": "Colocation",
+      "definition": "Locating trading infrastructure near exchange systems to reduce communication latency; access and cost are institutional constraints."
+    },
+    {
+      "term": "Corporate action",
+      "definition": "An issuer event that changes securities, ownership, distributions or symbol/quantity conventions."
+    },
+    {
+      "term": "Counterparty risk",
+      "definition": "Risk that an exchange, broker, clearing entity, issuer or other contractual counterparty fails to meet its obligations."
+    },
+    {
+      "term": "Cross margin",
+      "definition": "A venue arrangement sharing collateral across eligible positions; exact netting and liquidation rules are product-specific."
+    },
+    {
+      "term": "Day order",
+      "definition": "An order whose validity ends under the venue's definition of the trading day/session."
+    },
+    {
+      "term": "Delisting bias",
+      "definition": "Excluding securities or tokens that later disappeared, potentially overstating historical results."
+    },
+    {
+      "term": "Dollar-neutral",
+      "definition": "Long and short notionals balance; this does not necessarily make a portfolio beta-neutral or risk-free."
+    },
+    {
+      "term": "Embargo",
+      "definition": "A deliberate exclusion interval in a validation design to limit information contamination; its placement and length need justification."
+    },
+    {
+      "term": "Event-driven backtest",
+      "definition": "A simulation that processes timestamped data, decisions, orders, acknowledgments and fills in causal order."
+    },
+    {
+      "term": "Fill",
+      "definition": "An actual or explicitly simulated execution of all or part of an order."
+    },
+    {
+      "term": "FOK",
+      "definition": "Fill-or-kill order instruction: execute the required entire quantity immediately under supported rules or cancel."
+    },
+    {
+      "term": "Free float",
+      "definition": "Shares considered available for public trading under a data provider's definition; updates and corporate actions matter."
+    },
+    {
+      "term": "Funding",
+      "definition": "A contract-specific periodic payment mechanism used by many perpetual derivatives; distinct from trading commission."
+    },
+    {
+      "term": "GTC",
+      "definition": "Good-till-cancelled instruction, subject to venue expiration and corporate-action policies."
+    },
+    {
+      "term": "Hidden liquidity",
+      "definition": "Orders or portions not fully displayed in the visible order book; absence from L2 is not proof of absence."
+    },
+    {
+      "term": "Hedge ratio",
+      "definition": "The quantity or notional relation chosen to offset a defined exposure; units and estimation method must be explicit."
+    },
+    {
+      "term": "Information interval",
+      "definition": "The time range of observations needed to form a feature or realize a label; overlapping intervals can contaminate validation."
+    },
+    {
+      "term": "IOC",
+      "definition": "Immediate-or-cancel instruction: execute available quantity immediately under supported rules and cancel the remainder."
+    },
+    {
+      "term": "Isolated margin",
+      "definition": "Collateral assigned to a particular position or product under venue-specific rules."
+    },
+    {
+      "term": "Latency",
+      "definition": "Delay between observation, receipt, decision, submission, arrival and execution; these are separate intervals."
+    },
+    {
+      "term": "Legging risk",
+      "definition": "Exposure created when a multi-leg trade executes incompletely or at different times."
+    },
+    {
+      "term": "Liquidation",
+      "definition": "Venue or broker forced reduction of exposure under collateral or margin rules; not the same as the trader's protective stop."
+    },
+    {
+      "term": "Lookahead bias",
+      "definition": "Using information in a historical decision that was unavailable at that decision's real time."
+    },
+    {
+      "term": "Maker",
+      "definition": "An order that supplies resting liquidity under a venue's classification; posting does not guarantee this status at execution."
+    },
+    {
+      "term": "Mark price",
+      "definition": "A venue-defined valuation reference often used for derivative risk calculations; it differs from last trade and executable bid/ask."
+    },
+    {
+      "term": "Market impact",
+      "definition": "The effect of an order's own trading on available prices and subsequent market behavior."
+    },
+    {
+      "term": "Market regime",
+      "definition": "An operational classification of conditions such as trend, range, volatility or liquidity, estimated causally with uncertainty."
+    },
+    {
+      "term": "MEV",
+      "definition": "Value obtainable from transaction ordering or inclusion in blockchain systems; can change swap outcomes and hedge timing."
+    },
+    {
+      "term": "NBBO",
+      "definition": "US national best bid and offer under the applicable consolidated quote rules; it is not an entire depth book or a universal crypto quote."
+    },
+    {
+      "term": "OCO",
+      "definition": "One-cancels-other linkage between orders; supported behavior and cancellation races depend on the venue or client implementation."
+    },
+    {
+      "term": "Open interest",
+      "definition": "Outstanding derivative contracts or positions under a venue's counting convention, distinct from trading volume."
+    },
+    {
+      "term": "Overfitting",
+      "definition": "Selecting a model that explains sample-specific noise and fails to generalize."
+    },
+    {
+      "term": "Paper trading",
+      "definition": "Simulated order execution against a broker or local test environment; it does not establish real market fills."
+    },
+    {
+      "term": "Point-in-time data",
+      "definition": "Data representing what was actually known and available at the historical decision time."
+    },
+    {
+      "term": "Post-only",
+      "definition": "An instruction intended to avoid immediately taking liquidity; it may reject or adjust depending on venue rules."
+    },
+    {
+      "term": "Purging",
+      "definition": "Removing training observations whose information/outcome intervals contaminate an evaluation period."
+    },
+    {
+      "term": "Queue priority",
+      "definition": "The order-ranking rule governing which resting orders execute first at a price; not universally simple FIFO."
+    },
+    {
+      "term": "R multiple",
+      "definition": "PnL divided by a predeclared initial planned risk amount; state whether PnL and risk include costs."
+    },
+    {
+      "term": "Reduce-only",
+      "definition": "An order restriction intended to reduce an existing derivative exposure without increasing it, under exact venue semantics."
+    },
+    {
+      "term": "Repainting",
+      "definition": "Historical-looking indicator values or signals differing from what was observable in real time; causes and severity vary."
+    },
+    {
+      "term": "Residual",
+      "definition": "The difference between an observed value and a fitted model's prediction; it is not necessarily mean reverting."
+    },
+    {
+      "term": "Risk of ruin",
+      "definition": "Probability of crossing a specified capital-loss or insolvency threshold under a model; assumptions dominate the estimate."
+    },
+    {
+      "term": "Round trip",
+      "definition": "An entry and subsequent exit of a defined exposure; partial fills and reversals require consistent grouping."
+    },
+    {
+      "term": "Shadow trading",
+      "definition": "Producing and logging proposed actions alongside live markets without placing those orders."
+    },
+    {
+      "term": "Short interest",
+      "definition": "Outstanding short positions measured under the reporting system's schedule; usually not a live tape of every short trade."
+    },
+    {
+      "term": "Slippage",
+      "definition": "Difference between a specified expected/benchmark price and actual execution; the benchmark must be named."
+    },
+    {
+      "term": "Spread capture",
+      "definition": "Earning differences between purchase and sale quotes; inventory losses and adverse selection can outweigh it."
+    },
+    {
+      "term": "Stationarity",
+      "definition": "A statistical property of a process under a specified definition; a historical test does not guarantee future stability."
+    },
+    {
+      "term": "Stop-limit",
+      "definition": "A triggered order that becomes a limit order; price control creates non-execution risk."
+    },
+    {
+      "term": "Survivorship bias",
+      "definition": "Evaluating only instruments or strategies that remain observable/successful and omitting historical failures."
+    },
+    {
+      "term": "Taker",
+      "definition": "An execution removing existing liquidity under venue rules, typically with a corresponding fee classification."
+    },
+    {
+      "term": "Tick size",
+      "definition": "Minimum permitted price increment for a given instrument and price tier."
+    },
+    {
+      "term": "Time stop",
+      "definition": "A maximum holding deadline even if no price-based exit has triggered."
+    },
+    {
+      "term": "Turnover",
+      "definition": "Trading activity relative to capital under a specified definition; one-way and two-way definitions differ."
+    },
+    {
+      "term": "Walk-forward evaluation",
+      "definition": "Repeated fitting on preceding data and evaluation on later data, with results aggregated from evaluation segments only."
+    },
+    {
+      "term": "Memecoin",
+      "definition": "An informal category of crypto assets associated with memes, cultural themes, attention, or communities; the label does not define transfer behavior, value, or legal treatment."
+    },
+    {
+      "term": "Token deployment identity",
+      "definition": "A chain/network and specific contract or mint, distinguished from a ticker, logo, wrapped representation, and native asset."
+    },
+    {
+      "term": "Bonding curve",
+      "definition": "A protocol-defined relationship between traded quantities or state and price; parameters, real reserves, and virtual reserves must be distinguished."
+    },
+    {
+      "term": "Graduation",
+      "definition": "A launch platform's transition criterion or event, often associated with migration to another trading venue; not a guarantee of success or safety."
+    },
+    {
+      "term": "Migration",
+      "definition": "Movement of trading state or liquidity to another pool or protocol, requiring identity and accounting reconciliation."
+    },
+    {
+      "term": "Virtual reserves",
+      "definition": "Pricing quantities used by some protocols that need not correspond to transferable assets actually held in a vault."
+    },
+    {
+      "term": "Economic float",
+      "definition": "A defined estimate of supply available for economic trading after explicit exclusions; often uncertain and different from reported total supply."
+    },
+    {
+      "term": "Mint authority",
+      "definition": "A capability to create additional token units where supported; its presence and revocation are only part of the authority graph."
+    },
+    {
+      "term": "Freeze authority",
+      "definition": "A capability to restrict token-account activity under the relevant program, distinct from general market illiquidity."
+    },
+    {
+      "term": "Permanent delegate",
+      "definition": "A mint-level privileged capability in the documented Solana extension, distinct from an ordinary holder-granted allowance."
+    },
+    {
+      "term": "Transfer hook",
+      "definition": "Custom logic invoked during token transfer under a supporting token system; it may alter route requirements or reject transfers."
+    },
+    {
+      "term": "Transfer tax",
+      "definition": "An informal label for token-level deductions or charges during movement; exact computation and recipients are contract-specific."
+    },
+    {
+      "term": "Proxy upgrade",
+      "definition": "A change to the implementation used behind a stable contract address; previously reviewed behavior may no longer apply."
+    },
+    {
+      "term": "Authority graph",
+      "definition": "A representation of owners, roles, delegates, upgrade controls, timelocks, and dependent programs that can affect an asset."
+    },
+    {
+      "term": "LP lock",
+      "definition": "A restriction on withdrawing specified liquidity rights under particular conditions; coverage, unlock time, and revocability must be verified."
+    },
+    {
+      "term": "Honeypot token",
+      "definition": "A colloquial description of a token that attracts purchases while restricting or making sales uneconomic; a scanner result is conditional evidence."
+    },
+    {
+      "term": "Rug pull",
+      "definition": "An informal description of abrupt value extraction or abandonment harming holders; mechanisms differ and a heuristic flag is not a legal finding."
+    },
+    {
+      "term": "Sybil activity",
+      "definition": "Activity from multiple identities or addresses that may be controlled by one actor; raw address counts do not establish independent participants."
+    },
+    {
+      "term": "Wallet cluster",
+      "definition": "Addresses grouped by an explicitly stated heuristic or verified label, with uncertainty and historical availability retained."
+    },
+    {
+      "term": "Copy trading",
+      "definition": "Following another participant's observable trades; follower prices, delays, costs, and inventory risks differ from the source trader's."
+    },
+    {
+      "term": "Wallet baiting",
+      "definition": "Behavior designed to make a wallet appear attractive to followers before unfavorable trades or inventory exits; discussed here as a defensive risk."
+    },
+    {
+      "term": "Wash-trading candidate",
+      "definition": "Activity flagged as possibly circular or non-economic by a stated method; not automatically proof of intentional manipulation."
+    },
+    {
+      "term": "Economic swap",
+      "definition": "One intended exchange of assets by an initiating trader, potentially implemented through multiple pool-level instructions."
+    },
+    {
+      "term": "Pool leg",
+      "definition": "An individual interaction within a route; several legs can belong to one economic swap."
+    },
+    {
+      "term": "Executable exit capacity",
+      "definition": "The inventory that can be sold within stated cost and state assumptions, unlike market capitalization or a displayed last price."
+    },
+    {
+      "term": "Quote impact",
+      "definition": "The expected change in average execution economics caused by trade size under the quoted state, using a declared reference."
+    },
+    {
+      "term": "Slippage tolerance",
+      "definition": "A bound embedded in an execution request, often expressed through minimum output; not a prediction or guaranteed realized cost."
+    },
+    {
+      "term": "Priority fee",
+      "definition": "An optional transaction scheduling payment under the applicable chain rules, distinct from swap fees and other tips."
+    },
+    {
+      "term": "Transaction tip",
+      "definition": "An additional payment associated with certain submission paths or services; account for its actual conditions and currency."
+    },
+    {
+      "term": "Bundle",
+      "definition": "A group of transactions submitted with service-specific sequencing and execution semantics; acknowledgement and final settlement are separate states."
+    },
+    {
+      "term": "Finality policy",
+      "definition": "The explicit rule governing when observations or transactions are treated as sufficiently settled and how reversals are handled."
+    },
+    {
+      "term": "Point-in-time universe",
+      "definition": "The assets and eligibility information actually available at each historical decision time, including later failures."
+    },
+    {
+      "term": "Graduation bias",
+      "definition": "Selection bias caused by studying only launches that reached a later platform milestone."
+    },
+    {
+      "term": "Attention conversion",
+      "definition": "An operational comparison between measured attention and subsequent purchasing activity; generally an association, not identified causality."
+    },
+    {
+      "term": "Paid visibility",
+      "definition": "Advertising or promoted placement that must be tagged separately from organic participation and security evidence."
+    },
+    {
+      "term": "Active liquidity",
+      "definition": "Capital available at the current price under a pool's range or bin mechanics, distinct from all assets deposited in the pool."
+    },
+    {
+      "term": "Price bin",
+      "definition": "A discrete price region or point used by some liquidity protocols, with protocol-specific allocation and fee behavior."
+    },
+    {
+      "term": "LP markout",
+      "definition": "A measurement of how execution prices compare with later references from the liquidity provider's perspective, used to study adverse selection."
+    },
+    {
+      "term": "Hypothesis lineage",
+      "definition": "An explicit link between a contextual variant and its broader parent concept, preventing variants from being mistaken for independent discoveries."
+    }
+  ]
+}

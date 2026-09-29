@@ -1,0 +1,46 @@
+{
+ "id": "STRAT-223",
+ "key": "pack_st120_graduation_cohort_relative_leader",
+ "name": "Graduation-cohort relative leader",
+ "family": "memecoin",
+ "subfamily": "graduation",
+ "hypothesis": "Buy the highest predeclared liquidity-and-retention score among same-age graduates, holding a bounded intraday basket.",
+ "markets": [
+  "crypto"
+ ],
+ "timeframe": "5m",
+ "data": [
+  "curve completion",
+  "migration signature",
+  "destination pool",
+  "cross-stage fills and buyer cohorts"
+ ],
+ "definition": null,
+ "spec": "Setup: Graduation quality may matter beyond simply reaching the threshold. Entry: Buy the highest predeclared liquidity-and-retention score among same-age graduates, holding a bounded intraday basket. Evaluate only information available at decision time; attempt execution afterward. Exit: Exit on score reversal, individual invalidation, or cohort horizon. Always apply the earlier of the registered maximum holding time and hard risk invalidation; fills can be delayed or unavailable. Parameters to pre-register: eligible universe and point-in-time membership, observation window and completed-event/bar rule, numerical threshold(s) named by the signal, entry order and maximum price/quote deviation, initial invalidation level and target if used, H_max and explicit session definition, cost, impact, latency, failed-attempt, and leg-risk models, position/notional/exit-capacity caps, baseline and out-of-sample rejection thresholds.",
+ "implementation_status": "blocked",
+ "blocked_reason": "needs launchpad migration events and pool state history (on-chain, not connected)",
+ "research_status": "hypothesis",
+ "evidence": [
+  {
+   "source": "PK-S56",
+   "relation": "context",
+   "note": "pack ST120: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  },
+  {
+   "source": "PK-S57",
+   "relation": "context",
+   "note": "pack ST120: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  },
+  {
+   "source": "PK-S58",
+   "relation": "context",
+   "note": "pack ST120: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  },
+  {
+   "source": "PK-S68",
+   "relation": "context",
+   "note": "pack ST120: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  }
+ ],
+ "variants": []
+}

@@ -1,0 +1,905 @@
+{
+  "schema_version": "2.0.0",
+  "features": [
+    {
+      "id": "FT001",
+      "name": "Simple return",
+      "category": "price",
+      "definition": "P_t/P_previous - 1",
+      "timing_rule": "Only observations and fitted parameters available by decision time may be used.",
+      "pitfall": "Use comparable actual observations; corporate-action handling must be explicit.",
+      "definition_status": "Mathematical convention supplied for implementation; not an empirical profit claim."
+    },
+    {
+      "id": "FT002",
+      "name": "Log return",
+      "category": "price",
+      "definition": "ln(P_t/P_previous)",
+      "timing_rule": "Only observations and fitted parameters available by decision time may be used.",
+      "pitfall": "Requires positive prices; do not mix adjusted research prices with raw execution prices.",
+      "definition_status": "Mathematical convention supplied for implementation; not an empirical profit claim."
+    },
+    {
+      "id": "FT003",
+      "name": "Midpoint",
+      "category": "liquidity",
+      "definition": "(best_bid + best_ask)/2",
+      "timing_rule": "Only observations and fitted parameters available by decision time may be used.",
+      "pitfall": "A reference value, not a guaranteed executable price.",
+      "definition_status": "Mathematical convention supplied for implementation; not an empirical profit claim."
+    },
+    {
+      "id": "FT004",
+      "name": "Quoted spread",
+      "category": "liquidity",
+      "definition": "best_ask - best_bid",
+      "timing_rule": "Only observations and fitted parameters available by decision time may be used.",
+      "pitfall": "Use synchronized valid quotes; define treatment of locked or crossed states.",
+      "definition_status": "Mathematical convention supplied for implementation; not an empirical profit claim."
+    },
+    {
+      "id": "FT005",
+      "name": "Spread in basis points",
+      "category": "liquidity",
+      "definition": "10000*(ask-bid)/midpoint",
+      "timing_rule": "Only observations and fitted parameters available by decision time may be used.",
+      "pitfall": "Reject zero or invalid midpoint.",
+      "definition_status": "Mathematical convention supplied for implementation; not an empirical profit claim."
+    },
+    {
+      "id": "FT006",
+      "name": "Depth within a price band",
+      "category": "liquidity",
+      "definition": "sum(size_i) over eligible levels within a fixed distance from midpoint",
+      "timing_rule": "Only observations and fitted parameters available by decision time may be used.",
+      "pitfall": "Record whether size is base units, contracts or quote notional.",
+      "definition_status": "Mathematical convention supplied for implementation; not an empirical profit claim."
+    },
+    {
+      "id": "FT007",
+      "name": "Top-of-book imbalance",
+      "category": "orderflow",
+      "definition": "(bid_size-ask_size)/(bid_size+ask_size)",
+      "timing_rule": "Only observations and fitted parameters available by decision time may be used.",
+      "pitfall": "Zero denominator is unavailable; cancellations can change it instantly.",
+      "definition_status": "Mathematical convention supplied for implementation; not an empirical profit claim."
+    },
+    {
+      "id": "FT008",
+      "name": "Weighted midpoint proxy",
+      "category": "orderflow",
+      "definition": "(ask_price*bid_size + bid_price*ask_size)/(bid_size+ask_size)",
+      "timing_rule": "Only observations and fitted parameters available by decision time may be used.",
+      "pitfall": "Often called a microprice proxy; not a universal efficient-price estimator.",
+      "definition_status": "Mathematical convention supplied for implementation; not an empirical profit claim."
+    },
+    {
+      "id": "FT009",
+      "name": "Aggressor volume delta",
+      "category": "orderflow",
+      "definition": "buyer_initiated_volume - seller_initiated_volume",
+      "timing_rule": "Only observations and fitted parameters available by decision time may be used.",
+      "pitfall": "Validate venue side semantics; trade classification may be estimated.",
+      "definition_status": "Mathematical convention supplied for implementation; not an empirical profit claim."
+    },
+    {
+      "id": "FT010",
+      "name": "Cumulative volume delta",
+      "category": "orderflow",
+      "definition": "cumulative sum of aggressor delta from explicit anchor",
+      "timing_rule": "Only observations and fitted parameters available by decision time may be used.",
+      "pitfall": "Resets, missing trades and side-classification errors change the result.",
+      "definition_status": "Mathematical convention supplied for implementation; not an empirical profit claim."
+    },
+    {
+      "id": "FT011",
+      "name": "Order-flow imbalance",
+      "category": "orderflow",
+      "definition": "For consecutive best-quote events n: e_n=I(b_n>=b_prev)*qb_n-I(b_n<=b_prev)*qb_prev-I(a_n<=a_prev)*qa_n+I(a_n>=a_prev)*qa_prev; OFI=sum(e_n) over the window",
+      "timing_rule": "Only observations and fitted parameters available by decision time may be used.",
+      "pitfall": "b/a are bid/ask prices and qb/qa their sizes; I is an indicator. Requires valid sequenced best quotes; not identical to trade delta.",
+      "definition_status": "Mathematical convention supplied for implementation; not an empirical profit claim."
+    },
+    {
+      "id": "FT012",
+      "name": "Simple moving average",
+      "category": "trend",
+      "definition": "sum(last n completed prices)/n",
+      "timing_rule": "Only observations and fitted parameters available by decision time may be used.",
+      "pitfall": "Input price and warm-up must be specified.",
+      "definition_status": "Mathematical convention supplied for implementation; not an empirical profit claim."
+    },
+    {
+      "id": "FT013",
+      "name": "Exponential moving average",
+      "category": "trend",
+      "definition": "EMA_t = alpha*P_t + (1-alpha)*EMA_previous; alpha=2/(n+1)",
+      "timing_rule": "Only observations and fitted parameters available by decision time may be used.",
+      "pitfall": "Seed choice affects early values; require adequate historical warm-up.",
+      "definition_status": "Mathematical convention supplied for implementation; not an empirical profit claim."
+    },
+    {
+      "id": "FT014",
+      "name": "Wilder moving average",
+      "category": "trend",
+      "definition": "RMA_t = ((n-1)*RMA_previous + x_t)/n",
+      "timing_rule": "Only observations and fitted parameters available by decision time may be used.",
+      "pitfall": "Common seed is the first n-observation SMA; choose and document exact convention.",
+      "definition_status": "Mathematical convention supplied for implementation; not an empirical profit claim."
+    },
+    {
+      "id": "FT015",
+      "name": "MACD",
+      "category": "momentum",
+      "definition": "EMA_fast - EMA_slow; signal=EMA_signal_length(MACD); histogram=MACD-signal",
+      "timing_rule": "Only observations and fitted parameters available by decision time may be used.",
+      "pitfall": "Use one consistent EMA initialization and avoid future-bar updates.",
+      "definition_status": "Mathematical convention supplied for implementation; not an empirical profit claim."
+    },
+    {
+      "id": "FT016",
+      "name": "RSI",
+      "category": "momentum",
+      "definition": "100-100/(1+RS), with RS=RMA(gain)/RMA(loss)",
+      "timing_rule": "Only observations and fitted parameters available by decision time may be used.",
+      "pitfall": "Both zero means a convention is needed, commonly neutral; loss=0 and gain>0 gives 100.",
+      "definition_status": "Mathematical convention supplied for implementation; not an empirical profit claim."
+    },
+    {
+      "id": "FT017",
+      "name": "Stochastic percent K",
+      "category": "momentum",
+      "definition": "100*(close-lowest_low_n)/(highest_high_n-lowest_low_n)",
+      "timing_rule": "Only observations and fitted parameters available by decision time may be used.",
+      "pitfall": "Zero range is unavailable or explicitly convention-handled; smoothing variants differ.",
+      "definition_status": "Mathematical convention supplied for implementation; not an empirical profit claim."
+    },
+    {
+      "id": "FT018",
+      "name": "Rate of change",
+      "category": "momentum",
+      "definition": "P_t/P_(t-n)-1",
+      "timing_rule": "Only observations and fitted parameters available by decision time may be used.",
+      "pitfall": "State whether output is a fraction or multiplied by 100.",
+      "definition_status": "Mathematical convention supplied for implementation; not an empirical profit claim."
+    },
+    {
+      "id": "FT019",
+      "name": "True range",
+      "category": "volatility",
+      "definition": "max(high-low, abs(high-prev_close), abs(low-prev_close))",
+      "timing_rule": "Only observations and fitted parameters available by decision time may be used.",
+      "pitfall": "Session gaps and corporate actions affect comparisons.",
+      "definition_status": "Mathematical convention supplied for implementation; not an empirical profit claim."
+    },
+    {
+      "id": "FT020",
+      "name": "Average true range",
+      "category": "volatility",
+      "definition": "Wilder moving average of true range over n periods",
+      "timing_rule": "Only observations and fitted parameters available by decision time may be used.",
+      "pitfall": "ATR is a range statistic in price units, not a probability-based confidence interval.",
+      "definition_status": "Mathematical convention supplied for implementation; not an empirical profit claim."
+    },
+    {
+      "id": "FT021",
+      "name": "ATR percent",
+      "category": "volatility",
+      "definition": "100*ATR/close",
+      "timing_rule": "Only observations and fitted parameters available by decision time may be used.",
+      "pitfall": "Use positive comparable prices; cross-asset comparison remains imperfect.",
+      "definition_status": "Mathematical convention supplied for implementation; not an empirical profit claim."
+    },
+    {
+      "id": "FT022",
+      "name": "Realized variance",
+      "category": "volatility",
+      "definition": "sum(r_i^2) over an explicitly defined intraperiod sampling grid",
+      "timing_rule": "Only observations and fitted parameters available by decision time may be used.",
+      "pitfall": "This uncentered quadratic-variation proxy differs from sample return variance.",
+      "definition_status": "Mathematical convention supplied for implementation; not an empirical profit claim."
+    },
+    {
+      "id": "FT023",
+      "name": "Sample return volatility",
+      "category": "volatility",
+      "definition": "sqrt(sum((r_i-mean(r))^2)/(n-1))",
+      "timing_rule": "Only observations and fitted parameters available by decision time may be used.",
+      "pitfall": "Requires n>1; horizon, sampling and annualization must be stated.",
+      "definition_status": "Mathematical convention supplied for implementation; not an empirical profit claim."
+    },
+    {
+      "id": "FT024",
+      "name": "Bollinger bands",
+      "category": "volatility",
+      "definition": "center=SMA_n; upper/lower=center +/- k*rolling_std_n",
+      "timing_rule": "Only observations and fitted parameters available by decision time may be used.",
+      "pitfall": "Sample versus population standard deviation changes values; choose ddof explicitly.",
+      "definition_status": "Mathematical convention supplied for implementation; not an empirical profit claim."
+    },
+    {
+      "id": "FT025",
+      "name": "Band width",
+      "category": "volatility",
+      "definition": "(upper-lower)/center",
+      "timing_rule": "Only observations and fitted parameters available by decision time may be used.",
+      "pitfall": "Use a nonzero center; low width does not imply a known breakout direction.",
+      "definition_status": "Mathematical convention supplied for implementation; not an empirical profit claim."
+    },
+    {
+      "id": "FT026",
+      "name": "Donchian channel",
+      "category": "trend",
+      "definition": "max(high_(t-n:t-1)), min(low_(t-n:t-1))",
+      "timing_rule": "Only observations and fitted parameters available by decision time may be used.",
+      "pitfall": "For breakout signals exclude the current signal bar.",
+      "definition_status": "Mathematical convention supplied for implementation; not an empirical profit claim."
+    },
+    {
+      "id": "FT027",
+      "name": "Directional movement and ADX",
+      "category": "trend",
+      "definition": "up=high_t-high_prev; down=low_prev-low_t; DM_plus=up if up>down and up>0 else 0; DM_minus=down if down>up and down>0 else 0; DI_plus=100*RMA(DM_plus)/ATR; DI_minus=100*RMA(DM_minus)/ATR; DX=100*abs(DI_plus-DI_minus)/(DI_plus+DI_minus); ADX=RMA(DX)",
+      "timing_rule": "Only observations and fitted parameters available by decision time may be used.",
+      "pitfall": "Handle zero denominators and enough warm-up; ADX is strength, not direction.",
+      "definition_status": "Mathematical convention supplied for implementation; not an empirical profit claim."
+    },
+    {
+      "id": "FT028",
+      "name": "Trade-based VWAP",
+      "category": "volume",
+      "definition": "sum(trade_price*trade_size)/sum(trade_size) from an explicit anchor",
+      "timing_rule": "Only observations and fitted parameters available by decision time may be used.",
+      "pitfall": "Specify eligible trades and volume units; zero volume means unavailable.",
+      "definition_status": "Mathematical convention supplied for implementation; not an empirical profit claim."
+    },
+    {
+      "id": "FT029",
+      "name": "Bar-based VWAP approximation",
+      "category": "volume",
+      "definition": "sum(((high+low+close)/3)*bar_volume)/sum(bar_volume)",
+      "timing_rule": "Only observations and fitted parameters available by decision time may be used.",
+      "pitfall": "This is an approximation to trade VWAP; do not silently substitute it.",
+      "definition_status": "Mathematical convention supplied for implementation; not an empirical profit claim."
+    },
+    {
+      "id": "FT030",
+      "name": "Anchored VWAP",
+      "category": "volume",
+      "definition": "VWAP computed only from events at or after an explicitly chosen known anchor",
+      "timing_rule": "Only observations and fitted parameters available by decision time may be used.",
+      "pitfall": "A retrospectively chosen optimal anchor creates selection bias.",
+      "definition_status": "Mathematical convention supplied for implementation; not an empirical profit claim."
+    },
+    {
+      "id": "FT031",
+      "name": "Relative volume",
+      "category": "volume",
+      "definition": "current elapsed-session volume / historical mean volume at the same elapsed-session point",
+      "timing_rule": "Only observations and fitted parameters available by decision time may be used.",
+      "pitfall": "Use preceding sessions only and comparable calendars; partial-day comparisons matter.",
+      "definition_status": "Mathematical convention supplied for implementation; not an empirical profit claim."
+    },
+    {
+      "id": "FT032",
+      "name": "On-balance volume",
+      "category": "volume",
+      "definition": "OBV_prev + volume*sign(close-close_prev)",
+      "timing_rule": "Only observations and fitted parameters available by decision time may be used.",
+      "pitfall": "A cumulative price-direction proxy, not observed buying minus selling.",
+      "definition_status": "Mathematical convention supplied for implementation; not an empirical profit claim."
+    },
+    {
+      "id": "FT033",
+      "name": "Chaikin money flow",
+      "category": "volume",
+      "definition": "sum(((2*close-high-low)/(high-low))*volume)/sum(volume)",
+      "timing_rule": "Only observations and fitted parameters available by decision time may be used.",
+      "pitfall": "Define handling of zero-range bars; it approximates flow from bar location.",
+      "definition_status": "Mathematical convention supplied for implementation; not an empirical profit claim."
+    },
+    {
+      "id": "FT034",
+      "name": "Money flow index",
+      "category": "volume",
+      "definition": "100-100/(1+positive_money_flow/negative_money_flow); money_flow=typical_price*volume, classified by typical-price change",
+      "timing_rule": "Only observations and fitted parameters available by decision time may be used.",
+      "pitfall": "Handle unchanged prices and zero-flow cases explicitly; it is a constructed oscillator.",
+      "definition_status": "Mathematical convention supplied for implementation; not an empirical profit claim."
+    },
+    {
+      "id": "FT035",
+      "name": "Commodity channel index",
+      "category": "momentum",
+      "definition": "(typical_price - SMA(typical_price))/(0.015*mean_absolute_deviation)",
+      "timing_rule": "Only observations and fitted parameters available by decision time may be used.",
+      "pitfall": "The mean absolute deviation convention must be consistent; zero denominator is undefined.",
+      "definition_status": "Mathematical convention supplied for implementation; not an empirical profit claim."
+    },
+    {
+      "id": "FT036",
+      "name": "Rolling z score",
+      "category": "statistics",
+      "definition": "(x_t-training_or_lagged_mean)/training_or_lagged_std",
+      "timing_rule": "Only observations and fitted parameters available by decision time may be used.",
+      "pitfall": "Specify whether current observation enters estimates; causal does not imply normally distributed.",
+      "definition_status": "Mathematical convention supplied for implementation; not an empirical profit claim."
+    },
+    {
+      "id": "FT037",
+      "name": "Regression beta",
+      "category": "relative_value",
+      "definition": "cov(asset_return, benchmark_return)/var(benchmark_return)",
+      "timing_rule": "Only observations and fitted parameters available by decision time may be used.",
+      "pitfall": "Training-only estimates; zero benchmark variance blocks calculation.",
+      "definition_status": "Mathematical convention supplied for implementation; not an empirical profit claim."
+    },
+    {
+      "id": "FT038",
+      "name": "Log-price pair residual",
+      "category": "relative_value",
+      "definition": "ln(P_A)-alpha-beta*ln(P_B)",
+      "timing_rule": "Only observations and fitted parameters available by decision time may be used.",
+      "pitfall": "Beta is an elasticity; convert approximate hedge into dollar notionals, not equal share counts.",
+      "definition_status": "Mathematical convention supplied for implementation; not an empirical profit claim."
+    },
+    {
+      "id": "FT039",
+      "name": "Correlation",
+      "category": "statistics",
+      "definition": "cov(x,y)/(std(x)*std(y))",
+      "timing_rule": "Only observations and fitted parameters available by decision time may be used.",
+      "pitfall": "High correlation does not prove stationary spread or causality.",
+      "definition_status": "Mathematical convention supplied for implementation; not an empirical profit claim."
+    },
+    {
+      "id": "FT040",
+      "name": "Drawdown",
+      "category": "risk",
+      "definition": "1 - equity_t/max(equity_up_to_t)",
+      "timing_rule": "Only observations and fitted parameters available by decision time may be used.",
+      "pitfall": "State cash-flow adjustment and mark-to-market convention.",
+      "definition_status": "Mathematical convention supplied for implementation; not an empirical profit claim."
+    },
+    {
+      "id": "FT041",
+      "name": "Gross exposure",
+      "category": "risk",
+      "definition": "sum(abs(position_notional_i))/equity",
+      "timing_rule": "Only observations and fitted parameters available by decision time may be used.",
+      "pitfall": "Nonlinear derivatives require additional Greeks and stress exposures; zero equity is invalid.",
+      "definition_status": "Mathematical convention supplied for implementation; not an empirical profit claim."
+    },
+    {
+      "id": "FT042",
+      "name": "Net exposure",
+      "category": "risk",
+      "definition": "sum(signed_position_notional_i)/equity",
+      "timing_rule": "Only observations and fitted parameters available by decision time may be used.",
+      "pitfall": "Low net exposure can coexist with high gross and basis risk.",
+      "definition_status": "Mathematical convention supplied for implementation; not an empirical profit claim."
+    },
+    {
+      "id": "FT043",
+      "name": "Basis fraction",
+      "category": "derivatives",
+      "definition": "derivative_price/spot_reference-1",
+      "timing_rule": "Only observations and fitted parameters available by decision time may be used.",
+      "pitfall": "Synchronize prices, units, currencies and timestamps; annualization applies only with a defined horizon.",
+      "definition_status": "Mathematical convention supplied for implementation; not an empirical profit claim."
+    },
+    {
+      "id": "FT044",
+      "name": "Linear-contract funding cash flow",
+      "category": "derivatives",
+      "definition": "cashflow_long = -signed_long_notional * funding_rate_at_event, under the specified venue convention",
+      "timing_rule": "Only observations and fitted parameters available by decision time may be used.",
+      "pitfall": "For a positive long notional and positive rate this is a payment; inverse/other contracts need exact specifications.",
+      "definition_status": "Mathematical convention supplied for implementation; not an empirical profit claim."
+    },
+    {
+      "id": "FT045",
+      "name": "Open interest change",
+      "category": "derivatives",
+      "definition": "OI_t - OI_previous, optionally normalized by a lagged level",
+      "timing_rule": "Only observations and fitted parameters available by decision time may be used.",
+      "pitfall": "Open interest is not traded volume and does not reveal whether new positions are bullish.",
+      "definition_status": "Mathematical convention supplied for implementation; not an empirical profit claim."
+    },
+    {
+      "id": "FT046",
+      "name": "Event surprise",
+      "category": "event",
+      "definition": "(first_release_actual - pre_release_consensus)/training_scale",
+      "timing_rule": "Only observations and fitted parameters available by decision time may be used.",
+      "pitfall": "Consensus and release values must be vintage-correct and available at decision time.",
+      "definition_status": "Mathematical convention supplied for implementation; not an empirical profit claim."
+    },
+    {
+      "id": "FT047",
+      "name": "Net trade expectancy",
+      "category": "performance",
+      "definition": "p*mean_gross_win - (1-p)*mean_gross_loss - average_cost",
+      "timing_rule": "Only observations and fitted parameters available by decision time may be used.",
+      "pitfall": "For variable sizing or costs use full realized outcomes; do not subtract costs twice.",
+      "definition_status": "Mathematical convention supplied for implementation; not an empirical profit claim."
+    },
+    {
+      "id": "FT048",
+      "name": "Profit factor",
+      "category": "performance",
+      "definition": "sum(positive_net_trade_PnL)/abs(sum(negative_net_trade_PnL))",
+      "timing_rule": "Only observations and fitted parameters available by decision time may be used.",
+      "pitfall": "If no losses occur report undefined/infinite with sample context, never silently zero.",
+      "definition_status": "Mathematical convention supplied for implementation; not an empirical profit claim."
+    },
+    {
+      "id": "FT049",
+      "name": "Sharpe ratio",
+      "category": "performance",
+      "definition": "mean(period_excess_returns)/std(period_excess_returns)",
+      "timing_rule": "Only observations and fitted parameters available by decision time may be used.",
+      "pitfall": "Return frequency and autocorrelation treatment determine whether annualization is justified.",
+      "definition_status": "Mathematical convention supplied for implementation; not an empirical profit claim."
+    },
+    {
+      "id": "FT050",
+      "name": "Implementation shortfall",
+      "category": "execution",
+      "definition": "side_sign*(sum(q_i*(fill_i-decision_price)) + unfilled_qty*(terminal_price-decision_price)) + explicit_costs",
+      "timing_rule": "Only observations and fitted parameters available by decision time may be used.",
+      "pitfall": "For a buy side_sign=+1 and a sell=-1; benchmark and terminal time must be fixed. Positive values are execution cost.",
+      "definition_status": "Mathematical convention supplied for implementation; not an empirical profit claim."
+    },
+    {
+      "id": "FT051",
+      "name": "Token age",
+      "category": "identity",
+      "definition": "decision_time minus verified successful creation time, with a separate first-observed age when creation time is unavailable",
+      "pitfall": "First indexing time is not creation time; missing timestamps remain unknown.",
+      "timing_rule": "Use only versioned observations available by decision time; preserve block/slot, commitment, receipt time, and label availability.",
+      "definition_status": "Author-supplied operational convention requiring data-specific validation; not a profitable signal claim."
+    },
+    {
+      "id": "FT052",
+      "name": "Pool age",
+      "category": "identity",
+      "definition": "decision_time minus verified pool activation time",
+      "pitfall": "A migrated token can be old while its destination pool is new.",
+      "timing_rule": "Use only versioned observations available by decision time; preserve block/slot, commitment, receipt time, and label availability.",
+      "definition_status": "Author-supplied operational convention requiring data-specific validation; not a profitable signal claim."
+    },
+    {
+      "id": "FT053",
+      "name": "Chain observation lag",
+      "category": "data_quality",
+      "definition": "received_at minus source block time where block time is known; also preserve slot distance from the observed head",
+      "pitfall": "Block timestamps can be coarse, missing, or inconsistent across providers.",
+      "timing_rule": "Use only versioned observations available by decision time; preserve block/slot, commitment, receipt time, and label availability.",
+      "definition_status": "Author-supplied operational convention requiring data-specific validation; not a profitable signal claim."
+    },
+    {
+      "id": "FT054",
+      "name": "Quote freshness",
+      "category": "execution",
+      "definition": "decision_time minus quote_received_at, plus source-state age and cross-route state dispersion",
+      "pitfall": "A newly received quote may rely on old pool state.",
+      "timing_rule": "Use only versioned observations available by decision time; preserve block/slot, commitment, receipt time, and label availability.",
+      "definition_status": "Author-supplied operational convention requiring data-specific validation; not a profitable signal claim."
+    },
+    {
+      "id": "FT055",
+      "name": "All-in round-trip cost",
+      "category": "execution",
+      "definition": "entry impact plus exit impact plus all explicit fees, taxes, financing, expected failed-attempt cost, and currency conversion, expressed against consistent notional",
+      "pitfall": "Do not double-count fees already embedded in executable outputs; uncertainty needs separate stress scenarios.",
+      "timing_rule": "Use only versioned observations available by decision time; preserve block/slot, commitment, receipt time, and label availability.",
+      "definition_status": "Author-supplied operational convention requiring data-specific validation; not a profitable signal claim."
+    },
+    {
+      "id": "FT056",
+      "name": "Fee burden by layer",
+      "category": "execution",
+      "definition": "itemized protocol, LP, creator, transfer, hook, routing, chain, tip, and funding charges with currency and inclusion flags",
+      "pitfall": "A single displayed swap fee is not necessarily the complete cost.",
+      "timing_rule": "Use only versioned observations available by decision time; preserve block/slot, commitment, receipt time, and label availability.",
+      "definition_status": "Author-supplied operational convention requiring data-specific validation; not a profitable signal claim."
+    },
+    {
+      "id": "FT057",
+      "name": "Executable exit proceeds",
+      "category": "liquidity",
+      "definition": "net quoted output for the entire intended inventory at current state, with minimum output and additional external charges shown separately",
+      "pitfall": "A quote or simulation is conditional and may cease to exist before execution.",
+      "timing_rule": "Use only versioned observations available by decision time; preserve block/slot, commitment, receipt time, and label availability.",
+      "definition_status": "Author-supplied operational convention requiring data-specific validation; not a profitable signal claim."
+    },
+    {
+      "id": "FT058",
+      "name": "Immediate round-trip retention",
+      "category": "liquidity",
+      "definition": "net output from buying then selling a specified size divided by initial quote input under an explicitly defined state-update simulation",
+      "pitfall": "Use post-buy state for the hypothetical sale; pre-buy sell quotes can be inconsistent.",
+      "timing_rule": "Use only versioned observations available by decision time; preserve block/slot, commitment, receipt time, and label availability.",
+      "definition_status": "Author-supplied operational convention requiring data-specific validation; not a profitable signal claim."
+    },
+    {
+      "id": "FT059",
+      "name": "Fixed-price reserve value",
+      "category": "liquidity",
+      "definition": "sum of reserve quantities multiplied by frozen reference prices, excluding virtual balances",
+      "pitfall": "TVL marked at the moving token price can rise without new capital.",
+      "timing_rule": "Use only versioned observations available by decision time; preserve block/slot, commitment, receipt time, and label availability.",
+      "definition_status": "Author-supplied operational convention requiring data-specific validation; not a profitable signal claim."
+    },
+    {
+      "id": "FT060",
+      "name": "External liquidity addition",
+      "category": "liquidity",
+      "definition": "net assets contributed through verified liquidity-add/remove events, valued at fixed reference prices",
+      "pitfall": "Swaps, rebases, donations, and internal migration transfers are not automatically new outside liquidity.",
+      "timing_rule": "Use only versioned observations available by decision time; preserve block/slot, commitment, receipt time, and label availability.",
+      "definition_status": "Author-supplied operational convention requiring data-specific validation; not a profitable signal claim."
+    },
+    {
+      "id": "FT061",
+      "name": "Virtual reserve share",
+      "category": "liquidity",
+      "definition": "virtual pricing reserve divided by effective pricing reserve where that protocol defines the quantities",
+      "pitfall": "Virtual reserves influence quotes but are not freely withdrawable cash.",
+      "timing_rule": "Use only versioned observations available by decision time; preserve block/slot, commitment, receipt time, and label availability.",
+      "definition_status": "Author-supplied operational convention requiring data-specific validation; not a profitable signal claim."
+    },
+    {
+      "id": "FT062",
+      "name": "Curve progress",
+      "category": "lifecycle",
+      "definition": "protocol-specific completed funding or remaining-sale-state measure divided by the current verified target",
+      "pitfall": "No universal graduation formula; use the correct program version and configuration.",
+      "timing_rule": "Use only versioned observations available by decision time; preserve block/slot, commitment, receipt time, and label availability.",
+      "definition_status": "Author-supplied operational convention requiring data-specific validation; not a profitable signal claim."
+    },
+    {
+      "id": "FT063",
+      "name": "Migration availability delay",
+      "category": "lifecycle",
+      "definition": "first verified usable destination-pool time minus confirmed curve-completion time",
+      "pitfall": "An announcement, completion flag, and executable pool are different events.",
+      "timing_rule": "Use only versioned observations available by decision time; preserve block/slot, commitment, receipt time, and label availability.",
+      "definition_status": "Author-supplied operational convention requiring data-specific validation; not a profitable signal claim."
+    },
+    {
+      "id": "FT064",
+      "name": "Independent buyer estimate",
+      "category": "holders",
+      "definition": "number of buying address clusters after versioned heuristic merging and exclusion of known services",
+      "pitfall": "Clusters are estimates, not verified people; report raw address count alongside them.",
+      "timing_rule": "Use only versioned observations available by decision time; preserve block/slot, commitment, receipt time, and label availability.",
+      "definition_status": "Author-supplied operational convention requiring data-specific validation; not a profitable signal claim."
+    },
+    {
+      "id": "FT065",
+      "name": "Net buyer breadth",
+      "category": "flow",
+      "definition": "count of eligible clusters with positive net acquired token quantity minus those with negative net quantity during a window",
+      "pitfall": "Transfers, minting, airdrops, and liquidity operations must not be mislabeled as purchases.",
+      "timing_rule": "Use only versioned observations available by decision time; preserve block/slot, commitment, receipt time, and label availability.",
+      "definition_status": "Author-supplied operational convention requiring data-specific validation; not a profitable signal claim."
+    },
+    {
+      "id": "FT066",
+      "name": "Top-holder economic share",
+      "category": "holders",
+      "definition": "sum of top-k eligible entity balances divided by explicitly defined economic float",
+      "pitfall": "Pool vaults, bridges, custodians, burns, and vesting change denominator semantics.",
+      "timing_rule": "Use only versioned observations available by decision time; preserve block/slot, commitment, receipt time, and label availability.",
+      "definition_status": "Author-supplied operational convention requiring data-specific validation; not a profitable signal claim."
+    },
+    {
+      "id": "FT067",
+      "name": "Holder HHI",
+      "category": "holders",
+      "definition": "sum of squared ownership fractions over the defined eligible holder universe",
+      "pitfall": "Changing exclusions or unknown custody ownership can dominate the number.",
+      "timing_rule": "Use only versioned observations available by decision time; preserve block/slot, commitment, receipt time, and label availability.",
+      "definition_status": "Author-supplied operational convention requiring data-specific validation; not a profitable signal claim."
+    },
+    {
+      "id": "FT068",
+      "name": "Effective holder count",
+      "category": "holders",
+      "definition": "1 divided by holder HHI when shares are valid and sum to one",
+      "pitfall": "Not a count of humans and not meaningful if the underlying shares are incomplete.",
+      "timing_rule": "Use only versioned observations available by decision time; preserve block/slot, commitment, receipt time, and label availability.",
+      "definition_status": "Author-supplied operational convention requiring data-specific validation; not a profitable signal claim."
+    },
+    {
+      "id": "FT069",
+      "name": "Unattributed supply share",
+      "category": "holders",
+      "definition": "supply with unresolved economic ownership divided by the declared supply denominator",
+      "pitfall": "A low measured concentration is weak evidence when much of supply is unattributed.",
+      "timing_rule": "Use only versioned observations available by decision time; preserve block/slot, commitment, receipt time, and label availability.",
+      "definition_status": "Author-supplied operational convention requiring data-specific validation; not a profitable signal claim."
+    },
+    {
+      "id": "FT070",
+      "name": "Funding-source entropy",
+      "category": "holders",
+      "definition": "negative sum of p_j times log(p_j) over defined buyer-funding-source shares",
+      "pitfall": "Exchange hot wallets create shared funding without proving common beneficial ownership.",
+      "timing_rule": "Use only versioned observations available by decision time; preserve block/slot, commitment, receipt time, and label availability.",
+      "definition_status": "Author-supplied operational convention requiring data-specific validation; not a profitable signal claim."
+    },
+    {
+      "id": "FT071",
+      "name": "New-buyer retention",
+      "category": "holders",
+      "definition": "fraction of a fixed past buyer cohort retaining at least the preregistered net purchased inventory at a later observable cutoff",
+      "pitfall": "The later cutoff must already have occurred before the feature is used.",
+      "timing_rule": "Use only versioned observations available by decision time; preserve block/slot, commitment, receipt time, and label availability.",
+      "definition_status": "Author-supplied operational convention requiring data-specific validation; not a profitable signal claim."
+    },
+    {
+      "id": "FT072",
+      "name": "Returning-buyer ratio",
+      "category": "holders",
+      "definition": "eligible current buying clusters that bought in a specified prior window divided by eligible current buying clusters",
+      "pitfall": "Address recycling and common custody can inflate or suppress recurrence.",
+      "timing_rule": "Use only versioned observations available by decision time; preserve block/slot, commitment, receipt time, and label availability.",
+      "definition_status": "Author-supplied operational convention requiring data-specific validation; not a profitable signal claim."
+    },
+    {
+      "id": "FT073",
+      "name": "Creator-cluster net sales",
+      "category": "holders",
+      "definition": "net verified token sales by the creator-linked cluster over the window, with linkage uncertainty retained",
+      "pitfall": "Creator inventory can be hidden; a transfer away from the creator is not proof of a sale.",
+      "timing_rule": "Use only versioned observations available by decision time; preserve block/slot, commitment, receipt time, and label availability.",
+      "definition_status": "Author-supplied operational convention requiring data-specific validation; not a profitable signal claim."
+    },
+    {
+      "id": "FT074",
+      "name": "Dormant-supply activation",
+      "category": "supply",
+      "definition": "token quantity moved by holders inactive for at least the registered period divided by defined float",
+      "pitfall": "A move may be custody maintenance rather than intent to sell.",
+      "timing_rule": "Use only versioned observations available by decision time; preserve block/slot, commitment, receipt time, and label availability.",
+      "definition_status": "Author-supplied operational convention requiring data-specific validation; not a profitable signal claim."
+    },
+    {
+      "id": "FT075",
+      "name": "Labeled exchange net flow",
+      "category": "flow",
+      "definition": "verified deposits to exchange-controlled addresses minus withdrawals during the window",
+      "pitfall": "Label coverage, internal reshuffling, bridges, and timestamp lag require explicit handling.",
+      "timing_rule": "Use only versioned observations available by decision time; preserve block/slot, commitment, receipt time, and label availability.",
+      "definition_status": "Author-supplied operational convention requiring data-specific validation; not a profitable signal claim."
+    },
+    {
+      "id": "FT076",
+      "name": "Distribution-cohort sale ratio",
+      "category": "supply",
+      "definition": "verified recipient sales divided by received distribution quantity for a fixed event cohort",
+      "pitfall": "Receipt and sale attribution must be point-in-time and account for subsequent transfers.",
+      "timing_rule": "Use only versioned observations available by decision time; preserve block/slot, commitment, receipt time, and label availability.",
+      "definition_status": "Author-supplied operational convention requiring data-specific validation; not a profitable signal claim."
+    },
+    {
+      "id": "FT077",
+      "name": "Net external quote demand",
+      "category": "flow",
+      "definition": "quote currency paid into economic token purchases minus quote currency received from sales, after specified internal-flow exclusions",
+      "pitfall": "A router can generate multiple pool legs for one economic purchase.",
+      "timing_rule": "Use only versioned observations available by decision time; preserve block/slot, commitment, receipt time, and label availability.",
+      "definition_status": "Author-supplied operational convention requiring data-specific validation; not a profitable signal claim."
+    },
+    {
+      "id": "FT078",
+      "name": "Net-demand acceleration",
+      "category": "flow",
+      "definition": "difference between comparable net-demand rates in consecutive completed windows",
+      "pitfall": "Normalize units and duration; sampling gaps are not zero flow.",
+      "timing_rule": "Use only versioned observations available by decision time; preserve block/slot, commitment, receipt time, and label availability.",
+      "definition_status": "Author-supplied operational convention requiring data-specific validation; not a profitable signal claim."
+    },
+    {
+      "id": "FT079",
+      "name": "Independent buy-arrival rate",
+      "category": "flow",
+      "definition": "eligible independent purchase events divided by observed window duration",
+      "pitfall": "Provider batching, duplicated events, or artificial microtrades can create a false burst.",
+      "timing_rule": "Use only versioned observations available by decision time; preserve block/slot, commitment, receipt time, and label availability.",
+      "definition_status": "Author-supplied operational convention requiring data-specific validation; not a profitable signal claim."
+    },
+    {
+      "id": "FT080",
+      "name": "Median economic trade notional",
+      "category": "flow",
+      "definition": "median quote-denominated value over deduplicated qualifying economic swaps",
+      "pitfall": "Specify dust filters and reference currency; raw transaction counts can be manipulated.",
+      "timing_rule": "Use only versioned observations available by decision time; preserve block/slot, commitment, receipt time, and label availability.",
+      "definition_status": "Author-supplied operational convention requiring data-specific validation; not a profitable signal claim."
+    },
+    {
+      "id": "FT081",
+      "name": "Circular-flow candidate share",
+      "category": "manipulation",
+      "definition": "notional flagged by a versioned circular or near-round-trip heuristic divided by observed swap notional",
+      "pitfall": "A heuristic flag is not a legal finding; arbitrage and normal exits can look similar.",
+      "timing_rule": "Use only versioned observations available by decision time; preserve block/slot, commitment, receipt time, and label availability.",
+      "definition_status": "Author-supplied operational convention requiring data-specific validation; not a profitable signal claim."
+    },
+    {
+      "id": "FT082",
+      "name": "Dust-trade share",
+      "category": "manipulation",
+      "definition": "count or notional below a registered economic-size threshold divided by corresponding total",
+      "pitfall": "State whether the denominator is count or value; they answer different questions.",
+      "timing_rule": "Use only versioned observations available by decision time; preserve block/slot, commitment, receipt time, and label availability.",
+      "definition_status": "Author-supplied operational convention requiring data-specific validation; not a profitable signal claim."
+    },
+    {
+      "id": "FT083",
+      "name": "Route duplication ratio",
+      "category": "data_quality",
+      "definition": "raw decoded swap-leg count divided by deduplicated economic-swap count",
+      "pitfall": "This is a pipeline diagnostic, not a direct measure of fraudulent trading.",
+      "timing_rule": "Use only versioned observations available by decision time; preserve block/slot, commitment, receipt time, and label availability.",
+      "definition_status": "Author-supplied operational convention requiring data-specific validation; not a profitable signal claim."
+    },
+    {
+      "id": "FT084",
+      "name": "Buy-sell event imbalance",
+      "category": "flow",
+      "definition": "(qualified buy count minus qualified sell count) divided by their sum, null when the sum is zero",
+      "pitfall": "Event counts weight dust and large trades equally unless a separate notional measure is used.",
+      "timing_rule": "Use only versioned observations available by decision time; preserve block/slot, commitment, receipt time, and label availability.",
+      "definition_status": "Author-supplied operational convention requiring data-specific validation; not a profitable signal claim."
+    },
+    {
+      "id": "FT085",
+      "name": "Size-specific realized impact",
+      "category": "liquidity",
+      "definition": "direction-adjusted difference between actual average execution price and pre-trade reference, divided by that reference",
+      "pitfall": "Use the same side, size, units, and timing; quote drift and own impact are distinct components.",
+      "timing_rule": "Use only versioned observations available by decision time; preserve block/slot, commitment, receipt time, and label availability.",
+      "definition_status": "Author-supplied operational convention requiring data-specific validation; not a profitable signal claim."
+    },
+    {
+      "id": "FT086",
+      "name": "Largest buyer contribution",
+      "category": "holders",
+      "definition": "largest eligible buyer cluster's net quote purchase divided by positive aggregate net buying under a defined convention",
+      "pitfall": "Ratios become unstable near zero aggregate flow and need a null/quality rule.",
+      "timing_rule": "Use only versioned observations available by decision time; preserve block/slot, commitment, receipt time, and label availability.",
+      "definition_status": "Author-supplied operational convention requiring data-specific validation; not a profitable signal claim."
+    },
+    {
+      "id": "FT087",
+      "name": "Wallet realized net PnL",
+      "category": "wallets",
+      "definition": "sale proceeds minus matched acquisition cost minus allocable costs, with external transfers separately reconciled",
+      "pitfall": "Unpriced transferred inventory and incomplete history invalidate simple leaderboard returns.",
+      "timing_rule": "Use only versioned observations available by decision time; preserve block/slot, commitment, receipt time, and label availability.",
+      "definition_status": "Author-supplied operational convention requiring data-specific validation; not a profitable signal claim."
+    },
+    {
+      "id": "FT088",
+      "name": "Follower price gap",
+      "category": "wallets",
+      "definition": "(current executable follower entry price divided by observed source-wallet average entry price) minus one for a long",
+      "pitfall": "Include different fees, quantities, and observation delay; source fill is not available to the follower.",
+      "timing_rule": "Use only versioned observations available by decision time; preserve block/slot, commitment, receipt time, and label availability.",
+      "definition_status": "Author-supplied operational convention requiring data-specific validation; not a profitable signal claim."
+    },
+    {
+      "id": "FT089",
+      "name": "Original contributor breadth",
+      "category": "social",
+      "definition": "distinct eligible source accounts contributing non-duplicate original content within the permitted observed corpus",
+      "pitfall": "Accounts are not people; collection coverage and deleted content affect the count.",
+      "timing_rule": "Use only versioned observations available by decision time; preserve block/slot, commitment, receipt time, and label availability.",
+      "definition_status": "Author-supplied operational convention requiring data-specific validation; not a profitable signal claim."
+    },
+    {
+      "id": "FT090",
+      "name": "Attention purchase conversion",
+      "category": "social",
+      "definition": "new qualified purchasing clusters divided by the defined new-attention measure over causally aligned windows",
+      "pitfall": "Avoid a false causal claim; social and purchase identities usually cannot be linked reliably.",
+      "timing_rule": "Use only versioned observations available by decision time; preserve block/slot, commitment, receipt time, and label availability.",
+      "definition_status": "Author-supplied operational convention requiring data-specific validation; not a profitable signal claim."
+    },
+    {
+      "id": "FT091",
+      "name": "Paid-visibility indicator",
+      "category": "social",
+      "definition": "timestamped observed advertisement or boost status, separated from organic activity measures",
+      "pitfall": "Paid visibility is neither a safety rating nor proof of genuine demand.",
+      "timing_rule": "Use only versioned observations available by decision time; preserve block/slot, commitment, receipt time, and label availability.",
+      "definition_status": "Author-supplied operational convention requiring data-specific validation; not a profitable signal claim."
+    },
+    {
+      "id": "FT092",
+      "name": "Point-in-time narrative breadth",
+      "category": "relative",
+      "definition": "fraction of eligible fixed-membership narrative assets with positive registered residual returns",
+      "pitfall": "Membership must exist at decision time and include later failures.",
+      "timing_rule": "Use only versioned observations available by decision time; preserve block/slot, commitment, receipt time, and label availability.",
+      "definition_status": "Author-supplied operational convention requiring data-specific validation; not a profitable signal claim."
+    },
+    {
+      "id": "FT093",
+      "name": "Age-cohort residual return",
+      "category": "relative",
+      "definition": "token return minus a declared benchmark of tokens observed at comparable age, using fixed membership",
+      "pitfall": "Failed launches, no-trade prices, and non-graduates must not silently disappear.",
+      "timing_rule": "Use only versioned observations available by decision time; preserve block/slot, commitment, receipt time, and label availability.",
+      "definition_status": "Author-supplied operational convention requiring data-specific validation; not a profitable signal claim."
+    },
+    {
+      "id": "FT094",
+      "name": "Native-coin residual",
+      "category": "relative",
+      "definition": "token return minus lagged fitted beta times host-coin return, with intercept treatment declared",
+      "pitfall": "Beta instability and nonlinear crash exposure can make the hedge ineffective.",
+      "timing_rule": "Use only versioned observations available by decision time; preserve block/slot, commitment, receipt time, and label availability.",
+      "definition_status": "Author-supplied operational convention requiring data-specific validation; not a profitable signal claim."
+    },
+    {
+      "id": "FT095",
+      "name": "Contract-unit open-interest change",
+      "category": "derivatives",
+      "definition": "change in outstanding contract quantity under the venue's reporting convention",
+      "pitfall": "USD-valued open interest also changes with price; do not mix measures or double sides.",
+      "timing_rule": "Use only versioned observations available by decision time; preserve block/slot, commitment, receipt time, and label availability.",
+      "definition_status": "Author-supplied operational convention requiring data-specific validation; not a profitable signal claim."
+    },
+    {
+      "id": "FT096",
+      "name": "Executable perpetual basis",
+      "category": "derivatives",
+      "definition": "hedge-compatible perpetual execution price divided by spot execution price minus one",
+      "pitfall": "Last, mark, index, mid, and executable bid/ask bases are not interchangeable.",
+      "timing_rule": "Use only versioned observations available by decision time; preserve block/slot, commitment, receipt time, and label availability.",
+      "definition_status": "Author-supplied operational convention requiring data-specific validation; not a profitable signal claim."
+    },
+    {
+      "id": "FT097",
+      "name": "Realized funding cashflow",
+      "category": "derivatives",
+      "definition": "actual position-eligible funding amount using venue sign, notional, and settlement rules",
+      "pitfall": "An estimated next funding rate is not cash already earned.",
+      "timing_rule": "Use only versioned observations available by decision time; preserve block/slot, commitment, receipt time, and label availability.",
+      "definition_status": "Author-supplied operational convention requiring data-specific validation; not a profitable signal claim."
+    },
+    {
+      "id": "FT098",
+      "name": "LP net economic PnL",
+      "category": "liquidity_provision",
+      "definition": "current withdrawable asset value plus realized fees/rewards minus contributed capital and all withdrawal, hedge, and rebalance costs",
+      "pitfall": "Also compare with a same-start passive holding benchmark; fee APR alone is insufficient.",
+      "timing_rule": "Use only versioned observations available by decision time; preserve block/slot, commitment, receipt time, and label availability.",
+      "definition_status": "Author-supplied operational convention requiring data-specific validation; not a profitable signal claim."
+    },
+    {
+      "id": "FT099",
+      "name": "LP active-range exposure",
+      "category": "liquidity_provision",
+      "definition": "fraction of allocated position value whose current ticks or bins participate under actual pool mechanics",
+      "pitfall": "Being in range does not guarantee volume, fees, or immunity from adverse selection.",
+      "timing_rule": "Use only versioned observations available by decision time; preserve block/slot, commitment, receipt time, and label availability.",
+      "definition_status": "Author-supplied operational convention requiring data-specific validation; not a profitable signal claim."
+    },
+    {
+      "id": "FT100",
+      "name": "Stressed exit-capacity fraction",
+      "category": "risk",
+      "definition": "largest inventory quantity meeting a declared stressed exit-loss bound divided by proposed inventory quantity",
+      "pitfall": "This is scenario-dependent, not a guarantee; zero-liquidity and failed-transfer scenarios require separate treatment.",
+      "timing_rule": "Use only versioned observations available by decision time; preserve block/slot, commitment, receipt time, and label availability.",
+      "definition_status": "Author-supplied operational convention requiring data-specific validation; not a profitable signal claim."
+    }
+  ]
+}

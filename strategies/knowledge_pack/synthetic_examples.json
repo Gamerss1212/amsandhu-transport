@@ -1,0 +1,43 @@
+{
+  "status": "synthetic_arithmetic_only_not_a_market_backtest",
+  "large_exit": {
+    "amount_in": "1000000",
+    "amount_out": "4992.4887330996494742113169754631947921882824236355",
+    "fee_in_input_units": "3000.000",
+    "reserve_in_after": "2000000",
+    "reserve_out_after": "5007.5112669003505257886830245368052078117175763645"
+  },
+  "round_trip": {
+    "quote_input": "1000",
+    "tokens_received": "90661.089388014913158134036555424206601800491043012",
+    "quote_returned": "994.55066845952190870500469846804746112178005311802",
+    "quote_loss": "5.44933154047809129499530153195253887821994688198",
+    "retention_fraction": "0.99455066845952190870500469846804746112178005311802",
+    "buy": {
+      "amount_in": "1000",
+      "amount_out": "90661.089388014913158134036555424206601800491043012",
+      "fee_in_input_units": "3.000",
+      "reserve_in_after": "11000",
+      "reserve_out_after": "909338.91061198508684186596344457579339819950895699"
+    },
+    "sell": {
+      "amount_in": "90661.089388014913158134036555424206601800491043012",
+      "amount_out": "994.55066845952190870500469846804746112178005311802",
+      "fee_in_input_units": "271.98326816404473947440210966627261980540147312904",
+      "reserve_in_after": "1000000.0000000000000000000000000000000000000000000",
+      "reserve_out_after": "10005.449331540478091294995301531952538878219946882"
+    }
+  },
+  "two_percent_each_leg_break_even": "0.0412328196584756351520199916701374427321949187838",
+  "hypothetical_expectancy_r": "-0.040",
+  "capped_quantity": {
+    "quantity": "1.00E+4",
+    "planned_loss_cap_quantity": "25000",
+    "total_loss_cap_quantity": "1.00E+4",
+    "stressed_exit_cap_quantity": "50000",
+    "cash_cap_quantity": "1.0000E+6",
+    "acquisition_notional": "100",
+    "modeled_stop_loss": "20.0"
+  },
+  "priority_fee_example_lamports": 201
+}

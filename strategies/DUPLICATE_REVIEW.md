@@ -21,7 +21,7 @@ They are distinct when they differ in the market hypothesis, the signal construc
 Exact-structure matches: 0
 
 
-Near-duplicate pairs flagged for manual review: 11
+Near-duplicate pairs flagged for manual review: 14
 
 - STRAT-005 ADX trend-strength breakout / STRAT-006 Directional-movement crossover (Wilder DMI) (overlap 1.0): kept separate: anchor 'ADX/DMI(14)' vs 'DMI(14)', logic 'continuation' vs 'continuation'
 - STRAT-009 Ichimoku Tenkan/Kijun cross above the cloud / STRAT-010 Ichimoku cloud breakout (overlap 1.0): kept separate: anchor 'Ichimoku(9,26,52)' vs 'Ichimoku cloud', logic 'continuation' vs 'breakout'
@@ -34,6 +34,9 @@ Near-duplicate pairs flagged for manual review: 11
 - STRAT-082 Head-and-shoulders breakdown / STRAT-088 Swing trendline break (overlap 0.8): kept separate: anchor 'three confirmed swing highs' vs 'line through two confirmed swing highs', logic 'reversal' vs 'breakout'
 - STRAT-103 Pre-FOMC announcement drift (intraday part) / STRAT-104 Macro-announcement-day long (CPI) (overlap 0.75): kept separate: anchor 'FOMC announcement days (14:00 ET)' vs 'CPI release days', logic 'event bias' vs 'event bias'
 - STRAT-111 Perpetual-spot basis reversion / STRAT-112 US-venue premium momentum (overlap 1.0): kept separate: anchor 'z-score of OKX BTC perp / spot - 1' vs 'Coinbase BTC-USD / OKX BTC-USDT - 1', logic 'reversal' vs 'continuation'
+- STRAT-164 Memecoin breadth-led momentum / STRAT-165 Memecoin leader pullback (overlap 0.8): kept separate: anchor 'count of the six memecoins above their 20-bar EMA' vs 'DOGE (largest memecoin) and meme breadth', logic 'momentum (breadth)' vs 'continuation (pullback)'
+- STRAT-164 Memecoin breadth-led momentum / STRAT-168 Bitcoin risk-on memecoin participation (overlap 1.0): kept separate: anchor 'count of the six memecoins above their 20-bar EMA' vs 'BTC crossing above its 96-bar EMA (one day of 15-minute bars)', logic 'momentum (breadth)' vs 'regime change'
+- STRAT-165 Memecoin leader pullback / STRAT-168 Bitcoin risk-on memecoin participation (overlap 0.8): kept separate: anchor 'DOGE (largest memecoin) and meme breadth' vs 'BTC crossing above its 96-bar EMA (one day of 15-minute bars)', logic 'continuation (pullback)' vs 'regime change'
 
 ## Variants recorded (not counted): 66
 

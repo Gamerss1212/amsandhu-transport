@@ -1,0 +1,51 @@
+{
+ "id": "STRAT-272",
+ "key": "pack_st169_cross_pool_overshoot_rebound",
+ "name": "Cross-pool overshoot rebound",
+ "family": "memecoin",
+ "subfamily": "flow reversal",
+ "hypothesis": "Buy only after the cheap pool's executable price starts reverting and independent reference venues stay stable.",
+ "markets": [
+  "crypto"
+ ],
+ "timeframe": "5m",
+ "data": [
+  "trade-size cohorts",
+  "sell intensity",
+  "price-impact history",
+  "matched-depth quotes"
+ ],
+ "definition": null,
+ "spec": "Setup: A local pool can temporarily overreact relative to deeper independent markets. Entry: Buy only after the cheap pool's executable price starts reverting and independent reference venues stay stable. Evaluate only information available at decision time; attempt execution afterward. Exit: Exit when the gap closes or reference venues move down materially. Always apply the earlier of the registered maximum holding time and hard risk invalidation; fills can be delayed or unavailable. Parameters to pre-register: eligible universe and point-in-time membership, observation window and completed-event/bar rule, numerical threshold(s) named by the signal, entry order and maximum price/quote deviation, initial invalidation level and target if used, H_max and explicit session definition, cost, impact, latency, failed-attempt, and leg-risk models, position/notional/exit-capacity caps, baseline and out-of-sample rejection thresholds.",
+ "implementation_status": "blocked",
+ "blocked_reason": "needs swap-level flow and trade-size cohorts over time (not connected)",
+ "research_status": "hypothesis",
+ "evidence": [
+  {
+   "source": "PK-S27",
+   "relation": "context",
+   "note": "pack ST169: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  },
+  {
+   "source": "PK-S30",
+   "relation": "context",
+   "note": "pack ST169: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  },
+  {
+   "source": "PK-S64",
+   "relation": "context",
+   "note": "pack ST169: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  },
+  {
+   "source": "PK-S67",
+   "relation": "context",
+   "note": "pack ST169: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  },
+  {
+   "source": "PK-S70",
+   "relation": "context",
+   "note": "pack ST169: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  }
+ ],
+ "variants": []
+}

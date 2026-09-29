@@ -1,0 +1,61 @@
+{
+ "id": "STRAT-378",
+ "key": "pack_st291_confirmed_reserve_shock_continuation",
+ "name": "Confirmed reserve-shock continuation",
+ "family": "memecoin",
+ "subfamily": "onchain microstructure",
+ "hypothesis": "Buy continuation only after confirmed reserve changes, independent follow-on demand, and a fresh executable quote.",
+ "markets": [
+  "crypto"
+ ],
+ "timeframe": "5m",
+ "data": [
+  "confirmed state transitions",
+  "failed/landed attempts",
+  "economic flow",
+  "route costs"
+ ],
+ "definition": null,
+ "spec": "Setup: A large genuine swap can move the equilibrium before subsequent demand arrives. Entry: Buy continuation only after confirmed reserve changes, independent follow-on demand, and a fresh executable quote. Evaluate only information available at decision time; attempt execution afterward. Exit: Exit on reverse reserve shock or the brief registered horizon. Always apply the earlier of the registered maximum holding time and hard risk invalidation; fills can be delayed or unavailable. Parameters to pre-register: eligible universe and point-in-time membership, observation window and completed-event/bar rule, numerical threshold(s) named by the signal, entry order and maximum price/quote deviation, initial invalidation level and target if used, H_max and explicit session definition, cost, impact, latency, failed-attempt, and leg-risk models, position/notional/exit-capacity caps, baseline and out-of-sample rejection thresholds.",
+ "implementation_status": "blocked",
+ "blocked_reason": "needs block-level reserve and transaction data (on-chain, not connected)",
+ "research_status": "hypothesis",
+ "evidence": [
+  {
+   "source": "PK-S30",
+   "relation": "context",
+   "note": "pack ST291: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  },
+  {
+   "source": "PK-S56",
+   "relation": "context",
+   "note": "pack ST291: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  },
+  {
+   "source": "PK-S60",
+   "relation": "context",
+   "note": "pack ST291: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  },
+  {
+   "source": "PK-S61",
+   "relation": "context",
+   "note": "pack ST291: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  },
+  {
+   "source": "PK-S62",
+   "relation": "context",
+   "note": "pack ST291: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  },
+  {
+   "source": "PK-S63",
+   "relation": "context",
+   "note": "pack ST291: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  },
+  {
+   "source": "PK-S72",
+   "relation": "context",
+   "note": "pack ST291: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  }
+ ],
+ "variants": []
+}

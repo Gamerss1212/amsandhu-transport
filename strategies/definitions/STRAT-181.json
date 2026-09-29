@@ -1,0 +1,35 @@
+{
+ "id": "STRAT-181",
+ "key": "pack_st035_index_versus_basket_dislocation",
+ "name": "Index-versus-basket dislocation",
+ "family": "cross_asset",
+ "subfamily": "relative",
+ "hypothesis": "Enter opposite the measured difference with bounded legging exposure.",
+ "markets": [
+  "stock"
+ ],
+ "timeframe": "5m",
+ "data": [
+  "synchronized multi-instrument quotes and bars",
+  "borrow/financing data",
+  "point-in-time universe"
+ ],
+ "definition": null,
+ "spec": "Setup: Synchronized basket value differs from a tradable index proxy after fees. Entry: Enter opposite the measured difference with bounded legging exposure. Exit: Exit on convergence or hedge/time limit. Parameters to pre-register: basket_weights, quote_age_limit, cost_buffer, hedge_error_limit.",
+ "implementation_status": "blocked",
+ "blocked_reason": "needs simultaneous two-leg or basket execution with short legs; the engine trades one instrument per bot",
+ "research_status": "hypothesis",
+ "evidence": [
+  {
+   "source": "PK-S29",
+   "relation": "context",
+   "note": "pack ST035: Family-level definitions, mechanics or research context only. Exact rules below are original research templates, not a replication or source-endorsed strategy."
+  },
+  {
+   "source": "PK-S32",
+   "relation": "context",
+   "note": "pack ST035: Family-level definitions, mechanics or research context only. Exact rules below are original research templates, not a replication or source-endorsed strategy."
+  }
+ ],
+ "variants": []
+}

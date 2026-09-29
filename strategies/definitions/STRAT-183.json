@@ -1,0 +1,36 @@
+{
+ "id": "STRAT-183",
+ "key": "pack_st038_cross_sectional_intraday_reversal_basket",
+ "name": "Cross-sectional intraday reversal basket",
+ "family": "cross_asset",
+ "subfamily": "relative",
+ "hypothesis": "Buy laggards and short leaders under sector/beta and gross exposure constraints.",
+ "markets": [
+  "stock",
+  "crypto"
+ ],
+ "timeframe": "5m",
+ "data": [
+  "synchronized multi-instrument quotes and bars",
+  "borrow/financing data",
+  "point-in-time universe"
+ ],
+ "definition": null,
+ "spec": "Setup: Rank past residual returns within a point-in-time liquid universe. Entry: Buy laggards and short leaders under sector/beta and gross exposure constraints. Exit: Rebalance or close at a frozen horizon with turnover controls. Parameters to pre-register: ranking_window, universe, quantiles, turnover_cap.",
+ "implementation_status": "blocked",
+ "blocked_reason": "needs simultaneous two-leg or basket execution with short legs; the engine trades one instrument per bot",
+ "research_status": "hypothesis",
+ "evidence": [
+  {
+   "source": "PK-S29",
+   "relation": "context",
+   "note": "pack ST038: Family-level definitions, mechanics or research context only. Exact rules below are original research templates, not a replication or source-endorsed strategy."
+  },
+  {
+   "source": "PK-S32",
+   "relation": "context",
+   "note": "pack ST038: Family-level definitions, mechanics or research context only. Exact rules below are original research templates, not a replication or source-endorsed strategy."
+  }
+ ],
+ "variants": []
+}

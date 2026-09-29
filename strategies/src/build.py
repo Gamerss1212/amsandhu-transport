@@ -23,8 +23,10 @@ sys.path.insert(0, os.path.join(os.path.dirname(ROOT), "market_analysis_bots"))
 import lib  # noqa: E402
 import sources  # noqa: E402
 for m in ("f01_trend", "f02_open_gap_levels", "f03_vwap_profile_momentum", "f04_patterns_volume_time",
-          "f05_crossasset_crypto_flow_stat"):
+          "f05_crossasset_crypto_flow_stat", "f06_pack_formalized"):
     __import__(m)
+import pack  # noqa: E402  (knowledge pack: validation, dispositions, sources)
+pack.register_research_records()
 
 from mab import expr  # noqa: E402
 from mab.strategy import DefinitionError, compile_strategy  # noqa: E402
@@ -38,7 +40,8 @@ FAMILY_NAMES = {
     "time_of_day": "Time-of-day & calendar", "scheduled_events": "Scheduled events", "cross_asset": "Cross-asset & relative value",
     "crypto_structure": "Crypto derivatives & venue structure", "order_flow": "Order flow & microstructure",
     "statistical": "Statistical & regime", "machine_learning": "Machine learning", "market_making_arbitrage": "Market making & arbitrage",
-    "named_systems": "Named multi-screen systems"}
+    "named_systems": "Named multi-screen systems", "memecoin": "Memecoins (knowledge pack)",
+    "equity_events": "Equity corporate events (knowledge pack)", "equity_breadth": "Equity breadth & auctions (knowledge pack)"}
 
 
 def signature(node) -> str:
@@ -88,6 +91,20 @@ def build():
         r["evaluation_status"] = "untested"
         r["live_evidence"] = "none"
         r["variants"] = [ids[v["key"]] for v in variants if v["parent"] == r["key"]]
+    # knowledge-pack provenance: which pack records each entry covers
+    bykey = {r["key"]: r for r in counted}
+    for pid in pack.RECORDS:
+        kind, what = pack.disposition(pid)
+        if kind in ("same", "new"):
+            if what not in bykey:
+                errors.append(f"pack {pid} maps to unknown key {what}")
+                continue
+            bykey[what].setdefault("pack_refs", []).append({"pack_id": pid, "relation": kind, "name": pack.RECORDS[pid]["name"],
+                                                            "note": pack.SAME.get(pid, ("", ""))[1] if kind == "same" else "formalized here"})
+        elif kind == "research":
+            key = next((r["key"] for r in counted if r["key"].startswith("pack_" + pid.lower() + "_")), None)
+            if key:
+                bykey[key].setdefault("pack_refs", []).append({"pack_id": pid, "relation": "research", "name": pack.RECORDS[pid]["name"], "note": what})
     for v in variants:
         v["id"] = ids[v["key"]]
         if v["parent"] not in ids:
@@ -154,8 +171,35 @@ def write(counted, variants, errors, exact, near):
     with open(os.path.join(ROOT, "sources.json"), "w") as fh:
         json.dump(list(sources.S.values()), fh, indent=1)
     write_docs(counted, variants, counts, errors, exact, near)
+    write_pack_report(counted)
     write_xlsx(counted, variants)
     return counts
+
+
+def write_pack_report(counted):
+    probs = pack.validate()
+    summ = pack.summary()
+    byk = {r["key"]: r for r in counted}
+    L = ["# Knowledge pack import\n",
+         f"Pack version {pack.CAT['schema_version']} ({pack.CAT['as_of_utc']}): {len(pack.RECORDS)} records, "
+         f"{sum(1 for r in pack.RECORDS.values() if r['counts_as_trading_hypothesis'])} trading hypotheses. "
+         "The pack supplies research templates with no performance data; nothing here copies a performance number from it.\n",
+         "## Validation\n", "Manifest hashes (derived views `Strategy_Catalogue.md` and `knowledge_base.jsonl` are not stored), unique ids, "
+         "every required field and allowed value from the pack's schema, family/parent/source references, null performance and the "
+         "published counts:\n", ("**All checks passed.**" if not probs else "\n".join(f"- {p}" for p in probs)) + "\n",
+         "## Dispositions\n", "| Disposition | Records | Meaning |", "|---|---|---|",
+         f"| same | {len(summ['same'])} | the library already had this strategy; the pack adds provenance to it |",
+         f"| new (formalized) | {len(summ['new'])} | written here as executable rules with parameters frozen before testing (PREREGISTRATION_PACK.md) |",
+         f"| research (blocked) | {len(summ['research'])} | distinct hypotheses kept in the catalog, blocked on the named missing data |",
+         f"| supporting | {len(summ['supporting'])} | model frameworks, execution methods, risk filters; not trading hypotheses |\n"]
+    for kind in ("new", "same", "research", "supporting"):
+        L.append(f"\n## {kind}\n")
+        for pid, what in summ[kind]:
+            r = pack.RECORDS[pid]
+            tgt = byk.get(what) if kind in ("same", "new") else next((x for x in counted if x["key"].startswith("pack_" + pid.lower() + "_")), None)
+            L.append(f"- {pid} {r['name']} -> " + (f"{tgt['id']} {tgt['name']}" if tgt else "") + (f" ({what})" if kind in ("research", "supporting") else ""))
+    with open(os.path.join(ROOT, "PACK_IMPORT.md"), "w") as fh:
+        fh.write("\n".join(L) + "\n")
 
 
 def rules_text(r):
@@ -183,8 +227,9 @@ def rules_text(r):
 
 def write_docs(counted, variants, counts, errors, exact, near):
     L = [f"# Strategy library\n\nGenerated {TODAY}. {counts['counted_strategies']} distinct strategies after duplicate review "
-         f"(target was {counts['target']}; see *Why fewer than 300*), {counts['variants_not_counted']} documented variants that are "
-         f"not counted, {counts['sources']} verified sources.\n",
+         f"(target was {counts['target']}), {counts['variants_not_counted']} documented variants that are "
+         f"not counted, {counts['sources']} sources. {counts['blocked']} of the distinct strategies are blocked: they are real, distinct "
+         "hypotheses (most from the research knowledge pack, see PACK_IMPORT.md) that need data this software does not have.\n",
          "| Status | Count |\n|---|---|",
          f"| Implemented (runs on the bot platform) | {counts['implemented']} |",
          f"| Blocked (needs data or engine features that are missing) | {counts['blocked']} |",
@@ -194,10 +239,11 @@ def write_docs(counted, variants, counts, errors, exact, near):
     for k, v in counts["evaluation_status"].items():
         L.append(f"| Evaluation: {k} | {v} |")
     L.append("\nNo strategy here is labelled proven. Statuses are separate on purpose: a strategy can be sourced yet untested, or "
-             "backtested yet a hypothesis.\n\n## Why fewer than 300\n\nThe distinctness rule (DUPLICATE_REVIEW.md) counts a strategy only if it "
+             "backtested yet a hypothesis.\n\n## How strategies are counted\n\nThe distinctness rule (DUPLICATE_REVIEW.md) counts a strategy only if it "
              "differs in market hypothesis, signal construction, reference level, direction logic or required data. Changing a period, threshold, "
              "ticker, timeframe, or swapping one indicator for another in the same template makes a *variant*, listed under its parent and not "
-             "counted. Applying that rule honestly produced the count above; BACKLOG.md lists the variants and the ideas rejected or not yet specified.\n")
+             "counted. Applying that rule honestly produced the count above; BACKLOG.md lists the variants and the ideas rejected or not yet specified. "
+             "Knowledge-pack records that describe a strategy already here were mapped to it, not counted again (PACK_IMPORT.md).\n")
     L.append("## Files\n\n- `catalog.json` - every field of every strategy (machine-readable), plus variants\n"
              "- `definitions/STRAT-###.json` - one executable definition per strategy (the bot platform loads these)\n"
              "- `day_trading_strategies.xlsx` - index, full catalog, source register, evaluation results, implementation status\n"

@@ -1,0 +1,52 @@
+{
+ "id": "STRAT-197",
+ "key": "pack_st066_reverse_cash_and_carry",
+ "name": "Reverse cash and carry",
+ "family": "market_making_arbitrage",
+ "subfamily": "arbitrage",
+ "hypothesis": "Short cash and buy matched futures after borrow and recall checks.",
+ "markets": [
+  "stock",
+  "crypto"
+ ],
+ "timeframe": "5m",
+ "data": [
+  "synchronized executable depth on every leg",
+  "inventory",
+  "financing",
+  "fee tiers"
+ ],
+ "definition": null,
+ "spec": "Setup: A future is cheap to cash and the cash leg can actually be borrowed. Entry: Short cash and buy matched futures after borrow and recall checks. Exit: Exit on convergence or borrow recall, financing change or stop. Parameters to pre-register: borrow_cost, recall_assumption, expiry, basis_buffer.",
+ "implementation_status": "blocked",
+ "blocked_reason": "needs prefunded inventory on several venues and synchronized multi-leg execution",
+ "research_status": "hypothesis",
+ "evidence": [
+  {
+   "source": "PK-S20",
+   "relation": "context",
+   "note": "pack ST066: Family-level definitions, mechanics or research context only. Exact rules below are original research templates, not a replication or source-endorsed strategy."
+  },
+  {
+   "source": "PK-S21",
+   "relation": "context",
+   "note": "pack ST066: Family-level definitions, mechanics or research context only. Exact rules below are original research templates, not a replication or source-endorsed strategy."
+  },
+  {
+   "source": "PK-S22",
+   "relation": "context",
+   "note": "pack ST066: Family-level definitions, mechanics or research context only. Exact rules below are original research templates, not a replication or source-endorsed strategy."
+  },
+  {
+   "source": "PK-S23",
+   "relation": "context",
+   "note": "pack ST066: Family-level definitions, mechanics or research context only. Exact rules below are original research templates, not a replication or source-endorsed strategy."
+  },
+  {
+   "source": "PK-S32",
+   "relation": "context",
+   "note": "pack ST066: Family-level definitions, mechanics or research context only. Exact rules below are original research templates, not a replication or source-endorsed strategy."
+  }
+ ],
+ "variants": []
+}

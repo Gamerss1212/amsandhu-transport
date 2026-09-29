@@ -1,0 +1,84 @@
+{
+ "id": "STRAT-171",
+ "key": "meme_squeeze_release",
+ "name": "Memecoin volatility contraction release",
+ "family": "memecoin",
+ "subfamily": "market regime",
+ "hypothesis": "Buy when the 20-bar squeeze ends with a close above the prior 20-bar high while BTC's normalized ATR is under 1.5 times its 96-bar average; 3-ATR stop, 2R target.",
+ "markets": [
+  "crypto"
+ ],
+ "timeframe": "15m",
+ "data": [
+  "bars"
+ ],
+ "definition": {
+  "name": "Memecoin volatility contraction release",
+  "family": "memecoin",
+  "timeframe": "15m",
+  "direction": "long",
+  "params": {},
+  "entry": {
+   "long": "squeeze(20).on[1] == 1 and squeeze(20).on == 0 and close > donchian(20).upper[1] and sym(\"BTC-USD\", natr(14) < 1.5*sma(natr(14),96))"
+  },
+  "filters": [],
+  "order": {
+   "type": "market"
+  },
+  "stop": {
+   "type": "atr",
+   "mult": 3.0,
+   "n": 14
+  },
+  "target": {
+   "type": "r",
+   "r": 2.0
+  },
+  "trail": {
+   "type": "none"
+  },
+  "exit": {},
+  "max_bars": 0,
+  "session": {
+   "flat_minutes_before_close": 5
+  },
+  "max_trades_per_day": 2,
+  "cooldown_bars": 0,
+  "sizing": {
+   "risk_pct": 0.5,
+   "max_notional_pct": 100.0
+  },
+  "data": [
+   "bars"
+  ],
+  "id": "STRAT-171",
+  "version": "1.0.0"
+ },
+ "spec": null,
+ "implementation_status": "implemented",
+ "blocked_reason": null,
+ "research_status": "hypothesis",
+ "evidence": [
+  {
+   "source": "PK-S24",
+   "relation": "context",
+   "note": "pack ST225: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  },
+  {
+   "source": "PK-S32",
+   "relation": "context",
+   "note": "pack ST225: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  },
+  {
+   "source": "PK-S35",
+   "relation": "context",
+   "note": "pack ST225: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  },
+  {
+   "source": "PK-S36",
+   "relation": "context",
+   "note": "pack ST225: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  }
+ ],
+ "variants": []
+}

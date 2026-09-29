@@ -1,0 +1,56 @@
+{
+ "id": "STRAT-370",
+ "key": "pack_st282_concentrated_range_mean_reversion_lp",
+ "name": "Concentrated range mean-reversion LP",
+ "family": "memecoin",
+ "subfamily": "liquidity provision",
+ "hypothesis": "Provide a predeclared concentrated range after stability and two-sided organic volume pass tests.",
+ "markets": [
+  "crypto"
+ ],
+ "timeframe": "5m",
+ "data": [
+  "active ranges/bins",
+  "LP shares",
+  "swap fees",
+  "inventory valuation"
+ ],
+ "definition": null,
+ "spec": "Setup: A verified stationary price region may justify concentration. Entry: Provide a predeclared concentrated range after stability and two-sided organic volume pass tests. Evaluate only information available at decision time; attempt execution afterward. Exit: Withdraw on range-break confirmation, risk cap, or deadline. Always apply the earlier of the registered maximum holding time and hard risk invalidation; fills can be delayed or unavailable. Parameters to pre-register: eligible universe and point-in-time membership, observation window and completed-event/bar rule, numerical threshold(s) named by the signal, entry order and maximum price/quote deviation, initial invalidation level and target if used, H_max and explicit session definition, cost, impact, latency, failed-attempt, and leg-risk models, position/notional/exit-capacity caps, baseline and out-of-sample rejection thresholds.",
+ "implementation_status": "blocked",
+ "blocked_reason": "needs AMM liquidity-position simulation (fees, ranges, impermanent loss)",
+ "research_status": "hypothesis",
+ "evidence": [
+  {
+   "source": "PK-S22",
+   "relation": "context",
+   "note": "pack ST282: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  },
+  {
+   "source": "PK-S23",
+   "relation": "context",
+   "note": "pack ST282: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  },
+  {
+   "source": "PK-S31",
+   "relation": "context",
+   "note": "pack ST282: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  },
+  {
+   "source": "PK-S59",
+   "relation": "context",
+   "note": "pack ST282: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  },
+  {
+   "source": "PK-S66",
+   "relation": "context",
+   "note": "pack ST282: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  },
+  {
+   "source": "PK-S74",
+   "relation": "context",
+   "note": "pack ST282: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  }
+ ],
+ "variants": []
+}

@@ -1,0 +1,182 @@
+{
+  "version": "2.0.0",
+  "status": "research_policy_specification_not_production_implementation",
+  "live_execution_enabled": false,
+  "pass_meaning": "Eligible only for a configured research experiment; not safe or profitable.",
+  "thresholds": {
+    "max_quote_age": null,
+    "max_position_notional": null,
+    "max_total_loss": null,
+    "max_exit_impact": null
+  },
+  "rules": [
+    {
+      "id": "MR001",
+      "reason_code": "IDENTITY_UNRESOLVED",
+      "blocking_condition": "Exact chain and deployment not independently resolved",
+      "action": "block_new_exposure_and_record_evidence",
+      "unknown_policy": "block",
+      "existing_position_policy": "Apply separately authorized incident policy; an exit may be unavailable."
+    },
+    {
+      "id": "MR002",
+      "reason_code": "DECIMALS_UNVERIFIED",
+      "blocking_condition": "Quantity scale is missing or conflicting",
+      "action": "block_new_exposure_and_record_evidence",
+      "unknown_policy": "block",
+      "existing_position_policy": "Apply separately authorized incident policy; an exit may be unavailable."
+    },
+    {
+      "id": "MR003",
+      "reason_code": "AUTHORITY_UNKNOWN",
+      "blocking_condition": "Controlling privileges or implementation are unresolved",
+      "action": "block_new_exposure_and_record_evidence",
+      "unknown_policy": "block",
+      "existing_position_policy": "Apply separately authorized incident policy; an exit may be unavailable."
+    },
+    {
+      "id": "MR004",
+      "reason_code": "TOKEN_BEHAVIOR_CHANGED",
+      "blocking_condition": "Permissions, implementation, or extension state changed",
+      "action": "block_new_exposure_and_record_evidence",
+      "unknown_policy": "block",
+      "existing_position_policy": "Apply separately authorized incident policy; an exit may be unavailable."
+    },
+    {
+      "id": "MR005",
+      "reason_code": "EXTENSION_UNSUPPORTED",
+      "blocking_condition": "Token or pool behavior is unsupported by the adapter",
+      "action": "block_new_exposure_and_record_evidence",
+      "unknown_policy": "block",
+      "existing_position_policy": "Apply separately authorized incident policy; an exit may be unavailable."
+    },
+    {
+      "id": "MR006",
+      "reason_code": "SIMULATION_UNKNOWN",
+      "blocking_condition": "Intended wallet and size have no current successful route simulation",
+      "action": "block_new_exposure_and_record_evidence",
+      "unknown_policy": "block",
+      "existing_position_policy": "Apply separately authorized incident policy; an exit may be unavailable."
+    },
+    {
+      "id": "MR007",
+      "reason_code": "EXIT_ROUTE_MISSING",
+      "blocking_condition": "Full-position exit cannot be quoted",
+      "action": "block_new_exposure_and_record_evidence",
+      "unknown_policy": "block",
+      "existing_position_policy": "Apply separately authorized incident policy; an exit may be unavailable."
+    },
+    {
+      "id": "MR008",
+      "reason_code": "QUOTE_STALE",
+      "blocking_condition": "Quote age or underlying-state age exceeds the configured bound",
+      "action": "block_new_exposure_and_record_evidence",
+      "unknown_policy": "block",
+      "existing_position_policy": "Apply separately authorized incident policy; an exit may be unavailable."
+    },
+    {
+      "id": "MR009",
+      "reason_code": "FEE_SEMANTICS_UNKNOWN",
+      "blocking_condition": "All-in costs cannot be reconciled",
+      "action": "block_new_exposure_and_record_evidence",
+      "unknown_policy": "block",
+      "existing_position_policy": "Apply separately authorized incident policy; an exit may be unavailable."
+    },
+    {
+      "id": "MR010",
+      "reason_code": "LIQUIDITY_RIGHTS_UNKNOWN",
+      "blocking_condition": "Withdrawal rights or relevant active liquidity are unresolved",
+      "action": "block_new_exposure_and_record_evidence",
+      "unknown_policy": "block",
+      "existing_position_policy": "Apply separately authorized incident policy; an exit may be unavailable."
+    },
+    {
+      "id": "MR011",
+      "reason_code": "MIGRATION_UNRESOLVED",
+      "blocking_condition": "Curve completion and destination pool are not reconciled",
+      "action": "block_new_exposure_and_record_evidence",
+      "unknown_policy": "block",
+      "existing_position_policy": "Apply separately authorized incident policy; an exit may be unavailable."
+    },
+    {
+      "id": "MR012",
+      "reason_code": "DATA_GAP",
+      "blocking_condition": "Required economic events are incomplete or contradictory",
+      "action": "block_new_exposure_and_record_evidence",
+      "unknown_policy": "block",
+      "existing_position_policy": "Apply separately authorized incident policy; an exit may be unavailable."
+    },
+    {
+      "id": "MR013",
+      "reason_code": "UNIVERSE_PARTIAL",
+      "blocking_condition": "Coverage cannot support the experiment's stated population",
+      "action": "block_new_exposure_and_record_evidence",
+      "unknown_policy": "block",
+      "existing_position_policy": "Apply separately authorized incident policy; an exit may be unavailable."
+    },
+    {
+      "id": "MR014",
+      "reason_code": "LABEL_HINDSIGHT",
+      "blocking_condition": "A required identity label was unavailable at decision time",
+      "action": "block_new_exposure_and_record_evidence",
+      "unknown_policy": "block",
+      "existing_position_policy": "Apply separately authorized incident policy; an exit may be unavailable."
+    },
+    {
+      "id": "MR015",
+      "reason_code": "SHORT_UNAVAILABLE",
+      "blocking_condition": "Required borrow or permitted derivative is unavailable",
+      "action": "block_new_exposure_and_record_evidence",
+      "unknown_policy": "block",
+      "existing_position_policy": "Apply separately authorized incident policy; an exit may be unavailable."
+    },
+    {
+      "id": "MR016",
+      "reason_code": "ACCOUNT_INELIGIBLE",
+      "blocking_condition": "Actual account and jurisdiction checks do not allow the instrument",
+      "action": "block_new_exposure_and_record_evidence",
+      "unknown_policy": "block",
+      "existing_position_policy": "Apply separately authorized incident policy; an exit may be unavailable."
+    },
+    {
+      "id": "MR017",
+      "reason_code": "SUBMISSION_UNCERTAIN",
+      "blocking_condition": "A prior economic action is not reconciled",
+      "action": "block_new_exposure_and_record_evidence",
+      "unknown_policy": "block",
+      "existing_position_policy": "Apply separately authorized incident policy; an exit may be unavailable."
+    },
+    {
+      "id": "MR018",
+      "reason_code": "RISK_LIMIT_UNSET",
+      "blocking_condition": "Required numerical loss, notional, or capacity limits are unset",
+      "action": "block_new_exposure_and_record_evidence",
+      "unknown_policy": "block",
+      "existing_position_policy": "Apply separately authorized incident policy; an exit may be unavailable."
+    },
+    {
+      "id": "MR019",
+      "reason_code": "RESEARCH_PARAMETERS_UNSET",
+      "blocking_condition": "Hypothesis thresholds and rejection criteria are not frozen",
+      "action": "block_new_exposure_and_record_evidence",
+      "unknown_policy": "block",
+      "existing_position_policy": "Apply separately authorized incident policy; an exit may be unavailable."
+    },
+    {
+      "id": "MR020",
+      "reason_code": "COST_EXCEEDS_EDGE",
+      "blocking_condition": "Registered net-opportunity threshold fails after full costs",
+      "action": "block_new_exposure_and_record_evidence",
+      "unknown_policy": "block",
+      "existing_position_policy": "Apply separately authorized incident policy; an exit may be unavailable."
+    }
+  ],
+  "diagnostic_flags": [
+    "suspected_circular_flow",
+    "uncertain_entity_clusters",
+    "paid_visibility",
+    "concentrated_holdings",
+    "incomplete_wallet_cost_basis"
+  ],
+  "diagnostic_policy": "Investigate and run sensitivity tests; flags are not legal findings or calibrated probabilities."
+}

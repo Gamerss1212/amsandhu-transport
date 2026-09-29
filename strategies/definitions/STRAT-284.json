@@ -1,0 +1,46 @@
+{
+ "id": "STRAT-284",
+ "key": "pack_st184_narrative_rotation_crossover",
+ "name": "Narrative rotation crossover",
+ "family": "memecoin",
+ "subfamily": "narrative rotation",
+ "hypothesis": "Buy the newly stronger eligible narrative basket when relative flow and price ranks cross registered thresholds.",
+ "markets": [
+  "crypto"
+ ],
+ "timeframe": "5m",
+ "data": [
+  "point-in-time narrative membership",
+  "failed tokens",
+  "synchronized basket prices",
+  "independent flow"
+ ],
+ "definition": null,
+ "spec": "Setup: Capital may shift from a weakening narrative to one gaining independent demand. Entry: Buy the newly stronger eligible narrative basket when relative flow and price ranks cross registered thresholds. Evaluate only information available at decision time; attempt execution afterward. Exit: Exit on rank reversal or portfolio risk limits. Always apply the earlier of the registered maximum holding time and hard risk invalidation; fills can be delayed or unavailable. Parameters to pre-register: eligible universe and point-in-time membership, observation window and completed-event/bar rule, numerical threshold(s) named by the signal, entry order and maximum price/quote deviation, initial invalidation level and target if used, H_max and explicit session definition, cost, impact, latency, failed-attempt, and leg-risk models, position/notional/exit-capacity caps, baseline and out-of-sample rejection thresholds.",
+ "implementation_status": "blocked",
+ "blocked_reason": "needs point-in-time narrative membership and flow data beyond the six exchange-listed memecoins",
+ "research_status": "hypothesis",
+ "evidence": [
+  {
+   "source": "PK-S32",
+   "relation": "context",
+   "note": "pack ST184: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  },
+  {
+   "source": "PK-S48",
+   "relation": "context",
+   "note": "pack ST184: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  },
+  {
+   "source": "PK-S67",
+   "relation": "context",
+   "note": "pack ST184: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  },
+  {
+   "source": "PK-S70",
+   "relation": "context",
+   "note": "pack ST184: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  }
+ ],
+ "variants": []
+}

@@ -1,0 +1,56 @@
+{
+ "id": "STRAT-376",
+ "key": "pack_st288_post_volatility_fee_normalization_lp",
+ "name": "Post-volatility fee normalization LP",
+ "family": "memecoin",
+ "subfamily": "liquidity provision",
+ "hypothesis": "Provide bounded liquidity only when independent volatility/markout forecasts improve while current fees remain elevated.",
+ "markets": [
+  "crypto"
+ ],
+ "timeframe": "5m",
+ "data": [
+  "active ranges/bins",
+  "LP shares",
+  "swap fees",
+  "inventory valuation"
+ ],
+ "definition": null,
+ "spec": "Setup: High dynamic fees after a shock may persist briefly after adverse flow subsides. Entry: Provide bounded liquidity only when independent volatility/markout forecasts improve while current fees remain elevated. Evaluate only information available at decision time; attempt execution afterward. Exit: Withdraw when fees normalize, adverse flow returns, or inventory reaches its cap. Always apply the earlier of the registered maximum holding time and hard risk invalidation; fills can be delayed or unavailable. Parameters to pre-register: eligible universe and point-in-time membership, observation window and completed-event/bar rule, numerical threshold(s) named by the signal, entry order and maximum price/quote deviation, initial invalidation level and target if used, H_max and explicit session definition, cost, impact, latency, failed-attempt, and leg-risk models, position/notional/exit-capacity caps, baseline and out-of-sample rejection thresholds.",
+ "implementation_status": "blocked",
+ "blocked_reason": "needs AMM liquidity-position simulation (fees, ranges, impermanent loss)",
+ "research_status": "hypothesis",
+ "evidence": [
+  {
+   "source": "PK-S22",
+   "relation": "context",
+   "note": "pack ST288: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  },
+  {
+   "source": "PK-S23",
+   "relation": "context",
+   "note": "pack ST288: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  },
+  {
+   "source": "PK-S31",
+   "relation": "context",
+   "note": "pack ST288: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  },
+  {
+   "source": "PK-S59",
+   "relation": "context",
+   "note": "pack ST288: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  },
+  {
+   "source": "PK-S66",
+   "relation": "context",
+   "note": "pack ST288: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  },
+  {
+   "source": "PK-S74",
+   "relation": "context",
+   "note": "pack ST288: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  }
+ ],
+ "variants": []
+}

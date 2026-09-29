@@ -1,0 +1,51 @@
+{
+ "id": "STRAT-264",
+ "key": "pack_st161_seller_exhaustion_base_break",
+ "name": "Seller exhaustion base break",
+ "family": "memecoin",
+ "subfamily": "flow reversal",
+ "hypothesis": "Buy above a completed base after unique net-seller count and sell notional both contract without loss of exit liquidity.",
+ "markets": [
+  "crypto"
+ ],
+ "timeframe": "5m",
+ "data": [
+  "trade-size cohorts",
+  "sell intensity",
+  "price-impact history",
+  "matched-depth quotes"
+ ],
+ "definition": null,
+ "spec": "Setup: A declining supply of active sellers may permit a rebound. Entry: Buy above a completed base after unique net-seller count and sell notional both contract without loss of exit liquidity. Evaluate only information available at decision time; attempt execution afterward. Exit: Exit below the base or on renewed seller expansion. Always apply the earlier of the registered maximum holding time and hard risk invalidation; fills can be delayed or unavailable. Parameters to pre-register: eligible universe and point-in-time membership, observation window and completed-event/bar rule, numerical threshold(s) named by the signal, entry order and maximum price/quote deviation, initial invalidation level and target if used, H_max and explicit session definition, cost, impact, latency, failed-attempt, and leg-risk models, position/notional/exit-capacity caps, baseline and out-of-sample rejection thresholds.",
+ "implementation_status": "blocked",
+ "blocked_reason": "needs swap-level flow and trade-size cohorts over time (not connected)",
+ "research_status": "hypothesis",
+ "evidence": [
+  {
+   "source": "PK-S27",
+   "relation": "context",
+   "note": "pack ST161: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  },
+  {
+   "source": "PK-S30",
+   "relation": "context",
+   "note": "pack ST161: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  },
+  {
+   "source": "PK-S64",
+   "relation": "context",
+   "note": "pack ST161: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  },
+  {
+   "source": "PK-S67",
+   "relation": "context",
+   "note": "pack ST161: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  },
+  {
+   "source": "PK-S70",
+   "relation": "context",
+   "note": "pack ST161: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  }
+ ],
+ "variants": []
+}

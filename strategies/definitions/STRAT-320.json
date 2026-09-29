@@ -1,0 +1,46 @@
+{
+ "id": "STRAT-320",
+ "key": "pack_st221_native_coin_shock_delayed_momentum",
+ "name": "Native-coin shock delayed momentum",
+ "family": "memecoin",
+ "subfamily": "market regime",
+ "hypothesis": "Buy an eligible meme basket after a native-coin shock only when basket demand confirms and lagged costs leave room.",
+ "markets": [
+  "crypto"
+ ],
+ "timeframe": "5m",
+ "data": [
+  "native and BTC returns",
+  "lagged beta",
+  "network cost observations",
+  "point-in-time basket breadth"
+ ],
+ "definition": null,
+ "spec": "Setup: A host-chain rally may transmit to established memes with a measurable delay. Entry: Buy an eligible meme basket after a native-coin shock only when basket demand confirms and lagged costs leave room. Evaluate only information available at decision time; attempt execution afterward. Exit: Exit on native reversal or the predetermined response horizon. Always apply the earlier of the registered maximum holding time and hard risk invalidation; fills can be delayed or unavailable. Parameters to pre-register: eligible universe and point-in-time membership, observation window and completed-event/bar rule, numerical threshold(s) named by the signal, entry order and maximum price/quote deviation, initial invalidation level and target if used, H_max and explicit session definition, cost, impact, latency, failed-attempt, and leg-risk models, position/notional/exit-capacity caps, baseline and out-of-sample rejection thresholds.",
+ "implementation_status": "blocked",
+ "blocked_reason": "needs chain activity, network cost or depth data beyond exchange price bars",
+ "research_status": "hypothesis",
+ "evidence": [
+  {
+   "source": "PK-S24",
+   "relation": "context",
+   "note": "pack ST221: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  },
+  {
+   "source": "PK-S32",
+   "relation": "context",
+   "note": "pack ST221: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  },
+  {
+   "source": "PK-S35",
+   "relation": "context",
+   "note": "pack ST221: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  },
+  {
+   "source": "PK-S36",
+   "relation": "context",
+   "note": "pack ST221: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  }
+ ],
+ "variants": []
+}

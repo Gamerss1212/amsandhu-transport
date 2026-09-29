@@ -1,0 +1,51 @@
+{
+ "id": "STRAT-207",
+ "key": "pack_st104_returning_buyer_launch_continuation",
+ "name": "Returning-buyer launch continuation",
+ "family": "memecoin",
+ "subfamily": "launch discovery",
+ "hypothesis": "Buy when a preselected fraction of initial buyers makes additional net purchases and price clears a completed consolidation.",
+ "markets": [
+  "crypto"
+ ],
+ "timeframe": "5m",
+ "data": [
+  "creation events",
+  "decoded swaps",
+  "real and virtual reserves",
+  "buyer clusters"
+ ],
+ "definition": null,
+ "spec": "Setup: Repeat buying by independently funded participants may indicate continued demand. Entry: Buy when a preselected fraction of initial buyers makes additional net purchases and price clears a completed consolidation. Evaluate only information available at decision time; attempt execution afterward. Exit: Exit when return buyers turn net sellers or consolidation support fails. Always apply the earlier of the registered maximum holding time and hard risk invalidation; fills can be delayed or unavailable. Parameters to pre-register: eligible universe and point-in-time membership, observation window and completed-event/bar rule, numerical threshold(s) named by the signal, entry order and maximum price/quote deviation, initial invalidation level and target if used, H_max and explicit session definition, cost, impact, latency, failed-attempt, and leg-risk models, position/notional/exit-capacity caps, baseline and out-of-sample rejection thresholds.",
+ "implementation_status": "blocked",
+ "blocked_reason": "needs launchpad creation events, bonding-curve state and decoded swaps (on-chain history not connected)",
+ "research_status": "hypothesis",
+ "evidence": [
+  {
+   "source": "PK-S52",
+   "relation": "context",
+   "note": "pack ST104: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  },
+  {
+   "source": "PK-S56",
+   "relation": "context",
+   "note": "pack ST104: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  },
+  {
+   "source": "PK-S57",
+   "relation": "context",
+   "note": "pack ST104: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  },
+  {
+   "source": "PK-S67",
+   "relation": "context",
+   "note": "pack ST104: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  },
+  {
+   "source": "PK-S68",
+   "relation": "context",
+   "note": "pack ST104: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  }
+ ],
+ "variants": []
+}

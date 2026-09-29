@@ -1,0 +1,46 @@
+{
+ "id": "STRAT-274",
+ "key": "pack_st171_verified_announcement_demand_continuatio",
+ "name": "Verified announcement demand continuation",
+ "family": "memecoin",
+ "subfamily": "social events",
+ "hypothesis": "Buy after a timestamped primary announcement and a completed price breakout confirmed by independent on-chain purchases.",
+ "markets": [
+  "crypto"
+ ],
+ "timeframe": "5m",
+ "data": [
+  "permitted social archives",
+  "original publication and receipt times",
+  "paid-promotion labels",
+  "chain conversion"
+ ],
+ "definition": null,
+ "spec": "Setup: A public announcement may attract sustained demand beyond its first reaction. Entry: Buy after a timestamped primary announcement and a completed price breakout confirmed by independent on-chain purchases. Evaluate only information available at decision time; attempt execution afterward. Exit: Exit on announcement correction, flow reversal, or the event time limit. Always apply the earlier of the registered maximum holding time and hard risk invalidation; fills can be delayed or unavailable. Parameters to pre-register: eligible universe and point-in-time membership, observation window and completed-event/bar rule, numerical threshold(s) named by the signal, entry order and maximum price/quote deviation, initial invalidation level and target if used, H_max and explicit session definition, cost, impact, latency, failed-attempt, and leg-risk models, position/notional/exit-capacity caps, baseline and out-of-sample rejection thresholds.",
+ "implementation_status": "blocked",
+ "blocked_reason": "needs a social / announcement feed with receipt times (not connected)",
+ "research_status": "hypothesis",
+ "evidence": [
+  {
+   "source": "PK-S49",
+   "relation": "context",
+   "note": "pack ST171: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  },
+  {
+   "source": "PK-S51",
+   "relation": "context",
+   "note": "pack ST171: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  },
+  {
+   "source": "PK-S67",
+   "relation": "context",
+   "note": "pack ST171: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  },
+  {
+   "source": "PK-S71",
+   "relation": "context",
+   "note": "pack ST171: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  }
+ ],
+ "variants": []
+}

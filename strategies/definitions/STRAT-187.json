@@ -1,0 +1,46 @@
+{
+ "id": "STRAT-187",
+ "key": "pack_st043_public_filing_event",
+ "name": "Public filing event",
+ "family": "scheduled_events",
+ "subfamily": "event",
+ "hypothesis": "Trade only a prevalidated event-to-price rule after document parsing and quote checks.",
+ "markets": [
+  "stock"
+ ],
+ "timeframe": "5m",
+ "data": [
+  "publication and receipt timestamps",
+  "licensed event/news feed",
+  "executable quotes",
+  "session and halt status"
+ ],
+ "definition": null,
+ "spec": "Setup: A new regulatory filing is received and mapped to an issuer and event class. Entry: Trade only a prevalidated event-to-price rule after document parsing and quote checks. Exit: Exit under that event model's stop and time rules. Parameters to pre-register: filing_types, event_taxonomy, publication_latency, confidence_gate.",
+ "implementation_status": "blocked",
+ "blocked_reason": "needs a licensed event feed (earnings surprises, consensus, filings, auction or halt data) with receipt times",
+ "research_status": "hypothesis",
+ "evidence": [
+  {
+   "source": "PK-S04",
+   "relation": "context",
+   "note": "pack ST043: Family-level definitions, mechanics or research context only. Exact rules below are original research templates, not a replication or source-endorsed strategy."
+  },
+  {
+   "source": "PK-S06",
+   "relation": "context",
+   "note": "pack ST043: Family-level definitions, mechanics or research context only. Exact rules below are original research templates, not a replication or source-endorsed strategy."
+  },
+  {
+   "source": "PK-S42",
+   "relation": "context",
+   "note": "pack ST043: Family-level definitions, mechanics or research context only. Exact rules below are original research templates, not a replication or source-endorsed strategy."
+  },
+  {
+   "source": "PK-S43",
+   "relation": "context",
+   "note": "pack ST043: Family-level definitions, mechanics or research context only. Exact rules below are original research templates, not a replication or source-endorsed strategy."
+  }
+ ],
+ "variants": []
+}

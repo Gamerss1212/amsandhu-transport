@@ -101,6 +101,235 @@
 - STRAT-151 Funding-rate carry (spot long / perp short): not day trading: the position is held across funding settlements; also needs two venues
 - STRAT-156 Wolfe waves: five-swing geometric pattern not implemented (engine tracks three swings)
 - STRAT-157 Harmonic (Gartley/Bat) patterns: five-swing pattern matching not implemented
+- STRAT-178 Distance-based pairs convergence: needs simultaneous two-leg or basket execution with short legs; the engine trades one instrument per bot
+- STRAT-179 Cointegration residual convergence: needs simultaneous two-leg or basket execution with short legs; the engine trades one instrument per bot
+- STRAT-180 Kalman-filter pairs model: needs simultaneous two-leg or basket execution with short legs; the engine trades one instrument per bot
+- STRAT-181 Index-versus-basket dislocation: needs simultaneous two-leg or basket execution with short legs; the engine trades one instrument per bot
+- STRAT-182 ETF-versus-ETF relative value: needs simultaneous two-leg or basket execution with short legs; the engine trades one instrument per bot
+- STRAT-183 Cross-sectional intraday reversal basket: needs simultaneous two-leg or basket execution with short legs; the engine trades one instrument per bot
+- STRAT-184 Cross-sectional intraday momentum basket: needs simultaneous two-leg or basket execution with short legs; the engine trades one instrument per bot
+- STRAT-185 Earnings-response continuation: needs a licensed event feed (earnings surprises, consensus, filings, auction or halt data) with receipt times
+- STRAT-186 Earnings-response reversal: needs a licensed event feed (earnings surprises, consensus, filings, auction or halt data) with receipt times
+- STRAT-187 Public filing event: needs a licensed event feed (earnings surprises, consensus, filings, auction or halt data) with receipt times
+- STRAT-188 Macro-surprise reaction: needs a licensed event feed (earnings surprises, consensus, filings, auction or halt data) with receipt times
+- STRAT-189 Opening-auction imbalance response: needs a licensed event feed (earnings surprises, consensus, filings, auction or halt data) with receipt times
+- STRAT-190 Halt-resumption response: needs a licensed event feed (earnings surprises, consensus, filings, auction or halt data) with receipt times
+- STRAT-191 Order-flow imbalance forecast: needs a sequenced L2/L3 order-book feed; the free venues give periodic snapshots only
+- STRAT-192 Book-depletion breakout: needs a sequenced L2/L3 order-book feed; the free venues give periodic snapshots only
+- STRAT-193 Liquidity-sweep and recovery: needs a sequenced L2/L3 order-book feed; the free venues give periodic snapshots only
+- STRAT-194 Replenishment persistence: needs a sequenced L2/L3 order-book feed; the free venues give periodic snapshots only
+- STRAT-195 Spot-perpetual basis convergence: needs prefunded inventory on several venues and synchronized multi-leg execution
+- STRAT-196 Dated-futures cash and carry: needs prefunded inventory on several venues and synchronized multi-leg execution
+- STRAT-197 Reverse cash and carry: needs prefunded inventory on several venues and synchronized multi-leg execution
+- STRAT-198 Calendar-spread convergence: needs prefunded inventory on several venues and synchronized multi-leg execution
+- STRAT-199 Perpetual-versus-perpetual dislocation: needs prefunded inventory on several venues and synchronized multi-leg execution
+- STRAT-200 DEX-versus-CEX dislocation: needs prefunded inventory on several venues and synchronized multi-leg execution
+- STRAT-201 ETF cash-basket arbitrage concept: needs prefunded inventory on several venues and synchronized multi-leg execution
+- STRAT-202 Cross-venue hedged market making: needs queue/latency modelling and two-sided quoting, which the paper engine does not simulate
+- STRAT-203 AMM liquidity provision concept: needs queue/latency modelling and two-sided quoting, which the paper engine does not simulate
+- STRAT-204 Independent launch demand persistence: needs launchpad creation events, bonding-curve state and decoded swaps (on-chain history not connected)
+- STRAT-205 Second buyer-cohort expansion: needs launchpad creation events, bonding-curve state and decoded swaps (on-chain history not connected)
+- STRAT-206 Creator-sale absorption after launch: needs launchpad creation events, bonding-curve state and decoded swaps (on-chain history not connected)
+- STRAT-207 Returning-buyer launch continuation: needs launchpad creation events, bonding-curve state and decoded swaps (on-chain history not connected)
+- STRAT-208 Curve progress acceleration: needs launchpad creation events, bonding-curve state and decoded swaps (on-chain history not connected)
+- STRAT-209 Curve pullback with demand retention: needs launchpad creation events, bonding-curve state and decoded swaps (on-chain history not connected)
+- STRAT-210 Early buyer-seller balance reset: needs launchpad creation events, bonding-curve state and decoded swaps (on-chain history not connected)
+- STRAT-211 Broad-wallet launch range break: needs launchpad creation events, bonding-curve state and decoded swaps (on-chain history not connected)
+- STRAT-212 Native-relative launch strength: needs launchpad creation events, bonding-curve state and decoded swaps (on-chain history not connected)
+- STRAT-213 Age-normalized launch leader: needs launchpad creation events, bonding-curve state and decoded swaps (on-chain history not connected)
+- STRAT-214 Confirmed migration first consolidation: needs launchpad migration events and pool state history (on-chain, not connected)
+- STRAT-215 Migration selloff reclaim: needs launchpad migration events and pool state history (on-chain, not connected)
+- STRAT-216 Post-graduation new-high acceptance: needs launchpad migration events and pool state history (on-chain, not connected)
+- STRAT-217 Buyer retention through migration: needs launchpad migration events and pool state history (on-chain, not connected)
+- STRAT-218 Migration depth expansion trend: needs launchpad migration events and pool state history (on-chain, not connected)
+- STRAT-219 Migration fee-friction reduction: needs launchpad migration events and pool state history (on-chain, not connected)
+- STRAT-220 Cross-stage valuation catch-up: needs launchpad migration events and pool state history (on-chain, not connected)
+- STRAT-221 Delayed migration recovery: needs launchpad migration events and pool state history (on-chain, not connected)
+- STRAT-222 Post-graduation stable-quote demand: needs launchpad migration events and pool state history (on-chain, not connected)
+- STRAT-223 Graduation-cohort relative leader: needs launchpad migration events and pool state history (on-chain, not connected)
+- STRAT-224 Price-adjusted liquidity growth breakout: needs executable DEX pool depth and quote history (not connected)
+- STRAT-225 Executable sell-depth recovery: needs executable DEX pool depth and quote history (not connected)
+- STRAT-226 Two-sided quote compression continuation: needs executable DEX pool depth and quote history (not connected)
+- STRAT-227 Independent exit-route expansion: needs executable DEX pool depth and quote history (not connected)
+- STRAT-228 Liquidity cliff acceptance: needs executable DEX pool depth and quote history (not connected)
+- STRAT-229 Active-bin replenishment continuation: needs executable DEX pool depth and quote history (not connected)
+- STRAT-230 Temporary liquidity withdrawal recovery: needs executable DEX pool depth and quote history (not connected)
+- STRAT-231 Depth-to-valuation improvement: needs executable DEX pool depth and quote history (not connected)
+- STRAT-232 Routing-efficiency demand breakout: needs executable DEX pool depth and quote history (not connected)
+- STRAT-233 Quote-to-fill consistency momentum: needs executable DEX pool depth and quote history (not connected)
+- STRAT-234 Cluster-adjusted accumulation breakout: needs point-in-time holder balances and wallet clustering (on-chain, not connected)
+- STRAT-235 Large-holder reduction absorption: needs point-in-time holder balances and wallet clustering (on-chain, not connected)
+- STRAT-236 Median holder-balance expansion: needs point-in-time holder balances and wallet clustering (on-chain, not connected)
+- STRAT-237 New-holder retention breakout: needs point-in-time holder balances and wallet clustering (on-chain, not connected)
+- STRAT-238 Old-holder reactivation bid: needs point-in-time holder balances and wallet clustering (on-chain, not connected)
+- STRAT-239 Exchange-withdrawal confirmed accumulation: needs point-in-time holder balances and wallet clustering (on-chain, not connected)
+- STRAT-240 Holder concentration decline without dilution: needs point-in-time holder balances and wallet clustering (on-chain, not connected)
+- STRAT-241 Dormant supply absorption recovery: needs point-in-time holder balances and wallet clustering (on-chain, not connected)
+- STRAT-242 Net buyer cohort divergence: needs point-in-time holder balances and wallet clustering (on-chain, not connected)
+- STRAT-243 Entity diversity relative selection: needs point-in-time holder balances and wallet clustering (on-chain, not connected)
+- STRAT-244 Delayed realized-profit wallet follow: needs labelled wallet histories (on-chain, not connected)
+- STRAT-245 Independent wallet consensus entry: needs labelled wallet histories (on-chain, not connected)
+- STRAT-246 Repeat specialist wallet signal: needs labelled wallet histories (on-chain, not connected)
+- STRAT-247 Slow accumulator follow: needs labelled wallet histories (on-chain, not connected)
+- STRAT-248 Source-wallet drawdown recovery follow: needs labelled wallet histories (on-chain, not connected)
+- STRAT-249 Wallet entry cost-proximity follow: needs labelled wallet histories (on-chain, not connected)
+- STRAT-250 Wallet-size capped follow: needs labelled wallet histories (on-chain, not connected)
+- STRAT-251 Wallet disagreement resolution: needs labelled wallet histories (on-chain, not connected)
+- STRAT-252 Wallet cohort newcomer confirmation: needs labelled wallet histories (on-chain, not connected)
+- STRAT-253 Capacity-adjusted wallet basket: needs labelled wallet histories (on-chain, not connected)
+- STRAT-254 Net quote inflow acceleration: needs deduplicated swap-level flow history; exchange aggressor flow is captured live only
+- STRAT-255 Aggressor breadth momentum: needs deduplicated swap-level flow history; exchange aggressor flow is captured live only
+- STRAT-256 Median trade-size expansion: needs deduplicated swap-level flow history; exchange aggressor flow is captured live only
+- STRAT-257 Trade-arrival acceleration breakout: needs deduplicated swap-level flow history; exchange aggressor flow is captured live only
+- STRAT-258 Multi-window inflow alignment: needs deduplicated swap-level flow history; exchange aggressor flow is captured live only
+- STRAT-259 Buy-notional dominance with diverse sizes: needs deduplicated swap-level flow history; exchange aggressor flow is captured live only
+- STRAT-260 Price efficiency of genuine inflow: needs deduplicated swap-level flow history; exchange aggressor flow is captured live only
+- STRAT-261 Native-denominated volume expansion: needs deduplicated swap-level flow history; exchange aggressor flow is captured live only
+- STRAT-262 New-session demand renewal: needs deduplicated swap-level flow history; exchange aggressor flow is captured live only
+- STRAT-263 Cross-provider confirmed flow trend: needs deduplicated swap-level flow history; exchange aggressor flow is captured live only
+- STRAT-264 Seller exhaustion base break: needs swap-level flow and trade-size cohorts over time (not connected)
+- STRAT-265 Large-sale impact decay: needs swap-level flow and trade-size cohorts over time (not connected)
+- STRAT-266 Negative flow positive price divergence: needs swap-level flow and trade-size cohorts over time (not connected)
+- STRAT-267 Positive flow failed high reversal: needs swap-level flow and trade-size cohorts over time (not connected)
+- STRAT-268 Panic-volume recovery reclaim: needs swap-level flow and trade-size cohorts over time (not connected)
+- STRAT-269 Burst-volume afterglow fade: needs swap-level flow and trade-size cohorts over time (not connected)
+- STRAT-270 Whale-print reversion: needs swap-level flow and trade-size cohorts over time (not connected)
+- STRAT-271 Round-trip burst rejection: needs swap-level flow and trade-size cohorts over time (not connected)
+- STRAT-272 Cross-pool overshoot rebound: needs swap-level flow and trade-size cohorts over time (not connected)
+- STRAT-273 Volume climax with retained base: needs swap-level flow and trade-size cohorts over time (not connected)
+- STRAT-274 Verified announcement demand continuation: needs a social / announcement feed with receipt times (not connected)
+- STRAT-275 Attention-to-purchase conversion: needs a social / announcement feed with receipt times (not connected)
+- STRAT-276 Organic contributor breadth breakout: needs a social / announcement feed with receipt times (not connected)
+- STRAT-277 Cross-platform attention confirmation: needs a social / announcement feed with receipt times (not connected)
+- STRAT-278 Attention decay price resilience: needs a social / announcement feed with receipt times (not connected)
+- STRAT-279 Official rumor-resolution rebound: needs a social / announcement feed with receipt times (not connected)
+- STRAT-280 Community event second reaction: needs a social / announcement feed with receipt times (not connected)
+- STRAT-281 Paid-visibility quality confirmation: needs a social / announcement feed with receipt times (not connected)
+- STRAT-282 New public distribution-channel response: needs a social / announcement feed with receipt times (not connected)
+- STRAT-283 Narrative clarification relative trade: needs a social / announcement feed with receipt times (not connected)
+- STRAT-284 Narrative rotation crossover: needs point-in-time narrative membership and flow data beyond the six exchange-listed memecoins
+- STRAT-285 Narrative dispersion compression: needs point-in-time narrative membership and flow data beyond the six exchange-listed memecoins
+- STRAT-286 Narrative demand concentration reversal: needs point-in-time narrative membership and flow data beyond the six exchange-listed memecoins
+- STRAT-287 New-narrative liquidity confirmation: needs point-in-time narrative membership and flow data beyond the six exchange-listed memecoins
+- STRAT-288 Old-narrative revival: needs point-in-time narrative membership and flow data beyond the six exchange-listed memecoins
+- STRAT-289 Native-coin-neutral narrative momentum: needs point-in-time narrative membership and flow data beyond the six exchange-listed memecoins
+- STRAT-290 Same-chain prefunded pool arbitrage: needs synchronized multi-pool DEX quotes (not connected)
+- STRAT-291 Stable-versus-native route arbitrage: needs synchronized multi-pool DEX quotes (not connected)
+- STRAT-292 Cross-fee-tier convergence: needs synchronized multi-pool DEX quotes (not connected)
+- STRAT-293 Deep-pool lead shallow-pool catch-up: needs synchronized multi-pool DEX quotes (not connected)
+- STRAT-294 Multi-pool synchronized breakout: needs synchronized multi-pool DEX quotes (not connected)
+- STRAT-295 Outlier-pool recovery trade: needs synchronized multi-pool DEX quotes (not connected)
+- STRAT-296 Pool-share migration demand: needs synchronized multi-pool DEX quotes (not connected)
+- STRAT-297 Cross-pool inventory imbalance fade: needs synchronized multi-pool DEX quotes (not connected)
+- STRAT-298 New-pool price-discovery acceptance: needs synchronized multi-pool DEX quotes (not connected)
+- STRAT-299 Independent reference residual trend: needs synchronized multi-pool DEX quotes (not connected)
+- STRAT-300 Verified spot-listing second wave: needs exchange listing, deposit and withdrawal status history (not connected)
+- STRAT-301 Listing sell-the-news reversal: needs exchange listing, deposit and withdrawal status history (not connected)
+- STRAT-302 New quote-pair demand continuation: needs exchange listing, deposit and withdrawal status history (not connected)
+- STRAT-303 Deposit reopening convergence: needs exchange listing, deposit and withdrawal status history (not connected)
+- STRAT-304 Withdrawal reopening discount recovery: needs exchange listing, deposit and withdrawal status history (not connected)
+- STRAT-305 CEX-led spot momentum transmission: needs exchange listing, deposit and withdrawal status history (not connected)
+- STRAT-306 DEX-led listing-market catch-up: needs exchange listing, deposit and withdrawal status history (not connected)
+- STRAT-307 Trading-resumption range acceptance: needs exchange listing, deposit and withdrawal status history (not connected)
+- STRAT-308 Delisting flow absorption rebound: needs exchange listing, deposit and withdrawal status history (not connected)
+- STRAT-309 Exchange basket visibility response: needs exchange listing, deposit and withdrawal status history (not connected)
+- STRAT-310 Spot-led open-interest expansion: needs open-interest, funding and liquidation history at intraday resolution (not connected)
+- STRAT-311 Price rise with position closure reversal: needs open-interest, funding and liquidation history at intraday resolution (not connected)
+- STRAT-312 Long-liquidation recovery: needs open-interest, funding and liquidation history at intraday resolution (not connected)
+- STRAT-313 Short-liquidation exhaustion fade: needs open-interest, funding and liquidation history at intraday resolution (not connected)
+- STRAT-314 Funding extreme with spot rejection: needs open-interest, funding and liquidation history at intraday resolution (not connected)
+- STRAT-315 Negative funding with spot accumulation: needs open-interest, funding and liquidation history at intraday resolution (not connected)
+- STRAT-316 Perpetual premium mean reversion: needs open-interest, funding and liquidation history at intraday resolution (not connected)
+- STRAT-317 Perpetual discount rebound pair: needs open-interest, funding and liquidation history at intraday resolution (not connected)
+- STRAT-318 Open-interest reset trend restart: needs open-interest, funding and liquidation history at intraday resolution (not connected)
+- STRAT-319 Cross-exchange leverage divergence: needs open-interest, funding and liquidation history at intraday resolution (not connected)
+- STRAT-320 Native-coin shock delayed momentum: needs chain activity, network cost or depth data beyond exchange price bars
+- STRAT-321 Risk-off defensive relative pair: needs chain activity, network cost or depth data beyond exchange price bars
+- STRAT-322 Weekend liquidity recovery: needs chain activity, network cost or depth data beyond exchange price bars
+- STRAT-323 Chain activity relative strength: needs chain activity, network cost or depth data beyond exchange price bars
+- STRAT-324 Launch-anchored VWAP second reclaim: needs transaction-derived bars or launch/migration anchors from on-chain data
+- STRAT-325 Migration-anchored value-area break: needs transaction-derived bars or launch/migration anchors from on-chain data
+- STRAT-326 Failed low with quote-depth confirmation: needs transaction-derived bars or launch/migration anchors from on-chain data
+- STRAT-327 Transaction-count bar trend: needs transaction-derived bars or launch/migration anchors from on-chain data
+- STRAT-328 Quote-volume bar pullback: needs transaction-derived bars or launch/migration anchors from on-chain data
+- STRAT-329 Sparse-trade restart range: needs transaction-derived bars or launch/migration anchors from on-chain data
+- STRAT-330 Multi-pool anchored VWAP divergence: needs transaction-derived bars or launch/migration anchors from on-chain data
+- STRAT-331 Verified supply-reduction demand response: needs unlock / supply event feeds (not connected)
+- STRAT-332 Unlock selling exhaustion rebound: needs unlock / supply event feeds (not connected)
+- STRAT-333 Unlock pre-event relative hedge: needs unlock / supply event feeds (not connected)
+- STRAT-334 Airdrop absorption recovery: needs unlock / supply event feeds (not connected)
+- STRAT-335 Treasury-distribution completion rebound: needs unlock / supply event feeds (not connected)
+- STRAT-336 Liquidity-lock extension demand confirmation: needs unlock / supply event feeds (not connected)
+- STRAT-337 Authority-change revaluation: needs unlock / supply event feeds (not connected)
+- STRAT-338 Claim-deadline supply stabilization: needs unlock / supply event feeds (not connected)
+- STRAT-339 Supply-accounting correction reversal: needs unlock / supply event feeds (not connected)
+- STRAT-340 Post-distribution holder stabilization: needs unlock / supply event feeds (not connected)
+- STRAT-341 Transfer-function restoration recovery: needs operational status feeds (transfers, routers, pools) with timestamps
+- STRAT-342 Quote-provider outage catch-up: needs operational status feeds (transfers, routers, pools) with timestamps
+- STRAT-343 Chain-congestion normalization rebound: needs operational status feeds (transfers, routers, pools) with timestamps
+- STRAT-344 Stable-quote disruption recovery: needs operational status feeds (transfers, routers, pools) with timestamps
+- STRAT-345 Router support restoration trend: needs operational status feeds (transfers, routers, pools) with timestamps
+- STRAT-346 Liquidity-migration operational recovery: needs operational status feeds (transfers, routers, pools) with timestamps
+- STRAT-347 Verified false-alarm reversal: needs operational status feeds (transfers, routers, pools) with timestamps
+- STRAT-348 Public service-resumption demand: needs operational status feeds (transfers, routers, pools) with timestamps
+- STRAT-349 Pool-fee normalization recovery: needs operational status feeds (transfers, routers, pools) with timestamps
+- STRAT-350 Operational-risk relative switch: needs operational status feeds (transfers, routers, pools) with timestamps
+- STRAT-351 Funding-window matched carry: needs funding/basis history and hedged derivative legs (not connected)
+- STRAT-352 Funding-flip basis convergence: needs funding/basis history and hedged derivative legs (not connected)
+- STRAT-353 Cross-venue funding differential carry: needs funding/basis history and hedged derivative legs (not connected)
+- STRAT-354 Basis compression after spot inflow: needs funding/basis history and hedged derivative legs (not connected)
+- STRAT-355 Dated-futures intraday basis reversion: needs funding/basis history and hedged derivative legs (not connected)
+- STRAT-356 Perpetual calendar-timing differential: needs funding/basis history and hedged derivative legs (not connected)
+- STRAT-357 Spot inventory premium convergence: needs funding/basis history and hedged derivative legs (not connected)
+- STRAT-358 Quote-currency basis hedge: needs funding/basis history and hedged derivative legs (not connected)
+- STRAT-359 Funding crowding spot-only continuation: needs funding/basis history and hedged derivative legs (not connected)
+- STRAT-360 Basis-dislocation recovery after venue stress: needs funding/basis history and hedged derivative legs (not connected)
+- STRAT-361 Age-matched meme relative reversal: needs hedgeable short legs or float estimates for memecoins
+- STRAT-362 Liquidity-matched narrative pair: needs hedgeable short legs or float estimates for memecoins
+- STRAT-363 Native-beta hedged single-token trend: needs hedgeable short legs or float estimates for memecoins
+- STRAT-364 Large-meme leader versus broad basket: needs hedgeable short legs or float estimates for memecoins
+- STRAT-365 Spot-only quality rotation: needs hedgeable short legs or float estimates for memecoins
+- STRAT-366 Cross-chain narrative demand pair: needs hedgeable short legs or float estimates for memecoins
+- STRAT-367 Token versus launch-cohort residual: needs hedgeable short legs or float estimates for memecoins
+- STRAT-368 Demand-to-float relative selection: needs hedgeable short legs or float estimates for memecoins
+- STRAT-369 Full-range fee-versus-adverse-selection LP: needs AMM liquidity-position simulation (fees, ranges, impermanent loss)
+- STRAT-370 Concentrated range mean-reversion LP: needs AMM liquidity-position simulation (fees, ranges, impermanent loss)
+- STRAT-371 Volatility-budgeted liquidity range: needs AMM liquidity-position simulation (fees, ranges, impermanent loss)
+- STRAT-372 Inventory-skewed LP allocation: needs AMM liquidity-position simulation (fees, ranges, impermanent loss)
+- STRAT-373 Hedged concentrated liquidity: needs AMM liquidity-position simulation (fees, ranges, impermanent loss)
+- STRAT-374 Event-avoiding organic-volume LP: needs AMM liquidity-position simulation (fees, ranges, impermanent loss)
+- STRAT-375 Cross-pool LP capital allocation: needs AMM liquidity-position simulation (fees, ranges, impermanent loss)
+- STRAT-376 Post-volatility fee normalization LP: needs AMM liquidity-position simulation (fees, ranges, impermanent loss)
+- STRAT-377 Bin-shaped two-sided range capture: needs AMM liquidity-position simulation (fees, ranges, impermanent loss)
+- STRAT-378 Confirmed reserve-shock continuation: needs block-level reserve and transaction data (on-chain, not connected)
+- STRAT-379 Reserve-shock absorption reversal: needs block-level reserve and transaction data (on-chain, not connected)
+- STRAT-380 Landed-buy intensity continuation: needs block-level reserve and transaction data (on-chain, not connected)
+- STRAT-381 Failed-buy demand confirmation: needs block-level reserve and transaction data (on-chain, not connected)
+- STRAT-382 Sell-route stress recovery: needs block-level reserve and transaction data (on-chain, not connected)
+- STRAT-383 Block-level flow persistence: needs block-level reserve and transaction data (on-chain, not connected)
+- STRAT-384 Depth-consumption versus refill trend: needs block-level reserve and transaction data (on-chain, not connected)
+- STRAT-385 Post-MEV distortion recovery: needs block-level reserve and transaction data (on-chain, not connected)
+- STRAT-386 Execution-cost shock reversal: needs block-level reserve and transaction data (on-chain, not connected)
+- STRAT-387 Guidance-revision intraday continuation: needs primary filings / corporate-event data with receipt times (licensed feed)
+- STRAT-388 Buyback-announcement acceptance: needs primary filings / corporate-event data with receipt times (licensed feed)
+- STRAT-389 Secondary-offering discount recovery: needs primary filings / corporate-event data with receipt times (licensed feed)
+- STRAT-390 Dividend-adjusted opening dislocation: needs primary filings / corporate-event data with receipt times (licensed feed)
+- STRAT-391 Split-adjusted liquidity transition: needs primary filings / corporate-event data with receipt times (licensed feed)
+- STRAT-392 Index-rebalance anticipation residual: needs primary filings / corporate-event data with receipt times (licensed feed)
+- STRAT-393 Index-rebalance post-auction reversal: needs primary filings / corporate-event data with receipt times (licensed feed)
+- STRAT-394 Public filing liquidity-shock recovery: needs primary filings / corporate-event data with receipt times (licensed feed)
+- STRAT-395 Peer earnings read-through: needs primary filings / corporate-event data with receipt times (licensed feed)
+- STRAT-396 Public merger-spread intraday normalization: needs primary filings / corporate-event data with receipt times (licensed feed)
+- STRAT-397 Advance-decline confirmed index trend: needs point-in-time constituent breadth or auction imbalance data (not free)
+- STRAT-398 Equal-weight versus cap-weight divergence: needs point-in-time constituent breadth or auction imbalance data (not free)
+- STRAT-399 Sector participation expansion: needs point-in-time constituent breadth or auction imbalance data (not free)
+- STRAT-400 Market breadth exhaustion reversal: needs point-in-time constituent breadth or auction imbalance data (not free)
+- STRAT-401 Opening auction residual continuation: needs point-in-time constituent breadth or auction imbalance data (not free)
+- STRAT-402 Closing imbalance divergence reversal: needs point-in-time constituent breadth or auction imbalance data (not free)
+- STRAT-403 Small-cap participation confirmation: needs point-in-time constituent breadth or auction imbalance data (not free)
+- STRAT-404 Sector-neutral intraday reversal basket: needs point-in-time constituent breadth or auction imbalance data (not free)
+- STRAT-405 Cross-listed price convergence: needs point-in-time constituent breadth or auction imbalance data (not free)
+- STRAT-406 Halt-adjusted breadth recovery: needs point-in-time constituent breadth or auction imbalance data (not free)
 
 ## Ideas not admitted to the catalog
 

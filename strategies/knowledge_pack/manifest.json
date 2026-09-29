@@ -1,0 +1,133 @@
+{
+  "package_version": "2.0.0",
+  "research_date_utc": "2026-09-29",
+  "performance_evidence": "No market backtest or trading results supplied",
+  "counts": {
+    "records": 320,
+    "trading_hypotheses": 302,
+    "supporting_records": 18,
+    "families": 33,
+    "memecoin_specific_records": 200,
+    "memecoin_specific_hypotheses": 197,
+    "features": 100,
+    "sources": 77,
+    "acceptance_test_specs": 100,
+    "glossary_terms": 104,
+    "knowledge_records": 761,
+    "screening_rules": 20,
+    "synthetic_arithmetic_tests": 19
+  },
+  "manifest_hash_scope": "All top-level payload files except this manifest and the ZIP archive.",
+  "files": [
+    {
+      "filename": "Day_Trading_Handbook.md",
+      "size_bytes": 42553,
+      "sha256": "20eda14fc929c9e6ff4f168530394cceef06b3f252f807233ae4f30f073cfad3"
+    },
+    {
+      "filename": "Memecoin_Trading_Handbook.md",
+      "size_bytes": 32919,
+      "sha256": "63a9af7116355b847e55073ff3505b5f836532bb21702f5bcb019a08d91f42ec"
+    },
+    {
+      "filename": "README.md",
+      "size_bytes": 3135,
+      "sha256": "4ea78a7877345bd481f46e7413dcfe0f530818b4070514f77afa291ce4ed6c3c"
+    },
+    {
+      "filename": "Software_Integration_Prompt.md",
+      "size_bytes": 7773,
+      "sha256": "a7c8c4bd845f940babf19e4e2493b86c91d11271c33459a3a59e3780fcf6d74b"
+    },
+    {
+      "filename": "Sources.md",
+      "size_bytes": 35770,
+      "sha256": "ac5fb567469e66ffe76ab598648e5f2556d8263f6e51f6aa74438228b68bc698"
+    },
+    {
+      "filename": "Strategy_Catalogue.md",
+      "size_bytes": 992363,
+      "sha256": "760b476769f9aa6d643a6b86923298f1aeaa7fbd18cd4e5f68bb6ea58fedba06"
+    },
+    {
+      "filename": "acceptance_tests.json",
+      "size_bytes": 33072,
+      "sha256": "81ffb18de7d5071e94b9b1440544fda4f7a9a56aadba775e3ac761070d403f0b"
+    },
+    {
+      "filename": "catalogue_counts.json",
+      "size_bytes": 353,
+      "sha256": "3a8bee6874554234d8b01c79151abec2bd53f263fadda5b3deda488d51d7cd2c"
+    },
+    {
+      "filename": "data_contracts.json",
+      "size_bytes": 12229,
+      "sha256": "aee956ff62bc3054d61202149e3c349de5e4a703aa38f64f3aada88113f28074"
+    },
+    {
+      "filename": "feature_dictionary.json",
+      "size_bytes": 55819,
+      "sha256": "6f114ef5005f681bd5c865993f8311fb153a25f2fe72271afc29b8618ddac1e9"
+    },
+    {
+      "filename": "glossary.json",
+      "size_bytes": 18927,
+      "sha256": "ad5acd28f03bbe8d64465fda70aa84b1cdd68acea61b91146fc8a25235f9176e"
+    },
+    {
+      "filename": "knowledge_base.jsonl",
+      "size_bytes": 1655889,
+      "sha256": "f0ef3334dfc86bf3b8cc47e0ac7992671a7cfdd789b74163ddce6bb31d12b1aa"
+    },
+    {
+      "filename": "memecoin_screening_rules.json",
+      "size_bytes": 7959,
+      "sha256": "c6e7fe756ce44176fd53aaeef03bcee4cf609deb550df5d76dae70c7909269ad"
+    },
+    {
+      "filename": "research_math.py",
+      "size_bytes": 8118,
+      "sha256": "720200ccc54d4bd1b93ca4c2f1aad3301ec2d2c9e427fcaecb82404528e0d8df"
+    },
+    {
+      "filename": "research_session.json",
+      "size_bytes": 1151,
+      "sha256": "da0d8ca1c39a9e099cb6d85e108d9bfbec38f7254919c23413b4c87d226ecf8d"
+    },
+    {
+      "filename": "source_registry.json",
+      "size_bytes": 48442,
+      "sha256": "1afbacde286799afc807edc3dc17fda9fdc10e2adee8fc810ff69fb065e611d6"
+    },
+    {
+      "filename": "strategy_catalog.json",
+      "size_bytes": 1448022,
+      "sha256": "f719f416988f5985b7c73090ea8b02210d403a981eb2cf317cd9c0ba38810026"
+    },
+    {
+      "filename": "strategy_catalog.schema.json",
+      "size_bytes": 6606,
+      "sha256": "5dc9b4bdb24e32053a75e840b2bf263938e28b7f1005fe7c547b5ab724881a50"
+    },
+    {
+      "filename": "synthetic_examples.json",
+      "size_bytes": 1849,
+      "sha256": "8cb7673b97385ac63ed6cadf868551044bbdfed9b08b81dace37ae49ab7ff22f"
+    },
+    {
+      "filename": "test_research_math.py",
+      "size_bytes": 5115,
+      "sha256": "d8f20f5e1c5d13eb655455e9c556bf9ef8873a7e7f8036577a57a856d1d76781"
+    },
+    {
+      "filename": "universe_discovery_spec.json",
+      "size_bytes": 1660,
+      "sha256": "e343211ccf1ebc67aad96954fe3a198ffc0d635d3907a0ca7cac84e9cb14dd60"
+    },
+    {
+      "filename": "validation_notes.md",
+      "size_bytes": 1973,
+      "sha256": "cebc679ab354095b318ca9013c4d0cb34fe8b3c7768fb94dbd9eb8d6d9da26aa"
+    }
+  ]
+}

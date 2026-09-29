@@ -1,0 +1,35 @@
+{
+ "id": "STRAT-182",
+ "key": "pack_st036_etf_versus_etf_relative_value",
+ "name": "ETF-versus-ETF relative value",
+ "family": "cross_asset",
+ "subfamily": "relative",
+ "hypothesis": "Trade a normalized spread extreme with explicit financing and borrow availability.",
+ "markets": [
+  "stock"
+ ],
+ "timeframe": "5m",
+ "data": [
+  "synchronized multi-instrument quotes and bars",
+  "borrow/financing data",
+  "point-in-time universe"
+ ],
+ "definition": null,
+ "spec": "Setup: Two liquid ETFs represent similar exposures after currency and beta adjustments. Entry: Trade a normalized spread extreme with explicit financing and borrow availability. Exit: Exit at convergence, stop or session end. Parameters to pre-register: exposure_map, beta_window, entry_z, max_hold.",
+ "implementation_status": "blocked",
+ "blocked_reason": "needs simultaneous two-leg or basket execution with short legs; the engine trades one instrument per bot",
+ "research_status": "hypothesis",
+ "evidence": [
+  {
+   "source": "PK-S29",
+   "relation": "context",
+   "note": "pack ST036: Family-level definitions, mechanics or research context only. Exact rules below are original research templates, not a replication or source-endorsed strategy."
+  },
+  {
+   "source": "PK-S32",
+   "relation": "context",
+   "note": "pack ST036: Family-level definitions, mechanics or research context only. Exact rules below are original research templates, not a replication or source-endorsed strategy."
+  }
+ ],
+ "variants": []
+}

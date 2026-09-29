@@ -1,0 +1,41 @@
+{
+ "id": "STRAT-202",
+ "key": "pack_st073_cross_venue_hedged_market_making",
+ "name": "Cross-venue hedged market making",
+ "family": "market_making_arbitrage",
+ "subfamily": "making",
+ "hypothesis": "Post a quote only when hedge-adjusted expected spread exceeds all costs.",
+ "markets": [
+  "crypto"
+ ],
+ "timeframe": "5m",
+ "data": [
+  "L2/L3 replay",
+  "queue and latency model",
+  "inventory",
+  "fees/rebates"
+ ],
+ "definition": null,
+ "spec": "Setup: Quote on one venue with immediately accessible hedge liquidity elsewhere. Entry: Post a quote only when hedge-adjusted expected spread exceeds all costs. Exit: After fills, hedge within a fixed time/price budget and reconcile both venues. Parameters to pre-register: quote_venue, hedge_venue, hedge_timeout, maximum_unhedged_exposure.",
+ "implementation_status": "blocked",
+ "blocked_reason": "needs queue/latency modelling and two-sided quoting, which the paper engine does not simulate",
+ "research_status": "hypothesis",
+ "evidence": [
+  {
+   "source": "PK-S15",
+   "relation": "context",
+   "note": "pack ST073: Family-level definitions, mechanics or research context only. Exact rules below are original research templates, not a replication or source-endorsed strategy."
+  },
+  {
+   "source": "PK-S16",
+   "relation": "context",
+   "note": "pack ST073: Family-level definitions, mechanics or research context only. Exact rules below are original research templates, not a replication or source-endorsed strategy."
+  },
+  {
+   "source": "PK-S31",
+   "relation": "context",
+   "note": "pack ST073: Family-level definitions, mechanics or research context only. Exact rules below are original research templates, not a replication or source-endorsed strategy."
+  }
+ ],
+ "variants": []
+}

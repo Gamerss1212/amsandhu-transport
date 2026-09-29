@@ -1,0 +1,264 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:day-trading-research:strategy-catalog:2.0.0",
+  "title": "Research-only strategy catalogue",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "as_of_utc",
+    "performance_status",
+    "scope",
+    "families",
+    "strategies",
+    "count_policy"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "2.0.0"
+    },
+    "as_of_utc": {
+      "type": "string"
+    },
+    "performance_status": {
+      "type": "string"
+    },
+    "scope": {
+      "type": "string"
+    },
+    "families": {
+      "type": "object"
+    },
+    "strategies": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "family",
+          "record_type",
+          "markets",
+          "status",
+          "expected_win_rate",
+          "expected_return",
+          "source_ids",
+          "source_relationship",
+          "data_requirements",
+          "candidate_regime",
+          "holding_horizon",
+          "setup",
+          "entry_rule",
+          "exit_and_invalidation",
+          "parameters_to_pre_register",
+          "position_sizing",
+          "no_trade_conditions",
+          "failure_modes",
+          "validation_required",
+          "implementation_state",
+          "research_origin",
+          "concept_parent_id",
+          "variant_status",
+          "counts_as_trading_hypothesis",
+          "evidence_grade",
+          "memecoin_specific",
+          "direction_constraint",
+          "incremental_falsification_test",
+          "eligibility_profile"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^ST[0-9]{3}$"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "family": {
+            "enum": [
+              "trend",
+              "breakout",
+              "reversion",
+              "relative",
+              "event",
+              "orderflow",
+              "arbitrage",
+              "making",
+              "ml",
+              "execution",
+              "patterns",
+              "launch_discovery",
+              "graduation",
+              "quote_liquidity",
+              "holder_flow",
+              "wallet_follow",
+              "flow_momentum",
+              "flow_reversal",
+              "social_events",
+              "narrative_rotation",
+              "crosspool",
+              "cex_events",
+              "perpetual_flow",
+              "market_regime",
+              "intraday_structure",
+              "supply_events",
+              "recovery_events",
+              "funding_basis",
+              "relative_value_meme",
+              "liquidity_provision",
+              "onchain_microstructure",
+              "equity_microevents",
+              "equity_breadth"
+            ]
+          },
+          "record_type": {
+            "type": "string",
+            "minLength": 1
+          },
+          "markets": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "status": {
+            "const": "research_only_not_backtested"
+          },
+          "expected_win_rate": {
+            "type": "null"
+          },
+          "expected_return": {
+            "type": "null"
+          },
+          "source_ids": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "source_relationship": {
+            "type": "string",
+            "minLength": 1
+          },
+          "data_requirements": {
+            "type": "string",
+            "minLength": 1
+          },
+          "candidate_regime": {
+            "type": "string",
+            "minLength": 1
+          },
+          "holding_horizon": {
+            "type": "string",
+            "minLength": 1
+          },
+          "setup": {
+            "type": "string",
+            "minLength": 1
+          },
+          "entry_rule": {
+            "type": "string",
+            "minLength": 1
+          },
+          "exit_and_invalidation": {
+            "type": "string",
+            "minLength": 1
+          },
+          "parameters_to_pre_register": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "position_sizing": {
+            "type": "string",
+            "minLength": 1
+          },
+          "no_trade_conditions": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "failure_modes": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "validation_required": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "implementation_state": {
+            "type": "string",
+            "minLength": 1
+          },
+          "research_origin": {
+            "type": "string",
+            "minLength": 1
+          },
+          "variant_status": {
+            "type": "string",
+            "minLength": 1
+          },
+          "evidence_grade": {
+            "type": "string",
+            "minLength": 1
+          },
+          "direction_constraint": {
+            "type": "string",
+            "minLength": 1
+          },
+          "incremental_falsification_test": {
+            "type": "string",
+            "minLength": 1
+          },
+          "eligibility_profile": {
+            "type": "string",
+            "minLength": 1
+          },
+          "counts_as_trading_hypothesis": {
+            "type": "boolean"
+          },
+          "memecoin_specific": {
+            "type": "boolean"
+          },
+          "concept_parent_id": {
+            "anyOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "string",
+                "pattern": "^ST[0-9]{3}$"
+              }
+            ]
+          }
+        }
+      },
+      "minItems": 320,
+      "maxItems": 320
+    },
+    "count_policy": {
+      "type": "string",
+      "minLength": 1
+    }
+  },
+  "additionalProperties": false
+}

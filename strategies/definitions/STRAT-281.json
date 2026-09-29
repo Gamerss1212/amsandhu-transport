@@ -1,0 +1,46 @@
+{
+ "id": "STRAT-281",
+ "key": "pack_st178_paid_visibility_quality_confirmation",
+ "name": "Paid-visibility quality confirmation",
+ "family": "memecoin",
+ "subfamily": "social events",
+ "hypothesis": "Buy only after a disclosed boost is followed by sustained independent purchases after the initial promotion window.",
+ "markets": [
+  "crypto"
+ ],
+ "timeframe": "5m",
+ "data": [
+  "permitted social archives",
+  "original publication and receipt times",
+  "paid-promotion labels",
+  "chain conversion"
+ ],
+ "definition": null,
+ "spec": "Setup: Paid exposure may introduce buyers but does not prove organic interest. Entry: Buy only after a disclosed boost is followed by sustained independent purchases after the initial promotion window. Evaluate only information available at decision time; attempt execution afterward. Exit: Exit on post-promotion flow reversal or price failure. Always apply the earlier of the registered maximum holding time and hard risk invalidation; fills can be delayed or unavailable. Parameters to pre-register: eligible universe and point-in-time membership, observation window and completed-event/bar rule, numerical threshold(s) named by the signal, entry order and maximum price/quote deviation, initial invalidation level and target if used, H_max and explicit session definition, cost, impact, latency, failed-attempt, and leg-risk models, position/notional/exit-capacity caps, baseline and out-of-sample rejection thresholds.",
+ "implementation_status": "blocked",
+ "blocked_reason": "needs a social / announcement feed with receipt times (not connected)",
+ "research_status": "hypothesis",
+ "evidence": [
+  {
+   "source": "PK-S49",
+   "relation": "context",
+   "note": "pack ST178: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  },
+  {
+   "source": "PK-S51",
+   "relation": "context",
+   "note": "pack ST178: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  },
+  {
+   "source": "PK-S67",
+   "relation": "context",
+   "note": "pack ST178: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  },
+  {
+   "source": "PK-S71",
+   "relation": "context",
+   "note": "pack ST178: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  }
+ ],
+ "variants": []
+}

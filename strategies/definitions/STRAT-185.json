@@ -1,0 +1,46 @@
+{
+ "id": "STRAT-185",
+ "key": "pack_st041_earnings_response_continuation",
+ "name": "Earnings-response continuation",
+ "family": "scheduled_events",
+ "subfamily": "event",
+ "hypothesis": "Enter a liquid continuation only after the release and its real receipt time.",
+ "markets": [
+  "stock"
+ ],
+ "timeframe": "5m",
+ "data": [
+  "publication and receipt timestamps",
+  "licensed event/news feed",
+  "executable quotes",
+  "session and halt status"
+ ],
+ "definition": null,
+ "spec": "Setup: An issuer release produces a measurable surprise against a timestamped consensus estimate. Entry: Enter a liquid continuation only after the release and its real receipt time. Exit: Exit on structure failure, time limit or session deadline. Parameters to pre-register: surprise_definition, consensus_vintage, reaction_window, liquidity_floor.",
+ "implementation_status": "blocked",
+ "blocked_reason": "needs a licensed event feed (earnings surprises, consensus, filings, auction or halt data) with receipt times",
+ "research_status": "hypothesis",
+ "evidence": [
+  {
+   "source": "PK-S04",
+   "relation": "context",
+   "note": "pack ST041: Family-level definitions, mechanics or research context only. Exact rules below are original research templates, not a replication or source-endorsed strategy."
+  },
+  {
+   "source": "PK-S06",
+   "relation": "context",
+   "note": "pack ST041: Family-level definitions, mechanics or research context only. Exact rules below are original research templates, not a replication or source-endorsed strategy."
+  },
+  {
+   "source": "PK-S42",
+   "relation": "context",
+   "note": "pack ST041: Family-level definitions, mechanics or research context only. Exact rules below are original research templates, not a replication or source-endorsed strategy."
+  },
+  {
+   "source": "PK-S43",
+   "relation": "context",
+   "note": "pack ST041: Family-level definitions, mechanics or research context only. Exact rules below are original research templates, not a replication or source-endorsed strategy."
+  }
+ ],
+ "variants": []
+}

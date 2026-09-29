@@ -1,0 +1,52 @@
+{
+ "id": "STRAT-198",
+ "key": "pack_st067_calendar_spread_convergence",
+ "name": "Calendar-spread convergence",
+ "family": "market_making_arbitrage",
+ "subfamily": "arbitrage",
+ "hypothesis": "Trade the relative spread with duration and multiplier-aware sizing.",
+ "markets": [
+  "stock",
+  "crypto"
+ ],
+ "timeframe": "5m",
+ "data": [
+  "synchronized executable depth on every leg",
+  "inventory",
+  "financing",
+  "fee tiers"
+ ],
+ "definition": null,
+ "spec": "Setup: Two dated contracts differ from a predeclared carry curve. Entry: Trade the relative spread with duration and multiplier-aware sizing. Exit: Exit at normalization, roll cutoff or risk breach. Parameters to pre-register: expiries, carry_model, spread_threshold, roll_policy.",
+ "implementation_status": "blocked",
+ "blocked_reason": "needs prefunded inventory on several venues and synchronized multi-leg execution",
+ "research_status": "hypothesis",
+ "evidence": [
+  {
+   "source": "PK-S20",
+   "relation": "context",
+   "note": "pack ST067: Family-level definitions, mechanics or research context only. Exact rules below are original research templates, not a replication or source-endorsed strategy."
+  },
+  {
+   "source": "PK-S21",
+   "relation": "context",
+   "note": "pack ST067: Family-level definitions, mechanics or research context only. Exact rules below are original research templates, not a replication or source-endorsed strategy."
+  },
+  {
+   "source": "PK-S22",
+   "relation": "context",
+   "note": "pack ST067: Family-level definitions, mechanics or research context only. Exact rules below are original research templates, not a replication or source-endorsed strategy."
+  },
+  {
+   "source": "PK-S23",
+   "relation": "context",
+   "note": "pack ST067: Family-level definitions, mechanics or research context only. Exact rules below are original research templates, not a replication or source-endorsed strategy."
+  },
+  {
+   "source": "PK-S32",
+   "relation": "context",
+   "note": "pack ST067: Family-level definitions, mechanics or research context only. Exact rules below are original research templates, not a replication or source-endorsed strategy."
+  }
+ ],
+ "variants": []
+}

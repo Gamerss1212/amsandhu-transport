@@ -1,0 +1,46 @@
+{
+ "id": "STRAT-216",
+ "key": "pack_st113_post_graduation_new_high_acceptance",
+ "name": "Post-graduation new-high acceptance",
+ "family": "memecoin",
+ "subfamily": "graduation",
+ "hypothesis": "Buy after a completed post-graduation window holds above the old high with independent net inflow.",
+ "markets": [
+  "crypto"
+ ],
+ "timeframe": "5m",
+ "data": [
+  "curve completion",
+  "migration signature",
+  "destination pool",
+  "cross-stage fills and buyer cohorts"
+ ],
+ "definition": null,
+ "spec": "Setup: Sustained trading above the pre-migration high may indicate fresh price discovery. Entry: Buy after a completed post-graduation window holds above the old high with independent net inflow. Evaluate only information available at decision time; attempt execution afterward. Exit: Exit on sustained return below the old high or flow reversal. Always apply the earlier of the registered maximum holding time and hard risk invalidation; fills can be delayed or unavailable. Parameters to pre-register: eligible universe and point-in-time membership, observation window and completed-event/bar rule, numerical threshold(s) named by the signal, entry order and maximum price/quote deviation, initial invalidation level and target if used, H_max and explicit session definition, cost, impact, latency, failed-attempt, and leg-risk models, position/notional/exit-capacity caps, baseline and out-of-sample rejection thresholds.",
+ "implementation_status": "blocked",
+ "blocked_reason": "needs launchpad migration events and pool state history (on-chain, not connected)",
+ "research_status": "hypothesis",
+ "evidence": [
+  {
+   "source": "PK-S56",
+   "relation": "context",
+   "note": "pack ST113: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  },
+  {
+   "source": "PK-S57",
+   "relation": "context",
+   "note": "pack ST113: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  },
+  {
+   "source": "PK-S58",
+   "relation": "context",
+   "note": "pack ST113: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  },
+  {
+   "source": "PK-S68",
+   "relation": "context",
+   "note": "pack ST113: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  }
+ ],
+ "variants": []
+}

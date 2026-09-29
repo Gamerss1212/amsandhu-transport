@@ -1,0 +1,50 @@
+{
+  "version": "2.0.0",
+  "status": "specification_only_no_live_census",
+  "complete_token_universe_obtained": false,
+  "trade_ready_tokens_verified": 0,
+  "scope": "Versioned union of supported vendor-listed assets, recent pools, and decoded successful creation events.",
+  "identity_key": [
+    "chain_namespace",
+    "network_id",
+    "deployment_address_or_native_id"
+  ],
+  "sources": [
+    "S48",
+    "S49",
+    "S50",
+    "S51",
+    "S72",
+    "S76"
+  ],
+  "steps": [
+    "Freeze supported networks, protocols, time interval, classification, and provider permissions.",
+    "Collect every accessible page/cursor; preserve raw hashes, timestamps, errors, and provider caps.",
+    "Keep asset identities separate from pool, venue, wrapped, and derivative identities.",
+    "Reconcile identities and units against current chain state; unresolved records remain quarantined.",
+    "Decode economic events and retain later failures, deletions, and non-graduating launches.",
+    "Emit partial or unknown coverage when provider or archive limits prevent completeness.",
+    "Apply the separate screening policy before any experiment eligibility."
+  ],
+  "coverage_fields": [
+    "network",
+    "source",
+    "time_start",
+    "time_end",
+    "pages_requested",
+    "pages_succeeded",
+    "cursor",
+    "provider_cap",
+    "failed_requests",
+    "first_seen",
+    "last_seen",
+    "raw_hashes",
+    "coverage_status"
+  ],
+  "coverage_status_enum": [
+    "unknown",
+    "partial",
+    "complete_within_declared_scope"
+  ],
+  "refresh_policy": "Continuous or scheduled collection must be designed against actual provider limits; none is running in this pack."
+}

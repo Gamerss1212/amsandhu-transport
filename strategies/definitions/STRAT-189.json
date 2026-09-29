@@ -1,0 +1,46 @@
+{
+ "id": "STRAT-189",
+ "key": "pack_st046_opening_auction_imbalance_response",
+ "name": "Opening-auction imbalance response",
+ "family": "scheduled_events",
+ "subfamily": "event",
+ "hypothesis": "Submit an eligible order or post-open trade according to a frozen imbalance-response model.",
+ "markets": [
+  "stock"
+ ],
+ "timeframe": "5m",
+ "data": [
+  "publication and receipt timestamps",
+  "licensed event/news feed",
+  "executable quotes",
+  "session and halt status"
+ ],
+ "definition": null,
+ "spec": "Setup: A licensed auction feed reports imbalance and indicative clearing price before a permitted cutoff. Entry: Submit an eligible order or post-open trade according to a frozen imbalance-response model. Exit: Use auction-specific cancellation rules and a post-fill loss/time limit. Parameters to pre-register: auction_venue, imbalance_normalization, cutoff_buffer, order_type.",
+ "implementation_status": "blocked",
+ "blocked_reason": "needs a licensed event feed (earnings surprises, consensus, filings, auction or halt data) with receipt times",
+ "research_status": "hypothesis",
+ "evidence": [
+  {
+   "source": "PK-S04",
+   "relation": "context",
+   "note": "pack ST046: Family-level definitions, mechanics or research context only. Exact rules below are original research templates, not a replication or source-endorsed strategy."
+  },
+  {
+   "source": "PK-S06",
+   "relation": "context",
+   "note": "pack ST046: Family-level definitions, mechanics or research context only. Exact rules below are original research templates, not a replication or source-endorsed strategy."
+  },
+  {
+   "source": "PK-S42",
+   "relation": "context",
+   "note": "pack ST046: Family-level definitions, mechanics or research context only. Exact rules below are original research templates, not a replication or source-endorsed strategy."
+  },
+  {
+   "source": "PK-S43",
+   "relation": "context",
+   "note": "pack ST046: Family-level definitions, mechanics or research context only. Exact rules below are original research templates, not a replication or source-endorsed strategy."
+  }
+ ],
+ "variants": []
+}

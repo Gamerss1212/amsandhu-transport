@@ -1,0 +1,83 @@
+{
+ "id": "STRAT-158",
+ "key": "range_breakout_retest",
+ "name": "Range-boundary breakout retest",
+ "family": "volatility",
+ "subfamily": "breakout retest",
+ "hypothesis": "After a close beyond the prior 48-bar range, the first pullback within 2-12 bars that holds the frozen boundary (within 0.1 ATR) and closes back beyond it offers entry; stop 0.5 ATR through the boundary; target 2R.",
+ "markets": [
+  "stock",
+  "crypto"
+ ],
+ "timeframe": "5m",
+ "data": [
+  "bars"
+ ],
+ "definition": {
+  "name": "Range-boundary breakout retest",
+  "family": "volatility",
+  "timeframe": "5m",
+  "direction": "both",
+  "params": {},
+  "entry": {
+   "long": "since(cross_above(close, highest(high,48)[1])) >= 2 and since(cross_above(close, highest(high,48)[1])) <= 12 and low <= valuewhen(cross_above(close, highest(high,48)[1]), highest(high,48)[1]) + 0.1*atr(14) and close > valuewhen(cross_above(close, highest(high,48)[1]), highest(high,48)[1]) and close > open",
+   "short": "since(cross_below(close, lowest(low,48)[1])) >= 2 and since(cross_below(close, lowest(low,48)[1])) <= 12 and high >= valuewhen(cross_below(close, lowest(low,48)[1]), lowest(low,48)[1]) - 0.1*atr(14) and close < valuewhen(cross_below(close, lowest(low,48)[1]), lowest(low,48)[1]) and close < open"
+  },
+  "filters": [],
+  "order": {
+   "type": "market"
+  },
+  "stop": {
+   "type": "level",
+   "long": "valuewhen(cross_above(close, highest(high,48)[1]), highest(high,48)[1]) - 0.5*atr(14)",
+   "short": "valuewhen(cross_below(close, lowest(low,48)[1]), lowest(low,48)[1]) + 0.5*atr(14)"
+  },
+  "target": {
+   "type": "r",
+   "r": 2.0
+  },
+  "trail": {
+   "type": "none"
+  },
+  "exit": {},
+  "max_bars": 0,
+  "session": {
+   "stock": {
+    "entry_start": "09:35",
+    "entry_end": "15:30",
+    "flat_minutes_before_close": 5
+   },
+   "crypto": {
+    "flat_minutes_before_close": 5
+   }
+  },
+  "max_trades_per_day": 2,
+  "cooldown_bars": 0,
+  "sizing": {
+   "risk_pct": 0.5,
+   "max_notional_pct": 100.0
+  },
+  "data": [
+   "bars"
+  ],
+  "id": "STRAT-158",
+  "version": "1.0.0"
+ },
+ "spec": null,
+ "implementation_status": "implemented",
+ "blocked_reason": null,
+ "research_status": "hypothesis",
+ "evidence": [
+  {
+   "source": "PK-S24",
+   "relation": "context",
+   "note": "pack ST004: Family-level definitions, mechanics or research context only. Exact rules below are original research templates, not a replication or source-endorsed strategy."
+  },
+  {
+   "source": "PK-S26",
+   "relation": "context",
+   "note": "pack ST004: Family-level definitions, mechanics or research context only. Exact rules below are original research templates, not a replication or source-endorsed strategy."
+  }
+ ],
+ "variants": []
+}

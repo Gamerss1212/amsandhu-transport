@@ -1,0 +1,61 @@
+{
+ "id": "STRAT-343",
+ "key": "pack_st253_chain_congestion_normalization_rebound",
+ "name": "Chain-congestion normalization rebound",
+ "family": "memecoin",
+ "subfamily": "recovery events",
+ "hypothesis": "Buy a confirmed recovery after observed landing times and all-in costs return within registered bounds.",
+ "markets": [
+  "crypto"
+ ],
+ "timeframe": "5m",
+ "data": [
+  "incident/recovery times",
+  "reconciled missing data",
+  "verified route state",
+  "fees and landing observations"
+ ],
+ "definition": null,
+ "spec": "Setup: A cost shock may depress participation until execution normalizes. Entry: Buy a confirmed recovery after observed landing times and all-in costs return within registered bounds. Evaluate only information available at decision time; attempt execution afterward. Exit: Exit if congestion recurs or price loses the recovery base. Always apply the earlier of the registered maximum holding time and hard risk invalidation; fills can be delayed or unavailable. Parameters to pre-register: eligible universe and point-in-time membership, observation window and completed-event/bar rule, numerical threshold(s) named by the signal, entry order and maximum price/quote deviation, initial invalidation level and target if used, H_max and explicit session definition, cost, impact, latency, failed-attempt, and leg-risk models, position/notional/exit-capacity caps, baseline and out-of-sample rejection thresholds.",
+ "implementation_status": "blocked",
+ "blocked_reason": "needs operational status feeds (transfers, routers, pools) with timestamps",
+ "research_status": "hypothesis",
+ "evidence": [
+  {
+   "source": "PK-S14",
+   "relation": "context",
+   "note": "pack ST253: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  },
+  {
+   "source": "PK-S16",
+   "relation": "context",
+   "note": "pack ST253: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  },
+  {
+   "source": "PK-S55",
+   "relation": "context",
+   "note": "pack ST253: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  },
+  {
+   "source": "PK-S60",
+   "relation": "context",
+   "note": "pack ST253: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  },
+  {
+   "source": "PK-S61",
+   "relation": "context",
+   "note": "pack ST253: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  },
+  {
+   "source": "PK-S62",
+   "relation": "context",
+   "note": "pack ST253: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  },
+  {
+   "source": "PK-S64",
+   "relation": "context",
+   "note": "pack ST253: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  }
+ ],
+ "variants": []
+}

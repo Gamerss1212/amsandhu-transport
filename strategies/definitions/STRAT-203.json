@@ -1,0 +1,41 @@
+{
+ "id": "STRAT-203",
+ "key": "pack_st075_amm_liquidity_provision_concept",
+ "name": "AMM liquidity provision concept",
+ "family": "market_making_arbitrage",
+ "subfamily": "making",
+ "hypothesis": "Provide bounded liquidity only after contract and token behavior verification.",
+ "markets": [
+  "crypto"
+ ],
+ "timeframe": "5m",
+ "data": [
+  "L2/L3 replay",
+  "queue and latency model",
+  "inventory",
+  "fees/rebates"
+ ],
+ "definition": null,
+ "spec": "Setup: A permitted pool and price range are chosen using inventory and fee-risk assumptions. Entry: Provide bounded liquidity only after contract and token behavior verification. Exit: Withdraw or rebalance under inventory, price-range and operational limits. Parameters to pre-register: pool, range_width, rebalance_rule, gas_budget.",
+ "implementation_status": "blocked",
+ "blocked_reason": "needs queue/latency modelling and two-sided quoting, which the paper engine does not simulate",
+ "research_status": "hypothesis",
+ "evidence": [
+  {
+   "source": "PK-S15",
+   "relation": "context",
+   "note": "pack ST075: Family-level definitions, mechanics or research context only. Exact rules below are original research templates, not a replication or source-endorsed strategy."
+  },
+  {
+   "source": "PK-S16",
+   "relation": "context",
+   "note": "pack ST075: Family-level definitions, mechanics or research context only. Exact rules below are original research templates, not a replication or source-endorsed strategy."
+  },
+  {
+   "source": "PK-S31",
+   "relation": "context",
+   "note": "pack ST075: Family-level definitions, mechanics or research context only. Exact rules below are original research templates, not a replication or source-endorsed strategy."
+  }
+ ],
+ "variants": []
+}

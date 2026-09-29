@@ -1,0 +1,46 @@
+{
+ "id": "STRAT-311",
+ "key": "pack_st212_price_rise_with_position_closure_reversa",
+ "name": "Price rise with position closure reversal",
+ "family": "memecoin",
+ "subfamily": "perpetual flow",
+ "hypothesis": "Short only after rising price with falling contract-unit open interest ends in a failed high and spot demand weakens.",
+ "markets": [
+  "crypto"
+ ],
+ "timeframe": "5m",
+ "data": [
+  "contract-unit open interest",
+  "actual funding schedule",
+  "mark/index/last prices",
+  "spot flows"
+ ],
+ "definition": null,
+ "spec": "Setup: A rally driven mostly by closing shorts may lose force. Entry: Short only after rising price with falling contract-unit open interest ends in a failed high and spot demand weakens. Evaluate only information available at decision time; attempt execution afterward. Exit: Cover on a new high or the declared reference/time target. Always apply the earlier of the registered maximum holding time and hard risk invalidation; fills can be delayed or unavailable. Parameters to pre-register: eligible universe and point-in-time membership, observation window and completed-event/bar rule, numerical threshold(s) named by the signal, entry order and maximum price/quote deviation, initial invalidation level and target if used, H_max and explicit session definition, cost, impact, latency, failed-attempt, and leg-risk models, position/notional/exit-capacity caps, baseline and out-of-sample rejection thresholds.",
+ "implementation_status": "blocked",
+ "blocked_reason": "needs open-interest, funding and liquidation history at intraday resolution (not connected)",
+ "research_status": "hypothesis",
+ "evidence": [
+  {
+   "source": "PK-S20",
+   "relation": "context",
+   "note": "pack ST212: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  },
+  {
+   "source": "PK-S21",
+   "relation": "context",
+   "note": "pack ST212: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  },
+  {
+   "source": "PK-S30",
+   "relation": "context",
+   "note": "pack ST212: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  },
+  {
+   "source": "PK-S32",
+   "relation": "context",
+   "note": "pack ST212: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  }
+ ],
+ "variants": []
+}

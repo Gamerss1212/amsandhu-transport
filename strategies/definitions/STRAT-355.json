@@ -1,0 +1,41 @@
+{
+ "id": "STRAT-355",
+ "key": "pack_st265_dated_futures_intraday_basis_reversion",
+ "name": "Dated-futures intraday basis reversion",
+ "family": "memecoin",
+ "subfamily": "funding basis",
+ "hypothesis": "Pair the mispriced dated contract with spot after executable basis exceeds a registered band.",
+ "markets": [
+  "crypto"
+ ],
+ "timeframe": "5m",
+ "data": [
+  "synchronized executable legs",
+  "payment clocks",
+  "funding estimates versus realized rates",
+  "financing"
+ ],
+ "definition": null,
+ "spec": "Setup: A dated contract can temporarily deviate from a financing-adjusted spot reference. Entry: Pair the mispriced dated contract with spot after executable basis exceeds a registered band. Evaluate only information available at decision time; attempt execution afterward. Exit: Exit on intraday normalization or basis stop; do not silently roll into expiry carry. Always apply the earlier of the registered maximum holding time and hard risk invalidation; fills can be delayed or unavailable. Parameters to pre-register: eligible universe and point-in-time membership, observation window and completed-event/bar rule, numerical threshold(s) named by the signal, entry order and maximum price/quote deviation, initial invalidation level and target if used, H_max and explicit session definition, cost, impact, latency, failed-attempt, and leg-risk models, position/notional/exit-capacity caps, baseline and out-of-sample rejection thresholds.",
+ "implementation_status": "blocked",
+ "blocked_reason": "needs funding/basis history and hedged derivative legs (not connected)",
+ "research_status": "hypothesis",
+ "evidence": [
+  {
+   "source": "PK-S20",
+   "relation": "context",
+   "note": "pack ST265: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  },
+  {
+   "source": "PK-S21",
+   "relation": "context",
+   "note": "pack ST265: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  },
+  {
+   "source": "PK-S32",
+   "relation": "context",
+   "note": "pack ST265: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  }
+ ],
+ "variants": []
+}

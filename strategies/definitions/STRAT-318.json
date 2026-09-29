@@ -1,0 +1,46 @@
+{
+ "id": "STRAT-318",
+ "key": "pack_st219_open_interest_reset_trend_restart",
+ "name": "Open-interest reset trend restart",
+ "family": "memecoin",
+ "subfamily": "perpetual flow",
+ "hypothesis": "Buy a spot breakout after contract-unit open interest falls then stabilizes while independent spot balances keep accumulating.",
+ "markets": [
+  "crypto"
+ ],
+ "timeframe": "5m",
+ "data": [
+  "contract-unit open interest",
+  "actual funding schedule",
+  "mark/index/last prices",
+  "spot flows"
+ ],
+ "definition": null,
+ "spec": "Setup: A trend may resume after leverage is reduced without damaging spot demand. Entry: Buy a spot breakout after contract-unit open interest falls then stabilizes while independent spot balances keep accumulating. Evaluate only information available at decision time; attempt execution afterward. Exit: Exit on spot invalidation or renewed leverage excess. Always apply the earlier of the registered maximum holding time and hard risk invalidation; fills can be delayed or unavailable. Parameters to pre-register: eligible universe and point-in-time membership, observation window and completed-event/bar rule, numerical threshold(s) named by the signal, entry order and maximum price/quote deviation, initial invalidation level and target if used, H_max and explicit session definition, cost, impact, latency, failed-attempt, and leg-risk models, position/notional/exit-capacity caps, baseline and out-of-sample rejection thresholds.",
+ "implementation_status": "blocked",
+ "blocked_reason": "needs open-interest, funding and liquidation history at intraday resolution (not connected)",
+ "research_status": "hypothesis",
+ "evidence": [
+  {
+   "source": "PK-S20",
+   "relation": "context",
+   "note": "pack ST219: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  },
+  {
+   "source": "PK-S21",
+   "relation": "context",
+   "note": "pack ST219: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  },
+  {
+   "source": "PK-S30",
+   "relation": "context",
+   "note": "pack ST219: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  },
+  {
+   "source": "PK-S32",
+   "relation": "context",
+   "note": "pack ST219: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  }
+ ],
+ "variants": []
+}

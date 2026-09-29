@@ -1,0 +1,84 @@
+{
+ "id": "STRAT-172",
+ "key": "meme_session_handover",
+ "name": "Memecoin session-handover continuation",
+ "family": "memecoin",
+ "subfamily": "market regime",
+ "hypothesis": "In the first 30 minutes after 07:00 or 13:30 UTC, buy a memecoin that breaks its prior 8-bar high on at least 1.5x its usual volume for that time of day; 3-ATR stop, 2R target.",
+ "markets": [
+  "crypto"
+ ],
+ "timeframe": "15m",
+ "data": [
+  "bars"
+ ],
+ "definition": {
+  "name": "Memecoin session-handover continuation",
+  "family": "memecoin",
+  "timeframe": "15m",
+  "direction": "long",
+  "params": {},
+  "entry": {
+   "long": "(time_between(\"07:00\", \"07:30\") or time_between(\"13:30\", \"14:00\")) and rvol_tod(14) > 1.5 and cross_above(close, highest(high,8)[1])"
+  },
+  "filters": [],
+  "order": {
+   "type": "market"
+  },
+  "stop": {
+   "type": "atr",
+   "mult": 3.0,
+   "n": 14
+  },
+  "target": {
+   "type": "r",
+   "r": 2.0
+  },
+  "trail": {
+   "type": "none"
+  },
+  "exit": {},
+  "max_bars": 0,
+  "session": {
+   "flat_minutes_before_close": 5
+  },
+  "max_trades_per_day": 2,
+  "cooldown_bars": 0,
+  "sizing": {
+   "risk_pct": 0.5,
+   "max_notional_pct": 100.0
+  },
+  "data": [
+   "bars"
+  ],
+  "id": "STRAT-172",
+  "version": "1.0.0"
+ },
+ "spec": null,
+ "implementation_status": "implemented",
+ "blocked_reason": null,
+ "research_status": "hypothesis",
+ "evidence": [
+  {
+   "source": "PK-S24",
+   "relation": "context",
+   "note": "pack ST227: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  },
+  {
+   "source": "PK-S32",
+   "relation": "context",
+   "note": "pack ST227: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  },
+  {
+   "source": "PK-S35",
+   "relation": "context",
+   "note": "pack ST227: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  },
+  {
+   "source": "PK-S36",
+   "relation": "context",
+   "note": "pack ST227: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  }
+ ],
+ "variants": []
+}

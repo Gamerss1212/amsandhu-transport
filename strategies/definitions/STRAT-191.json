@@ -1,0 +1,42 @@
+{
+ "id": "STRAT-191",
+ "key": "pack_st052_order_flow_imbalance_forecast",
+ "name": "Order-flow imbalance forecast",
+ "family": "order_flow",
+ "subfamily": "orderflow",
+ "hypothesis": "Trade a trained short-horizon forecast from OFI with a conservative execution model.",
+ "markets": [
+  "stock",
+  "crypto"
+ ],
+ "timeframe": "5m",
+ "data": [
+  "sequenced L2 or L3 feed",
+  "trades with reliable aggressor labeling",
+  "receipt timestamps",
+  "order acknowledgments"
+ ],
+ "definition": null,
+ "spec": "Setup: Measure event-by-event changes in best bid/ask prices and sizes, including cancellations. Entry: Trade a trained short-horizon forecast from OFI with a conservative execution model. Exit: Exit when forecast decays, imbalance reverses or risk limits trigger. Parameters to pre-register: OFI_definition, aggregation_window, model, horizon.",
+ "implementation_status": "blocked",
+ "blocked_reason": "needs a sequenced L2/L3 order-book feed; the free venues give periodic snapshots only",
+ "research_status": "hypothesis",
+ "evidence": [
+  {
+   "source": "PK-S14",
+   "relation": "context",
+   "note": "pack ST052: Family-level definitions, mechanics or research context only. Exact rules below are original research templates, not a replication or source-endorsed strategy."
+  },
+  {
+   "source": "PK-S15",
+   "relation": "context",
+   "note": "pack ST052: Family-level definitions, mechanics or research context only. Exact rules below are original research templates, not a replication or source-endorsed strategy."
+  },
+  {
+   "source": "PK-S30",
+   "relation": "context",
+   "note": "pack ST052: Family-level definitions, mechanics or research context only. Exact rules below are original research templates, not a replication or source-endorsed strategy."
+  }
+ ],
+ "variants": []
+}

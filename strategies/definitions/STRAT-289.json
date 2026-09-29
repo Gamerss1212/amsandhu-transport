@@ -1,0 +1,46 @@
+{
+ "id": "STRAT-289",
+ "key": "pack_st190_native_coin_neutral_narrative_momentum",
+ "name": "Native-coin-neutral narrative momentum",
+ "family": "memecoin",
+ "subfamily": "narrative rotation",
+ "hypothesis": "Buy the eligible basket and hedge estimated native-coin beta with an authorized liquid instrument.",
+ "markets": [
+  "crypto"
+ ],
+ "timeframe": "5m",
+ "data": [
+  "point-in-time narrative membership",
+  "failed tokens",
+  "synchronized basket prices",
+  "independent flow"
+ ],
+ "definition": null,
+ "spec": "Setup: A narrative basket may have momentum beyond its host chain's coin. Entry: Buy the eligible basket and hedge estimated native-coin beta with an authorized liquid instrument. Evaluate only information available at decision time; attempt execution afterward. Exit: Exit on residual momentum reversal or hedge instability. Always apply the earlier of the registered maximum holding time and hard risk invalidation; fills can be delayed or unavailable. Parameters to pre-register: eligible universe and point-in-time membership, observation window and completed-event/bar rule, numerical threshold(s) named by the signal, entry order and maximum price/quote deviation, initial invalidation level and target if used, H_max and explicit session definition, cost, impact, latency, failed-attempt, and leg-risk models, position/notional/exit-capacity caps, baseline and out-of-sample rejection thresholds.",
+ "implementation_status": "blocked",
+ "blocked_reason": "needs point-in-time narrative membership and flow data beyond the six exchange-listed memecoins",
+ "research_status": "hypothesis",
+ "evidence": [
+  {
+   "source": "PK-S32",
+   "relation": "context",
+   "note": "pack ST190: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  },
+  {
+   "source": "PK-S48",
+   "relation": "context",
+   "note": "pack ST190: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  },
+  {
+   "source": "PK-S67",
+   "relation": "context",
+   "note": "pack ST190: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  },
+  {
+   "source": "PK-S70",
+   "relation": "context",
+   "note": "pack ST190: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  }
+ ],
+ "variants": []
+}

@@ -1,0 +1,36 @@
+{
+ "id": "STRAT-180",
+ "key": "pack_st033_kalman_filter_pairs_model",
+ "name": "Kalman-filter pairs model",
+ "family": "cross_asset",
+ "subfamily": "relative",
+ "hypothesis": "Trade residual dislocation only when model uncertainty is acceptable.",
+ "markets": [
+  "stock",
+  "crypto"
+ ],
+ "timeframe": "5m",
+ "data": [
+  "synchronized multi-instrument quotes and bars",
+  "borrow/financing data",
+  "point-in-time universe"
+ ],
+ "definition": null,
+ "spec": "Setup: Update hedge parameters causally with a frozen state-space model. Entry: Trade residual dislocation only when model uncertainty is acceptable. Exit: Close on normalized residual or parameter-instability trigger. Parameters to pre-register: state_noise, observation_noise, entry_z, uncertainty_limit.",
+ "implementation_status": "blocked",
+ "blocked_reason": "needs simultaneous two-leg or basket execution with short legs; the engine trades one instrument per bot",
+ "research_status": "hypothesis",
+ "evidence": [
+  {
+   "source": "PK-S29",
+   "relation": "context",
+   "note": "pack ST033: Family-level definitions, mechanics or research context only. Exact rules below are original research templates, not a replication or source-endorsed strategy."
+  },
+  {
+   "source": "PK-S32",
+   "relation": "context",
+   "note": "pack ST033: Family-level definitions, mechanics or research context only. Exact rules below are original research templates, not a replication or source-endorsed strategy."
+  }
+ ],
+ "variants": []
+}

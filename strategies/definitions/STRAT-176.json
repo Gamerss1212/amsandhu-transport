@@ -1,0 +1,93 @@
+{
+ "id": "STRAT-176",
+ "key": "meme_midpoint_acceptance",
+ "name": "Selloff-range midpoint acceptance",
+ "family": "memecoin",
+ "subfamily": "intraday structure",
+ "hypothesis": "Within 48 bars of a 96-bar low, buy when the last 4 bars' lows all held above the 96-bar range midpoint; stop 0.5 ATR under the midpoint; target the 96-bar high.",
+ "markets": [
+  "crypto"
+ ],
+ "timeframe": "15m",
+ "data": [
+  "bars"
+ ],
+ "definition": {
+  "name": "Selloff-range midpoint acceptance",
+  "family": "memecoin",
+  "timeframe": "15m",
+  "direction": "long",
+  "params": {},
+  "entry": {
+   "long": "since(low <= lowest(low,96)) <= 48 and persist(low > (highest(high,96)+lowest(low,96))/2, 4) and not persist(low > (highest(high,96)+lowest(low,96))/2, 5)"
+  },
+  "filters": [],
+  "order": {
+   "type": "market"
+  },
+  "stop": {
+   "type": "level",
+   "long": "(highest(high,96)+lowest(low,96))/2 - 0.5*atr(14)"
+  },
+  "target": {
+   "type": "level",
+   "long": "highest(high,96)"
+  },
+  "trail": {
+   "type": "none"
+  },
+  "exit": {},
+  "max_bars": 0,
+  "session": {
+   "flat_minutes_before_close": 5
+  },
+  "max_trades_per_day": 1,
+  "cooldown_bars": 0,
+  "sizing": {
+   "risk_pct": 0.5,
+   "max_notional_pct": 100.0
+  },
+  "data": [
+   "bars"
+  ],
+  "id": "STRAT-176",
+  "version": "1.0.0"
+ },
+ "spec": null,
+ "implementation_status": "implemented",
+ "blocked_reason": null,
+ "research_status": "hypothesis",
+ "evidence": [
+  {
+   "source": "PK-S24",
+   "relation": "context",
+   "note": "pack ST239: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  },
+  {
+   "source": "PK-S25",
+   "relation": "context",
+   "note": "pack ST239: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  },
+  {
+   "source": "PK-S26",
+   "relation": "context",
+   "note": "pack ST239: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  },
+  {
+   "source": "PK-S27",
+   "relation": "context",
+   "note": "pack ST239: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  },
+  {
+   "source": "PK-S37",
+   "relation": "context",
+   "note": "pack ST239: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  },
+  {
+   "source": "PK-S38",
+   "relation": "context",
+   "note": "pack ST239: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  }
+ ],
+ "variants": []
+}

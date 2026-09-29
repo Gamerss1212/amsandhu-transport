@@ -1,0 +1,51 @@
+{
+ "id": "STRAT-201",
+ "key": "pack_st070_etf_cash_basket_arbitrage_concept",
+ "name": "ETF cash-basket arbitrage concept",
+ "family": "market_making_arbitrage",
+ "subfamily": "arbitrage",
+ "hypothesis": "Only model creation/redemption if the operator actually has authorized-participant access; otherwise model an ordinary hedged spread.",
+ "markets": [
+  "stock"
+ ],
+ "timeframe": "5m",
+ "data": [
+  "synchronized executable depth on every leg",
+  "inventory",
+  "financing",
+  "fee tiers"
+ ],
+ "definition": null,
+ "spec": "Setup: A tradable ETF differs from a matched underlying basket after all costs. Entry: Only model creation/redemption if the operator actually has authorized-participant access; otherwise model an ordinary hedged spread. Exit: Exit on convergence and manage constituent, settlement and cash exposure. Parameters to pre-register: basket_version, creation_access, settlement_cost, tracking_error.",
+ "implementation_status": "blocked",
+ "blocked_reason": "needs prefunded inventory on several venues and synchronized multi-leg execution",
+ "research_status": "hypothesis",
+ "evidence": [
+  {
+   "source": "PK-S20",
+   "relation": "context",
+   "note": "pack ST070: Family-level definitions, mechanics or research context only. Exact rules below are original research templates, not a replication or source-endorsed strategy."
+  },
+  {
+   "source": "PK-S21",
+   "relation": "context",
+   "note": "pack ST070: Family-level definitions, mechanics or research context only. Exact rules below are original research templates, not a replication or source-endorsed strategy."
+  },
+  {
+   "source": "PK-S22",
+   "relation": "context",
+   "note": "pack ST070: Family-level definitions, mechanics or research context only. Exact rules below are original research templates, not a replication or source-endorsed strategy."
+  },
+  {
+   "source": "PK-S23",
+   "relation": "context",
+   "note": "pack ST070: Family-level definitions, mechanics or research context only. Exact rules below are original research templates, not a replication or source-endorsed strategy."
+  },
+  {
+   "source": "PK-S32",
+   "relation": "context",
+   "note": "pack ST070: Family-level definitions, mechanics or research context only. Exact rules below are original research templates, not a replication or source-endorsed strategy."
+  }
+ ],
+ "variants": []
+}

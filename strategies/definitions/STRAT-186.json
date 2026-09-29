@@ -1,0 +1,46 @@
+{
+ "id": "STRAT-186",
+ "key": "pack_st042_earnings_response_reversal",
+ "name": "Earnings-response reversal",
+ "family": "scheduled_events",
+ "subfamily": "event",
+ "hypothesis": "Fade only after the reversal is observable and the release has been correctly parsed.",
+ "markets": [
+  "stock"
+ ],
+ "timeframe": "5m",
+ "data": [
+  "publication and receipt timestamps",
+  "licensed event/news feed",
+  "executable quotes",
+  "session and halt status"
+ ],
+ "definition": null,
+ "spec": "Setup: A release causes a large reaction that fails a predefined acceptance test. Entry: Fade only after the reversal is observable and the release has been correctly parsed. Exit: Stop beyond the reaction extreme; exit at partial retracement or time. Parameters to pre-register: reaction_threshold, failure_window, reversal_trigger, target.",
+ "implementation_status": "blocked",
+ "blocked_reason": "needs a licensed event feed (earnings surprises, consensus, filings, auction or halt data) with receipt times",
+ "research_status": "hypothesis",
+ "evidence": [
+  {
+   "source": "PK-S04",
+   "relation": "context",
+   "note": "pack ST042: Family-level definitions, mechanics or research context only. Exact rules below are original research templates, not a replication or source-endorsed strategy."
+  },
+  {
+   "source": "PK-S06",
+   "relation": "context",
+   "note": "pack ST042: Family-level definitions, mechanics or research context only. Exact rules below are original research templates, not a replication or source-endorsed strategy."
+  },
+  {
+   "source": "PK-S42",
+   "relation": "context",
+   "note": "pack ST042: Family-level definitions, mechanics or research context only. Exact rules below are original research templates, not a replication or source-endorsed strategy."
+  },
+  {
+   "source": "PK-S43",
+   "relation": "context",
+   "note": "pack ST042: Family-level definitions, mechanics or research context only. Exact rules below are original research templates, not a replication or source-endorsed strategy."
+  }
+ ],
+ "variants": []
+}

@@ -1,0 +1,46 @@
+{
+ "id": "STRAT-258",
+ "key": "pack_st155_multi_window_inflow_alignment",
+ "name": "Multi-window inflow alignment",
+ "family": "memecoin",
+ "subfamily": "flow momentum",
+ "hypothesis": "Buy a pullback recovery when both predeclared net-inflow windows are positive and the longer trend remains intact.",
+ "markets": [
+  "crypto"
+ ],
+ "timeframe": "5m",
+ "data": [
+  "deduplicated economic swaps",
+  "quote-notional flow",
+  "initiating traders",
+  "receipt timestamps"
+ ],
+ "definition": null,
+ "spec": "Setup: Agreement between short and medium flow windows may reduce isolated-burst entries. Entry: Buy a pullback recovery when both predeclared net-inflow windows are positive and the longer trend remains intact. Evaluate only information available at decision time; attempt execution afterward. Exit: Exit when the longer flow window reverses or the pullback fails. Always apply the earlier of the registered maximum holding time and hard risk invalidation; fills can be delayed or unavailable. Parameters to pre-register: eligible universe and point-in-time membership, observation window and completed-event/bar rule, numerical threshold(s) named by the signal, entry order and maximum price/quote deviation, initial invalidation level and target if used, H_max and explicit session definition, cost, impact, latency, failed-attempt, and leg-risk models, position/notional/exit-capacity caps, baseline and out-of-sample rejection thresholds.",
+ "implementation_status": "blocked",
+ "blocked_reason": "needs deduplicated swap-level flow history; exchange aggressor flow is captured live only",
+ "research_status": "hypothesis",
+ "evidence": [
+  {
+   "source": "PK-S30",
+   "relation": "context",
+   "note": "pack ST155: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  },
+  {
+   "source": "PK-S51",
+   "relation": "context",
+   "note": "pack ST155: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  },
+  {
+   "source": "PK-S67",
+   "relation": "context",
+   "note": "pack ST155: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  },
+  {
+   "source": "PK-S72",
+   "relation": "context",
+   "note": "pack ST155: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  }
+ ],
+ "variants": []
+}

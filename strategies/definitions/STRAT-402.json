@@ -1,0 +1,62 @@
+{
+ "id": "STRAT-402",
+ "key": "pack_st316_closing_imbalance_divergence_reversal",
+ "name": "Closing imbalance divergence reversal",
+ "family": "equity_breadth",
+ "subfamily": "equity breadth",
+ "hypothesis": "Before permitted order deadlines, trade only after a preregistered price rejection and a validated current imbalance feed.",
+ "markets": [
+  "stock",
+  "crypto"
+ ],
+ "timeframe": "5m",
+ "data": [
+  "point-in-time index constituents",
+  "consolidated quotes",
+  "halt flags",
+  "auction updates"
+ ],
+ "definition": null,
+ "spec": "Setup: A large reported imbalance may fail to move price as expected. Entry: Before permitted order deadlines, trade only after a preregistered price rejection and a validated current imbalance feed. Evaluate only information available at decision time; attempt execution afterward. Exit: Exit under the explicit auction participation or pre-close liquidation rule. Always apply the earlier of the registered maximum holding time and hard risk invalidation; fills can be delayed or unavailable. Parameters to pre-register: eligible universe and point-in-time membership, observation window and completed-event/bar rule, numerical threshold(s) named by the signal, entry order and maximum price/quote deviation, initial invalidation level and target if used, H_max and explicit session definition, cost, impact, latency, failed-attempt, and leg-risk models, position/notional/exit-capacity caps, baseline and out-of-sample rejection thresholds.",
+ "implementation_status": "blocked",
+ "blocked_reason": "needs point-in-time constituent breadth or auction imbalance data (not free)",
+ "research_status": "hypothesis",
+ "evidence": [
+  {
+   "source": "PK-S04",
+   "relation": "context",
+   "note": "pack ST316: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  },
+  {
+   "source": "PK-S05",
+   "relation": "context",
+   "note": "pack ST316: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  },
+  {
+   "source": "PK-S06",
+   "relation": "context",
+   "note": "pack ST316: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  },
+  {
+   "source": "PK-S07",
+   "relation": "context",
+   "note": "pack ST316: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  },
+  {
+   "source": "PK-S08",
+   "relation": "context",
+   "note": "pack ST316: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  },
+  {
+   "source": "PK-S29",
+   "relation": "context",
+   "note": "pack ST316: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  },
+  {
+   "source": "PK-S30",
+   "relation": "context",
+   "note": "pack ST316: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  }
+ ],
+ "variants": []
+}

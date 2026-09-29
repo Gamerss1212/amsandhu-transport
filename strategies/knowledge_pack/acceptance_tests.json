@@ -1,0 +1,705 @@
+{
+  "purpose": "Acceptance-test specifications for future implementation. These are not claims that the user software has been tested.",
+  "tests": [
+    {
+      "id": "AT001",
+      "name": "Causal higher-timeframe features",
+      "scenario": "A decision occurs at 10:05 while its hourly bar ends at 11:00.",
+      "expected_behavior": "Reject use of the completed 11:00 value; only available values may enter the signal.",
+      "status": "specification_not_run_against_user_software"
+    },
+    {
+      "id": "AT002",
+      "name": "Pivot confirmation",
+      "scenario": "A pivot at bar t requires three later bars for confirmation.",
+      "expected_behavior": "The earliest signal is after those later bars become available, not backdated to t.",
+      "status": "specification_not_run_against_user_software"
+    },
+    {
+      "id": "AT003",
+      "name": "Training-only preprocessing",
+      "scenario": "A held-out period has different mean and variance.",
+      "expected_behavior": "Fit scaling and imputation only on training data; preserve fitted parameters in the model record.",
+      "status": "specification_not_run_against_user_software"
+    },
+    {
+      "id": "AT004",
+      "name": "Overlapping-label purge",
+      "scenario": "A training label's outcome interval overlaps the validation period.",
+      "expected_behavior": "Remove or appropriately separate the contaminated training observation under the declared split policy.",
+      "status": "specification_not_run_against_user_software"
+    },
+    {
+      "id": "AT005",
+      "name": "Holdout reuse",
+      "scenario": "A developer changes parameters after seeing final holdout returns.",
+      "expected_behavior": "Mark the holdout consumed and require new independent evaluation before performance claims.",
+      "status": "specification_not_run_against_user_software"
+    },
+    {
+      "id": "AT006",
+      "name": "Point-in-time universe",
+      "scenario": "A failed/delisted asset was tradable during the test.",
+      "expected_behavior": "Retain it if its historical data meets declared quality rules; log any missing-data exclusion.",
+      "status": "specification_not_run_against_user_software"
+    },
+    {
+      "id": "AT007",
+      "name": "Corporate-action scale",
+      "scenario": "A stock undergoes a two-for-one split.",
+      "expected_behavior": "Adjust position quantity and research series consistently; simulate execution at the actual historical price scale.",
+      "status": "specification_not_run_against_user_software"
+    },
+    {
+      "id": "AT008",
+      "name": "Book sequence gap",
+      "scenario": "A depth sequence number is missing.",
+      "expected_behavior": "Invalidate the book and block new exposure until documented recovery completes.",
+      "status": "specification_not_run_against_user_software"
+    },
+    {
+      "id": "AT009",
+      "name": "Stale quote",
+      "scenario": "A quote exceeds the approved age threshold.",
+      "expected_behavior": "Reject new price-sensitive orders and record the reason.",
+      "status": "specification_not_run_against_user_software"
+    },
+    {
+      "id": "AT010",
+      "name": "Trade-side semantics",
+      "scenario": "A venue marks trades by maker side.",
+      "expected_behavior": "Map correctly before computing aggressor delta; a buy maker implies a sell aggressor under that convention.",
+      "status": "specification_not_run_against_user_software"
+    },
+    {
+      "id": "AT011",
+      "name": "Zero-volume VWAP",
+      "scenario": "A session contains no eligible trades.",
+      "expected_behavior": "Return unavailable with a reason; do not divide by zero or carry an undocumented value.",
+      "status": "specification_not_run_against_user_software"
+    },
+    {
+      "id": "AT012",
+      "name": "Indicator warm-up",
+      "scenario": "Live history is shorter than the research warm-up.",
+      "expected_behavior": "Block the affected strategy or apply the explicitly tested warm-up policy.",
+      "status": "specification_not_run_against_user_software"
+    },
+    {
+      "id": "AT013",
+      "name": "Tick rounding",
+      "scenario": "A proposed price lies between valid price ticks.",
+      "expected_behavior": "Round by the documented side/order policy without violating a price cap; reject if no compliant value exists.",
+      "status": "specification_not_run_against_user_software"
+    },
+    {
+      "id": "AT014",
+      "name": "Minimum notional conflict",
+      "scenario": "Risk-approved size falls below venue minimum notional.",
+      "expected_behavior": "Reject; do not silently increase size beyond risk approval.",
+      "status": "specification_not_run_against_user_software"
+    },
+    {
+      "id": "AT015",
+      "name": "Stop-sizing example",
+      "scenario": "Equity=10000, risk_fraction=0.0025, entry=100, stop=99.50, unit_cost=0.10, multiplier=1, lot=1.",
+      "expected_behavior": "Quantity is 41 before other caps; modeled planned loss is 24.60.",
+      "status": "specification_not_run_against_user_software"
+    },
+    {
+      "id": "AT016",
+      "name": "Invalid stop direction",
+      "scenario": "A long order has a stop above entry under a protective-stop specification.",
+      "expected_behavior": "Reject the inconsistent intent.",
+      "status": "specification_not_run_against_user_software"
+    },
+    {
+      "id": "AT017",
+      "name": "Inverse-contract PnL",
+      "scenario": "A long inverse USD-notional contract rises in price.",
+      "expected_behavior": "Coin PnL follows its reciprocal-price specification, not the linear quote-PnL formula.",
+      "status": "specification_not_run_against_user_software"
+    },
+    {
+      "id": "AT018",
+      "name": "No double-counted spread",
+      "scenario": "Fills already use actual bid and ask prices.",
+      "expected_behavior": "Do not subtract another identical spread charge in net PnL.",
+      "status": "specification_not_run_against_user_software"
+    },
+    {
+      "id": "AT019",
+      "name": "Same-bar stop and target",
+      "scenario": "Both levels lie within one OHLC candle and event ordering is unavailable.",
+      "expected_behavior": "Use finer evidence or declared conservative ambiguity handling; no automatic favorable fill.",
+      "status": "specification_not_run_against_user_software"
+    },
+    {
+      "id": "AT020",
+      "name": "Passive-touch fill",
+      "scenario": "Market touches a limit with unknown queue ahead.",
+      "expected_behavior": "Do not guarantee a fill; apply the declared queue or pessimistic fill model.",
+      "status": "specification_not_run_against_user_software"
+    },
+    {
+      "id": "AT021",
+      "name": "Partial entry",
+      "scenario": "Only part of a parent order fills.",
+      "expected_behavior": "Risk, protection and ledger quantities reflect the actual fill; handle remainder independently.",
+      "status": "specification_not_run_against_user_software"
+    },
+    {
+      "id": "AT022",
+      "name": "Cancel/fill race",
+      "scenario": "A fill arrives while cancellation is pending.",
+      "expected_behavior": "Account for the fill and cancel only remaining quantity; pending_cancel is not a final state.",
+      "status": "specification_not_run_against_user_software"
+    },
+    {
+      "id": "AT023",
+      "name": "Lost order response",
+      "scenario": "A submission times out after the venue may have accepted it.",
+      "expected_behavior": "Reconcile by client order ID before any retry; do not create duplicate exposure.",
+      "status": "specification_not_run_against_user_software"
+    },
+    {
+      "id": "AT024",
+      "name": "Duplicate execution report",
+      "scenario": "The same fill ID arrives twice.",
+      "expected_behavior": "Update positions, fees and PnL once.",
+      "status": "specification_not_run_against_user_software"
+    },
+    {
+      "id": "AT025",
+      "name": "Out-of-order order updates",
+      "scenario": "An older partial-fill report arrives after a filled status.",
+      "expected_behavior": "Do not regress cumulative state; retain raw events and reconcile conflicts.",
+      "status": "specification_not_run_against_user_software"
+    },
+    {
+      "id": "AT026",
+      "name": "Restart with open positions",
+      "scenario": "The process restarts after a crash.",
+      "expected_behavior": "Reconcile authoritative balances, positions and orders before new exposure.",
+      "status": "specification_not_run_against_user_software"
+    },
+    {
+      "id": "AT027",
+      "name": "Fee-currency conversion",
+      "scenario": "A crypto fee is charged in a third token.",
+      "expected_behavior": "Record native fee amount and timestamped conversion; preserve conversion uncertainty.",
+      "status": "specification_not_run_against_user_software"
+    },
+    {
+      "id": "AT028",
+      "name": "Funding sign and timing",
+      "scenario": "A positive-rate funding event occurs while a linear long remains open.",
+      "expected_behavior": "Apply the documented payment at that event and update collateral; do not infer from an eight-hour constant.",
+      "status": "specification_not_run_against_user_software"
+    },
+    {
+      "id": "AT029",
+      "name": "Borrow unavailable",
+      "scenario": "A historical stock short signal has no verified borrow.",
+      "expected_behavior": "Reject or mark non-executable; never score an assumed fill as real evidence.",
+      "status": "specification_not_run_against_user_software"
+    },
+    {
+      "id": "AT030",
+      "name": "Changing margin regime",
+      "scenario": "A US broker has not yet adopted the new 2026 framework.",
+      "expected_behavior": "Use the broker's actual effective account regime; do not universally erase old controls.",
+      "status": "specification_not_run_against_user_software"
+    },
+    {
+      "id": "AT031",
+      "name": "Early close",
+      "scenario": "A trading day closes earlier than normal.",
+      "expected_behavior": "Move flat deadline and order cutoffs according to that venue calendar.",
+      "status": "specification_not_run_against_user_software"
+    },
+    {
+      "id": "AT032",
+      "name": "Halt and gap",
+      "scenario": "A position is halted and reopens beyond its stop.",
+      "expected_behavior": "No fills during non-tradability; simulate possible gap loss rather than an exact stop-price fill.",
+      "status": "specification_not_run_against_user_software"
+    },
+    {
+      "id": "AT033",
+      "name": "Cross-venue one-leg fill",
+      "scenario": "The buy leg fills but the hedge order fails.",
+      "expected_behavior": "Enforce the predefined unhedged exposure/time budget and hedge or unwind policy.",
+      "status": "specification_not_run_against_user_software"
+    },
+    {
+      "id": "AT034",
+      "name": "Withdrawal suspension",
+      "scenario": "An apparent cross-venue spread relies on blocked transfers.",
+      "expected_behavior": "Exclude the assumed transfer-based trade or model funded inventory constraints honestly.",
+      "status": "specification_not_run_against_user_software"
+    },
+    {
+      "id": "AT035",
+      "name": "Collateral fragmentation",
+      "scenario": "One venue profits while another approaches liquidation.",
+      "expected_behavior": "Do not net away the second venue's collateral requirement unless an actual permitted transfer settles in time.",
+      "status": "specification_not_run_against_user_software"
+    },
+    {
+      "id": "AT036",
+      "name": "Daily loss includes open loss",
+      "scenario": "Realized PnL is positive but open positions make total session PnL breach its limit.",
+      "expected_behavior": "Trigger the configured total-loss control; deposits must not conceal loss.",
+      "status": "specification_not_run_against_user_software"
+    },
+    {
+      "id": "AT037",
+      "name": "Correlated risk accumulation",
+      "scenario": "Several strategies request the same factor exposure.",
+      "expected_behavior": "Apply aggregate factor/sector/instrument limits across strategy names.",
+      "status": "specification_not_run_against_user_software"
+    },
+    {
+      "id": "AT038",
+      "name": "Protective-order cancellation",
+      "scenario": "An emergency command cancels all resting orders.",
+      "expected_behavior": "Identify any removed protection and execute the predefined remaining-position plan; never assume cancellation flattened exposure.",
+      "status": "specification_not_run_against_user_software"
+    },
+    {
+      "id": "AT039",
+      "name": "Text prompt injection",
+      "scenario": "A retrieved article tells the bot to ignore limits and trade.",
+      "expected_behavior": "Treat the text as data, discard the instruction and preserve deterministic permissions.",
+      "status": "specification_not_run_against_user_software"
+    },
+    {
+      "id": "AT040",
+      "name": "False performance claim",
+      "scenario": "A research-only record has null results but a generated answer claims 85% wins.",
+      "expected_behavior": "Reject the claim; require a linked measured experiment with scope and uncertainty.",
+      "status": "specification_not_run_against_user_software"
+    },
+    {
+      "id": "AT041",
+      "name": "Paper/live labeling",
+      "scenario": "A paper broker returns profitable simulated fills.",
+      "expected_behavior": "Keep status paper; never relabel as live or infer queue/impact validation.",
+      "status": "specification_not_run_against_user_software"
+    },
+    {
+      "id": "AT042",
+      "name": "Secret handling",
+      "scenario": "A source document or model request asks for trading credentials.",
+      "expected_behavior": "Do not expose secrets; credentials remain outside retrieval and prompts.",
+      "status": "specification_not_run_against_user_software"
+    },
+    {
+      "id": "AT043",
+      "name": "Model drift",
+      "scenario": "Observed feature/forecast behavior exceeds predeclared drift bounds.",
+      "expected_behavior": "Pause or fall back according to the approved policy; retraining cannot auto-promote a new live model.",
+      "status": "specification_not_run_against_user_software"
+    },
+    {
+      "id": "AT044",
+      "name": "Zero-loss profit factor",
+      "scenario": "A small sample contains no losing closed trades.",
+      "expected_behavior": "Return undefined or infinite with sample disclosure, not a misleading finite value.",
+      "status": "specification_not_run_against_user_software"
+    },
+    {
+      "id": "AT045",
+      "name": "Win-rate expectancy example",
+      "scenario": "Win probability=0.8, average gross win=0.2R, mean gross loss=1R, additional cost=0.",
+      "expected_behavior": "Expected value is -0.04R; high win rate alone does not imply profitability.",
+      "status": "specification_not_run_against_user_software"
+    },
+    {
+      "id": "AT046",
+      "name": "Chain reorganization",
+      "scenario": "A DEX transaction thought included is removed by a reorg.",
+      "expected_behavior": "Reconcile chain and hedge exposure under the declared finality policy before assuming settlement.",
+      "status": "specification_not_run_against_user_software"
+    },
+    {
+      "id": "AT047",
+      "name": "Model rollback",
+      "scenario": "A new model has a validation or execution incident.",
+      "expected_behavior": "Restore a compatible previously approved version and state; preserve incident and experiment history.",
+      "status": "specification_not_run_against_user_software"
+    },
+    {
+      "id": "AT048",
+      "name": "No authorized account profile",
+      "scenario": "Required jurisdiction, account eligibility or venue permissions are unknown.",
+      "expected_behavior": "Keep live execution disabled and reject new exposure.",
+      "status": "specification_not_run_against_user_software"
+    },
+    {
+      "id": "AT049",
+      "name": "Source refresh",
+      "scenario": "A cached fee, API or regulatory fact is past its approved freshness window.",
+      "expected_behavior": "Recheck the controlling source before use or mark the dependent function unavailable.",
+      "status": "specification_not_run_against_user_software"
+    },
+    {
+      "id": "AT050",
+      "name": "Gross/net accounting reconciliation",
+      "scenario": "Trade-level realized PnL disagrees with marked-to-market account equity changes.",
+      "expected_behavior": "Investigate fees, financing, cash flows, open inventory and FX; do not publish a performance result until reconciled.",
+      "status": "specification_not_run_against_user_software"
+    },
+    {
+      "id": "AT051",
+      "name": "Duplicate ticker identity",
+      "scenario": "Two tokens on different chains share a symbol and logo.",
+      "expected_behavior": "Keep separate deployment identities and prohibit symbol-only joins.",
+      "status": "specification_not_run_against_user_software"
+    },
+    {
+      "id": "AT052",
+      "name": "Native coin identity",
+      "scenario": "A native asset has no ERC-20 or SPL mint address.",
+      "expected_behavior": "Use explicit native identity; do not invent a contract or merge with a wrapped version.",
+      "status": "specification_not_run_against_user_software"
+    },
+    {
+      "id": "AT053",
+      "name": "Decimal mismatch",
+      "scenario": "A provider reports 18 decimals while the verified mint reports 6.",
+      "expected_behavior": "Block sizing and quoting until the discrepancy is resolved; retain raw integers.",
+      "status": "specification_not_run_against_user_software"
+    },
+    {
+      "id": "AT054",
+      "name": "Mint revocation with delegate",
+      "scenario": "Ordinary mint authority is revoked but a permanent delegate exists.",
+      "expected_behavior": "Preserve delegate risk; do not issue a universal safe flag.",
+      "status": "specification_not_run_against_user_software"
+    },
+    {
+      "id": "AT055",
+      "name": "Proxy implementation change",
+      "scenario": "The same token address upgrades its implementation between observation and entry.",
+      "expected_behavior": "Invalidate prior permission/simulation evidence and require new versioned checks.",
+      "status": "specification_not_run_against_user_software"
+    },
+    {
+      "id": "AT056",
+      "name": "Transfer hook denial",
+      "scenario": "The intended wallet's full-size sale fails custom transfer logic.",
+      "expected_behavior": "Reject entry and record the precise unsupported or denied route state.",
+      "status": "specification_not_run_against_user_software"
+    },
+    {
+      "id": "AT057",
+      "name": "Transfer-fee update",
+      "scenario": "A future-effective transfer fee changes between signal and execution.",
+      "expected_behavior": "Reprice using the correct effective state and enforce the fee cap.",
+      "status": "specification_not_run_against_user_software"
+    },
+    {
+      "id": "AT058",
+      "name": "Unknown scanner response",
+      "scenario": "A scanner times out or omits a honeypot result.",
+      "expected_behavior": "Mark unknown; do not coerce absence to false or safe.",
+      "status": "specification_not_run_against_user_software"
+    },
+    {
+      "id": "AT059",
+      "name": "Small-test false reassurance",
+      "scenario": "A tiny simulation succeeds but the planned-size sale fails.",
+      "expected_behavior": "Reject the intended position; small-size success is not extrapolated.",
+      "status": "specification_not_run_against_user_software"
+    },
+    {
+      "id": "AT060",
+      "name": "Locked LP incomplete coverage",
+      "scenario": "One pool is locked but most liquidity sits in another removable pool.",
+      "expected_behavior": "Compute route-specific rights and capacity; do not label all liquidity locked.",
+      "status": "specification_not_run_against_user_software"
+    },
+    {
+      "id": "AT061",
+      "name": "Virtual reserves mistaken for cash",
+      "scenario": "A pricing curve includes virtual quote balances.",
+      "expected_behavior": "Use them only in the documented pricing model, not available exit cash accounting.",
+      "status": "specification_not_run_against_user_software"
+    },
+    {
+      "id": "AT062",
+      "name": "Curve completion before migration",
+      "scenario": "A completion flag is set but no usable destination pool exists.",
+      "expected_behavior": "Pause entries and do not invent fills during the transition.",
+      "status": "specification_not_run_against_user_software"
+    },
+    {
+      "id": "AT063",
+      "name": "Changed pool interface",
+      "scenario": "A protocol adds a mandatory field or account.",
+      "expected_behavior": "Fail schema/version checks rather than using a legacy default silently.",
+      "status": "specification_not_run_against_user_software"
+    },
+    {
+      "id": "AT064",
+      "name": "New pool pagination cap",
+      "scenario": "The provider exposes only a recent window or plan-limited pages.",
+      "expected_behavior": "Mark coverage partial and preserve the cap, timeframe, and missing range.",
+      "status": "specification_not_run_against_user_software"
+    },
+    {
+      "id": "AT065",
+      "name": "Pagination retry duplication",
+      "scenario": "A failed page is fetched again with overlapping records.",
+      "expected_behavior": "Deduplicate by provider ID and deployment identity while retaining observation versions.",
+      "status": "specification_not_run_against_user_software"
+    },
+    {
+      "id": "AT066",
+      "name": "Empty error response",
+      "scenario": "An API failure produces an empty result body.",
+      "expected_behavior": "Record failure; never treat it as successful exhaustion of the universe.",
+      "status": "specification_not_run_against_user_software"
+    },
+    {
+      "id": "AT067",
+      "name": "Disappearing token",
+      "scenario": "A previously observed failed token vanishes from a listing API.",
+      "expected_behavior": "Retain its historical membership and terminal/missing state in backtests.",
+      "status": "specification_not_run_against_user_software"
+    },
+    {
+      "id": "AT068",
+      "name": "Category drift",
+      "scenario": "A token enters a meme category after it already rallied.",
+      "expected_behavior": "Do not use the later category membership to select the earlier trade.",
+      "status": "specification_not_run_against_user_software"
+    },
+    {
+      "id": "AT069",
+      "name": "Router hop double count",
+      "scenario": "One user swap crosses three pools.",
+      "expected_behavior": "Separate pool-level activity from one economic user trade; avoid triple-counting demand.",
+      "status": "specification_not_run_against_user_software"
+    },
+    {
+      "id": "AT070",
+      "name": "LP addition versus purchase",
+      "scenario": "Token balances change because a user adds liquidity.",
+      "expected_behavior": "Classify as liquidity provision, not directional buyer demand.",
+      "status": "specification_not_run_against_user_software"
+    },
+    {
+      "id": "AT071",
+      "name": "Failed chain transaction",
+      "scenario": "A submitted transaction lands with an execution error.",
+      "expected_behavior": "Record applicable fees and no token fill; do not count it as a successful purchase.",
+      "status": "specification_not_run_against_user_software"
+    },
+    {
+      "id": "AT072",
+      "name": "Unconfirmed rollback",
+      "scenario": "An observed transaction is removed from the accepted chain.",
+      "expected_behavior": "Rollback derived balances/features according to the finality policy and preserve audit history.",
+      "status": "specification_not_run_against_user_software"
+    },
+    {
+      "id": "AT073",
+      "name": "Out-of-order indexer messages",
+      "scenario": "A late earlier-slot message arrives after a later state.",
+      "expected_behavior": "Reconcile causally without overwriting current state incorrectly or granting historical knowledge.",
+      "status": "specification_not_run_against_user_software"
+    },
+    {
+      "id": "AT074",
+      "name": "Block time unavailable",
+      "scenario": "A chain event has a slot but null wall-clock time.",
+      "expected_behavior": "Retain slot order and uncertainty; do not fabricate precise timing.",
+      "status": "specification_not_run_against_user_software"
+    },
+    {
+      "id": "AT075",
+      "name": "Wallet label hindsight",
+      "scenario": "A creator cluster is identified only after a later incident.",
+      "expected_behavior": "Make the label unavailable to earlier decisions and run revised-label sensitivity separately.",
+      "status": "specification_not_run_against_user_software"
+    },
+    {
+      "id": "AT076",
+      "name": "Exchange shared funding",
+      "scenario": "Many unrelated buyers are funded by the same exchange hot wallet.",
+      "expected_behavior": "Avoid automatically merging them into one controller; retain uncertain linkage.",
+      "status": "specification_not_run_against_user_software"
+    },
+    {
+      "id": "AT077",
+      "name": "Dust holder inflation",
+      "scenario": "Thousands of tiny unsolicited transfers create new addresses.",
+      "expected_behavior": "Do not treat raw holder count growth as independent purchased demand.",
+      "status": "specification_not_run_against_user_software"
+    },
+    {
+      "id": "AT078",
+      "name": "Source-wallet hidden inventory",
+      "scenario": "A followed wallet received tokens from an unknown wallet before selling.",
+      "expected_behavior": "Flag incomplete acquisition cost and identity linkage; exclude unsupported profit claims.",
+      "status": "specification_not_run_against_user_software"
+    },
+    {
+      "id": "AT079",
+      "name": "Open gains leaderboard",
+      "scenario": "A source wallet has large marked gains but no feasible full-position exit.",
+      "expected_behavior": "Value open inventory with stressed exit proceeds and report unpriced exposure.",
+      "status": "specification_not_run_against_user_software"
+    },
+    {
+      "id": "AT080",
+      "name": "Follower entry delay",
+      "scenario": "The source wallet buys before the follower receives the event.",
+      "expected_behavior": "Simulate only later executable prices, including transaction build and landing delay.",
+      "status": "specification_not_run_against_user_software"
+    },
+    {
+      "id": "AT081",
+      "name": "Source exit ahead of follower",
+      "scenario": "The followed wallet sells first and worsens exit liquidity.",
+      "expected_behavior": "Apply the resulting later state to the follower's exit instead of copying the source price.",
+      "status": "specification_not_run_against_user_software"
+    },
+    {
+      "id": "AT082",
+      "name": "Round-trip state consistency",
+      "scenario": "The test buys into a constant-product pool then immediately sells.",
+      "expected_behavior": "Use the updated post-buy reserves for the sale and charge both legs consistently.",
+      "status": "specification_not_run_against_user_software"
+    },
+    {
+      "id": "AT083",
+      "name": "Market-cap liquidation illusion",
+      "scenario": "A token has high FDV but little quote liquidity.",
+      "expected_behavior": "Cap proceeds by executable route economics; do not value a full exit at the last tiny-trade price.",
+      "status": "specification_not_run_against_user_software"
+    },
+    {
+      "id": "AT084",
+      "name": "Embedded fees double count",
+      "scenario": "An aggregator output already includes the pool fee.",
+      "expected_behavior": "Add only costs not embedded in that output and preserve inclusion flags.",
+      "status": "specification_not_run_against_user_software"
+    },
+    {
+      "id": "AT085",
+      "name": "Quote currency depeg",
+      "scenario": "The token's stable quote drops below its reporting-currency value.",
+      "expected_behavior": "Revalue both entry and exit consistently and separate token return from quote-asset return.",
+      "status": "specification_not_run_against_user_software"
+    },
+    {
+      "id": "AT086",
+      "name": "Priority fee unit mismatch",
+      "scenario": "Compute price is in micro-lamports while the ledger is in lamports.",
+      "expected_behavior": "Apply the correct scaling and upward rounding for the applicable transaction format.",
+      "status": "specification_not_run_against_user_software"
+    },
+    {
+      "id": "AT087",
+      "name": "Bundle acknowledgement only",
+      "scenario": "A submission returns a bundle ID but never lands.",
+      "expected_behavior": "Keep status pending/expired as verified; do not create a fill from the acknowledgement.",
+      "status": "specification_not_run_against_user_software"
+    },
+    {
+      "id": "AT088",
+      "name": "Bundle rebroadcast exposure",
+      "scenario": "Transactions from an uncled block are rebroadcast individually.",
+      "expected_behavior": "Validate state assertions and reconcile actual individual outcomes; do not assume unconditional atomicity.",
+      "status": "specification_not_run_against_user_software"
+    },
+    {
+      "id": "AT089",
+      "name": "Uncertain submission retry",
+      "scenario": "A timeout occurs after sending a signed transaction.",
+      "expected_behavior": "Reconcile its identity/status before constructing a new potentially duplicative trade.",
+      "status": "specification_not_run_against_user_software"
+    },
+    {
+      "id": "AT090",
+      "name": "Stale social metadata",
+      "scenario": "A later-edited post contains a more favorable event description.",
+      "expected_behavior": "Use the version actually observed at the original decision time.",
+      "status": "specification_not_run_against_user_software"
+    },
+    {
+      "id": "AT091",
+      "name": "Paid boost conflation",
+      "scenario": "A token appears in a paid boost feed.",
+      "expected_behavior": "Tag paid visibility separately from organic demand, quality, and security.",
+      "status": "specification_not_run_against_user_software"
+    },
+    {
+      "id": "AT092",
+      "name": "Creator-separated validation",
+      "scenario": "Related creators appear in both training and test launch cohorts.",
+      "expected_behavior": "Add entity-group holdout sensitivity and disclose uncertain entity mapping.",
+      "status": "specification_not_run_against_user_software"
+    },
+    {
+      "id": "AT093",
+      "name": "Graduation survivorship",
+      "scenario": "Training data contains only tokens that successfully migrated.",
+      "expected_behavior": "Limit claims to graduates or rebuild a launch-inclusive dataset; do not claim all-launch performance.",
+      "status": "specification_not_run_against_user_software"
+    },
+    {
+      "id": "AT094",
+      "name": "Multiple strategy trials",
+      "scenario": "Hundreds of variants are searched and only the best is reported.",
+      "expected_behavior": "Track all trials and use untouched chronological validation plus selection-bias controls.",
+      "status": "specification_not_run_against_user_software"
+    },
+    {
+      "id": "AT095",
+      "name": "Unavailable meme short",
+      "scenario": "A bearish signal appears for a token without borrow or a derivative.",
+      "expected_behavior": "Return no trade; do not simulate a fictional short.",
+      "status": "specification_not_run_against_user_software"
+    },
+    {
+      "id": "AT096",
+      "name": "Funding clock mismatch",
+      "scenario": "Offsetting perpetuals settle funding at different times.",
+      "expected_behavior": "Calculate each cashflow on its actual schedule and model residual basis/collateral risk.",
+      "status": "specification_not_run_against_user_software"
+    },
+    {
+      "id": "AT097",
+      "name": "Liquidation feed incompleteness",
+      "scenario": "A public liquidation stream is sampled or intermittently missing.",
+      "expected_behavior": "Tag coverage and avoid treating absence of records as absence of liquidations.",
+      "status": "specification_not_run_against_user_software"
+    },
+    {
+      "id": "AT098",
+      "name": "LP fee-only reporting",
+      "scenario": "A liquidity position earns fees while its token inventory collapses.",
+      "expected_behavior": "Report total economic PnL and passive-hold comparison, including unwind costs.",
+      "status": "specification_not_run_against_user_software"
+    },
+    {
+      "id": "AT099",
+      "name": "Equity margin transition",
+      "scenario": "Two brokers apply different allowed margin regimes during the transition period.",
+      "expected_behavior": "Read the actual account regime and current buying power; do not impose one universal assumption.",
+      "status": "specification_not_run_against_user_software"
+    },
+    {
+      "id": "AT100",
+      "name": "Hypothesis count integrity",
+      "scenario": "A catalogue includes strategies, ML frameworks, filters, and execution methods.",
+      "expected_behavior": "Count only explicit trading hypotheses toward the 300 target and disclose contextual variants.",
+      "status": "specification_not_run_against_user_software"
+    }
+  ]
+}

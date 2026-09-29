@@ -1,0 +1,46 @@
+{
+ "id": "STRAT-251",
+ "key": "pack_st148_wallet_disagreement_resolution",
+ "name": "Wallet disagreement resolution",
+ "family": "memecoin",
+ "subfamily": "wallet follow",
+ "hypothesis": "Buy after prior seller cohorts stop reducing inventory and buyer cohorts retain net purchases above the trigger.",
+ "markets": [
+  "crypto"
+ ],
+ "timeframe": "5m",
+ "data": [
+  "complete prior wallet fills and fees",
+  "transfers",
+  "realized and open positions",
+  "follower delay"
+ ],
+ "definition": null,
+ "spec": "Setup: A new consensus may form after qualified wallets initially trade opposite sides. Entry: Buy after prior seller cohorts stop reducing inventory and buyer cohorts retain net purchases above the trigger. Evaluate only information available at decision time; attempt execution afterward. Exit: Exit when qualified selling resumes or the resolution range fails. Always apply the earlier of the registered maximum holding time and hard risk invalidation; fills can be delayed or unavailable. Parameters to pre-register: eligible universe and point-in-time membership, observation window and completed-event/bar rule, numerical threshold(s) named by the signal, entry order and maximum price/quote deviation, initial invalidation level and target if used, H_max and explicit session definition, cost, impact, latency, failed-attempt, and leg-risk models, position/notional/exit-capacity caps, baseline and out-of-sample rejection thresholds.",
+ "implementation_status": "blocked",
+ "blocked_reason": "needs labelled wallet histories (on-chain, not connected)",
+ "research_status": "hypothesis",
+ "evidence": [
+  {
+   "source": "PK-S67",
+   "relation": "context",
+   "note": "pack ST148: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  },
+  {
+   "source": "PK-S68",
+   "relation": "context",
+   "note": "pack ST148: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  },
+  {
+   "source": "PK-S69",
+   "relation": "context",
+   "note": "pack ST148: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  },
+  {
+   "source": "PK-S72",
+   "relation": "context",
+   "note": "pack ST148: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  }
+ ],
+ "variants": []
+}

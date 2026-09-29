@@ -1,0 +1,24 @@
+{
+  "started_at_utc": "2026-09-28T23:38:37Z",
+  "requested_minimum_minutes": 60,
+  "requested_minimum_strategies": 300,
+  "phase": "completed",
+  "base_catalogue_count": 100,
+  "base_path": "/workspace/scratch/bfcf4709ea2a/research_v2/current",
+  "goal": "Expand to at least 300 clearly labeled distinct research strategies with memecoin specialization and source-backed handbook. No performance fabricated.",
+  "finished_at_utc": "2026-09-29T05:13:00.001293+00:00",
+  "elapsed_wall_clock_minutes": 334.38,
+  "active_research_minutes": null,
+  "time_request_met": "not_verified_as_one_hour_of_active_research",
+  "timing_note": "Wall-clock duration includes a long gap before the user status message. It must not be reported as active research time.",
+  "quota_fraction_requested": 0.1,
+  "quota_usage_measurable": false,
+  "work_completed": "302 hypotheses, 18 supporting records, expanded handbooks and source registry, import files, synthetic arithmetic verification",
+  "work_not_performed": [
+    "market backtesting",
+    "live token census",
+    "account connection",
+    "production trading",
+    "measured percentage usage enforcement"
+  ]
+}

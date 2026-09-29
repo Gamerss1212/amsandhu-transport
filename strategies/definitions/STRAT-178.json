@@ -1,0 +1,36 @@
+{
+ "id": "STRAT-178",
+ "key": "pack_st031_distance_based_pairs_convergence",
+ "name": "Distance-based pairs convergence",
+ "family": "cross_asset",
+ "subfamily": "relative",
+ "hypothesis": "Buy the laggard and short the leader after spread deviation passes a fixed threshold.",
+ "markets": [
+  "stock",
+  "crypto"
+ ],
+ "timeframe": "5m",
+ "data": [
+  "synchronized multi-instrument quotes and bars",
+  "borrow/financing data",
+  "point-in-time universe"
+ ],
+ "definition": null,
+ "spec": "Setup: Select economically plausible pairs using training-only normalized-price distance. Entry: Buy the laggard and short the leader after spread deviation passes a fixed threshold. Exit: Close both legs at convergence, timeout or spread stop. Parameters to pre-register: formation_window, distance_metric, entry_threshold, exit_threshold.",
+ "implementation_status": "blocked",
+ "blocked_reason": "needs simultaneous two-leg or basket execution with short legs; the engine trades one instrument per bot",
+ "research_status": "hypothesis",
+ "evidence": [
+  {
+   "source": "PK-S29",
+   "relation": "context",
+   "note": "pack ST031: Family-level definitions, mechanics or research context only. Exact rules below are original research templates, not a replication or source-endorsed strategy."
+  },
+  {
+   "source": "PK-S32",
+   "relation": "context",
+   "note": "pack ST031: Family-level definitions, mechanics or research context only. Exact rules below are original research templates, not a replication or source-endorsed strategy."
+  }
+ ],
+ "variants": []
+}

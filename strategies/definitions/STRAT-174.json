@@ -1,0 +1,94 @@
+{
+ "id": "STRAT-174",
+ "key": "meme_native_ratio_breakout",
+ "name": "Memecoin native-price range breakout",
+ "family": "memecoin",
+ "subfamily": "intraday structure",
+ "hypothesis": "Buy a Solana memecoin (BONK, WIF) when its SOL-denominated price closes above its prior 48-bar high and the USD price is above its 20-bar EMA; 3-ATR stop, 2R target.",
+ "markets": [
+  "crypto"
+ ],
+ "timeframe": "15m",
+ "data": [
+  "bars"
+ ],
+ "definition": {
+  "name": "Memecoin native-price range breakout",
+  "family": "memecoin",
+  "timeframe": "15m",
+  "direction": "long",
+  "params": {},
+  "entry": {
+   "long": "close / sym(\"SOL-USD\", close) > highest(close / sym(\"SOL-USD\", close), 48)[1] and close > ema(close,20)"
+  },
+  "filters": [],
+  "order": {
+   "type": "market"
+  },
+  "stop": {
+   "type": "atr",
+   "mult": 3.0,
+   "n": 14
+  },
+  "target": {
+   "type": "r",
+   "r": 2.0
+  },
+  "trail": {
+   "type": "none"
+  },
+  "exit": {},
+  "max_bars": 0,
+  "session": {
+   "flat_minutes_before_close": 5
+  },
+  "max_trades_per_day": 2,
+  "cooldown_bars": 0,
+  "sizing": {
+   "risk_pct": 0.5,
+   "max_notional_pct": 100.0
+  },
+  "data": [
+   "bars"
+  ],
+  "id": "STRAT-174",
+  "version": "1.0.0"
+ },
+ "spec": null,
+ "implementation_status": "implemented",
+ "blocked_reason": null,
+ "research_status": "hypothesis",
+ "evidence": [
+  {
+   "source": "PK-S24",
+   "relation": "context",
+   "note": "pack ST233: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  },
+  {
+   "source": "PK-S25",
+   "relation": "context",
+   "note": "pack ST233: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  },
+  {
+   "source": "PK-S26",
+   "relation": "context",
+   "note": "pack ST233: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  },
+  {
+   "source": "PK-S27",
+   "relation": "context",
+   "note": "pack ST233: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  },
+  {
+   "source": "PK-S37",
+   "relation": "context",
+   "note": "pack ST233: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  },
+  {
+   "source": "PK-S38",
+   "relation": "context",
+   "note": "pack ST233: Sources establish mechanics, data semantics, or research limitations. The exact entry, exit, and filters below are original hypotheses, not findings endorsed by"
+  }
+ ],
+ "variants": []
+}
