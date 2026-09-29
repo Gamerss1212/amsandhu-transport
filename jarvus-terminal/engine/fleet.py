@@ -152,7 +152,8 @@ def boot():
     global _watchdog
     ap = _load_autopilot()
     if ap["enabled"]:
-        print(f"  Autopilot: starting the bot fleet ({ap['stage']} bots, paper money).", flush=True)
+        which = "all" if ap["stage"] == "250" else f"the stage-{ap['stage']}"
+        print(f"  Autopilot: starting {which} bots (paper money).", flush=True)
         start(ap["stage"], auto=True)
     if _watchdog is None:
         import threading
