@@ -1,7 +1,7 @@
 # Jarvus
 
-One window for a fleet of **296 trading bots** and the **brain** that checks every trade they want to
-make. The bots run **147 strategies** on crypto and US/Canadian stocks with **paper money** at live
+One window for a fleet of **311 trading bots** and the **brain** that checks every trade they want to
+make. The bots run **150 strategies** on crypto and US/Canadian stocks with **paper money** at live
 prices, start by themselves and decide everything on their own. **Real money is off** until you
 connect a broker, set your limits and type an acknowledgement in the app.
 
@@ -28,10 +28,10 @@ protected your PC". Click **More info**, then **Run anyway**.
 | **Command** | The live view: paper wallet (set the balance to any amount, any time), price chart and order book, the #1 bot, the hive of all 296 bots around the brain, P&L, recent trades and the execution log of every brain decision. |
 | **Bots** | Every bot, its state and last decision. Click one to see the exact rules, indicator values and checks behind what it did; disable or enable it. |
 | **Brain** | How every entry is decided (cost gate → volatility gate → learned score → bench and size), live gate readings for every market, what refused trades would have made, what it has learned, calibration and its own insights. |
-| **Strategies** | The library: 406 strategies (147 the bots run, 259 research-only), with exact rules, sources, how each fails and its measured results after costs. |
-| **Results** | Everything measured: 3,000 whole-system simulations, 14,672 strategy backtests with a correction for how many ideas were tried, and the volatility gate's accuracy. |
+| **Strategies** | The library: 409 strategies (150 the bots run, 259 research-only), with exact rules, sources, how each fails and its measured results after costs. |
+| **Results** | Everything measured: whole-system simulations at each fee level, the swing lab (5.5 years of hourly data), 14,672 strategy backtests with a correction for how many ideas were tried, and the volatility gate's accuracy. |
 | **Live money** | Connect Kraken, NDAX or Alpaca; see which bots have earned real money; arm or disarm real-money trading. |
-| **Settings** | Paper balance, autopilot (start/stop the bots), pause, emergency stop, system health, data feeds and alerts. |
+| **Settings** | Your exchange's fees, paper balance, autopilot (start/stop the bots), pause, emergency stop, system health, data feeds and alerts. |
 
 ## How the bots decide
 
@@ -49,6 +49,17 @@ limit and its own sizing. Before any entry, the **brain** checks it:
 
 Every refused trade is followed to its exit as a "shadow", so the brain learns from what it blocked.
 Everything is local statistics: no AI service, no per-tick model calls.
+
+**Your fees (Settings).** Fees decide most results, so tell Jarvus which exchange you trade crypto on
+(Coinbase, Kraken, NDAX, a low-fee exchange, or each bot's own). Paper fills, the cost gate and the
+brain's starting knowledge then use those fees; the brain keeps what it learns at each fee level apart.
+A limit (maker) entry is counted at the maker fee.
+
+**Swing bots.** The swing lab tested 8 hourly setups with 48 exit structures each on 5.5 years of data.
+The oldest data picked the same shape almost everywhere: a 4 x ATR stop, a 2-3R target, holds of up to
+96 hours and a limit entry, because that is what keeps fees small next to the risk. Three setups stayed
+positive on the untouched recent data at a low-fee exchange (not significant after correction); they
+run as 15 swing bots that hold through the night.
 
 ## What was measured (and what it means)
 

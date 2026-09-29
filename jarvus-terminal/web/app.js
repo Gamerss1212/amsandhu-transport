@@ -131,7 +131,7 @@ function candles(c, d) {
 /* ---------------------------------------------------------------- hive mind swarm */
 const FAM = {trend_following: "TREND", opening_range: "ORB", gaps: "GAP", reference_levels: "LEVEL", vwap: "VWAP", market_profile: "PROFILE", momentum: "MOM", mean_reversion: "REVERT",
   volatility: "VOL", candlestick: "CANDLE", market_structure: "STRUCT", volume: "VOLUME", time_of_day: "CLOCK", scheduled_events: "EVENT", cross_asset: "CROSS", crypto_structure: "FUNDING",
-  order_flow: "FLOW", statistical: "STAT", machine_learning: "ML", market_making_arbitrage: "ARB", named_systems: "SYSTEM", memecoin: "MEME", equity_events: "EARN", equity_breadth: "BREADTH"};
+  order_flow: "FLOW", statistical: "STAT", machine_learning: "ML", market_making_arbitrage: "ARB", named_systems: "SYSTEM", memecoin: "MEME", equity_events: "EARN", equity_breadth: "BREADTH", swing: "SWING"};
 const NET = {nodes: [], clusters: {}, pulses: [], stars: [], rot: 0, hover: null, byId: {}, flash: {}};
 function hash(s) { let h = 2166136261; for (const c of s) h = Math.imul(h ^ c.charCodeAt(0), 16777619); return (h >>> 0) / 4294967296; }
 function layout() {
