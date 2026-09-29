@@ -101,11 +101,26 @@ def _prepare(balance: float = None) -> str:
     return cfg_path
 
 
+def _exit_with_parent():
+    """The bots never outlive Jarvus: if the window's process dies (crash, force-kill), the fleet exits too,
+    instead of running on unseen and holding its port so the next start fails. Its state is saved after
+    every decision, so nothing is lost."""
+    parent = multiprocessing.parent_process()
+    if parent is None:
+        return
+    while True:
+        time.sleep(3)
+        if not parent.is_alive():
+            os._exit(0)
+
+
 def _run(cfg_path: str, stage: str):
     os.environ["MAB_HOME"] = HOME
     if MAB_DIR not in sys.path:
         sys.path.insert(0, MAB_DIR)
     import logging
+    import threading
+    threading.Thread(target=_exit_with_parent, name="parent-watch", daemon=True).start()
     logging.basicConfig(level=logging.INFO, format="[fleet] %(asctime)s %(levelname)s %(message)s")
     from mab.cli import run_fleet
     run_fleet(stage=stage, dashboard=True, port=PORT, config_path=cfg_path, quiet=False)
