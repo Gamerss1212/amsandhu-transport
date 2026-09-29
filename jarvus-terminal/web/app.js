@@ -471,7 +471,8 @@ function renderResults() {
   if (!RES) return;
   const sy = RES.system, stt = RES.strategies, vg = RES.volgate;
   const hero = [];
-  if (sy) hero.push(["Whole-system simulations", fmt(sy.simulations, 0), `${fmt(sy.runs, 0)} runs × 3 arms, ${sy.bots_per_run} bots, ${sy.window_days}-day windows`],
+  const fp = RES.fee_profiles || [], sims = fp.length ? fp.reduce((a, r) => a + 3 * r.runs, 0) : (sy ? sy.simulations : 0);
+  if (sy) hero.push(["Whole-system simulations", fmt(sims, 0), `${fp.length > 1 ? fp.length + " fee levels × " : ""}${fmt(sy.runs, 0)} runs × 3 versions, ${sy.bots_per_run} bots, ${sy.window_days}-day windows`],
     ["Brain: mean per window", spct(sy.arms.brain.return.mean, 3), `vs ${spct(sy.arms.none.return.mean, 2)} trading every signal · ${pct(sy.arms.brain.return.share_positive, 0)} of windows positive`]);
   if (stt) hero.push(["Strategy backtests", fmt(stt.backtests, 0), `${stt.strategies} strategies on ${stt.pairs} strategy-market pairs`], ["Significant after correction", fmt(stt.holm, 0), `of ${fmt(stt.tests, 0)} hypothesis tests (Holm)`]);
   if (vg && vg.crypto) hero.push(["LOUD forecast right", pct(vg.crypto.loud.precision, 0), `crypto, when flagged (base rate ${pct(vg.crypto.loud.base_rate, 0)})`]);

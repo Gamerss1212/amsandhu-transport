@@ -65,11 +65,16 @@ run as 15 swing bots that hold through the night.
 
 From the Results page, in plain words:
 
-* **Whole software, 1,000 runs x 3 arms** (60 random bots, random 10-day windows, real fees and
-  sizing, the brain starting only with what it learned before those windows): trading every signal
-  lost **12.3%** per window on average; with the gates **0.12%**; with the full brain **0.02%**. The
-  brain cuts losses by refusing trades whose costs exceed their edge. **No arm made money on
-  average.**
+* **Whole software, 1,000 runs x 3 versions at each of 4 fee levels** (60 random bots, random 10-day
+  windows, real sizing, the brain starting only with what it learned before those windows). Average
+  result per window with the full brain: **-0.020%** at each bot's own exchange's fees, **-0.012%** at
+  Kraken's, **+0.001%** at NDAX's (0.20%), **+0.006%** at a low-fee exchange (0.10%). Trading every
+  signal instead loses 3.5% to 12% per window. The brain cuts losses by refusing trades whose costs
+  exceed their edge and by sizing; at low fees it reaches about break-even. **No version makes
+  meaningful money**, and the average trade is still negative at every fee level.
+* **Swing lab** (5.5 years of hourly data, 8 setups x 48 exit structures): nothing survives retail
+  fees; three setups stay slightly positive on the untouched recent data at a low-fee exchange; none
+  is significant after correction.
 * **Strategies:** 143 strategies on 917 strategy-market pairs, 1,834 hypothesis tests. **None is
   significant after correcting for the number of ideas tried.** At Kraken retail fees, 0 of 353
   crypto runs were profitable; at a low-fee venue 14 of 353; stocks 102 of 564.
