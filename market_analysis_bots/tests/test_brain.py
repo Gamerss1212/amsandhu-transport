@@ -132,6 +132,57 @@ def test_priors_follow_each_venue_costs(tmp_path):
     b.load_priors(str(p))
     assert b.estimate("S:S1")["mean"] < -1 and b.estimate("S:S1@low")["mean"] > 0
     assert b._combined("S1@low", "BTC-USDT")["mean"] > 0 > b._combined("S1", "BTC-USD")["mean"]
+    # mid fees (0.20%): interpolated between the two measured levels, 1/7 of the way to retail
+    from mab.brain import MID_WEIGHT, fee_key
+    assert abs(b.post["SI:S1@mid|BTC-USD"]["prior_mean"] - (0.2 + (-1.5 - 0.2) * MID_WEIGHT)) < 1e-9
+    assert fee_key(0.012) == "" and fee_key(0.008) == "" and fee_key(0.002) == "@mid" and fee_key(0.001) == "@low"
+    assert fee_key(0.0, stock=True) == ""
+    b2 = FleetBrain(seed=1)
+    b2.load_priors(str(p))
+    q = tmp_path / "more.json"
+    q.write_text(json.dumps({"strategies": {"S2": {"runs": [{"cost": "base", "instrument": "SPY", "full": {"trades": 50, "expectancy_r": 0.1}}]}}}))
+    b2.load_priors(str(q), add=True)
+    assert b2.stats["prior_strategies"] == 2 and b2.estimate("S:S2@mid")["mean"] > 0
+
+
+def test_fee_profile_changes_fills_cost_gate_and_brain_key(tmp_path):
+    from types import SimpleNamespace
+    from mab.costs import CostModel, FEE_PROFILES
+    from mab.runtime import Fleet, LiveFiller
+    fl = Fleet({"data_dir": str(tmp_path / "d")}, {}, [], str(tmp_path))
+    br = SimpleNamespace(id="B1", venue="coinbase", symbol="BTC-USD", c=SimpleNamespace(id="S9", definition={}),
+                         filler=LiveFiller(CostModel("coinbase", "major")))
+    fl.bots["B1"] = br
+    assert fl._bkey(br) == "S9" and abs(fl.broker.fee_rate("coinbase") - 0.012) < 1e-12
+    retail = fl._cost_r(br, 100.0, 98.0)
+    fl.set_fee_profile("ndax")
+    assert fl._bkey(br) == "S9@mid" and fl.broker.fee_rate("coinbase") == FEE_PROFILES["ndax"]["taker"]
+    assert fl.broker.fee_rate("yahoo") == 0.0                          # stocks keep their own costs
+    assert fl._cost_r(br, 100.0, 98.0) < retail / 4
+    assert fl.storage.kv_get("fee_profile") == "ndax"
+    assert Fleet({"data_dir": str(tmp_path / "d")}, {}, [], str(tmp_path)).fee_profile == "ndax"   # survives a restart
+    fl.set_fee_profile("low_fee")
+    assert fl._bkey(br) == "S9@low"
+    fl.set_fee_profile("kraken")                                      # maker 0.40%, taker 0.80%
+    limit_bot = SimpleNamespace(id="B2", venue="coinbase", symbol="BTC-USD", filler=br.filler,
+                                c=SimpleNamespace(id="S8", definition={"order": {"type": "limit"}}))
+    assert fl._cost_r(limit_bot, 100.0, 98.0) < fl._cost_r(br, 100.0, 98.0)   # a limit entry pays the maker fee
+    try:
+        fl.set_fee_profile("free")
+        assert False, "unknown profiles must be refused"
+    except ValueError:
+        pass
+
+
+def test_swing_strategies_hold_through_the_session_end():
+    from mab.strategy import compile_strategy
+    from mab import backtest
+    base = {"id": "T1", "name": "t", "family": "swing", "timeframe": "5m", "direction": "long", "entry": {"long": "close > 0"},
+            "stop": {"type": "pct", "pct": 50.0}, "target": {"type": "none"}, "max_bars": 400, "max_trades_per_day": 1}
+    day = backtest.run(compile_strategy(dict(base), {}, "crypto"), F, "okx", cost_mult=0.0)
+    swing = backtest.run(compile_strategy(dict(base, session={"hold_overnight": True}), {}, "crypto"), F, "okx", cost_mult=0.0)
+    assert any("session end" in (t.exit_reason or "") for t in day.trades)
+    assert not any("session end" in (t.exit_reason or "") for t in swing.trades)
 
 
 def test_resting_orders_go_through_the_brain_and_the_risk_layer(tmp_path, monkeypatch):
@@ -150,9 +201,9 @@ def test_resting_orders_go_through_the_brain_and_the_risk_layer(tmp_path, monkey
         filler = SimpleNamespace(fee=lambda notional, liq: notional * 0.001, cm=SimpleNamespace(slip=0.0005))
         return SimpleNamespace(id=bid, venue="coinbase", symbol="TST", c=SimpleNamespace(id=sid, definition={}),
                                tm=tm, enabled=True, series_keys=[], last_decision="", filler=filler)
-    for _ in range(40):
-        fl.brain.learn("B0", "BAD", "TST", -1.0)
     bad = bot("B1", "BAD")
+    for _ in range(40):                                # taught under the key the fleet uses for this bot's fees
+        fl.brain.learn("B0", fl._bkey(bad), "TST", -1.0)
     assert fl._accept_resting(bad, F, i) == "vetoed" and bad.tm.pending is None
     good = bot("B2", "NEW")
     r = fl._accept_resting(good, F, i)

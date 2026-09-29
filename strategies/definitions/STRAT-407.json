@@ -1,0 +1,71 @@
+{
+ "id": "STRAT-407",
+ "key": "swing_rsi2_dip",
+ "name": "Swing RSI(2) dip in an uptrend (4 ATR, 3R, 96h, limit entry)",
+ "family": "swing",
+ "subfamily": "hourly pullback",
+ "hypothesis": "On hourly bars, buy with a limit 0.1% under the close when RSI(2) < 10 and the close is above the 200-hour EMA; stop 4 ATR(14) below the fill, target 3R, exit after 96 bars.",
+ "markets": [
+  "crypto"
+ ],
+ "timeframe": "1h",
+ "data": [
+  "bars"
+ ],
+ "definition": {
+  "name": "Swing RSI(2) dip in an uptrend (4 ATR, 3R, 96h, limit entry)",
+  "family": "swing",
+  "timeframe": "1h",
+  "direction": "long",
+  "params": {},
+  "entry": {
+   "long": "rsi(close,2) < 10 and close > ema(close,200)"
+  },
+  "filters": [],
+  "order": {
+   "type": "limit",
+   "long": "close * 0.999",
+   "ttl_bars": 3
+  },
+  "stop": {
+   "type": "atr",
+   "mult": 4.0,
+   "n": 14
+  },
+  "target": {
+   "type": "r",
+   "r": 3.0
+  },
+  "trail": {
+   "type": "none"
+  },
+  "exit": {},
+  "max_bars": 96,
+  "session": {
+   "hold_overnight": true
+  },
+  "max_trades_per_day": 3,
+  "cooldown_bars": 0,
+  "sizing": {
+   "risk_pct": 0.5,
+   "max_notional_pct": 100.0
+  },
+  "data": [
+   "bars"
+  ],
+  "id": "STRAT-407",
+  "version": "1.0.0"
+ },
+ "spec": null,
+ "implementation_status": "implemented",
+ "blocked_reason": null,
+ "research_status": "hypothesis",
+ "evidence": [
+  {
+   "source": "SRC-072",
+   "relation": "mechanism",
+   "note": "RSI(2) dips in an uptrend"
+  }
+ ],
+ "variants": []
+}

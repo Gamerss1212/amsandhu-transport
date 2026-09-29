@@ -213,7 +213,16 @@ def _money_offline(cmd: str, amount: float) -> dict:
 
 
 COMMANDS = {"pause", "resume", "emergency_stop", "clear_emergency", "set_balance", "deposit", "withdraw", "stop",
-            "enable_bot", "disable_bot", "live_status", "live_eligibility", "live_arm", "live_disarm", "live_close_all"}
+            "enable_bot", "disable_bot", "live_status", "live_eligibility", "live_arm", "live_disarm", "live_close_all",
+            "set_fee_profile"}
+
+
+def fee_profiles() -> dict:
+    from mab.costs import FEE_PROFILE_LABELS
+    cur = "venue"
+    if os.path.exists(os.path.join(HOME, "data", "mab.db")):
+        cur = _storage().kv_get("fee_profile", "venue") or "venue"
+    return {"current": cur, "profiles": [{"name": k, "label": v} for k, v in FEE_PROFILE_LABELS.items()]}
 
 
 def command(cmd: str, args: dict = None, wait: float = 6.0) -> dict:
@@ -228,6 +237,13 @@ def command(cmd: str, args: dict = None, wait: float = 6.0) -> dict:
             return {"error": "the amount must be more than 0"}
         if not running():
             return _money_offline(cmd, amount)
+    if cmd == "set_fee_profile" and not running():         # saved now; the fleet applies it when it starts
+        from mab.costs import FEE_PROFILE_LABELS
+        name = str((args or {}).get("profile") or "")
+        if name not in FEE_PROFILE_LABELS:
+            return {"error": "unknown fee profile"}
+        _db_storage().kv_set("fee_profile", name)
+        return {"status": "done", "result": {"profile": name, "label": FEE_PROFILE_LABELS[name]}}
     if cmd == "live_disarm" and not running():
         return {"status": "done", "result": _live_offline().disarm((args or {}).get("reason") or "owner")}
     if cmd.startswith("live_") and not running():
@@ -287,6 +303,7 @@ def status() -> dict:
                 from mab.account import Account
                 out["account"] = Account.from_state(acct).summary()
             out["live_armed"] = bool((st.kv_get("live", {}) or {}).get("armed"))
+            out["fee_profile"] = st.kv_get("fee_profile", "venue") or "venue"
         except Exception as e:                                          # noqa: BLE001
             out["error"] = str(e)
     return out
@@ -387,6 +404,39 @@ def results() -> dict:
         with open(os.path.join(MAB_DIR, "results", "system_backtest_summary.json"), encoding="utf-8") as fh:
             out["system"] = json.load(fh)
     except (OSError, ValueError):
+        pass
+    try:
+        with open(os.path.join(MAB_DIR, "results", "system_backtest_profiles.json"), encoding="utf-8") as fh:
+            prof = json.load(fh)
+        from mab.costs import FEE_PROFILE_LABELS
+        out["fee_profiles"] = [{"profile": k, "label": FEE_PROFILE_LABELS.get(k, k), "runs": v["runs"],
+                                "none": v["arms"]["none"]["return"]["mean"], "gates": v["arms"]["gates"]["return"]["mean"],
+                                "brain": v["arms"]["brain"]["return"]["mean"],
+                                "brain_positive": v["arms"]["brain"]["return"]["share_positive"],
+                                "brain_trades": v["arms"]["brain"]["trades"]["mean"],
+                                "brain_avg_r": (v["arms"]["brain"]["avg_r"] or {}).get("mean")}
+                               for k, v in prof.items()]
+        order = ["venue", "coinbase", "kraken", "ndax", "low_fee"]
+        out["fee_profiles"].sort(key=lambda r: order.index(r["profile"]) if r["profile"] in order else 9)
+    except (OSError, ValueError, KeyError):
+        pass
+    try:
+        import gzip as _gz
+        with _gz.open(os.path.join(PAYLOAD, "strategies", "results", "swing_lab.json.gz"), "rt", encoding="utf-8") as fh:
+            lab = json.load(fh)
+        rows = []
+        for sc, groups in lab["scenarios"].items():
+            for g, lst in groups.items():
+                for r in lst:
+                    if r.get("config"):
+                        rows.append({"scenario": sc, "group": g, "setup": r["setup"], "config": r["config"],
+                                     "train": r["train"]["mean"], "validation": r["validation"]["mean"],
+                                     "test": r["test"]["mean"], "test_n": r["test"]["n"], "test_gross": r["test_gross"]["mean"],
+                                     "test_cost": r["test_cost_r"], "survivor": r["survivor"],
+                                     "holm": bool(r.get("holm_significant"))})
+        out["swing_lab"] = {"generated": lab["generated"], "cuts": lab["cuts"], "configs_per_setup": lab["configs_per_setup"],
+                            "rows": rows}
+    except (OSError, ValueError, KeyError):
         pass
     try:
         from mab.volgate import MODEL_PATH

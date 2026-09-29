@@ -31,6 +31,7 @@ import random
 from typing import Dict, List, Optional
 
 from mab.brain import FleetBrain, regime_key, regime_of
+from mab.costs import round_trip
 from mab import volgate as VG
 
 DAY = 86_400_000
@@ -70,11 +71,12 @@ def gate_at(gate: VG.VolGate, hb: VG.Bars, t_ms: int, asset: str) -> Optional[di
     return None if r["state"] == "UNKNOWN" else r
 
 
-def candidates_for(result, frame, bkey, bot_id, inst, venue, family, filler, gate, hb) -> List[Candidate]:
+def candidates_for(result, frame, bkey, bot_id, inst, venue, family, filler, gate, hb,
+                   limit_entry: bool = False) -> List[Candidate]:
     """Turn one bot's backtest trades into candidates with the brain's context at the signal bar."""
     out = []
     asset = "stock" if frame.asset_type.startswith("stock") else "crypto"
-    round_trip = 2 * filler.fee(1.0, "taker") + 2 * filler.cm.slip
+    rt = round_trip(filler, limit_entry)
     for tr in result.trades:
         if tr.r is None or not tr.qty:
             continue
@@ -83,7 +85,7 @@ def candidates_for(result, frame, bkey, bot_id, inst, venue, family, filler, gat
             continue
         risk_amt = abs(tr.pnl / tr.r) if tr.r else None
         stop_dist = risk_amt / tr.qty if risk_amt else None
-        cost_r = round_trip * tr.entry_price / stop_dist if stop_dist else None
+        cost_r = rt * tr.entry_price / stop_dist if stop_dist else None
         g = gate_at(gate, hb, tr.entry_time, asset) if (gate is not None and hb is not None) else None
         reg = regime_of(frame.c, i)
         try:
@@ -110,7 +112,8 @@ def run(cands: List[Candidate], t0: int, t1: int, arm: str, seed: int = 0, prior
     if arm in ("gates", "brain"):
         brain = FleetBrain(mode="active", seed=seed)
         if arm == "brain" and priors:
-            brain.load_priors(priors, segment="train")
+            for k, pth in enumerate([priors] if isinstance(priors, str) else priors):
+                brain.load_priors(pth, segment="train", add=k > 0)
         for c in {c.bot: c for c in cands}.values():
             brain.connect(c.bot, c.bkey, (families or {}).get(c.bkey.split("@")[0]), None, c.inst)
     equity = peak = capital

@@ -4,7 +4,8 @@ Every implemented strategy gets at least one bot on each market it targets; bots
 a fixed pool of instruments so that the whole fleet shares a limited number of data series.
 Stage tags: "1" (the pilot bot), "10", "50" and "250" (every bot) select the staged roll-out.
 
-    python bots/generate.py
+    python bots/generate.py            (a fresh registry: renumbers every bot)
+    python bots/generate.py --append   (add bots for new strategies; existing bots keep their ids)
 """
 
 import json
@@ -140,5 +141,34 @@ def main(target=250):
           f"stage 10: {sum('10' in b['stages'] for b in bots)}, stage 50: {sum('50' in b['stages'] for b in bots)}")
 
 
+def append_new():
+    """Add bots for implemented strategies that have none yet, keeping every existing bot and its id (bot ids
+    key saved positions and learning, so a full regeneration that renumbers bots must never replace a live
+    registry)."""
+    with open(CATALOG) as fh:
+        cat = json.load(fh)
+    path = os.path.join(HERE, "registry.json")
+    with open(path) as fh:
+        reg = json.load(fh)
+    bots = reg["bots"]
+    have = {b["strategy_id"] for b in bots}
+    n = max(int(b["bot_id"].split("-")[1]) for b in bots)
+    added = 0
+    for s in cat["strategies"]:
+        if s["implementation_status"] != "implemented" or s["id"] in have:
+            continue
+        insts = s.get("instruments") or ([] if "crypto" not in s["markets"] else ["BTC-USD"])
+        for sym in insts:
+            n += 1
+            venue = "yahoo" if sym in STOCKS else "coinbase"
+            bots.append(OrderedDict(bot_id=f"BOT-{n:03d}", name=f"{s['name']} | {sym}", strategy_id=s["id"], venue=venue,
+                                    instrument=sym, enabled=True, stages=["250"]))
+            added += 1
+    with open(path, "w") as fh:
+        json.dump(reg, fh, indent=1)
+    print(f"added {added} bots; {len(bots)} in total")
+
+
 if __name__ == "__main__":
-    main()
+    import sys
+    append_new() if "--append" in sys.argv else main()

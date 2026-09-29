@@ -30,6 +30,25 @@ FEES: Dict[str, Dict[str, float]] = {
     "yahoo": {"taker": 0.0, "maker": 0.0},            # US stocks: commission-free broker assumed
 }
 
+# Which exchange's fees the crypto bots pay. "venue" (the default) charges each bot its own data venue's
+# fees above. Choosing the exchange the owner actually trades on makes paper results, the cost gate and
+# the brain's starting knowledge match that exchange. The NDAX rate is the flat rate NDAX publishes;
+# owners should check their own account's schedule.
+FEE_PROFILES: Dict[str, Optional[Dict[str, float]]] = {
+    "venue": None,
+    "coinbase": {"taker": 0.0120, "maker": 0.0060},
+    "kraken": {"taker": 0.0080, "maker": 0.0040},
+    "ndax": {"taker": 0.0020, "maker": 0.0020},
+    "low_fee": {"taker": 0.0010, "maker": 0.0008},
+}
+FEE_PROFILE_LABELS = {
+    "venue": "each bot's own exchange (Coinbase 1.20%, Kraken 0.80%, OKX 0.10% taker)",
+    "coinbase": "Coinbase Advanced, entry tier (0.60% maker / 1.20% taker)",
+    "kraken": "Kraken Pro, entry tier (0.40% / 0.80%)",
+    "ndax": "NDAX (0.20% flat)",
+    "low_fee": "a low-fee exchange (0.08% / 0.10%)",
+}
+
 # regulatory fees on US stock SALES only (fraction of sale notional); see docs/COSTS.md
 US_SELL_FEES = 0.0000278
 
@@ -55,13 +74,15 @@ class CostModel:
     cost_mult: float = 1.0          # sensitivity: 2.0 doubles fees and slippage
     tick: float = 0.0
     stock: bool = False
+    fees: Optional[Dict[str, float]] = None      # a fee profile overriding the venue's fees (crypto only)
 
     @property
     def slip(self) -> float:
         return SLIPPAGE_TIER[self.tier] * self.cost_mult
 
     def fee_rate(self, liquidity: str) -> float:
-        return FEES.get(self.venue, FEES["kraken"])[liquidity] * self.cost_mult
+        table = self.fees if (self.fees and not self.stock) else FEES.get(self.venue, FEES["kraken"])
+        return table[liquidity] * self.cost_mult
 
     def describe(self) -> dict:
         return {"venue": self.venue, "tier": self.tier, "cost_mult": self.cost_mult,
@@ -95,6 +116,14 @@ class StockBacktestFiller(BacktestFiller):
 
     def fee(self, notional: float, liquidity: str) -> float:
         return notional * (self.cm.fee_rate(liquidity) + US_SELL_FEES / 2)   # averaged over buy and sell sides
+
+
+def round_trip(filler, limit_entry: bool = False) -> float:
+    """Round-trip cost as a fraction of price, as the brain's cost gate counts it: the entry pays the maker fee
+    for a limit (resting) entry, else taker fee plus slippage; the exit is assumed to be a stop or market exit
+    (taker fee plus slippage), the conservative case."""
+    entry = filler.fee(1.0, "maker") if limit_entry else filler.fee(1.0, "taker") + filler.cm.slip
+    return entry + filler.fee(1.0, "taker") + filler.cm.slip
 
 
 def filler_for(venue: str, instrument: str, asset_type: str, cost_mult: float = 1.0, tick: float = 0.0) -> BacktestFiller:

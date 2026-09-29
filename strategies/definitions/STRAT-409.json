@@ -1,0 +1,71 @@
+{
+ "id": "STRAT-409",
+ "key": "swing_meme_retest",
+ "name": "Swing memecoin 48-hour breakout retest (4 ATR, 3R, 96h, limit entry)",
+ "family": "swing",
+ "subfamily": "hourly breakout retest",
+ "hypothesis": "On hourly bars, 1-12 bars after a close above the prior 48-hour high, buy with a limit 0.1% under the close when the bar dips to within 0.2% of that level and closes above it, above the 200-hour EMA; stop 4 ATR(14), target 3R, exit after 96 bars.",
+ "markets": [
+  "crypto"
+ ],
+ "timeframe": "1h",
+ "data": [
+  "bars"
+ ],
+ "definition": {
+  "name": "Swing memecoin 48-hour breakout retest (4 ATR, 3R, 96h, limit entry)",
+  "family": "swing",
+  "timeframe": "1h",
+  "direction": "long",
+  "params": {},
+  "entry": {
+   "long": "since(close > highest(high,48)[1]) >= 1 and since(close > highest(high,48)[1]) <= 12 and low <= valuewhen(close > highest(high,48)[1], highest(high,48)[1]) * 1.002 and close > valuewhen(close > highest(high,48)[1], highest(high,48)[1]) and close > ema(close,200)"
+  },
+  "filters": [],
+  "order": {
+   "type": "limit",
+   "long": "close * 0.999",
+   "ttl_bars": 3
+  },
+  "stop": {
+   "type": "atr",
+   "mult": 4.0,
+   "n": 14
+  },
+  "target": {
+   "type": "r",
+   "r": 3.0
+  },
+  "trail": {
+   "type": "none"
+  },
+  "exit": {},
+  "max_bars": 96,
+  "session": {
+   "hold_overnight": true
+  },
+  "max_trades_per_day": 3,
+  "cooldown_bars": 0,
+  "sizing": {
+   "risk_pct": 0.5,
+   "max_notional_pct": 100.0
+  },
+  "data": [
+   "bars"
+  ],
+  "id": "STRAT-409",
+  "version": "1.0.0"
+ },
+ "spec": null,
+ "implementation_status": "implemented",
+ "blocked_reason": null,
+ "research_status": "hypothesis",
+ "evidence": [
+  {
+   "source": "SRC-090",
+   "relation": "mechanism",
+   "note": "channel breakouts (Donchian)"
+  }
+ ],
+ "variants": []
+}

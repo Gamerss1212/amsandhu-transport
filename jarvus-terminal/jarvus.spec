@@ -19,10 +19,13 @@ datas = [
     (os.path.join(MAB, "bots", "registry.json"), "market_analysis_bots/bots"),
     (os.path.join(MAB, "config", "fleet.example.json"), "market_analysis_bots/config"),
     (os.path.join(MAB, "results", "system_backtest_summary.json"), "market_analysis_bots/results"),
+    (os.path.join(MAB, "results", "system_backtest_profiles.json"), "market_analysis_bots/results"),   # the same system at each fee level
     (os.path.join(STRAT, "catalog.json"), "strategies"),
     (os.path.join(STRAT, "sources.json"), "strategies"),
     (os.path.join(STRAT, "data", "events.json"), "strategies/data"),
     (os.path.join(STRAT, "results", "evaluation_summary.json.gz"), "strategies/results"),   # the brain's starting knowledge
+    (os.path.join(STRAT, "results", "swing_eval.json"), "strategies/results"),              # ... for the swing strategies
+    (os.path.join(STRAT, "results", "swing_lab.json.gz"), "strategies/results"),
 ]
 
 # named explicitly: the fleet runs in a spawned process and imports some modules by name

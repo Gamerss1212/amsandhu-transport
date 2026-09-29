@@ -12,6 +12,7 @@ Routes
     GET  /api/results               every measured result shipped with this build
     GET  /api/brokers               which brokers are connected (never their keys)
     GET  /api/live                  live-money status
+    GET  /api/fees                  which exchange's fees the crypto bots pay (the fee profile)
     POST /api/fleet/start|stop      turn the autopilot on or off
     POST /api/command               pause, resume, emergency stop, balance, enable/disable a bot, live controls
     POST /api/broker/save|test|remove
@@ -201,6 +202,8 @@ class Handler(BaseHTTPRequestHandler):
                 return self._json(fleet.brokers())
             if route == "/api/live":
                 return self._json(fleet.live())
+            if route == "/api/fees":
+                return self._json(fleet.fee_profiles())
             return self._send(404, b"not found", "text/plain; charset=utf-8")
         except Exception as e:                                # noqa: BLE001
             traceback.print_exc()

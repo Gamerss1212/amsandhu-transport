@@ -19,6 +19,7 @@ Definition fields (JSON):
     exit            {"long": rule, "short": rule}   signal exits, at the next bar's open
     max_bars        time stop in bars (0 = none)
     session         {"entry_start": "HH:MM", "entry_end": "HH:MM", "flat_minutes_before_close": 5}
+                    or {"hold_overnight": true} for swing strategies (positions are not closed at the session end)
     max_trades_per_day, cooldown_bars
     sizing          {"risk_pct": 0.5, "max_notional_pct": 100}
     data            required data kinds: "bars", "trades", "book", "funding", "events:<name>", "bench"
@@ -300,7 +301,7 @@ class TradeManager:
         s = self.d.get("session") or {}
         self.entry_start = _hhmm(s.get("entry_start"))
         self.entry_end = _hhmm(s.get("entry_end"))
-        self.flat_before = float(s.get("flat_minutes_before_close", 5))
+        self.flat_before = None if s.get("hold_overnight") else float(s.get("flat_minutes_before_close", 5))
 
     # ------------------------------------------------------------------ state persistence
     def state(self) -> dict:
@@ -411,6 +412,8 @@ class TradeManager:
         return i + 1 < f.n and f.sess[i + 1] == f.sess[i]
 
     def _flat_due(self, f: Frame, i: int) -> bool:
+        if self.flat_before is None:                     # swing: held through session ends
+            return False
         if f.sess[i] < 0:
             return True
         return (f.sess_close[i] - (f.t[i] + f.step)) <= self.flat_before * 60_000

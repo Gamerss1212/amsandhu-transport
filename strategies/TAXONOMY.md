@@ -229,3 +229,9 @@ Family -> subfamily -> strategies. Each strategy also records its *mechanism* (t
 ## Equity breadth & auctions (knowledge pack) (10)
 
 - **equity breadth**: STRAT-397 Advance-decline confirmed index trend; STRAT-398 Equal-weight versus cap-weight divergence; STRAT-399 Sector participation expansion; STRAT-400 Market breadth exhaustion reversal; STRAT-401 Opening auction residual continuation; STRAT-402 Closing imbalance divergence reversal; STRAT-403 Small-cap participation confirmation; STRAT-404 Sector-neutral intraday reversal basket; STRAT-405 Cross-listed price convergence; STRAT-406 Halt-adjusted breadth recovery
+
+## Swing (hourly, cost-aware; swing lab) (3)
+
+- **hourly breakout**: STRAT-408 Swing memecoin 24-hour breakout (4 ATR, 2R, 96h, limit entry)
+- **hourly breakout retest**: STRAT-409 Swing memecoin 48-hour breakout retest (4 ATR, 3R, 96h, limit entry)
+- **hourly pullback**: STRAT-407 Swing RSI(2) dip in an uptrend (4 ATR, 3R, 96h, limit entry)

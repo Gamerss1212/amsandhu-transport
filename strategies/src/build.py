@@ -27,6 +27,7 @@ for m in ("f01_trend", "f02_open_gap_levels", "f03_vwap_profile_momentum", "f04_
     __import__(m)
 import pack  # noqa: E402  (knowledge pack: validation, dispositions, sources)
 pack.register_research_records()
+import f07_swing  # noqa: E402,F401  (after the pack records, so every earlier id stays the same)
 
 from mab import expr  # noqa: E402
 from mab.strategy import DefinitionError, compile_strategy  # noqa: E402
@@ -41,7 +42,8 @@ FAMILY_NAMES = {
     "crypto_structure": "Crypto derivatives & venue structure", "order_flow": "Order flow & microstructure",
     "statistical": "Statistical & regime", "machine_learning": "Machine learning", "market_making_arbitrage": "Market making & arbitrage",
     "named_systems": "Named multi-screen systems", "memecoin": "Memecoins (knowledge pack)",
-    "equity_events": "Equity corporate events (knowledge pack)", "equity_breadth": "Equity breadth & auctions (knowledge pack)"}
+    "equity_events": "Equity corporate events (knowledge pack)", "equity_breadth": "Equity breadth & auctions (knowledge pack)",
+    "swing": "Swing (hourly, cost-aware; swing lab)"}
 
 
 def signature(node) -> str:
@@ -132,6 +134,10 @@ def build():
         import gzip
         with gzip.open(ev_path + ".gz", "rt") as fh:
             evals = json.load(fh).get("strategies", {})
+    sw_path = os.path.join(ROOT, "results", "swing_eval.json")          # the swing strategies' own evaluation
+    if os.path.exists(sw_path):
+        with open(sw_path) as fh:
+            evals.update(json.load(fh).get("strategies", {}))
     keep = ("trades", "win_rate", "expectancy_r", "profit_factor", "net_return", "sharpe", "max_drawdown")
     for r in counted:
         e = evals.get(r["id"])

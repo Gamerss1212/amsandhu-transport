@@ -1,19 +1,19 @@
 {
  "generated": "2026-09-29",
  "counts": {
-  "counted_strategies": 406,
+  "counted_strategies": 409,
   "variants_not_counted": 66,
-  "implemented": 147,
+  "implemented": 150,
   "blocked": 259,
   "specified_only": 0,
   "research_status": {
    "sourced": 3,
    "incompletely sourced": 67,
-   "hypothesis": 336
+   "hypothesis": 339
   },
   "evaluation_status": {
    "untested": 263,
-   "backtested": 109,
+   "backtested": 112,
    "out-of-sample tested": 34,
    "paper observed": 0
   },
@@ -41,7 +41,8 @@
    "named_systems": 6,
    "memecoin": 197,
    "equity_events": 10,
-   "equity_breadth": 10
+   "equity_breadth": 10,
+   "swing": 3
   },
   "target": 300,
   "sources": 147
@@ -137827,6 +137828,1999 @@
      "note": "needs point-in-time constituent breadth or auction imbalance data (not free)"
     }
    ]
+  },
+  {
+   "key": "swing_rsi2_dip",
+   "name": "Swing RSI(2) dip in an uptrend (4 ATR, 3R, 96h, limit entry)",
+   "family": "swing",
+   "subfamily": "hourly pullback",
+   "mechanism": "short-term oversold dips inside an uptrend tend to recover over the next days",
+   "logic": "mean reversion within trend",
+   "anchor": "RSI(2) and the 200-hour EMA",
+   "hypothesis": "On hourly bars, buy with a limit 0.1% under the close when RSI(2) < 10 and the close is above the 200-hour EMA; stop 4 ATR(14) below the fill, target 3R, exit after 96 bars.",
+   "markets": [
+    "crypto"
+   ],
+   "timeframe": "1h",
+   "definition": {
+    "name": "Swing RSI(2) dip in an uptrend (4 ATR, 3R, 96h, limit entry)",
+    "family": "swing",
+    "timeframe": "1h",
+    "direction": "long",
+    "params": {},
+    "entry": {
+     "long": "rsi(close,2) < 10 and close > ema(close,200)"
+    },
+    "filters": [],
+    "order": {
+     "type": "limit",
+     "long": "close * 0.999",
+     "ttl_bars": 3
+    },
+    "stop": {
+     "type": "atr",
+     "mult": 4.0,
+     "n": 14
+    },
+    "target": {
+     "type": "r",
+     "r": 3.0
+    },
+    "trail": {
+     "type": "none"
+    },
+    "exit": {},
+    "max_bars": 96,
+    "session": {
+     "hold_overnight": true
+    },
+    "max_trades_per_day": 3,
+    "cooldown_bars": 0,
+    "sizing": {
+     "risk_pct": 0.5,
+     "max_notional_pct": 100.0
+    },
+    "data": [
+     "bars"
+    ],
+    "id": "STRAT-407",
+    "version": "1.0.0"
+   },
+   "data": [
+    "bars"
+   ],
+   "evidence": [
+    {
+     "source": "SRC-072",
+     "relation": "mechanism",
+     "note": "RSI(2) dips in an uptrend"
+    }
+   ],
+   "research_status": "hypothesis",
+   "failure_modes": [
+    "fees above about 0.2% per side remove the edge",
+    "a long-only swing loses in a falling market",
+    "limit entries miss the strongest moves (unfilled)"
+   ],
+   "notes": "Selected by the swing lab on 2021-2025 train data (results/SWING_LAB.md). Untouched test period: positive only at a low-fee exchange (0.10% taker), about break-even at 0.20%, negative at retail fees; not significant after correction. Holds overnight and through weekends.",
+   "blocked": null,
+   "spec": null,
+   "parent": null,
+   "instruments": [
+    "BTC-USD",
+    "ETH-USD",
+    "SOL-USD"
+   ],
+   "distinct": "Hourly bars, 4 ATR stop, 96-bar hold and a maker entry (rsi2_pullback is intraday with a tight stop).",
+   "id": "STRAT-407",
+   "warmup_bars": {
+    "crypto": 1001
+   },
+   "references": {
+    "indicators": [
+     "atr",
+     "ema",
+     "rsi"
+    ],
+    "functions": [],
+    "sources": [
+     "close"
+    ],
+    "timeframes": [],
+    "instruments": [],
+    "events": []
+   },
+   "implementation_status": "implemented",
+   "evaluation_status": "backtested",
+   "live_evidence": "none",
+   "variants": [],
+   "evaluation": {
+    "status": "backtested",
+    "best_realistic": {
+     "instrument": "SOL-USD",
+     "expectancy_r": -0.011406,
+     "trades": 276,
+     "net_return": -0.01574,
+     "test_expectancy_r": -0.269475,
+     "gross_expectancy_r": 0.232862
+    },
+    "candidates": [],
+    "results": [
+     {
+      "period": "train",
+      "instrument": "BTC-USD",
+      "tf": "1h",
+      "dataset": "coinbase:BTC-USD 1h 2021-04-08..2026-09-29",
+      "cost_mult": "low_fee_venue",
+      "metrics": {
+       "trades": 178,
+       "win_rate": 0.421348,
+       "expectancy_r": 0.060601,
+       "profit_factor": 1.109794,
+       "net_return": 0.053935,
+       "sharpe": 0.328954,
+       "max_drawdown": 0.069655
+      },
+      "p_value": 0.220906207515569,
+      "note": ""
+     },
+     {
+      "period": "validation",
+      "instrument": "BTC-USD",
+      "tf": "1h",
+      "dataset": "coinbase:BTC-USD 1h 2021-04-08..2026-09-29",
+      "cost_mult": "low_fee_venue",
+      "metrics": {
+       "trades": 72,
+       "win_rate": 0.402778,
+       "expectancy_r": 0.088572,
+       "profit_factor": 1.151504,
+       "net_return": 0.031886,
+       "sharpe": 0.498077,
+       "max_drawdown": 0.043247
+      },
+      "p_value": 0.220906207515569,
+      "note": ""
+     },
+     {
+      "period": "test",
+      "instrument": "BTC-USD",
+      "tf": "1h",
+      "dataset": "coinbase:BTC-USD 1h 2021-04-08..2026-09-29",
+      "cost_mult": "low_fee_venue",
+      "metrics": {
+       "trades": 58,
+       "win_rate": 0.413793,
+       "expectancy_r": 0.077268,
+       "profit_factor": 1.138089,
+       "net_return": 0.022408,
+       "sharpe": 0.388178,
+       "max_drawdown": 0.040172
+      },
+      "p_value": null,
+      "note": ""
+     },
+     {
+      "period": "train",
+      "instrument": "BTC-USD",
+      "tf": "1h",
+      "dataset": "coinbase:BTC-USD 1h 2021-04-08..2026-09-29",
+      "cost_mult": "retail_kraken",
+      "metrics": {
+       "trades": 178,
+       "win_rate": 0.353933,
+       "expectancy_r": -0.26595,
+       "profit_factor": 0.650392,
+       "net_return": -0.236696,
+       "sharpe": -1.396014,
+       "max_drawdown": 0.244651
+      },
+      "p_value": 0.9991399546289753,
+      "note": ""
+     },
+     {
+      "period": "validation",
+      "instrument": "BTC-USD",
+      "tf": "1h",
+      "dataset": "coinbase:BTC-USD 1h 2021-04-08..2026-09-29",
+      "cost_mult": "retail_kraken",
+      "metrics": {
+       "trades": 72,
+       "win_rate": 0.347222,
+       "expectancy_r": -0.337365,
+       "profit_factor": 0.611398,
+       "net_return": -0.121451,
+       "sharpe": -1.791018,
+       "max_drawdown": 0.121451
+      },
+      "p_value": 0.9991399546289753,
+      "note": ""
+     },
+     {
+      "period": "test",
+      "instrument": "BTC-USD",
+      "tf": "1h",
+      "dataset": "coinbase:BTC-USD 1h 2021-04-08..2026-09-29",
+      "cost_mult": "retail_kraken",
+      "metrics": {
+       "trades": 58,
+       "win_rate": 0.327586,
+       "expectancy_r": -0.363064,
+       "profit_factor": 0.572665,
+       "net_return": -0.105289,
+       "sharpe": -1.747759,
+       "max_drawdown": 0.131146
+      },
+      "p_value": null,
+      "note": ""
+     },
+     {
+      "period": "train",
+      "instrument": "ETH-USD",
+      "tf": "1h",
+      "dataset": "coinbase:ETH-USD 1h 2021-04-08..2026-09-29",
+      "cost_mult": "low_fee_venue",
+      "metrics": {
+       "trades": 180,
+       "win_rate": 0.394444,
+       "expectancy_r": 0.029508,
+       "profit_factor": 1.052008,
+       "net_return": 0.026557,
+       "sharpe": 0.155945,
+       "max_drawdown": 0.106211
+      },
+      "p_value": 0.424969488037814,
+      "note": ""
+     },
+     {
+      "period": "validation",
+      "instrument": "ETH-USD",
+      "tf": "1h",
+      "dataset": "coinbase:ETH-USD 1h 2021-04-08..2026-09-29",
+      "cost_mult": "low_fee_venue",
+      "metrics": {
+       "trades": 58,
+       "win_rate": 0.362069,
+       "expectancy_r": -0.021716,
+       "profit_factor": 0.962925,
+       "net_return": -0.006298,
+       "sharpe": -0.11437,
+       "max_drawdown": 0.05554
+      },
+      "p_value": 0.424969488037814,
+      "note": ""
+     },
+     {
+      "period": "test",
+      "instrument": "ETH-USD",
+      "tf": "1h",
+      "dataset": "coinbase:ETH-USD 1h 2021-04-08..2026-09-29",
+      "cost_mult": "low_fee_venue",
+      "metrics": {
+       "trades": 58,
+       "win_rate": 0.362069,
+       "expectancy_r": -0.11826,
+       "profit_factor": 0.810669,
+       "net_return": -0.034295,
+       "sharpe": -0.637664,
+       "max_drawdown": 0.048533
+      },
+      "p_value": null,
+      "note": ""
+     },
+     {
+      "period": "train",
+      "instrument": "ETH-USD",
+      "tf": "1h",
+      "dataset": "coinbase:ETH-USD 1h 2021-04-08..2026-09-29",
+      "cost_mult": "retail_kraken",
+      "metrics": {
+       "trades": 180,
+       "win_rate": 0.333333,
+       "expectancy_r": -0.249757,
+       "profit_factor": 0.667522,
+       "net_return": -0.224782,
+       "sharpe": -1.291132,
+       "max_drawdown": 0.257446
+      },
+      "p_value": 0.9980069965728526,
+      "note": ""
+     },
+     {
+      "period": "validation",
+      "instrument": "ETH-USD",
+      "tf": "1h",
+      "dataset": "coinbase:ETH-USD 1h 2021-04-08..2026-09-29",
+      "cost_mult": "retail_kraken",
+      "metrics": {
+       "trades": 58,
+       "win_rate": 0.344828,
+       "expectancy_r": -0.301958,
+       "profit_factor": 0.610131,
+       "net_return": -0.087568,
+       "sharpe": -1.534436,
+       "max_drawdown": 0.113596
+      },
+      "p_value": 0.9980069965728526,
+      "note": ""
+     },
+     {
+      "period": "test",
+      "instrument": "ETH-USD",
+      "tf": "1h",
+      "dataset": "coinbase:ETH-USD 1h 2021-04-08..2026-09-29",
+      "cost_mult": "retail_kraken",
+      "metrics": {
+       "trades": 58,
+       "win_rate": 0.275862,
+       "expectancy_r": -0.413537,
+       "profit_factor": 0.496325,
+       "net_return": -0.119926,
+       "sharpe": -2.159021,
+       "max_drawdown": 0.1205
+      },
+      "p_value": null,
+      "note": ""
+     },
+     {
+      "period": "train",
+      "instrument": "SOL-USD",
+      "tf": "1h",
+      "dataset": "coinbase:SOL-USD 1h 2021-06-17..2026-09-29",
+      "cost_mult": "low_fee_venue",
+      "metrics": {
+       "trades": 162,
+       "win_rate": 0.475309,
+       "expectancy_r": 0.250847,
+       "profit_factor": 1.515805,
+       "net_return": 0.203186,
+       "sharpe": 1.208435,
+       "max_drawdown": 0.051808
+      },
+      "p_value": 0.017428597250842226,
+      "note": ""
+     },
+     {
+      "period": "validation",
+      "instrument": "SOL-USD",
+      "tf": "1h",
+      "dataset": "coinbase:SOL-USD 1h 2021-06-17..2026-09-29",
+      "cost_mult": "low_fee_venue",
+      "metrics": {
+       "trades": 61,
+       "win_rate": 0.409836,
+       "expectancy_r": 0.087207,
+       "profit_factor": 1.150149,
+       "net_return": 0.026598,
+       "sharpe": 0.470759,
+       "max_drawdown": 0.031637
+      },
+      "p_value": 0.017428597250842226,
+      "note": ""
+     },
+     {
+      "period": "test",
+      "instrument": "SOL-USD",
+      "tf": "1h",
+      "dataset": "coinbase:SOL-USD 1h 2021-06-17..2026-09-29",
+      "cost_mult": "low_fee_venue",
+      "metrics": {
+       "trades": 52,
+       "win_rate": 0.384615,
+       "expectancy_r": 0.000635,
+       "profit_factor": 1.001062,
+       "net_return": 0.000165,
+       "sharpe": 0.003151,
+       "max_drawdown": 0.034131
+      },
+      "p_value": null,
+      "note": ""
+     },
+     {
+      "period": "train",
+      "instrument": "SOL-USD",
+      "tf": "1h",
+      "dataset": "coinbase:SOL-USD 1h 2021-06-17..2026-09-29",
+      "cost_mult": "retail_kraken",
+      "metrics": {
+       "trades": 162,
+       "win_rate": 0.438272,
+       "expectancy_r": 0.096963,
+       "profit_factor": 1.168398,
+       "net_return": 0.07854,
+       "sharpe": 0.466146,
+       "max_drawdown": 0.093527
+      },
+      "p_value": 0.3569879748585829,
+      "note": ""
+     },
+     {
+      "period": "validation",
+      "instrument": "SOL-USD",
+      "tf": "1h",
+      "dataset": "coinbase:SOL-USD 1h 2021-06-17..2026-09-29",
+      "cost_mult": "retail_kraken",
+      "metrics": {
+       "trades": 61,
+       "win_rate": 0.393443,
+       "expectancy_r": -0.124969,
+       "profit_factor": 0.825696,
+       "net_return": -0.038116,
+       "sharpe": -0.666581,
+       "max_drawdown": 0.058075
+      },
+      "p_value": 0.3569879748585829,
+      "note": ""
+     },
+     {
+      "period": "test",
+      "instrument": "SOL-USD",
+      "tf": "1h",
+      "dataset": "coinbase:SOL-USD 1h 2021-06-17..2026-09-29",
+      "cost_mult": "retail_kraken",
+      "metrics": {
+       "trades": 52,
+       "win_rate": 0.346154,
+       "expectancy_r": -0.269475,
+       "profit_factor": 0.65377,
+       "net_return": -0.070064,
+       "sharpe": -1.292132,
+       "max_drawdown": 0.084118
+      },
+      "p_value": null,
+      "note": ""
+     }
+    ]
+   }
+  },
+  {
+   "key": "swing_meme_breakout",
+   "name": "Swing memecoin 24-hour breakout (4 ATR, 2R, 96h, limit entry)",
+   "family": "swing",
+   "subfamily": "hourly breakout",
+   "mechanism": "memecoin breakouts to new daily highs in an uptrend tend to continue for days",
+   "logic": "continuation",
+   "anchor": "prior 24-hour high and the 200-hour EMA",
+   "hypothesis": "On hourly bars, buy with a limit 0.1% under the close when the close is above the prior 24-hour high and above the 200-hour EMA; stop 4 ATR(14) below the fill, target 2R, exit after 96 bars.",
+   "markets": [
+    "crypto"
+   ],
+   "timeframe": "1h",
+   "definition": {
+    "name": "Swing memecoin 24-hour breakout (4 ATR, 2R, 96h, limit entry)",
+    "family": "swing",
+    "timeframe": "1h",
+    "direction": "long",
+    "params": {},
+    "entry": {
+     "long": "close > highest(high,24)[1] and close > ema(close,200)"
+    },
+    "filters": [],
+    "order": {
+     "type": "limit",
+     "long": "close * 0.999",
+     "ttl_bars": 3
+    },
+    "stop": {
+     "type": "atr",
+     "mult": 4.0,
+     "n": 14
+    },
+    "target": {
+     "type": "r",
+     "r": 2.0
+    },
+    "trail": {
+     "type": "none"
+    },
+    "exit": {},
+    "max_bars": 96,
+    "session": {
+     "hold_overnight": true
+    },
+    "max_trades_per_day": 3,
+    "cooldown_bars": 0,
+    "sizing": {
+     "risk_pct": 0.5,
+     "max_notional_pct": 100.0
+    },
+    "data": [
+     "bars"
+    ],
+    "id": "STRAT-408",
+    "version": "1.0.0"
+   },
+   "data": [
+    "bars"
+   ],
+   "evidence": [
+    {
+     "source": "SRC-090",
+     "relation": "mechanism",
+     "note": "channel breakouts (Donchian)"
+    }
+   ],
+   "research_status": "hypothesis",
+   "failure_modes": [
+    "fees above about 0.2% per side remove the edge",
+    "a long-only swing loses in a falling market",
+    "limit entries miss the strongest moves (unfilled)"
+   ],
+   "notes": "Selected by the swing lab on 2021-2025 train data (results/SWING_LAB.md). Untouched test period: positive only at a low-fee exchange (0.10% taker), about break-even at 0.20%, negative at retail fees; not significant after correction. Holds overnight and through weekends.",
+   "blocked": null,
+   "spec": null,
+   "parent": null,
+   "instruments": [
+    "DOGE-USD",
+    "SHIB-USD",
+    "PEPE-USD",
+    "BONK-USD",
+    "WIF-USD",
+    "FLOKI-USD"
+   ],
+   "distinct": "Hourly memecoin breakout with a wide stop and multi-day hold.",
+   "id": "STRAT-408",
+   "warmup_bars": {
+    "crypto": 1001
+   },
+   "references": {
+    "indicators": [
+     "atr",
+     "ema"
+    ],
+    "functions": [
+     "highest"
+    ],
+    "sources": [
+     "close",
+     "high"
+    ],
+    "timeframes": [],
+    "instruments": [],
+    "events": []
+   },
+   "implementation_status": "implemented",
+   "evaluation_status": "backtested",
+   "live_evidence": "none",
+   "variants": [],
+   "evaluation": {
+    "status": "backtested",
+    "best_realistic": {
+     "instrument": "BONK-USD",
+     "expectancy_r": -0.000409,
+     "trades": 180,
+     "net_return": -0.000368,
+     "test_expectancy_r": -0.310507,
+     "gross_expectancy_r": 0.170078
+    },
+    "candidates": [],
+    "results": [
+     {
+      "period": "train",
+      "instrument": "DOGE-USD",
+      "tf": "1h",
+      "dataset": "coinbase:DOGE-USD 1h 2021-06-03..2026-09-29",
+      "cost_mult": "low_fee_venue",
+      "metrics": {
+       "trades": 201,
+       "win_rate": 0.38806,
+       "expectancy_r": -0.048437,
+       "profit_factor": 0.917896,
+       "net_return": -0.048679,
+       "sharpe": -0.30841,
+       "max_drawdown": 0.112738
+      },
+      "p_value": 0.4758258618480774,
+      "note": ""
+     },
+     {
+      "period": "validation",
+      "instrument": "DOGE-USD",
+      "tf": "1h",
+      "dataset": "coinbase:DOGE-USD 1h 2021-06-03..2026-09-29",
+      "cost_mult": "low_fee_venue",
+      "metrics": {
+       "trades": 81,
+       "win_rate": 0.419753,
+       "expectancy_r": 0.136412,
+       "profit_factor": 1.249746,
+       "net_return": 0.055247,
+       "sharpe": 0.866087,
+       "max_drawdown": 0.052083
+      },
+      "p_value": 0.4758258618480774,
+      "note": ""
+     },
+     {
+      "period": "test",
+      "instrument": "DOGE-USD",
+      "tf": "1h",
+      "dataset": "coinbase:DOGE-USD 1h 2021-06-03..2026-09-29",
+      "cost_mult": "low_fee_venue",
+      "metrics": {
+       "trades": 72,
+       "win_rate": 0.361111,
+       "expectancy_r": -0.097036,
+       "profit_factor": 0.84495,
+       "net_return": -0.034933,
+       "sharpe": -0.631648,
+       "max_drawdown": 0.083387
+      },
+      "p_value": null,
+      "note": ""
+     },
+     {
+      "period": "train",
+      "instrument": "DOGE-USD",
+      "tf": "1h",
+      "dataset": "coinbase:DOGE-USD 1h 2021-06-03..2026-09-29",
+      "cost_mult": "retail_kraken",
+      "metrics": {
+       "trades": 201,
+       "win_rate": 0.338308,
+       "expectancy_r": -0.258905,
+       "profit_factor": 0.647998,
+       "net_return": -0.2602,
+       "sharpe": -1.57717,
+       "max_drawdown": 0.27702
+      },
+      "p_value": 0.9931639434821482,
+      "note": ""
+     },
+     {
+      "period": "validation",
+      "instrument": "DOGE-USD",
+      "tf": "1h",
+      "dataset": "coinbase:DOGE-USD 1h 2021-06-03..2026-09-29",
+      "cost_mult": "retail_kraken",
+      "metrics": {
+       "trades": 81,
+       "win_rate": 0.407407,
+       "expectancy_r": -0.033601,
+       "profit_factor": 0.948812,
+       "net_return": -0.013609,
+       "sharpe": -0.210908,
+       "max_drawdown": 0.083818
+      },
+      "p_value": 0.9931639434821482,
+      "note": ""
+     },
+     {
+      "period": "test",
+      "instrument": "DOGE-USD",
+      "tf": "1h",
+      "dataset": "coinbase:DOGE-USD 1h 2021-06-03..2026-09-29",
+      "cost_mult": "retail_kraken",
+      "metrics": {
+       "trades": 72,
+       "win_rate": 0.291667,
+       "expectancy_r": -0.338503,
+       "profit_factor": 0.575295,
+       "net_return": -0.121861,
+       "sharpe": -2.09584,
+       "max_drawdown": 0.16102
+      },
+      "p_value": null,
+      "note": ""
+     },
+     {
+      "period": "train",
+      "instrument": "SHIB-USD",
+      "tf": "1h",
+      "dataset": "coinbase:SHIB-USD 1h 2021-09-09..2026-09-29",
+      "cost_mult": "low_fee_venue",
+      "metrics": {
+       "trades": 182,
+       "win_rate": 0.379121,
+       "expectancy_r": 0.038377,
+       "profit_factor": 1.067575,
+       "net_return": 0.034923,
+       "sharpe": 0.230722,
+       "max_drawdown": 0.076469
+      },
+      "p_value": 0.31337494971830004,
+      "note": ""
+     },
+     {
+      "period": "validation",
+      "instrument": "SHIB-USD",
+      "tf": "1h",
+      "dataset": "coinbase:SHIB-USD 1h 2021-09-09..2026-09-29",
+      "cost_mult": "low_fee_venue",
+      "metrics": {
+       "trades": 74,
+       "win_rate": 0.391892,
+       "expectancy_r": 0.044005,
+       "profit_factor": 1.074874,
+       "net_return": 0.016282,
+       "sharpe": 0.274282,
+       "max_drawdown": 0.046063
+      },
+      "p_value": 0.31337494971830004,
+      "note": ""
+     },
+     {
+      "period": "test",
+      "instrument": "SHIB-USD",
+      "tf": "1h",
+      "dataset": "coinbase:SHIB-USD 1h 2021-09-09..2026-09-29",
+      "cost_mult": "low_fee_venue",
+      "metrics": {
+       "trades": 59,
+       "win_rate": 0.389831,
+       "expectancy_r": 0.01629,
+       "profit_factor": 1.02889,
+       "net_return": 0.004806,
+       "sharpe": 0.09794,
+       "max_drawdown": 0.03367
+      },
+      "p_value": null,
+      "note": ""
+     },
+     {
+      "period": "train",
+      "instrument": "SHIB-USD",
+      "tf": "1h",
+      "dataset": "coinbase:SHIB-USD 1h 2021-09-09..2026-09-29",
+      "cost_mult": "retail_kraken",
+      "metrics": {
+       "trades": 182,
+       "win_rate": 0.362637,
+       "expectancy_r": -0.146557,
+       "profit_factor": 0.788776,
+       "net_return": -0.133367,
+       "sharpe": -0.855047,
+       "max_drawdown": 0.186248
+      },
+      "p_value": 0.9602765875027923,
+      "note": ""
+     },
+     {
+      "period": "validation",
+      "instrument": "SHIB-USD",
+      "tf": "1h",
+      "dataset": "coinbase:SHIB-USD 1h 2021-09-09..2026-09-29",
+      "cost_mult": "retail_kraken",
+      "metrics": {
+       "trades": 74,
+       "win_rate": 0.378378,
+       "expectancy_r": -0.149465,
+       "profit_factor": 0.790488,
+       "net_return": -0.055302,
+       "sharpe": -0.917225,
+       "max_drawdown": 0.094461
+      },
+      "p_value": 0.9602765875027923,
+      "note": ""
+     },
+     {
+      "period": "test",
+      "instrument": "SHIB-USD",
+      "tf": "1h",
+      "dataset": "coinbase:SHIB-USD 1h 2021-09-09..2026-09-29",
+      "cost_mult": "retail_kraken",
+      "metrics": {
+       "trades": 59,
+       "win_rate": 0.355932,
+       "expectancy_r": -0.233618,
+       "profit_factor": 0.682026,
+       "net_return": -0.068917,
+       "sharpe": -1.35007,
+       "max_drawdown": 0.088363
+      },
+      "p_value": null,
+      "note": ""
+     },
+     {
+      "period": "train",
+      "instrument": "PEPE-USD",
+      "tf": "1h",
+      "dataset": "coinbase:PEPE-USD 1h 2024-11-13..2026-09-29",
+      "cost_mult": "low_fee_venue",
+      "metrics": {
+       "trades": 66,
+       "win_rate": 0.393939,
+       "expectancy_r": -0.054022,
+       "profit_factor": 0.904882,
+       "net_return": -0.017827,
+       "sharpe": -0.350176,
+       "max_drawdown": 0.056055
+      },
+      "p_value": 0.550391752203713,
+      "note": ""
+     },
+     {
+      "period": "validation",
+      "instrument": "PEPE-USD",
+      "tf": "1h",
+      "dataset": "coinbase:PEPE-USD 1h 2024-11-13..2026-09-29",
+      "cost_mult": "low_fee_venue",
+      "metrics": {
+       "trades": 30,
+       "win_rate": 0.433333,
+       "expectancy_r": 0.067478,
+       "profit_factor": 1.125946,
+       "net_return": 0.010122,
+       "sharpe": 0.454214,
+       "max_drawdown": 0.027
+      },
+      "p_value": 0.550391752203713,
+      "note": ""
+     },
+     {
+      "period": "test",
+      "instrument": "PEPE-USD",
+      "tf": "1h",
+      "dataset": "coinbase:PEPE-USD 1h 2024-11-13..2026-09-29",
+      "cost_mult": "low_fee_venue",
+      "metrics": {
+       "trades": 24,
+       "win_rate": 0.5,
+       "expectancy_r": 0.392259,
+       "profit_factor": 1.853131,
+       "net_return": 0.047071,
+       "sharpe": 2.167916,
+       "max_drawdown": 0.02206
+      },
+      "p_value": null,
+      "note": ""
+     },
+     {
+      "period": "train",
+      "instrument": "PEPE-USD",
+      "tf": "1h",
+      "dataset": "coinbase:PEPE-USD 1h 2024-11-13..2026-09-29",
+      "cost_mult": "retail_kraken",
+      "metrics": {
+       "trades": 66,
+       "win_rate": 0.363636,
+       "expectancy_r": -0.205388,
+       "profit_factor": 0.691867,
+       "net_return": -0.067778,
+       "sharpe": -1.301126,
+       "max_drawdown": 0.082694
+      },
+      "p_value": 0.915802388550383,
+      "note": ""
+     },
+     {
+      "period": "validation",
+      "instrument": "PEPE-USD",
+      "tf": "1h",
+      "dataset": "coinbase:PEPE-USD 1h 2024-11-13..2026-09-29",
+      "cost_mult": "retail_kraken",
+      "metrics": {
+       "trades": 30,
+       "win_rate": 0.4,
+       "expectancy_r": -0.111215,
+       "profit_factor": 0.826085,
+       "net_return": -0.016682,
+       "sharpe": -0.74982,
+       "max_drawdown": 0.037182
+      },
+      "p_value": 0.915802388550383,
+      "note": ""
+     },
+     {
+      "period": "test",
+      "instrument": "PEPE-USD",
+      "tf": "1h",
+      "dataset": "coinbase:PEPE-USD 1h 2024-11-13..2026-09-29",
+      "cost_mult": "retail_kraken",
+      "metrics": {
+       "trades": 24,
+       "win_rate": 0.458333,
+       "expectancy_r": 0.213038,
+       "profit_factor": 1.376691,
+       "net_return": 0.025565,
+       "sharpe": 1.178359,
+       "max_drawdown": 0.027449
+      },
+      "p_value": null,
+      "note": ""
+     },
+     {
+      "period": "train",
+      "instrument": "BONK-USD",
+      "tf": "1h",
+      "dataset": "coinbase:BONK-USD 1h 2023-12-14..2026-09-29",
+      "cost_mult": "low_fee_venue",
+      "metrics": {
+       "trades": 113,
+       "win_rate": 0.451327,
+       "expectancy_r": 0.252524,
+       "profit_factor": 1.516368,
+       "net_return": 0.142676,
+       "sharpe": 1.511874,
+       "max_drawdown": 0.030584
+      },
+      "p_value": 0.05014712658894749,
+      "note": ""
+     },
+     {
+      "period": "validation",
+      "instrument": "BONK-USD",
+      "tf": "1h",
+      "dataset": "coinbase:BONK-USD 1h 2023-12-14..2026-09-29",
+      "cost_mult": "low_fee_venue",
+      "metrics": {
+       "trades": 28,
+       "win_rate": 0.357143,
+       "expectancy_r": -0.084343,
+       "profit_factor": 0.857855,
+       "net_return": -0.011808,
+       "sharpe": -0.443455,
+       "max_drawdown": 0.049012
+      },
+      "p_value": 0.05014712658894749,
+      "note": ""
+     },
+     {
+      "period": "test",
+      "instrument": "BONK-USD",
+      "tf": "1h",
+      "dataset": "coinbase:BONK-USD 1h 2023-12-14..2026-09-29",
+      "cost_mult": "low_fee_venue",
+      "metrics": {
+       "trades": 39,
+       "win_rate": 0.358974,
+       "expectancy_r": -0.118581,
+       "profit_factor": 0.820283,
+       "net_return": -0.023123,
+       "sharpe": -0.779098,
+       "max_drawdown": 0.050858
+      },
+      "p_value": null,
+      "note": ""
+     },
+     {
+      "period": "train",
+      "instrument": "BONK-USD",
+      "tf": "1h",
+      "dataset": "coinbase:BONK-USD 1h 2023-12-14..2026-09-29",
+      "cost_mult": "retail_kraken",
+      "metrics": {
+       "trades": 113,
+       "win_rate": 0.433628,
+       "expectancy_r": 0.14837,
+       "profit_factor": 1.268593,
+       "net_return": 0.083829,
+       "sharpe": 0.888152,
+       "max_drawdown": 0.039879
+      },
+      "p_value": 0.2687947454685815,
+      "note": ""
+     },
+     {
+      "period": "validation",
+      "instrument": "BONK-USD",
+      "tf": "1h",
+      "dataset": "coinbase:BONK-USD 1h 2023-12-14..2026-09-29",
+      "cost_mult": "retail_kraken",
+      "metrics": {
+       "trades": 28,
+       "win_rate": 0.321429,
+       "expectancy_r": -0.243898,
+       "profit_factor": 0.650901,
+       "net_return": -0.034146,
+       "sharpe": -1.266519,
+       "max_drawdown": 0.059797
+      },
+      "p_value": 0.2687947454685815,
+      "note": ""
+     },
+     {
+      "period": "test",
+      "instrument": "BONK-USD",
+      "tf": "1h",
+      "dataset": "coinbase:BONK-USD 1h 2023-12-14..2026-09-29",
+      "cost_mult": "retail_kraken",
+      "metrics": {
+       "trades": 39,
+       "win_rate": 0.307692,
+       "expectancy_r": -0.310507,
+       "profit_factor": 0.611074,
+       "net_return": -0.060549,
+       "sharpe": -1.957367,
+       "max_drawdown": 0.080975
+      },
+      "p_value": null,
+      "note": ""
+     },
+     {
+      "period": "train",
+      "instrument": "WIF-USD",
+      "tf": "1h",
+      "dataset": "coinbase:WIF-USD 1h 2024-11-13..2026-09-29",
+      "cost_mult": "low_fee_venue",
+      "metrics": {
+       "trades": 73,
+       "win_rate": 0.342466,
+       "expectancy_r": -0.054452,
+       "profit_factor": 0.914116,
+       "net_return": -0.019875,
+       "sharpe": -0.331057,
+       "max_drawdown": 0.047382
+      },
+      "p_value": 0.4576440067439391,
+      "note": ""
+     },
+     {
+      "period": "validation",
+      "instrument": "WIF-USD",
+      "tf": "1h",
+      "dataset": "coinbase:WIF-USD 1h 2024-11-13..2026-09-29",
+      "cost_mult": "low_fee_venue",
+      "metrics": {
+       "trades": 25,
+       "win_rate": 0.44,
+       "expectancy_r": 0.216421,
+       "profit_factor": 1.375738,
+       "net_return": 0.027053,
+       "sharpe": 1.124638,
+       "max_drawdown": 0.028076
+      },
+      "p_value": 0.4576440067439391,
+      "note": ""
+     },
+     {
+      "period": "test",
+      "instrument": "WIF-USD",
+      "tf": "1h",
+      "dataset": "coinbase:WIF-USD 1h 2024-11-13..2026-09-29",
+      "cost_mult": "low_fee_venue",
+      "metrics": {
+       "trades": 24,
+       "win_rate": 0.375,
+       "expectancy_r": 0.022617,
+       "profit_factor": 1.037446,
+       "net_return": 0.002714,
+       "sharpe": 0.140369,
+       "max_drawdown": 0.03428
+      },
+      "p_value": null,
+      "note": ""
+     },
+     {
+      "period": "train",
+      "instrument": "WIF-USD",
+      "tf": "1h",
+      "dataset": "coinbase:WIF-USD 1h 2024-11-13..2026-09-29",
+      "cost_mult": "retail_kraken",
+      "metrics": {
+       "trades": 73,
+       "win_rate": 0.328767,
+       "expectancy_r": -0.184639,
+       "profit_factor": 0.74504,
+       "net_return": -0.067393,
+       "sharpe": -1.103762,
+       "max_drawdown": 0.070522
+      },
+      "p_value": 0.8188728167905676,
+      "note": ""
+     },
+     {
+      "period": "validation",
+      "instrument": "WIF-USD",
+      "tf": "1h",
+      "dataset": "coinbase:WIF-USD 1h 2024-11-13..2026-09-29",
+      "cost_mult": "retail_kraken",
+      "metrics": {
+       "trades": 25,
+       "win_rate": 0.4,
+       "expectancy_r": 0.041662,
+       "profit_factor": 1.060415,
+       "net_return": 0.005208,
+       "sharpe": 0.216176,
+       "max_drawdown": 0.041256
+      },
+      "p_value": 0.8188728167905676,
+      "note": ""
+     },
+     {
+      "period": "test",
+      "instrument": "WIF-USD",
+      "tf": "1h",
+      "dataset": "coinbase:WIF-USD 1h 2024-11-13..2026-09-29",
+      "cost_mult": "retail_kraken",
+      "metrics": {
+       "trades": 24,
+       "win_rate": 0.333333,
+       "expectancy_r": -0.163719,
+       "profit_factor": 0.77795,
+       "net_return": -0.019646,
+       "sharpe": -0.989404,
+       "max_drawdown": 0.048844
+      },
+      "p_value": null,
+      "note": ""
+     },
+     {
+      "period": "train",
+      "instrument": "FLOKI-USD",
+      "tf": "1h",
+      "dataset": "coinbase:FLOKI-USD 1h 2024-11-21..2026-09-29",
+      "cost_mult": "low_fee_venue",
+      "metrics": {
+       "trades": 71,
+       "win_rate": 0.366197,
+       "expectancy_r": 0.018061,
+       "profit_factor": 1.029732,
+       "net_return": 0.006412,
+       "sharpe": 0.103898,
+       "max_drawdown": 0.048729
+      },
+      "p_value": 0.5575514328594193,
+      "note": ""
+     },
+     {
+      "period": "validation",
+      "instrument": "FLOKI-USD",
+      "tf": "1h",
+      "dataset": "coinbase:FLOKI-USD 1h 2024-11-21..2026-09-29",
+      "cost_mult": "low_fee_venue",
+      "metrics": {
+       "trades": 29,
+       "win_rate": 0.37931,
+       "expectancy_r": -0.111332,
+       "profit_factor": 0.835523,
+       "net_return": -0.016143,
+       "sharpe": -0.762477,
+       "max_drawdown": 0.044431
+      },
+      "p_value": 0.5575514328594193,
+      "note": ""
+     },
+     {
+      "period": "test",
+      "instrument": "FLOKI-USD",
+      "tf": "1h",
+      "dataset": "coinbase:FLOKI-USD 1h 2024-11-21..2026-09-29",
+      "cost_mult": "low_fee_venue",
+      "metrics": {
+       "trades": 22,
+       "win_rate": 0.363636,
+       "expectancy_r": -0.15263,
+       "profit_factor": 0.780576,
+       "net_return": -0.016789,
+       "sharpe": -0.898488,
+       "max_drawdown": 0.033736
+      },
+      "p_value": null,
+      "note": ""
+     },
+     {
+      "period": "train",
+      "instrument": "FLOKI-USD",
+      "tf": "1h",
+      "dataset": "coinbase:FLOKI-USD 1h 2024-11-21..2026-09-29",
+      "cost_mult": "retail_kraken",
+      "metrics": {
+       "trades": 71,
+       "win_rate": 0.366197,
+       "expectancy_r": -0.130103,
+       "profit_factor": 0.816685,
+       "net_return": -0.046187,
+       "sharpe": -0.733224,
+       "max_drawdown": 0.060993
+      },
+      "p_value": 0.9179443769236714,
+      "note": ""
+     },
+     {
+      "period": "validation",
+      "instrument": "FLOKI-USD",
+      "tf": "1h",
+      "dataset": "coinbase:FLOKI-USD 1h 2024-11-21..2026-09-29",
+      "cost_mult": "retail_kraken",
+      "metrics": {
+       "trades": 29,
+       "win_rate": 0.344828,
+       "expectancy_r": -0.337774,
+       "profit_factor": 0.594914,
+       "net_return": -0.048977,
+       "sharpe": -2.217176,
+       "max_drawdown": 0.06198
+      },
+      "p_value": 0.9179443769236714,
+      "note": ""
+     },
+     {
+      "period": "test",
+      "instrument": "FLOKI-USD",
+      "tf": "1h",
+      "dataset": "coinbase:FLOKI-USD 1h 2024-11-21..2026-09-29",
+      "cost_mult": "retail_kraken",
+      "metrics": {
+       "trades": 22,
+       "win_rate": 0.363636,
+       "expectancy_r": -0.385928,
+       "profit_factor": 0.546725,
+       "net_return": -0.042452,
+       "sharpe": -2.150828,
+       "max_drawdown": 0.055024
+      },
+      "p_value": null,
+      "note": ""
+     }
+    ]
+   }
+  },
+  {
+   "key": "swing_meme_retest",
+   "name": "Swing memecoin 48-hour breakout retest (4 ATR, 3R, 96h, limit entry)",
+   "family": "swing",
+   "subfamily": "hourly breakout retest",
+   "mechanism": "a broken 48-hour high that holds on the first pullback marks demand",
+   "logic": "continuation (retest)",
+   "anchor": "48-hour high frozen at the breakout bar",
+   "hypothesis": "On hourly bars, 1-12 bars after a close above the prior 48-hour high, buy with a limit 0.1% under the close when the bar dips to within 0.2% of that level and closes above it, above the 200-hour EMA; stop 4 ATR(14), target 3R, exit after 96 bars.",
+   "markets": [
+    "crypto"
+   ],
+   "timeframe": "1h",
+   "definition": {
+    "name": "Swing memecoin 48-hour breakout retest (4 ATR, 3R, 96h, limit entry)",
+    "family": "swing",
+    "timeframe": "1h",
+    "direction": "long",
+    "params": {},
+    "entry": {
+     "long": "since(close > highest(high,48)[1]) >= 1 and since(close > highest(high,48)[1]) <= 12 and low <= valuewhen(close > highest(high,48)[1], highest(high,48)[1]) * 1.002 and close > valuewhen(close > highest(high,48)[1], highest(high,48)[1]) and close > ema(close,200)"
+    },
+    "filters": [],
+    "order": {
+     "type": "limit",
+     "long": "close * 0.999",
+     "ttl_bars": 3
+    },
+    "stop": {
+     "type": "atr",
+     "mult": 4.0,
+     "n": 14
+    },
+    "target": {
+     "type": "r",
+     "r": 3.0
+    },
+    "trail": {
+     "type": "none"
+    },
+    "exit": {},
+    "max_bars": 96,
+    "session": {
+     "hold_overnight": true
+    },
+    "max_trades_per_day": 3,
+    "cooldown_bars": 0,
+    "sizing": {
+     "risk_pct": 0.5,
+     "max_notional_pct": 100.0
+    },
+    "data": [
+     "bars"
+    ],
+    "id": "STRAT-409",
+    "version": "1.0.0"
+   },
+   "data": [
+    "bars"
+   ],
+   "evidence": [
+    {
+     "source": "SRC-090",
+     "relation": "mechanism",
+     "note": "channel breakouts (Donchian)"
+    }
+   ],
+   "research_status": "hypothesis",
+   "failure_modes": [
+    "fees above about 0.2% per side remove the edge",
+    "a long-only swing loses in a falling market",
+    "limit entries miss the strongest moves (unfilled)"
+   ],
+   "notes": "Selected by the swing lab on 2021-2025 train data (results/SWING_LAB.md). Untouched test period: positive only at a low-fee exchange (0.10% taker), about break-even at 0.20%, negative at retail fees; not significant after correction. Holds overnight and through weekends.",
+   "blocked": null,
+   "spec": null,
+   "parent": null,
+   "instruments": [
+    "DOGE-USD",
+    "SHIB-USD",
+    "PEPE-USD",
+    "BONK-USD",
+    "WIF-USD",
+    "FLOKI-USD"
+   ],
+   "distinct": "Hourly, memecoins, frozen breakout level, wide stop (range_breakout_retest is 5-minute).",
+   "id": "STRAT-409",
+   "warmup_bars": {
+    "crypto": 1001
+   },
+   "references": {
+    "indicators": [
+     "atr",
+     "ema"
+    ],
+    "functions": [
+     "highest",
+     "since",
+     "valuewhen"
+    ],
+    "sources": [
+     "close",
+     "high",
+     "low"
+    ],
+    "timeframes": [],
+    "instruments": [],
+    "events": []
+   },
+   "implementation_status": "implemented",
+   "evaluation_status": "backtested",
+   "live_evidence": "none",
+   "variants": [],
+   "evaluation": {
+    "status": "backtested",
+    "best_realistic": {
+     "instrument": "BONK-USD",
+     "expectancy_r": 0.092071,
+     "trades": 113,
+     "net_return": 0.05202,
+     "test_expectancy_r": -0.064246,
+     "gross_expectancy_r": 0.262141
+    },
+    "candidates": [],
+    "results": [
+     {
+      "period": "train",
+      "instrument": "DOGE-USD",
+      "tf": "1h",
+      "dataset": "coinbase:DOGE-USD 1h 2021-06-03..2026-09-29",
+      "cost_mult": "low_fee_venue",
+      "metrics": {
+       "trades": 129,
+       "win_rate": 0.410853,
+       "expectancy_r": 0.098505,
+       "profit_factor": 1.173263,
+       "net_return": 0.063536,
+       "sharpe": 0.421403,
+       "max_drawdown": 0.043169
+      },
+      "p_value": 0.1016415139084258,
+      "note": ""
+     },
+     {
+      "period": "validation",
+      "instrument": "DOGE-USD",
+      "tf": "1h",
+      "dataset": "coinbase:DOGE-USD 1h 2021-06-03..2026-09-29",
+      "cost_mult": "low_fee_venue",
+      "metrics": {
+       "trades": 50,
+       "win_rate": 0.4,
+       "expectancy_r": 0.272606,
+       "profit_factor": 1.457659,
+       "net_return": 0.068151,
+       "sharpe": 1.094064,
+       "max_drawdown": 0.029975
+      },
+      "p_value": 0.1016415139084258,
+      "note": ""
+     },
+     {
+      "period": "test",
+      "instrument": "DOGE-USD",
+      "tf": "1h",
+      "dataset": "coinbase:DOGE-USD 1h 2021-06-03..2026-09-29",
+      "cost_mult": "low_fee_venue",
+      "metrics": {
+       "trades": 44,
+       "win_rate": 0.386364,
+       "expectancy_r": 0.000913,
+       "profit_factor": 1.001569,
+       "net_return": 0.000201,
+       "sharpe": 0.004088,
+       "max_drawdown": 0.048584
+      },
+      "p_value": null,
+      "note": ""
+     },
+     {
+      "period": "train",
+      "instrument": "DOGE-USD",
+      "tf": "1h",
+      "dataset": "coinbase:DOGE-USD 1h 2021-06-03..2026-09-29",
+      "cost_mult": "retail_kraken",
+      "metrics": {
+       "trades": 129,
+       "win_rate": 0.387597,
+       "expectancy_r": -0.109734,
+       "profit_factor": 0.843159,
+       "net_return": -0.070778,
+       "sharpe": -0.461874,
+       "max_drawdown": 0.103745
+      },
+      "p_value": 0.6701618618132662,
+      "note": ""
+     },
+     {
+      "period": "validation",
+      "instrument": "DOGE-USD",
+      "tf": "1h",
+      "dataset": "coinbase:DOGE-USD 1h 2021-06-03..2026-09-29",
+      "cost_mult": "retail_kraken",
+      "metrics": {
+       "trades": 50,
+       "win_rate": 0.4,
+       "expectancy_r": 0.098322,
+       "profit_factor": 1.139383,
+       "net_return": 0.024581,
+       "sharpe": 0.395664,
+       "max_drawdown": 0.0512
+      },
+      "p_value": 0.6701618618132662,
+      "note": ""
+     },
+     {
+      "period": "test",
+      "instrument": "DOGE-USD",
+      "tf": "1h",
+      "dataset": "coinbase:DOGE-USD 1h 2021-06-03..2026-09-29",
+      "cost_mult": "retail_kraken",
+      "metrics": {
+       "trades": 44,
+       "win_rate": 0.318182,
+       "expectancy_r": -0.255577,
+       "profit_factor": 0.662312,
+       "net_return": -0.056227,
+       "sharpe": -1.111534,
+       "max_drawdown": 0.092111
+      },
+      "p_value": null,
+      "note": ""
+     },
+     {
+      "period": "train",
+      "instrument": "SHIB-USD",
+      "tf": "1h",
+      "dataset": "coinbase:SHIB-USD 1h 2021-09-09..2026-09-29",
+      "cost_mult": "low_fee_venue",
+      "metrics": {
+       "trades": 117,
+       "win_rate": 0.401709,
+       "expectancy_r": 0.15663,
+       "profit_factor": 1.268352,
+       "net_return": 0.091628,
+       "sharpe": 0.621889,
+       "max_drawdown": 0.059013
+      },
+      "p_value": 0.09084136965769019,
+      "note": ""
+     },
+     {
+      "period": "validation",
+      "instrument": "SHIB-USD",
+      "tf": "1h",
+      "dataset": "coinbase:SHIB-USD 1h 2021-09-09..2026-09-29",
+      "cost_mult": "low_fee_venue",
+      "metrics": {
+       "trades": 49,
+       "win_rate": 0.326531,
+       "expectancy_r": 0.19779,
+       "profit_factor": 1.308712,
+       "net_return": 0.048459,
+       "sharpe": 0.794145,
+       "max_drawdown": 0.037353
+      },
+      "p_value": 0.09084136965769019,
+      "note": ""
+     },
+     {
+      "period": "test",
+      "instrument": "SHIB-USD",
+      "tf": "1h",
+      "dataset": "coinbase:SHIB-USD 1h 2021-09-09..2026-09-29",
+      "cost_mult": "low_fee_venue",
+      "metrics": {
+       "trades": 35,
+       "win_rate": 0.257143,
+       "expectancy_r": -0.295696,
+       "profit_factor": 0.587264,
+       "net_return": -0.051747,
+       "sharpe": -1.277789,
+       "max_drawdown": 0.077211
+      },
+      "p_value": null,
+      "note": ""
+     },
+     {
+      "period": "train",
+      "instrument": "SHIB-USD",
+      "tf": "1h",
+      "dataset": "coinbase:SHIB-USD 1h 2021-09-09..2026-09-29",
+      "cost_mult": "retail_kraken",
+      "metrics": {
+       "trades": 117,
+       "win_rate": 0.350427,
+       "expectancy_r": -0.027574,
+       "profit_factor": 0.960971,
+       "net_return": -0.016131,
+       "sharpe": -0.108038,
+       "max_drawdown": 0.108018
+      },
+      "p_value": 0.551157020342198,
+      "note": ""
+     },
+     {
+      "period": "validation",
+      "instrument": "SHIB-USD",
+      "tf": "1h",
+      "dataset": "coinbase:SHIB-USD 1h 2021-09-09..2026-09-29",
+      "cost_mult": "retail_kraken",
+      "metrics": {
+       "trades": 49,
+       "win_rate": 0.326531,
+       "expectancy_r": 0.010101,
+       "profit_factor": 1.013172,
+       "net_return": 0.002475,
+       "sharpe": 0.04064,
+       "max_drawdown": 0.054338
+      },
+      "p_value": 0.551157020342198,
+      "note": ""
+     },
+     {
+      "period": "test",
+      "instrument": "SHIB-USD",
+      "tf": "1h",
+      "dataset": "coinbase:SHIB-USD 1h 2021-09-09..2026-09-29",
+      "cost_mult": "retail_kraken",
+      "metrics": {
+       "trades": 35,
+       "win_rate": 0.2,
+       "expectancy_r": -0.551409,
+       "profit_factor": 0.402661,
+       "net_return": -0.096497,
+       "sharpe": -2.193536,
+       "max_drawdown": 0.117799
+      },
+      "p_value": null,
+      "note": ""
+     },
+     {
+      "period": "train",
+      "instrument": "PEPE-USD",
+      "tf": "1h",
+      "dataset": "coinbase:PEPE-USD 1h 2024-11-13..2026-09-29",
+      "cost_mult": "low_fee_venue",
+      "metrics": {
+       "trades": 51,
+       "win_rate": 0.27451,
+       "expectancy_r": -0.196357,
+       "profit_factor": 0.708111,
+       "net_return": -0.050071,
+       "sharpe": -0.968539,
+       "max_drawdown": 0.057252
+      },
+      "p_value": 0.8810989318932914,
+      "note": ""
+     },
+     {
+      "period": "validation",
+      "instrument": "PEPE-USD",
+      "tf": "1h",
+      "dataset": "coinbase:PEPE-USD 1h 2024-11-13..2026-09-29",
+      "cost_mult": "low_fee_venue",
+      "metrics": {
+       "trades": 15,
+       "win_rate": 0.333333,
+       "expectancy_r": -0.206475,
+       "profit_factor": 0.704889,
+       "net_return": -0.015486,
+       "sharpe": -0.930522,
+       "max_drawdown": 0.032781
+      },
+      "p_value": 0.8810989318932914,
+      "note": ""
+     },
+     {
+      "period": "test",
+      "instrument": "PEPE-USD",
+      "tf": "1h",
+      "dataset": "coinbase:PEPE-USD 1h 2024-11-13..2026-09-29",
+      "cost_mult": "low_fee_venue",
+      "metrics": {
+       "trades": 16,
+       "win_rate": 0.25,
+       "expectancy_r": -0.183872,
+       "profit_factor": 0.727405,
+       "net_return": -0.01471,
+       "sharpe": -0.871406,
+       "max_drawdown": 0.028769
+      },
+      "p_value": null,
+      "note": ""
+     },
+     {
+      "period": "train",
+      "instrument": "PEPE-USD",
+      "tf": "1h",
+      "dataset": "coinbase:PEPE-USD 1h 2024-11-13..2026-09-29",
+      "cost_mult": "retail_kraken",
+      "metrics": {
+       "trades": 51,
+       "win_rate": 0.254902,
+       "expectancy_r": -0.346418,
+       "profit_factor": 0.556671,
+       "net_return": -0.088337,
+       "sharpe": -1.675913,
+       "max_drawdown": 0.092442
+      },
+      "p_value": 0.9811471287417539,
+      "note": ""
+     },
+     {
+      "period": "validation",
+      "instrument": "PEPE-USD",
+      "tf": "1h",
+      "dataset": "coinbase:PEPE-USD 1h 2024-11-13..2026-09-29",
+      "cost_mult": "retail_kraken",
+      "metrics": {
+       "trades": 15,
+       "win_rate": 0.333333,
+       "expectancy_r": -0.361959,
+       "profit_factor": 0.547034,
+       "net_return": -0.027147,
+       "sharpe": -1.597271,
+       "max_drawdown": 0.043302
+      },
+      "p_value": 0.9811471287417539,
+      "note": ""
+     },
+     {
+      "period": "test",
+      "instrument": "PEPE-USD",
+      "tf": "1h",
+      "dataset": "coinbase:PEPE-USD 1h 2024-11-13..2026-09-29",
+      "cost_mult": "retail_kraken",
+      "metrics": {
+       "trades": 16,
+       "win_rate": 0.25,
+       "expectancy_r": -0.380697,
+       "profit_factor": 0.543362,
+       "net_return": -0.030456,
+       "sharpe": -1.72426,
+       "max_drawdown": 0.039161
+      },
+      "p_value": null,
+      "note": ""
+     },
+     {
+      "period": "train",
+      "instrument": "BONK-USD",
+      "tf": "1h",
+      "dataset": "coinbase:BONK-USD 1h 2023-12-14..2026-09-29",
+      "cost_mult": "low_fee_venue",
+      "metrics": {
+       "trades": 71,
+       "win_rate": 0.464789,
+       "expectancy_r": 0.349886,
+       "profit_factor": 1.749744,
+       "net_return": 0.12421,
+       "sharpe": 1.435324,
+       "max_drawdown": 0.022198
+      },
+      "p_value": 0.0752870448048899,
+      "note": ""
+     },
+     {
+      "period": "validation",
+      "instrument": "BONK-USD",
+      "tf": "1h",
+      "dataset": "coinbase:BONK-USD 1h 2023-12-14..2026-09-29",
+      "cost_mult": "low_fee_venue",
+      "metrics": {
+       "trades": 21,
+       "win_rate": 0.285714,
+       "expectancy_r": -0.150464,
+       "profit_factor": 0.793498,
+       "net_return": -0.015799,
+       "sharpe": -0.590307,
+       "max_drawdown": 0.045308
+      },
+      "p_value": 0.0752870448048899,
+      "note": ""
+     },
+     {
+      "period": "test",
+      "instrument": "BONK-USD",
+      "tf": "1h",
+      "dataset": "coinbase:BONK-USD 1h 2023-12-14..2026-09-29",
+      "cost_mult": "low_fee_venue",
+      "metrics": {
+       "trades": 21,
+       "win_rate": 0.333333,
+       "expectancy_r": 0.122186,
+       "profit_factor": 1.246097,
+       "net_return": 0.01283,
+       "sharpe": 0.533317,
+       "max_drawdown": 0.024443
+      },
+      "p_value": null,
+      "note": ""
+     },
+     {
+      "period": "train",
+      "instrument": "BONK-USD",
+      "tf": "1h",
+      "dataset": "coinbase:BONK-USD 1h 2023-12-14..2026-09-29",
+      "cost_mult": "retail_kraken",
+      "metrics": {
+       "trades": 71,
+       "win_rate": 0.450704,
+       "expectancy_r": 0.239721,
+       "profit_factor": 1.454736,
+       "net_return": 0.085101,
+       "sharpe": 0.990765,
+       "max_drawdown": 0.026433
+      },
+      "p_value": 0.2395447695086721,
+      "note": ""
+     },
+     {
+      "period": "validation",
+      "instrument": "BONK-USD",
+      "tf": "1h",
+      "dataset": "coinbase:BONK-USD 1h 2023-12-14..2026-09-29",
+      "cost_mult": "retail_kraken",
+      "metrics": {
+       "trades": 21,
+       "win_rate": 0.238095,
+       "expectancy_r": -0.299393,
+       "profit_factor": 0.644487,
+       "net_return": -0.031436,
+       "sharpe": -1.156563,
+       "max_drawdown": 0.053956
+      },
+      "p_value": 0.2395447695086721,
+      "note": ""
+     },
+     {
+      "period": "test",
+      "instrument": "BONK-USD",
+      "tf": "1h",
+      "dataset": "coinbase:BONK-USD 1h 2023-12-14..2026-09-29",
+      "cost_mult": "retail_kraken",
+      "metrics": {
+       "trades": 21,
+       "win_rate": 0.333333,
+       "expectancy_r": -0.064246,
+       "profit_factor": 0.89731,
+       "net_return": -0.006746,
+       "sharpe": -0.277697,
+       "max_drawdown": 0.037662
+      },
+      "p_value": null,
+      "note": ""
+     },
+     {
+      "period": "train",
+      "instrument": "WIF-USD",
+      "tf": "1h",
+      "dataset": "coinbase:WIF-USD 1h 2024-11-13..2026-09-29",
+      "cost_mult": "low_fee_venue",
+      "metrics": {
+       "trades": 52,
+       "win_rate": 0.25,
+       "expectancy_r": -0.239776,
+       "profit_factor": 0.676728,
+       "net_return": -0.062342,
+       "sharpe": -1.127181,
+       "max_drawdown": 0.077929
+      },
+      "p_value": 0.841784738036102,
+      "note": ""
+     },
+     {
+      "period": "validation",
+      "instrument": "WIF-USD",
+      "tf": "1h",
+      "dataset": "coinbase:WIF-USD 1h 2024-11-13..2026-09-29",
+      "cost_mult": "low_fee_venue",
+      "metrics": {
+       "trades": 12,
+       "win_rate": 0.333333,
+       "expectancy_r": 0.037377,
+       "profit_factor": 1.052727,
+       "net_return": 0.002243,
+       "sharpe": 0.134697,
+       "max_drawdown": 0.036502
+      },
+      "p_value": 0.841784738036102,
+      "note": ""
+     },
+     {
+      "period": "test",
+      "instrument": "WIF-USD",
+      "tf": "1h",
+      "dataset": "coinbase:WIF-USD 1h 2024-11-13..2026-09-29",
+      "cost_mult": "low_fee_venue",
+      "metrics": {
+       "trades": 10,
+       "win_rate": 0.4,
+       "expectancy_r": 0.188395,
+       "profit_factor": 1.344043,
+       "net_return": 0.00942,
+       "sharpe": 0.61835,
+       "max_drawdown": 0.02738
+      },
+      "p_value": null,
+      "note": ""
+     },
+     {
+      "period": "train",
+      "instrument": "WIF-USD",
+      "tf": "1h",
+      "dataset": "coinbase:WIF-USD 1h 2024-11-13..2026-09-29",
+      "cost_mult": "retail_kraken",
+      "metrics": {
+       "trades": 52,
+       "win_rate": 0.25,
+       "expectancy_r": -0.373914,
+       "profit_factor": 0.555761,
+       "net_return": -0.097218,
+       "sharpe": -1.720541,
+       "max_drawdown": 0.11136
+      },
+      "p_value": 0.958969600719545,
+      "note": ""
+     },
+     {
+      "period": "validation",
+      "instrument": "WIF-USD",
+      "tf": "1h",
+      "dataset": "coinbase:WIF-USD 1h 2024-11-13..2026-09-29",
+      "cost_mult": "retail_kraken",
+      "metrics": {
+       "trades": 12,
+       "win_rate": 0.25,
+       "expectancy_r": -0.129678,
+       "profit_factor": 0.845126,
+       "net_return": -0.007781,
+       "sharpe": -0.46026,
+       "max_drawdown": 0.043585
+      },
+      "p_value": 0.958969600719545,
+      "note": ""
+     },
+     {
+      "period": "test",
+      "instrument": "WIF-USD",
+      "tf": "1h",
+      "dataset": "coinbase:WIF-USD 1h 2024-11-13..2026-09-29",
+      "cost_mult": "retail_kraken",
+      "metrics": {
+       "trades": 10,
+       "win_rate": 0.4,
+       "expectancy_r": 0.008998,
+       "profit_factor": 1.013265,
+       "net_return": 0.00045,
+       "sharpe": 0.028922,
+       "max_drawdown": 0.033918
+      },
+      "p_value": null,
+      "note": ""
+     },
+     {
+      "period": "train",
+      "instrument": "FLOKI-USD",
+      "tf": "1h",
+      "dataset": "coinbase:FLOKI-USD 1h 2024-11-21..2026-09-29",
+      "cost_mult": "low_fee_venue",
+      "metrics": {
+       "trades": 42,
+       "win_rate": 0.357143,
+       "expectancy_r": 0.036015,
+       "profit_factor": 1.057788,
+       "net_return": 0.007563,
+       "sharpe": 0.146413,
+       "max_drawdown": 0.033728
+      },
+      "p_value": 0.3553105907908126,
+      "note": ""
+     },
+     {
+      "period": "validation",
+      "instrument": "FLOKI-USD",
+      "tf": "1h",
+      "dataset": "coinbase:FLOKI-USD 1h 2024-11-21..2026-09-29",
+      "cost_mult": "low_fee_venue",
+      "metrics": {
+       "trades": 13,
+       "win_rate": 0.384615,
+       "expectancy_r": 0.208245,
+       "profit_factor": 1.378283,
+       "net_return": 0.013536,
+       "sharpe": 0.801986,
+       "max_drawdown": 0.022367
+      },
+      "p_value": 0.3553105907908126,
+      "note": ""
+     },
+     {
+      "period": "test",
+      "instrument": "FLOKI-USD",
+      "tf": "1h",
+      "dataset": "coinbase:FLOKI-USD 1h 2024-11-21..2026-09-29",
+      "cost_mult": "low_fee_venue",
+      "metrics": {
+       "trades": 11,
+       "win_rate": 0.454545,
+       "expectancy_r": 0.437031,
+       "profit_factor": 1.916228,
+       "net_return": 0.024037,
+       "sharpe": 1.384897,
+       "max_drawdown": 0.020037
+      },
+      "p_value": null,
+      "note": ""
+     },
+     {
+      "period": "train",
+      "instrument": "FLOKI-USD",
+      "tf": "1h",
+      "dataset": "coinbase:FLOKI-USD 1h 2024-11-21..2026-09-29",
+      "cost_mult": "retail_kraken",
+      "metrics": {
+       "trades": 42,
+       "win_rate": 0.357143,
+       "expectancy_r": -0.113001,
+       "profit_factor": 0.843326,
+       "net_return": -0.02373,
+       "sharpe": -0.455983,
+       "max_drawdown": 0.040863
+      },
+      "p_value": 0.656979186813837,
+      "note": ""
+     },
+     {
+      "period": "validation",
+      "instrument": "FLOKI-USD",
+      "tf": "1h",
+      "dataset": "coinbase:FLOKI-USD 1h 2024-11-21..2026-09-29",
+      "cost_mult": "retail_kraken",
+      "metrics": {
+       "trades": 13,
+       "win_rate": 0.384615,
+       "expectancy_r": 0.010456,
+       "profit_factor": 1.015569,
+       "net_return": 0.00068,
+       "sharpe": 0.040593,
+       "max_drawdown": 0.031531
+      },
+      "p_value": 0.656979186813837,
+      "note": ""
+     },
+     {
+      "period": "test",
+      "instrument": "FLOKI-USD",
+      "tf": "1h",
+      "dataset": "coinbase:FLOKI-USD 1h 2024-11-21..2026-09-29",
+      "cost_mult": "retail_kraken",
+      "metrics": {
+       "trades": 11,
+       "win_rate": 0.454545,
+       "expectancy_r": 0.224999,
+       "profit_factor": 1.374561,
+       "net_return": 0.012375,
+       "sharpe": 0.71294,
+       "max_drawdown": 0.024985
+      },
+      "p_value": null,
+      "note": ""
+     }
+    ]
+   }
   }
  ],
  "variants": [

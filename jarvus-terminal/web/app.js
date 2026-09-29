@@ -22,10 +22,11 @@ const t = ms => ms ? new Date(ms).toLocaleString() : "–";
 const hm = ms => ms ? new Date(ms).toLocaleTimeString([], {hour12: false}) : "–";
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]));
 const pxf = v => fmt(v, v >= 100 ? 2 : v >= 1 ? 4 : 6);
-const sid = v => esc(String(v || "").replace("@low", " · low-fee"));
+const sid = v => esc(String(v || "").replace("@low", " · low-fee").replace("@mid", " · 0.2% fees"));
 const cls = v => v == null ? "muted" : v >= 0 ? "up" : "dn";
 const kv = rows => rows.map(([k, v]) => `<div>${k}</div><div>${v}</div>`).join("");
 const FAMNAME = f => String(f || "").replace(/_/g, " ");
+const FEENAME = {venue: "each bot's exchange", coinbase: "Coinbase", kraken: "Kraken", ndax: "NDAX", low_fee: "low-fee"};
 
 /* ---------------------------------------------------------------- server */
 async function get(p) {
@@ -66,6 +67,7 @@ function show(page) {
   if (page === "strategies") loadLibrary();
   if (page === "results") loadResults();
   if (page === "live") loadLive(true);
+  if (page === "settings") loadFees();
   renderPage();
   if (page === "command") loadChart();
 }
@@ -237,7 +239,7 @@ function renderTape() {
 function renderWallet() {
   const a = S.account || ST.account || {}, n = TR.length, w = TR.filter(x => x.pnl > 0).length;
   $("eqBig").textContent = money(a.equity);
-  $("wMode").textContent = `paper account · ${a.currency || "USD"} · ${ST.live_armed ? "real money armed separately (Live money)" : "no real money"}`;
+  $("wMode").textContent = `paper account · ${a.currency || "USD"} · fees: ${FEENAME[ST.fee_profile || "venue"] || ST.fee_profile} · ${ST.live_armed ? "real money armed separately" : "no real money"}`;
   $("eqSub").innerHTML = a.twr != null ? `<span class="${a.twr >= 0 ? "up" : "dn"}">${a.twr >= 0 ? "▲" : "▼"} ${fmt(100 * a.twr, 3)}%</span> <span class="dim">· ${n} trades · time-weighted</span>` : "";
   $("w1").textContent = fmt(n, 0); $("w2").textContent = n ? (100 * w / n).toFixed(1) + "%" : "–"; $("w3").textContent = n ? fmt(TR.reduce((s, x) => s + (x.r || 0), 0) / n, 2) : "–";
   $("acct").innerHTML = kv([["free cash", money(a.cash)], ["open positions", fmt(a.open_positions, 0)], ["exposure", money(a.gross_exposure)], ["realized", sgn(a.realized_pnl)], ["fees paid", money(a.fees)]]);
@@ -384,7 +386,7 @@ function renderBrain() {
   const b = BRAIN || {}, sk = b.shadow_by_kind || {}, G = b.gates || {}, M = b.markets || {};
   const sh = k => sk[k] && sk[k].trades ? `${fmt(sk[k].trades, 0)} · <span class="${cls(-(sk[k].avg_r || 0))}">${rr(sk[k].avg_r)}</span>` : "–";
   const loud = Object.values(G).filter(g => g.state === "LOUD").length, quiet = Object.values(G).filter(g => g.state === "QUIET").length;
-  $("g1").innerHTML = kv([["refuse above", "0.33R"], ["half size above", "0.20R"], ["refused (followed)", sh("cost")]]);
+  $("g1").innerHTML = kv([["crypto fees", `<a href="#settings">${esc(FEENAME[ST.fee_profile || "venue"] || "")}</a>`], ["refuse above", "0.33R"], ["half size above", "0.20R"], ["refused (followed)", sh("cost")]]);
   $("g2").innerHTML = kv([["markets LOUD now", `<span class="hotc">${loud}</span>`], ["markets QUIET now", `<span class="cyanc">${quiet}</span>`], ["refused (followed)", sh("quiet")]]);
   $("g3").innerHTML = kv([["entries scored", fmt(b.scored, 0)], ["approved", b.scored ? `${fmt(b.approved, 0)} (${pct(b.approved / b.scored)})` : "–"], ["refused (followed)", sh("learned")]]);
   $("g4").innerHTML = kv([["benched now", fmt(b.benched_now, 0)], ["resized", fmt(b.resized, 0)], ["refused (followed)", sh("benched")]]);
@@ -495,8 +497,53 @@ function renderResults() {
     ["candidates (train + validation positive)", `${stt.candidates} from ${stt.candidate_strategies} strategies`], ["still positive on the untouched test", `${stt.candidates_test_positive} of ${stt.candidates}`],
     ["candidates: full period vs test", `${rr(stt.candidates_avg_full, 3)} vs ${rr(stt.candidates_avg_test, 3)}`]]);
   if (vg) $("vg").innerHTML = ["crypto", "stock"].filter(a => vg[a]).flatMap(a => ["loud", "quiet"].map(k => { const m = vg[a][k]; return `<tr><td>${a} <span class="dim">${vg[a].horizon_hours}h</span></td><td><span class="gstate g-${k.toUpperCase()}">${k.toUpperCase()}</span></td><td class="r">${fmt(m.auc, 3)}</td><td class="r">${pct(m.flagged_share)}</td><td class="r"><b>${pct(m.precision)}</b></td><td class="r muted">${pct(m.base_rate)}</td></tr>`; })).join("");
+  renderFeeRows(); renderLab();
   if (stt) $("top").innerHTML = stt.top.map(x => `<tr><td class="w">${esc(x.id)} <span class="muted">${esc(x.name)}</span></td><td>${esc(x.instrument)}</td><td class="r">${x.trades}</td><td class="r ${cls(x.expectancy_r)}">${rr(x.expectancy_r, 3)}</td><td class="r ${cls(x.gross_expectancy_r)}">${rr(x.gross_expectancy_r, 3)}</td><td class="r">${pct(x.win_rate, 0)}</td><td class="r ${cls(x.test_expectancy_r)}">${rr(x.test_expectancy_r, 3)} (${x.test_trades ?? "–"})</td><td>${x.holm_significant ? "yes" : "no"}</td></tr>`).join("");
 }
+const SCEN = [["coinbase_retail", "Coinbase 1.20%"], ["kraken_retail", "Kraken 0.80%"], ["ndax", "NDAX 0.20%"], ["low_fee", "Low-fee 0.10%"]];
+function renderFeeRows() {
+  const fp = (RES && RES.fee_profiles) || [];
+  $("feeRows").innerHTML = fp.map(r => `<tr><td class="w">${esc(r.label)}</td><td class="r">${fmt(r.runs, 0)}</td><td class="r ${cls(r.none)}">${spct(r.none, 2)}</td><td class="r ${cls(r.gates)}">${spct(r.gates, 3)}</td><td class="r ${cls(r.brain)}"><b>${spct(r.brain, 3)}</b></td><td class="r">${pct(r.brain_positive, 0)}</td><td class="r">${fmt(r.brain_trades, 0)}</td><td class="r ${cls(r.brain_avg_r)}">${r.brain_avg_r != null ? rr(r.brain_avg_r, 3) : "–"}</td></tr>`).join("")
+    || '<tr><td colspan="8" class="empty">not included in this build</td></tr>';
+}
+function renderLab() {
+  const L = RES && RES.swing_lab;
+  if (!L) { $("labSub").textContent = "The swing lab is not included in this build."; return; }
+  $("labR").textContent = `test period: crypto from ${L.cuts.crypto[1]}, stocks from ${L.cuts.stock[1]}`;
+  $("labSub").innerHTML = `8 hourly setups, each tried with ${L.configs_per_setup} exit structures and entry types on 5.5 years of crypto and 3 years of stock data. The structure is chosen on the oldest data, must stay positive on the middle part, and is judged once on the most recent, untouched part. The train data picked the same shape almost everywhere: a <b>4×ATR stop, 2–3R target, up to 96 hours, limit (maker) entry</b>.`;
+  const cell = r => r ? `<td class="r ${cls(r.test)}">${r.survivor ? "★ " : ""}${rr(r.test, 3)} <span class="dim">(${r.test_n})</span></td>` : '<td class="r dim">–</td>';
+  $("labHead").innerHTML = `<tr><th>setup</th><th>market</th>${SCEN.map(([, n]) => `<th class="r">${n}</th>`).join("")}<th class="r">stocks (no commission)</th></tr>`;
+  const setups = [...new Set(L.rows.map(r => r.setup))], rows = [];
+  for (const g of ["majors", "memes", "stocks"]) for (const s of setups) {
+    const pick = sc => L.rows.find(r => r.group === g && r.setup === s && r.scenario === sc);
+    if (g === "stocks") { const r = pick("stock_commission_free"); if (!r) continue; rows.push(`<tr><td>${esc(s.replace(/_/g, " "))}</td><td>stocks</td>${SCEN.map(() => '<td class="r dim">–</td>').join("")}${cell(r)}</tr>`); }
+    else rows.push(`<tr><td>${esc(s.replace(/_/g, " "))}</td><td>${g === "majors" ? "BTC · ETH · SOL" : "memecoins"}</td>${SCEN.map(([sc]) => cell(pick(sc))).join("")}<td class="r dim">–</td></tr>`);
+  }
+  $("labRows").innerHTML = rows.join("");
+}
+let FEES = null;
+async function loadFees() {
+  try { FEES = await get("/api/fees"); } catch (e) { return; }
+  if (!RES) { try { RES = await get("/api/results"); } catch (e) { /* the list still works without results */ } }
+  renderFees();
+}
+function renderFees() {
+  if (!FEES) return;
+  const box = $("feeList"); if (box.contains(document.activeElement)) return;
+  const bt = {}; ((RES && RES.fee_profiles) || []).forEach(r => bt[r.profile] = r);
+  $("feeCur").textContent = "now: " + ((FEES.profiles.find(p => p.name === FEES.current) || {}).label || FEES.current);
+  box.innerHTML = FEES.profiles.map(p => { const r = bt[p.name];
+    return `<label class="chk"><input type="radio" name="fee" value="${esc(p.name)}" ${p.name === FEES.current ? "checked" : ""}><span><b>${esc(p.label)}</b>${r ? ` <span class="muted">· backtest with the brain: <span class="${cls(r.brain)}">${spct(r.brain, 3)}</span> per window, ${pct(r.brain_positive, 0)} of windows positive, ${fmt(r.brain_trades, 0)} trades</span>` : ""}</span></label>`; }).join("");
+}
+$("feeSave").onclick = async () => {
+  const v = (document.querySelector('input[name="fee"]:checked') || {}).value;
+  if (!v) return;
+  const j = await command("set_fee_profile", {profile: v}, true);
+  if (!j.error) toast(`Crypto fees now: ${((j.result || {}).label) || v}`, "ok");
+  document.activeElement && document.activeElement.blur();
+  loadFees();
+};
+
 function drawHist() {
   const sy = RES && RES.system; if (!sy || !sy.histogram || PAGE !== "results") return;
   const H = sy.histogram, c = $("hist"), [x, w, h] = fit(c); x.clearRect(0, 0, w, h);

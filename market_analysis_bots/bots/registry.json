@@ -3343,6 +3343,171 @@
    "stages": [
     "250"
    ]
+  },
+  {
+   "bot_id": "BOT-297",
+   "name": "Swing RSI(2) dip in an uptrend (4 ATR, 3R, 96h, limit entry) | BTC-USD",
+   "strategy_id": "STRAT-407",
+   "venue": "coinbase",
+   "instrument": "BTC-USD",
+   "enabled": true,
+   "stages": [
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-298",
+   "name": "Swing RSI(2) dip in an uptrend (4 ATR, 3R, 96h, limit entry) | ETH-USD",
+   "strategy_id": "STRAT-407",
+   "venue": "coinbase",
+   "instrument": "ETH-USD",
+   "enabled": true,
+   "stages": [
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-299",
+   "name": "Swing RSI(2) dip in an uptrend (4 ATR, 3R, 96h, limit entry) | SOL-USD",
+   "strategy_id": "STRAT-407",
+   "venue": "coinbase",
+   "instrument": "SOL-USD",
+   "enabled": true,
+   "stages": [
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-300",
+   "name": "Swing memecoin 24-hour breakout (4 ATR, 2R, 96h, limit entry) | DOGE-USD",
+   "strategy_id": "STRAT-408",
+   "venue": "coinbase",
+   "instrument": "DOGE-USD",
+   "enabled": true,
+   "stages": [
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-301",
+   "name": "Swing memecoin 24-hour breakout (4 ATR, 2R, 96h, limit entry) | SHIB-USD",
+   "strategy_id": "STRAT-408",
+   "venue": "coinbase",
+   "instrument": "SHIB-USD",
+   "enabled": true,
+   "stages": [
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-302",
+   "name": "Swing memecoin 24-hour breakout (4 ATR, 2R, 96h, limit entry) | PEPE-USD",
+   "strategy_id": "STRAT-408",
+   "venue": "coinbase",
+   "instrument": "PEPE-USD",
+   "enabled": true,
+   "stages": [
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-303",
+   "name": "Swing memecoin 24-hour breakout (4 ATR, 2R, 96h, limit entry) | BONK-USD",
+   "strategy_id": "STRAT-408",
+   "venue": "coinbase",
+   "instrument": "BONK-USD",
+   "enabled": true,
+   "stages": [
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-304",
+   "name": "Swing memecoin 24-hour breakout (4 ATR, 2R, 96h, limit entry) | WIF-USD",
+   "strategy_id": "STRAT-408",
+   "venue": "coinbase",
+   "instrument": "WIF-USD",
+   "enabled": true,
+   "stages": [
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-305",
+   "name": "Swing memecoin 24-hour breakout (4 ATR, 2R, 96h, limit entry) | FLOKI-USD",
+   "strategy_id": "STRAT-408",
+   "venue": "coinbase",
+   "instrument": "FLOKI-USD",
+   "enabled": true,
+   "stages": [
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-306",
+   "name": "Swing memecoin 48-hour breakout retest (4 ATR, 3R, 96h, limit entry) | DOGE-USD",
+   "strategy_id": "STRAT-409",
+   "venue": "coinbase",
+   "instrument": "DOGE-USD",
+   "enabled": true,
+   "stages": [
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-307",
+   "name": "Swing memecoin 48-hour breakout retest (4 ATR, 3R, 96h, limit entry) | SHIB-USD",
+   "strategy_id": "STRAT-409",
+   "venue": "coinbase",
+   "instrument": "SHIB-USD",
+   "enabled": true,
+   "stages": [
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-308",
+   "name": "Swing memecoin 48-hour breakout retest (4 ATR, 3R, 96h, limit entry) | PEPE-USD",
+   "strategy_id": "STRAT-409",
+   "venue": "coinbase",
+   "instrument": "PEPE-USD",
+   "enabled": true,
+   "stages": [
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-309",
+   "name": "Swing memecoin 48-hour breakout retest (4 ATR, 3R, 96h, limit entry) | BONK-USD",
+   "strategy_id": "STRAT-409",
+   "venue": "coinbase",
+   "instrument": "BONK-USD",
+   "enabled": true,
+   "stages": [
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-310",
+   "name": "Swing memecoin 48-hour breakout retest (4 ATR, 3R, 96h, limit entry) | WIF-USD",
+   "strategy_id": "STRAT-409",
+   "venue": "coinbase",
+   "instrument": "WIF-USD",
+   "enabled": true,
+   "stages": [
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-311",
+   "name": "Swing memecoin 48-hour breakout retest (4 ATR, 3R, 96h, limit entry) | FLOKI-USD",
+   "strategy_id": "STRAT-409",
+   "venue": "coinbase",
+   "instrument": "FLOKI-USD",
+   "enabled": true,
+   "stages": [
+    "250"
+   ]
   }
  ]
 }

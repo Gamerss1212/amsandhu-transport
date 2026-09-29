@@ -69,6 +69,8 @@ def main() -> int:
     check("strategy test results load", bool(res.get("strategies")) and res["strategies"]["runs"] > 0, res.get("strategies_error", ""))
     check("full-system backtest results load", bool(res.get("system")) and res["system"]["runs"] >= 500)
     check("volatility gate accuracy loads", bool(res.get("volgate")) and "crypto" in res["volgate"])
+    check("swing lab results load", bool(res.get("swing_lab")) and len(res["swing_lab"]["rows"]) > 50)
+    check("fee-level comparison loads", len(res.get("fee_profiles") or []) >= 2)
     from mab import secrets_store
     check("secret store available", bool(secrets_store.backend_name()), secrets_store.backend_name())
 
@@ -135,6 +137,13 @@ def main() -> int:
     check("add paper money", j.get("status") == "done" and abs(j["account"]["equity"] - 30000) < 1e-6, str(j))
     code, j = req("/api/command", {"command": "set_balance", "args": {"amount": -5}})
     check("a negative amount is refused", "error" in j)
+    code, fees = req("/api/fees")
+    check("fee profiles listed, each bot's own exchange by default", code == 200 and fees["current"] == "venue"
+          and {"ndax", "kraken", "low_fee"} <= {p["name"] for p in fees["profiles"]})
+    code, j = req("/api/command", {"command": "set_fee_profile", "args": {"profile": "ndax"}})
+    check("choose NDAX fees while stopped", j.get("status") == "done" and req("/api/fees")[1]["current"] == "ndax", str(j))
+    code, j = req("/api/command", {"command": "set_fee_profile", "args": {"profile": "free"}})
+    check("unknown fee profiles are refused", "error" in j)
     code, j = req("/api/broker/save", {"name": "kraken", "key": "", "secret": ""})
     check("a broker needs a key and a secret", code == 400 and "required" in j.get("error", ""))
     code, j = req("/api/broker/save", {"name": "nope", "key": "a", "secret": "b"})

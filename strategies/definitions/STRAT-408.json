@@ -1,0 +1,71 @@
+{
+ "id": "STRAT-408",
+ "key": "swing_meme_breakout",
+ "name": "Swing memecoin 24-hour breakout (4 ATR, 2R, 96h, limit entry)",
+ "family": "swing",
+ "subfamily": "hourly breakout",
+ "hypothesis": "On hourly bars, buy with a limit 0.1% under the close when the close is above the prior 24-hour high and above the 200-hour EMA; stop 4 ATR(14) below the fill, target 2R, exit after 96 bars.",
+ "markets": [
+  "crypto"
+ ],
+ "timeframe": "1h",
+ "data": [
+  "bars"
+ ],
+ "definition": {
+  "name": "Swing memecoin 24-hour breakout (4 ATR, 2R, 96h, limit entry)",
+  "family": "swing",
+  "timeframe": "1h",
+  "direction": "long",
+  "params": {},
+  "entry": {
+   "long": "close > highest(high,24)[1] and close > ema(close,200)"
+  },
+  "filters": [],
+  "order": {
+   "type": "limit",
+   "long": "close * 0.999",
+   "ttl_bars": 3
+  },
+  "stop": {
+   "type": "atr",
+   "mult": 4.0,
+   "n": 14
+  },
+  "target": {
+   "type": "r",
+   "r": 2.0
+  },
+  "trail": {
+   "type": "none"
+  },
+  "exit": {},
+  "max_bars": 96,
+  "session": {
+   "hold_overnight": true
+  },
+  "max_trades_per_day": 3,
+  "cooldown_bars": 0,
+  "sizing": {
+   "risk_pct": 0.5,
+   "max_notional_pct": 100.0
+  },
+  "data": [
+   "bars"
+  ],
+  "id": "STRAT-408",
+  "version": "1.0.0"
+ },
+ "spec": null,
+ "implementation_status": "implemented",
+ "blocked_reason": null,
+ "research_status": "hypothesis",
+ "evidence": [
+  {
+   "source": "SRC-090",
+   "relation": "mechanism",
+   "note": "channel breakouts (Donchian)"
+  }
+ ],
+ "variants": []
+}

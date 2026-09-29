@@ -163,6 +163,13 @@
         <table><thead><tr><th>market</th><th>forecast</th><th class="r">AUC</th><th class="r">hours flagged</th><th class="r">right when flagged</th><th class="r">base rate</th></tr></thead><tbody id="vg"></tbody></table>
         <div class="tiny muted" style="margin-top:8px">AUC 0.5 = coin flip. The gate predicts how much a market will move, never which way.</div></section>
     </div>
+    <section class="p"><div class="h"><span class="o"></span>The same system at each exchange's fees</div>
+      <div class="sub">Same bots, same windows, same brain; only the crypto fees change. This is the single biggest lever in the software.</div>
+      <div class="scroll"><table><thead><tr><th>crypto fees</th><th class="r">runs</th><th class="r">no brain</th><th class="r">gates only</th><th class="r">full brain</th><th class="r">brain windows +</th><th class="r">brain trades / window</th><th class="r">brain avg R</th></tr></thead><tbody id="feeRows"></tbody></table></div></section>
+    <section class="p"><div class="h"><span class="o"></span>Swing lab · what survives costs (5.5 years hourly)<span class="r" id="labR"></span></div>
+      <div class="sub" id="labSub"></div>
+      <div class="scroll tall"><table><thead id="labHead"></thead><tbody id="labRows"></tbody></table></div>
+      <div class="tiny muted" style="margin-top:8px">Each cell: result per trade after costs on the untouched test period (number of trades). ★ = positive on validation and test (a survivor); none passed the Holm correction. Structure chosen on train data only.</div></section>
     <section class="p"><div class="h"><span class="o"></span>Best 15 strategy runs at realistic costs</div>
       <div class="scroll"><table><thead><tr><th>strategy</th><th>market</th><th class="r">trades</th><th class="r">R / trade</th><th class="r">gross R</th><th class="r">win %</th><th class="r">test R (trades)</th><th>significant</th></tr></thead><tbody id="top"></tbody></table></div></section>
   </section>
@@ -200,6 +207,10 @@
           <div class="tiny muted">Pause: no new entries; open trades keep their stops and exits. Emergency stop: closes every paper position, blocks new trades and disarms real money until cleared.</div>
         </div></section>
     </div>
+    <section class="p pink" id="feeBox"><div class="h"><span class="o"></span>Your exchange's fees<span class="r" id="feeCur"></span></div>
+      <div class="sub">Fees decide most results. Choose the exchange you actually trade crypto on: paper fills, the brain's cost gate and its starting knowledge then use that exchange's fees. Stocks stay commission-free. Next to each choice: the whole-system backtest at that fee level (average per 10-day window with the brain, and the share of windows that made money).</div>
+      <div id="feeList" class="gap10"></div>
+      <div class="flex" style="margin-top:10px"><button class="hot" id="feeSave">Use these fees</button><span class="tiny muted">Takes effect at once; the bots keep their open trades.</span></div></section>
     <div class="row c3">
       <section class="p"><div class="h"><span class="o"></span>System health</div><div class="kv" id="sys"></div></section>
       <section class="p"><div class="h"><span class="o"></span>Market data feeds</div><div class="scroll"><table><thead><tr><th>series</th><th>status</th><th>bars</th><th>bots</th></tr></thead><tbody id="series"></tbody></table></div></section>

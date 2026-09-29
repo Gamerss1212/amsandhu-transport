@@ -25,7 +25,7 @@ from urllib.parse import parse_qs, urlparse
 from mab.storage import Storage
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-ALLOWED_COMMANDS = {"live_status", "live_eligibility", "live_arm", "live_disarm", "live_close_all", "pause", "resume", "emergency_stop", "clear_emergency", "deposit", "withdraw", "set_balance",
+ALLOWED_COMMANDS = {"set_fee_profile", "live_status", "live_eligibility", "live_arm", "live_disarm", "live_close_all", "pause", "resume", "emergency_stop", "clear_emergency", "deposit", "withdraw", "set_balance",
                     "enable_bot", "disable_bot", "test_order"}
 
 

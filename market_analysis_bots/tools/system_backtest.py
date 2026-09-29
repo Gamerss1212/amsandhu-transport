@@ -29,12 +29,14 @@ from mab.clock import DAY, tf_ms  # noqa: E402
 from mab.frame import Frame  # noqa: E402
 from mab.models import Bar  # noqa: E402
 from mab.volgate import VolGate  # noqa: E402
+from mab.costs import FEE_PROFILES  # noqa: E402
 
 EXTRA_CRYPTO = ["XRP-USD", "LINK-USD", "AVAX-USD", "LTC-USD"]
 EXTRA_STOCKS = ["MSFT", "AMZN", "AMD", "META", "COIN", "SHOP.TO", "RY.TO"]
 DATA_MAP = {("kraken", "XXBTZUSD"): ("coinbase", "BTC-USD"), ("kraken", "XETHZUSD"): ("coinbase", "ETH-USD"),
             ("okx", "BTC-USDT"): ("coinbase", "BTC-USD"), ("okx", "ETH-USDT"): ("coinbase", "ETH-USD")}
 DATA, FRAMES, HOURLY = {}, {}, {}
+PROFILE = {"name": "venue"}
 
 
 def load_data(cache):
@@ -110,8 +112,9 @@ def resolver(venue, sym, tf):
     return frame(venue, sym, tf)
 
 
-def init(cache):
+def init(cache, profile="venue"):
     DATA.update(load_data(cache))
+    PROFILE["name"] = profile
 
 
 def work(job):
@@ -129,14 +132,18 @@ def work(job):
         c = compile_strategy(definition, bot.get("params") or {}, asset)
         rs = eval_rules(c, f, resolver, load_events({}))
         can_short = asset == "stock" or inst.endswith("SWAP")
-        res = backtest.run(c, f, venue, cost_mult=1.0, rs=rs, can_short=can_short)
+        fees = FEE_PROFILES[PROFILE["name"]] if asset == "crypto" else None
+        res = backtest.run(c, f, venue, cost_mult=1.0, rs=rs, can_short=can_short, fees=fees)
         filler = backtest.filler_for(venue, inst, f.asset_type, 1.0, 0.0)
+        filler.cm.fees = fees
         key = (dv, ds)
         if key not in HOURLY:
             base = frame(dv, ds, "5m") or f
             HOURLY[key] = SB.hourly_from(base)
-        bkey = bot["strategy_id"] + ("@low" if venue == "okx" else "")
-        cands = SB.candidates_for(res, f, bkey, bot["bot_id"], inst, venue, family, filler, VolGate(), HOURLY[key])
+        from mab.brain import fee_key
+        bkey = bot["strategy_id"] + fee_key(filler.fee(1.0, "taker"), asset == "stock")
+        cands = SB.candidates_for(res, f, bkey, bot["bot_id"], inst, venue, family, filler, VolGate(), HOURLY[key],
+                                  limit_entry=(definition.get("order") or {}).get("type") == "limit")
         span = f.t[-1] - f.t[0]
         cutoff = f.t[0] + int(span * 0.6) + DAY                       # after the training segment + embargo
         return {"bot": bot["bot_id"], "cands": [x.to_dict() for x in cands if x.t_in >= cutoff],
@@ -172,9 +179,11 @@ def main():
     ap.add_argument("--window-days", type=int, default=10)
     ap.add_argument("--bots-per-run", type=int, default=60)
     ap.add_argument("--workers", type=int, default=4)
+    ap.add_argument("--fee-profile", default="venue", choices=sorted(FEE_PROFILES))
+    ap.add_argument("--out-suffix", default="")
     a = ap.parse_args()
     t0 = time.time()
-    init(a.cache)
+    init(a.cache, a.fee_profile)
     with open(os.path.join(ROOT, "bots", "registry.json")) as fh:
         bots = json.load(fh)["bots"]
     with open(os.path.join(STRAT, "catalog.json")) as fh:
@@ -182,7 +191,7 @@ def main():
     jobs = [(b, cat[b["strategy_id"]]["definition"], cat[b["strategy_id"]]["family"]) for b in bots
             if cat.get(b["strategy_id"], {}).get("definition") and not (set(cat[b["strategy_id"]]["data"]) & {"trades", "book"})]
     print(f"{len(jobs)} bots to backtest for candidates", flush=True)
-    with Pool(a.workers, initializer=init, initargs=(a.cache,)) as pool:
+    with Pool(a.workers, initializer=init, initargs=(a.cache, a.fee_profile)) as pool:
         res = pool.map(work, jobs, chunksize=2)
     errors = [r for r in res if r.get("error")]
     cands = [SB.Candidate(**c) for r in res if not r.get("error") for c in r["cands"]]
@@ -193,7 +202,7 @@ def main():
     t_end = max(r["end"] for r in res if not r.get("error"))
     families = {sid: s["family"] for sid, s in cat.items()}
     ev = os.path.join(STRAT, "results", "evaluation_summary.json")
-    priors = ev if os.path.exists(ev) else ev + ".gz"
+    priors = [ev if os.path.exists(ev) else ev + ".gz", os.path.join(STRAT, "results", "swing_eval.json")]
     runs = SB.sample_runs(cands, usable, t_start, t_end, a.runs, a.window_days, a.bots_per_run, priors, families)
     rng = random.Random(7)
     arms = ("none", "gates", "brain")
@@ -221,13 +230,52 @@ def main():
            "arms": agg, "paired": cmp_, "vetoes_total": veto,
            "vetoed_trades_avg_r": {k: {"trades": v[0], "avg_r": v[1] / v[0] if v[0] else None} for k, v in shadow.items()},
            "errors": [{"bot": e["bot"], "error": e["error"]} for e in errors], "minutes": round((time.time() - t0) / 60, 1),
-           "per_run": runs}
+           "per_run": runs, "fee_profile": a.fee_profile}
     os.makedirs(os.path.join(ROOT, "results"), exist_ok=True)
-    with open(os.path.join(ROOT, "results", "system_backtest.json"), "w") as fh:
-        json.dump(out, fh, default=str)
-    write_report(out)
-    write_summary(out)
-    print(json.dumps({k: out[k] for k in ("runs", "simulations", "candidates", "minutes")}, indent=1))
+    if a.fee_profile == "venue":
+        with open(os.path.join(ROOT, "results", "system_backtest.json"), "w") as fh:
+            json.dump(out, fh, default=str)
+        write_report(out)
+        write_summary(out)
+    else:
+        with open(os.path.join(ROOT, "results", f"system_backtest_{a.fee_profile}.json"), "w") as fh:
+            json.dump(out, fh, default=str)
+    record_profile(out)
+    print(json.dumps({k: out[k] for k in ("runs", "simulations", "candidates", "minutes", "fee_profile")}, indent=1))
+
+
+def record_profile(o):
+    """results/system_backtest_profiles.json and docs/FEE_PROFILES.md: the same system at each exchange's fees."""
+    path = os.path.join(ROOT, "results", "system_backtest_profiles.json")
+    allp = {}
+    if os.path.exists(path):
+        with open(path) as fh:
+            allp = json.load(fh)
+    allp[o["fee_profile"]] = {k: o[k] for k in ("generated", "runs", "window_days", "bots_per_run", "candidates", "period",
+                                                "arms", "paired", "vetoed_trades_avg_r")}
+    with open(path, "w") as fh:
+        json.dump(allp, fh, default=str)
+    from mab.costs import FEE_PROFILE_LABELS
+    L = ["# The whole system at each exchange's fees\n",
+         "Same bots, same windows, same brain; only the crypto fees change (stocks are commission-free in every row). "
+         "Each row is a full-system backtest (`tools/system_backtest.py --fee-profile NAME`); mean return per window "
+         "and share of windows that made money.\n",
+         "| Crypto fees | Runs | No brain | Gates only | Full brain | Brain windows positive | Brain trades per window | Brain avg R |",
+         "|---|---|---|---|---|---|---|---|"]
+    for name in ("venue", "coinbase", "kraken", "ndax", "low_fee"):
+        p = allp.get(name)
+        if not p:
+            continue
+        A = p["arms"]
+        L.append(f"| {FEE_PROFILE_LABELS[name]} | {p['runs']:,} | {pct(A['none']['return']['mean'], 3)} | "
+                 f"{pct(A['gates']['return']['mean'], 3)} | **{pct(A['brain']['return']['mean'], 3)}** | "
+                 f"{100 * A['brain']['return']['share_positive']:.0f}% | {A['brain']['trades']['mean']:.0f} | "
+                 + (f"{A['brain']['avg_r']['mean']:+.3f}" if A['brain']['avg_r'] else "-") + " |")
+    L.append("\nWindows are drawn after the training segment of each dataset; the brain starts from the training "
+             "segment only. A fee level with more trades and a higher brain return is one where the bots' edges survive "
+             "costs more often; it is not a forecast.\n")
+    with open(os.path.join(ROOT, "docs", "FEE_PROFILES.md"), "w") as fh:
+        fh.write("\n".join(L))
 
 
 def write_summary(o, bins=24):

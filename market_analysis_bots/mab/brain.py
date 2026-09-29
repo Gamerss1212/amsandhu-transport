@@ -68,6 +68,21 @@ PRIOR_CAP = 25.0             # at most this many pseudo-trades from history
 R_VAR = 1.0                  # assumed variance of per-trade R before data says otherwise
 SHRINK = 6.0                 # pseudo-trades pulling each level toward its parent level
 LOW_FEE = "@low"             # brain key suffix for bots on a low-fee venue (their costs differ, so do their results)
+MID_FEE = "@mid"             # ... on an exchange charging about 0.20% (NDAX-level)
+# net R is linear in the fee for the same trades, so mid-fee priors are interpolated between the measured
+# retail (0.80% taker) and low-fee (0.10%) runs of the same strategy and market
+MID_WEIGHT = (0.0020 - 0.0010) / (0.0080 - 0.0010)
+
+
+def fee_key(taker_fee: float, stock: bool = False) -> str:
+    """Brain key suffix for a bot paying this taker fee."""
+    if stock:
+        return ""
+    if taker_fee <= 0.0012:
+        return LOW_FEE
+    if taker_fee <= 0.0030:
+        return MID_FEE
+    return ""
 SHADOW_WEIGHT = 0.5          # a shadow (vetoed, simulated) trade counts as half a real one
 STACK0 = [0.0, 1.0, 1.0]     # stacking weights at start: base, history estimate, context model
 REGIME_TEXT = {"with": "trading with the trend", "against": "trading against the trend", "range": "the market is sideways"}
@@ -141,7 +156,7 @@ class FleetBrain:
         self.connected: set = set()
 
     # ------------------------------------------------------------------ priors from the batch evaluation
-    def load_priors(self, path: str, segment: str = "full") -> int:
+    def load_priors(self, path: str, segment: str = "full", add: bool = False) -> int:
         """Priors from the batch evaluation. segment="train" uses only the first 60% of each dataset
         (the system backtest does, so the brain never starts with knowledge of the period it is tested on)."""
         if not path or not os.path.exists(path):
@@ -168,8 +183,27 @@ class FleetBrain:
                     for x in rows:
                         self._set_prior(f"SI:{key}|{x['instrument']}",
                                         max(-R_CLIP, min(R_CLIP, x[segment]["expectancy_r"] or 0)), x[segment]["trades"])
+                # mid fees: interpolate each market's retail and low-fee results; stock rows as they are
+                runs = [x for x in s.get("runs", []) if (x.get(segment) or {}).get("trades")]
+                by = {}
+                for x in runs:
+                    by.setdefault(x["instrument"], {})[x.get("cost")] = x[segment]
+                mids = []
+                for inst, d in by.items():
+                    if "retail_kraken" in d and "low_fee_venue" in d:
+                        lo, hi = d["low_fee_venue"], d["retail_kraken"]
+                        e = (lo["expectancy_r"] or 0) + ((hi["expectancy_r"] or 0) - (lo["expectancy_r"] or 0)) * MID_WEIGHT
+                        mids.append((inst, e, min(lo["trades"], hi["trades"])))
+                    elif "base" in d:
+                        mids.append((inst, d["base"]["expectancy_r"] or 0, d["base"]["trades"]))
+                if mids:
+                    key = sid + MID_FEE
+                    tot = sum(m[2] for m in mids)
+                    self._set_prior(f"S:{key}", sum(max(-R_CLIP, min(R_CLIP, m[1])) * m[2] for m in mids) / tot, tot)
+                    for inst, e, k in mids:
+                        self._set_prior(f"SI:{key}|{inst}", max(-R_CLIP, min(R_CLIP, e)), k)
                 n += 1
-            self.stats["prior_strategies"] = n
+            self.stats["prior_strategies"] = n + (self.stats.get("prior_strategies", 0) if add else 0)
         return n
 
     def _set_prior(self, key, mean, trades):

@@ -64,6 +64,7 @@ class PaperBroker(BrokerAdapter):
         self.latency_ms = latency_ms
         self.max_slip = max_slippage_bps / 1e4
         self.depth = depth
+        self.fee_profile = None             # mab.costs.FEE_PROFILES entry applied to crypto fills (None = venue fees)
         self.stats = {"orders": 0, "filled": 0, "partial": 0, "rejected": 0, "book_walks": 0, "synthetic": 0}
 
     # ------------------------------------------------------------------ helpers
@@ -79,6 +80,8 @@ class PaperBroker(BrokerAdapter):
         return qty
 
     def fee_rate(self, venue: str, liquidity: str = "taker") -> float:
+        if self.fee_profile and venue != "yahoo":
+            return self.fee_profile[liquidity]
         return FEES.get(venue, FEES["kraken"])[liquidity]
 
     # ------------------------------------------------------------------ execute

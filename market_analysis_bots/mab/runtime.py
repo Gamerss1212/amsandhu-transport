@@ -34,12 +34,12 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from mab import __version__
 from mab.account import Account
-from mab.brain import LOW_FEE, FleetBrain
+from mab.brain import FleetBrain, fee_key
 from mab.volgate import HORIZON as GATE_HORIZON, Bars as GateBars, VolGate
 from mab import broker_setup
 from mab.live import LiveExecutor
 from mab.broker import PaperBroker
-from mab.costs import BacktestFiller, CostModel, tier_for
+from mab.costs import FEE_PROFILE_LABELS, FEE_PROFILES, FEES, BacktestFiller, CostModel, round_trip, tier_for
 from mab.data.hub import Hub
 from mab.expr import Events
 from mab.instruments import InstrumentRegistry
@@ -51,7 +51,6 @@ from mab.strategy import Compiled, TradeManager, compile_strategy, evaluate, exp
 
 log = logging.getLogger("mab.runtime")
 
-LOW_FEE_VENUES = ("okx",)       # taker fee 0.10% (vs 0.80% Kraken retail, 1.20% Coinbase retail)
 
 BOT_STATES = ("running", "warming", "idle_no_signal", "data_unavailable", "degraded", "stopped", "disabled", "paused")
 
@@ -156,12 +155,18 @@ class Fleet:
                        on_bars=self._on_bars)
         p = config.get("paper", {})
         self.broker = PaperBroker(self.hub, self.account, p.get("latency_ms", 150), p.get("max_slippage_bps", 50))
+        self.fee_profile = self.storage.kv_get("fee_profile", "venue") or "venue"
+        if self.fee_profile not in FEE_PROFILES:
+            self.fee_profile = "venue"
+        self.broker.fee_profile = FEE_PROFILES[self.fee_profile]
         self.events = load_events(config)
         bcfg = config.get("brain", {})
         self.brain = FleetBrain(mode=bcfg.get("mode", "active"))
         try:
             pri = bcfg.get("priors") or _default_priors(config)
             self.brain.load_priors(pri)
+            if pri and not bcfg.get("priors"):                # the swing strategies' own evaluation, same format
+                self.brain.load_priors(os.path.join(os.path.dirname(pri), "swing_eval.json"), add=True)
         except Exception as e:                      # a missing or unreadable priors file only means "start blank"
             log.warning("brain priors not loaded: %s", e)
         self.brain.restore(self.storage.kv_get("brain", {}))
@@ -220,6 +225,7 @@ class Fleet:
         c = compile_strategy(definition, {k: v for k, v in params.items() if k in (d.get("params") or {})},
                              inst["asset_type"])
         br = BotRunner(b, c, inst, self.account)
+        br.filler.cm.fees = FEE_PROFILES[self.fee_profile]
         if saved and not saved.get("corrupt"):
             try:
                 br.tm.restore(saved.get("tm", {}))
@@ -560,6 +566,10 @@ class Fleet:
                     with (gzip.open(p, "rt") if p.endswith(".gz") else open(p)) as fh:
                         self._evaluation = json.load(fh).get("strategies", {})
                     break
+            sw = os.path.join(os.path.dirname(path), "swing_eval.json") if path else ""
+            if sw and os.path.exists(sw):
+                with open(sw) as fh:
+                    self._evaluation.update(json.load(fh).get("strategies", {}))
         return (self._evaluation.get(sid) or {}).get("runs", [])
 
     def _live_eligible(self, bot_id: str) -> tuple:
@@ -717,10 +727,11 @@ class Fleet:
 
     @staticmethod
     def _cost_r(br: BotRunner, ref: float, stop: Optional[float]) -> Optional[float]:
-        """Round-trip costs (two taker fees plus two slippages) as a fraction of the trade's risk."""
+        """Round-trip costs as a fraction of the trade's risk (a limit entry pays the maker fee; see costs.round_trip)."""
         if not stop or not ref or ref == stop:
             return None
-        return (2 * br.filler.fee(1.0, "taker") + 2 * br.filler.cm.slip) * ref / abs(ref - stop)
+        limit = ((br.c.definition or {}).get("order") or {}).get("type") == "limit"
+        return round_trip(br.filler, limit) * ref / abs(ref - stop)
 
     @staticmethod
     def _gate_asset(br: BotRunner) -> str:
@@ -761,8 +772,24 @@ class Fleet:
 
     @staticmethod
     def _bkey(br: BotRunner) -> str:
-        """The brain judges a strategy separately on low-fee venues, where its costs and results differ."""
-        return br.c.id + (LOW_FEE if br.venue in LOW_FEE_VENUES else "")
+        """The brain judges a strategy separately at each fee level (retail, about 0.20%, low-fee): costs decide
+        most results. The level follows the fees the bot actually pays (its venue, or the fee profile)."""
+        f = getattr(br, "filler", None)
+        taker = f.fee(1.0, "taker") if f is not None else FEES.get(br.venue, FEES["kraken"])["taker"]
+        return br.c.id + fee_key(taker, br.venue == "yahoo")
+
+    def set_fee_profile(self, name: str) -> dict:
+        if name not in FEE_PROFILES:
+            raise ValueError(f"unknown fee profile {name!r}; choose one of {', '.join(FEE_PROFILES)}")
+        with self.lock:
+            self.fee_profile = name
+            self.broker.fee_profile = FEE_PROFILES[name]
+            for br in self.bots.values():
+                br.filler.cm.fees = FEE_PROFILES[name]
+                self.brain.connect(br.id, self._bkey(br), br.c.definition.get("family"), br.c.definition.get("name"), br.symbol)
+            self.storage.kv_set("fee_profile", name)
+        self._event("info", "fee_profile", f"crypto fees now: {FEE_PROFILE_LABELS[name]}")
+        return {"profile": name, "label": FEE_PROFILE_LABELS[name]}
 
     def _trade_closed(self, br: BotRunner, trade):
         for text in self.brain.learn(br.id, self._bkey(br), br.symbol, trade.r):
@@ -820,6 +847,8 @@ class Fleet:
             self._event("info", "cash_flow", f"{command} {amt:,.2f}: equity {rec['equity_before']:,.2f} -> "
                                              f"{rec['equity_after']:,.2f}")
             return rec
+        if command == "set_fee_profile":
+            return self.set_fee_profile(str(args.get("profile") or ""))
         if command == "live_status":
             st = self.live.status()
             st["eligibility"] = {b: dict(zip(("eligible", "why"), self._live_eligible(b))) for b in

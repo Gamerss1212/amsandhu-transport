@@ -58,10 +58,12 @@ def session_days(frame: Frame, i0: int, i1: int) -> List[str]:
 def run(c: Compiled, frame: Frame, venue: str = None, capital: float = 10_000.0, cost_mult: float = 1.0,
         start: Optional[int] = None, end: Optional[int] = None, period: str = "full", resolver=None, events=None,
         rs: Optional[RuleSeries] = None, lot_size: float = 0.0, min_notional: float = 0.0,
-        can_short: bool = True, tick: float = 0.0) -> Result:
+        can_short: bool = True, tick: float = 0.0, fees: Optional[dict] = None) -> Result:
+    """fees: a mab.costs.FEE_PROFILES entry overriding the venue's crypto fees."""
     t0 = time.time()
     venue = venue or frame.venue
     filler = filler_for(venue, frame.instrument, frame.asset_type, cost_mult, tick)
+    filler.cm.fees = fees
     rs = rs or evaluate(c, frame, resolver, events)
     tm = TradeManager(c, filler, lambda: capital, lot_size, min_notional, can_short, frame.instrument)
     i0 = 0 if start is None else next((i for i, t in enumerate(frame.t) if t >= start), frame.n)
