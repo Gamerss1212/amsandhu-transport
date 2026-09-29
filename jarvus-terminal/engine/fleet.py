@@ -1,12 +1,14 @@
-"""Bridge between Jarvus Terminal and the market-analysis bot platform (package `mab`).
+"""Bridge between the Jarvus window and the bot fleet (package `mab`).
 
-* Library: the strategy catalog (strategies/catalog.json) with statuses, rules, sources and
-  measured results, served to the Library tab.
-* Fleet: starts the bot fleet in its own process (so its work never slows the Jarvus window),
-  with its dashboard on http://127.0.0.1:8765, and sends it commands (pause, resume, emergency
-  stop, balance changes, stop) through the fleet's control queue.
+* Fleet: runs the bots in their own process (so their work never slows the window), starts them
+  by itself (autopilot) and restarts them if they stop; commands (pause, resume, emergency stop,
+  balance changes, enable/disable a bot, live-money controls) go through the fleet's control queue.
+* Library and results: the strategy catalog and every measured result, served to the app.
+* Brokers: API keys are saved to the encrypted secret store and tested here; the app never gets
+  them back.
 
-Paper trading only. The fleet process has no code path that can place a real order.
+Money: paper by default. Real-money orders exist only in mab.live, which stays off until the owner
+arms it in the app (a tested broker, limits, and the typed acknowledgement).
 """
 
 from __future__ import annotations
@@ -209,9 +211,12 @@ def _money_offline(cmd: str, amount: float) -> dict:
     return {"status": "done", "result": rec, "account": acc.summary()}
 
 
+COMMANDS = {"pause", "resume", "emergency_stop", "clear_emergency", "set_balance", "deposit", "withdraw", "stop",
+            "enable_bot", "disable_bot", "live_status", "live_eligibility", "live_arm", "live_disarm", "live_close_all"}
+
+
 def command(cmd: str, args: dict = None, wait: float = 6.0) -> dict:
-    allowed = {"pause", "resume", "emergency_stop", "clear_emergency", "set_balance", "deposit", "withdraw", "stop"}
-    if cmd not in allowed:
+    if cmd not in COMMANDS:
         return {"error": "command not allowed"}
     if cmd in ("set_balance", "deposit", "withdraw"):
         try:
@@ -222,6 +227,10 @@ def command(cmd: str, args: dict = None, wait: float = 6.0) -> dict:
             return {"error": "the amount must be more than 0"}
         if not running():
             return _money_offline(cmd, amount)
+    if cmd == "live_disarm" and not running():
+        return {"status": "done", "result": _live_offline().disarm((args or {}).get("reason") or "owner")}
+    if cmd.startswith("live_") and not running():
+        return {"error": "start the bots first: live trading runs inside the fleet"}
     if not os.path.exists(os.path.join(HOME, "data", "mab.db")):
         return {"error": "the fleet has not been started yet"}
     st = _storage()
@@ -276,6 +285,117 @@ def status() -> dict:
             if acct:
                 from mab.account import Account
                 out["account"] = Account.from_state(acct).summary()
+            out["live_armed"] = bool((st.kv_get("live", {}) or {}).get("armed"))
         except Exception as e:                                          # noqa: BLE001
             out["error"] = str(e)
+    return out
+
+
+# ------------------------------------------------------------------ brokers and real money
+def _db_storage():
+    os.makedirs(os.path.join(HOME, "data"), exist_ok=True)
+    return _storage()
+
+
+def _live_offline():
+    from mab.live import LiveExecutor
+    return LiveExecutor(_db_storage(), None)
+
+
+def brokers() -> dict:
+    from mab import broker_setup
+    return broker_setup.public(_db_storage())
+
+
+def broker_save(name: str, key: str, secret: str, options: dict = None) -> dict:
+    from mab import broker_setup
+    return broker_setup.save(_db_storage(), name, key, secret, options)
+
+
+def broker_test(name: str) -> dict:
+    from mab import broker_setup
+    return broker_setup.test(_db_storage(), name)
+
+
+def broker_remove(name: str) -> dict:
+    from mab import broker_setup
+    st = _db_storage()
+    cfg = st.kv_get("live", {}) or {}
+    if cfg.get("armed") and cfg.get("broker") == name:
+        raise ValueError("disarm live trading before removing the broker it uses")
+    return broker_setup.remove(st, name)
+
+
+def live() -> dict:
+    """Live-money status from the state the fleet saves on every change (no command round trip)."""
+    ex = _live_offline()
+    out = ex.status()
+    out["armed"] = bool(ex.cfg.get("armed"))              # the saved switch; the fleet holds the broker itself
+    out["fleet_running"] = running()
+    return out
+
+
+# ------------------------------------------------------------------ results (what was measured)
+_results = None
+
+
+def results() -> dict:
+    """Digest of every measurement shipped with this build: strategy runs, full-system runs, volatility gate."""
+    global _results
+    if _results is not None:
+        return _results
+    import gzip
+    import statistics
+    out = {"strategies": None, "system": None, "volgate": None}
+    ev_path = os.path.join(PAYLOAD, "strategies", "results", "evaluation_summary.json")
+    try:
+        if os.path.exists(ev_path):
+            with open(ev_path, encoding="utf-8") as fh:
+                ev = json.load(fh)
+        else:
+            with gzip.open(ev_path + ".gz", "rt", encoding="utf-8") as fh:
+                ev = json.load(fh)
+        runs = [(sid, x) for sid, s in ev["strategies"].items() for x in s["runs"]]
+
+        def prof(xs, n=0):
+            return sum(1 for x in xs if (x["full"]["expectancy_r"] or -1) > 0 and (x["full"]["trades"] or 0) >= n)
+        by = {c: [x for _, x in runs if x["cost"] == c] for c in ("retail_kraken", "low_fee_venue", "base")}
+        cands = [x for _, x in runs if x.get("candidate")]
+        tv = [x["test"]["expectancy_r"] for x in cands if x["test"]["expectancy_r"] is not None]
+        fv = [x["full"]["expectancy_r"] for x in cands if x["full"]["expectancy_r"] is not None]
+        out["strategies"] = {
+            "generated": ev.get("generated"), "strategies": len(ev["strategies"]),
+            "pairs": len({(sid, x["instrument"]) for sid, x in runs}), "runs": len(runs), "backtests": len(runs) * 8,
+            "tests": ev.get("hypothesis_tests"), "holm": ev.get("holm_significant"),
+            "dsr": ev.get("deflated_sharpe_best_validation"),
+            "crypto_retail": [prof(by["retail_kraken"]), len(by["retail_kraken"])],
+            "crypto_low_fee": [prof(by["low_fee_venue"]), len(by["low_fee_venue"])],
+            "stocks": [prof(by["base"], 20), len(by["base"])],
+            "gross_positive": sum(1 for _, x in runs if x["cost"] in ("retail_kraken", "base")
+                                  and ((x.get("gross_full") or {}).get("expectancy_r") or -1) > 0),
+            "candidates": len(cands), "candidate_strategies": len({s for s, x in runs if x.get("candidate")}),
+            "candidates_test_positive": sum(1 for v in tv if v > 0),
+            "candidates_avg_full": statistics.mean(fv) if fv else None,
+            "candidates_avg_test": statistics.mean(tv) if tv else None,
+            "top": [{k: x.get(k) for k in ("id", "name", "instrument", "trades", "expectancy_r", "gross_expectancy_r",
+                                           "win_rate", "test_expectancy_r", "test_trades", "holm_significant")}
+                    for x in ev.get("ranking", [])[:15]]}
+    except (OSError, ValueError, KeyError) as e:
+        out["strategies_error"] = str(e)
+    try:
+        with open(os.path.join(MAB_DIR, "results", "system_backtest_summary.json"), encoding="utf-8") as fh:
+            out["system"] = json.load(fh)
+    except (OSError, ValueError):
+        pass
+    try:
+        from mab.volgate import MODEL_PATH
+        with open(MODEL_PATH, encoding="utf-8") as fh:
+            vg = json.load(fh)
+        out["volgate"] = {a: {"horizon_hours": m["horizon_hours"], "rows": m["rows"], "period": m["period"],
+                              "kind": m.get("kind"), "loud": m["test_loud"], "quiet": m["test_quiet"]}
+                          for a, m in vg.items() if a in ("crypto", "stock")}
+        out["volgate"]["generated"] = vg.get("generated")
+    except (OSError, ValueError, KeyError):
+        pass
+    _results = out
     return out

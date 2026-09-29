@@ -6,3 +6,4 @@ data/candles/
 data/settings.json
 build/
 dist/
+data/fleet/

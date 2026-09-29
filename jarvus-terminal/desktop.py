@@ -1,10 +1,8 @@
 #!/usr/bin/env python3
-"""Entry point for the packaged build (the .exe or the Mac/Linux binary).
+"""Entry point for the packaged app (JarvusTerminal.exe).
 
-Differs from run.py only in what it does around the server: it opens a browser,
-explains itself in plain language, and refuses to vanish silently if something
-fails. A double-clicked window that closes instantly is the worst possible error
-message, so anything fatal is printed and the window waits for a keypress.
+Opens the browser, explains itself in plain words, and never vanishes silently: anything fatal is
+printed and the window waits for a key press.
 """
 
 from __future__ import annotations
@@ -23,7 +21,6 @@ else:
 
 
 def hold(msg: str = "") -> None:
-    """Keep a double-clicked console window open long enough to read."""
     if msg:
         print(msg)
     try:
@@ -35,60 +32,50 @@ def hold(msg: str = "") -> None:
 def main() -> int:
     try:
         import config
-        from engine import automation, portfolio, store
         import server
     except Exception:                                    # noqa: BLE001
         traceback.print_exc()
         hold("\n  Jarvus could not start: the error above says why.")
         return 1
-
     os.makedirs(config.DATA_DIR, exist_ok=True)
     url = f"http://{config.HOST}:{config.PORT}"
-
     print()
-    print("  " + "=" * 60)
-    print("   JARVUS TERMINAL")
-    print("  " + "=" * 60)
+    print("  " + "=" * 62)
+    print("   JARVUS")
+    print("  " + "=" * 62)
     print(f"   Opening {url} in your browser.")
-    print("   Keep this window open. Closing it stops Jarvus and the bots.")
+    print("   Keep this window open: closing it stops Jarvus and the bots.")
     print()
-    print("   AUTOPILOT: the seven Jarvus bots and the 250-bot fleet start by")
-    print("   themselves and decide everything on their own (what to trade,")
-    print("   how much, when to get out), with practice money only. They")
-    print("   restart by themselves; only the Stop buttons turn them off.")
+    print("   AUTOPILOT: the bots start by themselves and decide everything")
+    print("   (what to trade, how much, when to get out) with PAPER money.")
+    print("   They restart by themselves; only Stop (Settings) turns them off.")
     print()
-    print(f"   Your data is saved in: {config.DATA_DIR}")
-    print("   Drop your own strategy .py files in a 'strategies' folder")
-    print("   next to this program and they load on the next start.")
+    print("   REAL MONEY is OFF. It can only be turned on in the app (Live")
+    print("   money page): a tested broker, your limits and a typed")
+    print("   acknowledgement.")
     print()
+    print(f"   Your data: {config.DATA_DIR}")
     print("   Educational research tool, not financial advice.")
-    print("  " + "=" * 60)
+    print("  " + "=" * 62)
     print()
 
     def open_later():
         time.sleep(1.6)                                  # let the port bind first
         try:
             webbrowser.open(url)
-        except Exception:                                # noqa: BLE001 - headless is fine
+        except Exception:                                # noqa: BLE001
             pass
 
     threading.Thread(target=open_later, daemon=True).start()
-
     try:
-        # server.serve() does this setup and reports what it loaded, so do not
-        # duplicate the announcement here.
-        store.conn()
-        portfolio.ensure_default()
-        automation.seed_default_rules()
         server.serve()
     except KeyboardInterrupt:
         print("\n  Stopped.\n")
     except OSError as exc:
         if getattr(exc, "errno", None) in (48, 98, 10048):
-            hold(f"\n  Something is already using port {config.PORT}.\n"
-                 f"  Either close the other Jarvus window, or set a different port:\n"
-                 f"      set JARVUS_PORT=8899   (Windows)\n"
-                 f"      export JARVUS_PORT=8899  (Mac/Linux)")
+            hold(f"\n  Something is already using port {config.PORT} (is Jarvus already open?).\n"
+                 f"  Close the other Jarvus window, or use another port:\n"
+                 f"      set JARVUS_PORT=8899   (then start Jarvus again)")
             return 1
         traceback.print_exc()
         hold("\n  Jarvus stopped with a network error.")
@@ -102,5 +89,5 @@ def main() -> int:
 
 if __name__ == "__main__":
     import multiprocessing
-    multiprocessing.freeze_support()     # lets the packaged exe start the research process
+    multiprocessing.freeze_support()     # lets the packaged exe start the bot fleet process
     sys.exit(main())

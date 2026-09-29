@@ -577,7 +577,8 @@ class Fleet:
         good = [x for x in rows if x.get("candidate") and (x["test"].get("expectancy_r") or -1) > 0 and (x["test"].get("trades") or 0) >= 10]
         if not good:
             best = max((x["test"].get("expectancy_r") or -9 for x in rows), default=None)
-            return False, "no out-of-sample positive result at this venue's costs" + (f" (best test {best:+.2f}R)" if best is not None else "")
+            return False, ("not positive on train, validation AND the untouched test at this venue's costs"
+                           + (f" (best test {best:+.2f}R)" if best is not None else ""))
         paper = self.storage.query("SELECT r FROM trades WHERE bot_id=? AND r IS NOT NULL AND entry_reason NOT LIKE '[LIVE]%'", (bot_id,))
         if len(paper) < 20:
             return False, f"{len(paper)} of 20 paper trades so far"
@@ -724,6 +725,19 @@ class Fleet:
     @staticmethod
     def _gate_asset(br: BotRunner) -> str:
         return "stock" if br.venue == "yahoo" else "crypto"
+
+    def _refresh_gates(self):
+        """A current gate reading for every market, not only those whose bots just signalled (for the app)."""
+        seen = set()
+        for br in list(self.bots.values()):
+            key = getattr(br, "gate_key", None)
+            if key is None or key in seen or not br.enabled:
+                continue
+            seen.add(key)
+            try:
+                self._gate(br)                                  # cached per hourly bar: cheap after the first
+            except Exception as e:                              # noqa: BLE001
+                log.debug("gate reading for %s failed: %s", key, e)
 
     def _gate(self, br: BotRunner) -> Optional[dict]:
         """The volatility gate reading for this bot's market (one computation per market per hour)."""
@@ -947,6 +961,7 @@ class Fleet:
             try:
                 self.health_cycle()
                 self._live_poll()
+                self._refresh_gates()
                 day = time.strftime("%Y-%m-%d", time.gmtime())
                 if day != last_prune_day:
                     self.storage.prune()

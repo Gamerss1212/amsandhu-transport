@@ -1,498 +1,215 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Jarvus Terminal</title>
-<link rel="stylesheet" href="/static/app.css">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='13' font-size='13'>📡</text></svg>">
+<title>Jarvus</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 16 16%22%3E%3Crect width=%2216%22 height=%2216%22 rx=%224%22 fill=%22%23ff2d95%22/%3E%3C/svg%3E">
+<link rel="stylesheet" href="app.css">
 </head>
 <body>
-<canvas id="bgfx" aria-hidden="true"></canvas>
-<header>
-  <div class="bar">
-    <div class="brand"><span class="dot"></span><h1>Jarvus Terminal</h1>
-      <span class="small muted" id="subtitle">starting up</span></div>
-    <div class="ctl"><label class="lbl" for="feeTier">Fees</label>
-      <select id="feeTier" title="Round-trip cost decides more outcomes than setup choice"></select></div>
-    <div class="ctl"><label class="lbl" for="deepN">Depth</label>
-      <select id="deepN">
-        <option value="20">20</option><option value="40" selected>40</option>
-        <option value="60">60</option><option value="100">100</option>
-      </select></div>
-    <div class="ctl"><label class="lbl" for="account">Account</label>
-      <input id="account" type="number" value="10000" min="100" step="100" style="width:92px"></div>
-    <button id="refresh" class="primary">Rescan</button>
-    <button id="openSettings" title="Customise everything">Settings</button>
-  </div>
-</header>
-
-<nav role="tablist">
-  <button role="tab" data-tab="bots" aria-selected="true">Bots<span class="badge on" id="botsBadge" hidden>ON</span></button>
-  <button role="tab" data-tab="fleet" aria-selected="false">Fleet</button>
-  <button role="tab" data-tab="library" aria-selected="false">Library</button>
-  <button role="tab" data-tab="brain" aria-selected="false">Brain</button>
-  <button role="tab" data-tab="markets" aria-selected="false">Markets</button>
-  <button role="tab" data-tab="detail" aria-selected="false">Detail</button>
-  <button role="tab" data-tab="swarm" aria-selected="false">Swarm</button>
-  <button role="tab" data-tab="research" aria-selected="false">Research</button>
-  <button role="tab" data-tab="portfolio" aria-selected="false">Portfolio</button>
-  <button role="tab" data-tab="alerts" aria-selected="false">Alerts<span class="badge" id="alertBadge" hidden>0</span></button>
-  <button role="tab" data-tab="news" aria-selected="false">News</button>
-  <button role="tab" data-tab="learning" aria-selected="false">Calibration</button>
-  <button role="tab" data-tab="learn" aria-selected="false">Learn trading</button>
-</nav>
-
-<main>
-  <!-- ============ BOTS ============ -->
-  <section class="panel on" id="panel-bots" role="tabpanel">
-    <div class="card">
-      <div class="herorow">
-        <div>
-          <div class="k">Practice money, all seven bots</div>
-          <div class="hero mono" id="botsEquity">—</div>
-          <div class="small" id="botsPnl">&nbsp;</div>
-        </div>
-        <div class="runbox">
-          <button id="runBots" class="run" disabled>Run bots</button>
-          <div class="small sec" id="botsState" role="status" aria-live="polite">Loading…</div>
-        </div>
-      </div>
-      <p class="small sec" style="margin:12px 0 0">
-        Press <strong>Run bots</strong> once. Every five minutes the bots scan every liquid crypto market and the
-        most active US stocks (in market hours), run all 95 strategies on each, backtest any setup on that market's
-        last 1,500 hours before touching it, let the Brain's 120 agents vote on it, and buy only what passes. Every fifteen seconds they check each open trade and sell at its stop,
-        its target or its time limit. They keep running across restarts until you press Stop.
-        <strong>Practice money:</strong> live prices, real fees, real slippage, no real funds.
-      </p>
-      <p class="tiny muted" style="margin:6px 0 0">
-        Measured before release, walk-forward on 15 markets: the bots' rule made <strong>+0.22R per trade
-        over 675 trades</strong> (about $3.70 on a trade risking $16.67) and beat random buying in all three
-        test windows, but mostly on volatile small coins; on BTC/ETH-type majors it made +0.07R. One period,
-        no guarantee. This screen is where you find out whether it holds.
-      </p>
-    </div>
-
-    <div class="grid tiles" id="botsTiles"></div>
-
-    <div class="card">
-      <div class="bigrow" style="margin-bottom:6px"><h2>Account</h2>
-        <span class="small muted" id="botsEqNote"></span></div>
-      <div id="botsEq"></div>
-    </div>
-
-    <div class="card">
-      <div class="bigrow" style="margin-bottom:8px"><h2>The bots</h2>
-        <span class="small muted">Each has its own playbook and its own share of the money.</span></div>
-      <div class="botgrid" id="botCards"></div>
-    </div>
-
-    <div class="grid half">
-      <div class="card">
-        <div class="bigrow" style="margin-bottom:6px"><h2>Open trades</h2>
-          <span style="margin-left:auto"></span>
-          <button id="closeAllBots" class="sm ghost">Close all now</button></div>
-        <div id="botsPositions"></div>
-      </div>
-      <div class="card">
-        <div class="bigrow" style="margin-bottom:6px"><h2>What the bots are doing</h2>
-          <span style="margin-left:auto"></span>
-          <select id="feedKind" style="width:130px" aria-label="Filter activity">
-            <option value="">Everything</option><option value="trades">Trades only</option>
-            <option value="cycle">Scans</option><option value="learn">Learning</option></select></div>
-        <div id="botsFeed" class="feed"></div>
-      </div>
-    </div>
-
-    <div class="grid half">
-      <div class="card"><h2>What they have learned</h2><div id="botsLearn" style="margin-top:8px"></div></div>
-      <div class="card"><h2>Recent closed trades</h2><div id="botsRecent" style="margin-top:8px"></div></div>
-    </div>
-
-    <div class="card">
-      <h2>Is this good enough for real money?</h2>
-      <p class="small sec" style="margin:4px 0 10px">The same six checks the Portfolio tab uses, applied
-        to everything the bots have closed. Under 50 trades nothing here means anything yet.</p>
-      <div id="botsReady"></div>
-    </div>
-
-    <div class="card">
-      <details id="botsSettingsBox">
-        <summary><strong>Bot settings</strong> <span class="small muted">optional; the defaults are the measured ones</span></summary>
-        <div id="botsSettings" style="margin-top:10px"></div>
-      </details>
-    </div>
-  </section>
-
-  <!-- ============ BRAIN ============ -->
-
-  <!-- ============ FLEET (250 paper bots) ============ -->
-  <section class="panel" id="panel-fleet" role="tabpanel">
-    <div class="card">
-      <div class="bigrow" style="margin-bottom:8px"><h2>Bot fleet</h2><span class="small muted" id="fleetMeta"></span></div>
-      <p class="small sec" style="margin:0 0 10px">Runs up to 250 rule-based bots on shared live data from Coinbase,
-        Kraken, OKX and Yahoo, with paper money only. Each bot is one strategy from the Library on one market.
-        Stocks trade only in US/Toronto market hours; crypto trades all day and every bot is flat before its session ends.
-        Real-money trading is not available in this version.</p>
-      <div class="bigrow" style="gap:8px;flex-wrap:wrap">
-        <select id="fleetStage" style="width:190px"><option value="10">10 bots (starter)</option><option value="50">50 bots</option>
-          <option value="250" selected>All 250 bots</option></select>
-        <button class="primary" id="fleetStart">Start fleet</button><button id="fleetStop">Stop</button>
-        <button id="fleetPause">Pause entries</button><button id="fleetResume">Resume</button>
-        <button id="fleetEmergency" style="border-color:var(--bad,#c2372f)">Emergency stop</button>
-        <span class="small muted" id="fleetAuto"></span>
-      </div>
-      <div class="bigrow small" style="gap:8px;margin-top:10px;flex-wrap:wrap">
-        <label>Paper balance <input id="fleetBalance" type="number" min="0.01" step="any" placeholder="any amount" style="width:140px"></label>
-        <button class="sm primary" id="fleetSet">Set balance</button>
-        <span style="width:14px"></span>
-        <label>Amount <input id="fleetAmt" type="number" min="0.01" step="any" placeholder="amount" style="width:110px"></label>
-        <button class="sm" id="fleetDep">Deposit</button><button class="sm" id="fleetWd">Withdraw</button>
-        <span class="muted" id="fleetMoneyMsg"></span>
-      </div>
-      <p class="tiny muted" style="margin:6px 0 0">Change the balance to any amount at any time, running or stopped. The bots
-        keep their open trades and close them on their own; if money is tied up in open trades, new entries wait until it is free.</p>
-    </div>
-    <div class="grid tiles" id="fleetTiles"></div>
-    <div class="card" id="fleetIdle"><p class="sec" style="margin:0">Start the fleet to see its live dashboard here: every bot on a
-      rotating 3D map around the Fleet Brain, the paper wallet, live prices, trades, and a running log of every decision.</p></div>
-    <div class="card" id="fleetFrameCard" style="padding:0;overflow:hidden" hidden>
-      <iframe id="fleetFrame" title="Fleet dashboard" style="width:100%;height:1400px;border:0;display:block" src="about:blank"></iframe>
-    </div>
-  </section>
-
-  <!-- ============ LIBRARY (strategy catalog) ============ -->
-  <section class="panel" id="panel-library" role="tabpanel">
-    <div class="card">
-      <h2>Strategy library</h2>
-      <p class="small sec" style="margin:4px 0 8px" id="libMeta"></p>
-      <div class="bigrow" style="gap:8px;flex-wrap:wrap">
-        <input id="libSearch" type="search" placeholder="Find a strategy…" style="width:200px">
-        <select id="libFamily" style="width:220px"><option value="">Every family</option></select>
-        <select id="libImpl" style="width:170px"><option value="">Any implementation</option><option>implemented</option><option>blocked</option><option>specified</option></select>
-        <select id="libResearch" style="width:190px"><option value="">Any research status</option><option>sourced</option><option>incompletely sourced</option><option>hypothesis</option></select>
-        <select id="libSort" style="width:200px"><option value="id">By id</option><option value="best">Best measured result</option><option value="name">A to Z</option></select>
-      </div>
-      <p class="small sec" style="margin:8px 0">"Measured" is the average result per trade in R after realistic fees (Kraken's retail
-        fees for crypto, commission-free stocks with spreads), over the full test period on the instrument where it did best.
-        Nothing here is proven: see each strategy's statuses.</p>
-      <div class="tablewrap" id="libTable"></div>
-    </div>
-    <div class="card" id="libDetail" hidden></div>
-  </section>
-
-  <section class="panel" id="panel-brain" role="tabpanel">
-    <div class="card">
-      <div class="bigrow" style="margin-bottom:6px"><h2>The Brain</h2>
-        <span class="small muted" id="brainSub"></span>
-        <span style="margin-left:auto"></span>
-        <div class="ctl"><label class="lbl" for="brainMode">Mode</label>
-          <select id="brainMode"><option value="veto">Can veto trades</option>
-            <option value="rank">Only ranks trades</option><option value="off">Off</option></select></div>
-        <button id="brainSave" class="sm">Save</button>
-      </div>
-      <p class="small sec" style="margin:4px 0 0">
-        Every candidate trade is read by <strong id="agentCount">120+</strong> agents at once: one for each strategy,
-        and 25 that watch what strategies do not (volatility, trend on three horizons, fees, time of day, gaps,
-        VWAP, crowding, the backtest's measured edge, and what Bitcoin or the S&amp;P 500 is doing). A learned
-        coordinator weighs them and predicts the trade's result in R, after fees. It was trained on history and
-        judged on the part of history it never saw, below. It keeps learning from every trade the bots close.
-      </p>
-    </div>
-    <div class="card"><h2>How it did on data it never saw</h2>
-      <p class="small sec" style="margin:4px 0 10px">Trained on the first 60% of every market's history, tested on
-        the last 40%. Each row is a different way of choosing which moments to trade.</p>
-      <div id="brainTest"></div></div>
-    <div class="grid half">
-      <div class="card"><h2>Latest votes</h2><div id="brainVotes" style="margin-top:8px"></div></div>
-      <div class="card"><h2>Does a higher prediction mean a better trade?</h2>
-        <p class="small sec" style="margin:4px 0 8px">Unseen test trades split into ten groups by the Brain's
-          prediction, best first. If the Brain has learned something real, the left bars beat the right ones.</p>
-        <div id="brainDeciles"></div></div>
-    </div>
-    <div class="card">
-      <div class="bigrow" style="margin-bottom:8px"><h2>The 120 agents</h2>
-        <span style="margin-left:auto"></span>
-        <input id="agentSearch" type="search" placeholder="Find an agent…" style="width:160px">
-        <select id="agentKind" style="width:140px"><option value="">All agents</option>
-          <option value="context">Context agents</option><option value="strategy">Strategy agents</option></select></div>
-      <p class="small sec" style="margin:0 0 8px">Trust is the coordinator's weight: how much an agent's reading moves
-        the prediction, in R. Positive agents push toward trading, negative ones push away.</p>
-      <div id="brainAgents"></div>
-    </div>
-  </section>
-
-  <!-- ============ LEARN ============ -->
-  <section class="panel" id="panel-learn" role="tabpanel">
-    <div class="card">
-      <h2>Learn trading, from measurements</h2>
-      <p class="small sec" style="margin:4px 0 0">Every number on this page was measured by this app: 95 strategies
-        on 15 crypto markets (3,300 hours each) and 30 US stocks and ETFs (two years of hourly bars), plus ten years
-        of daily bars for the classic high-win-rate rules. Fees and slippage are included everywhere.
-        <span id="learnMeta"></span></p>
-    </div>
-    <div id="learnLessons"></div>
-    <div class="card">
-      <div class="bigrow" style="margin-bottom:8px"><h2>Every strategy, measured</h2>
-        <span class="small muted" id="encCount"></span><span style="margin-left:auto"></span>
-        <input id="encSearch" type="search" placeholder="Find a strategy…" style="width:160px">
-        <select id="encFamily" style="width:150px"><option value="">Every family</option></select>
-        <select id="encSort" style="width:190px">
-          <option value="crypto">Best on crypto</option><option value="stock">Best on stocks (4-day)</option>
-          <option value="stock_dt">Best on stocks (day trade)</option><option value="win">Highest win rate</option>
-          <option value="name">A to Z</option></select></div>
-      <p class="small sec" style="margin:0 0 8px">Average result per trade in R after fees, with a 4 ATR stop and a 2R
-        target. <strong>Beats random</strong> counts the markets where it did better than buying at random under
-        the same rules. Click a row for how it works.</p>
-      <div id="encTable"></div>
-    </div>
-  </section>
-
-  <!-- ============ MARKETS ============ -->
-  <section class="panel" id="panel-markets" role="tabpanel">
-    <div class="grid tiles" id="tiles" data-panel="tiles"></div>
-
-    <div class="card">
-      <div class="bigrow" style="margin-bottom:8px">
-        <h2>Most likely to move next</h2>
-        <span class="small muted" id="rowCount"></span>
-      </div>
-      <p class="small sec" data-panel="explainer" style="margin:0 0 10px">
-        Ranked by the volatility gate, which forecasts <strong>how much</strong> a market will move,
-        never which way. Volatility is forecastable because it clusters; direction is not
-        (a trained model on 67,585 hours reached 0.513 against a 0.500 coin flip).
-      </p>
-
-      <div class="filters">
-        <input id="search" type="search" placeholder="Filter by name…" style="width:150px">
-        <div class="ctl"><label class="lbl" for="fHeat">Min heat</label>
-          <input id="fHeat" type="range" min="0" max="1" step="0.05" value="0" style="width:100px">
-          <span class="mono tiny" id="fHeatVal">0.00</span></div>
-        <div class="ctl"><label class="lbl" for="fState">State</label>
-          <select id="fState"><option value="">any</option><option>LOUD</option>
-            <option>COILED</option><option>NORMAL</option><option>QUIET</option></select></div>
-        <div class="ctl"><label class="lbl" for="fVerdict">Plan</label>
-          <select id="fVerdict"><option value="">any</option><option>BUY</option><option>WAIT</option></select></div>
-        <div class="ctl"><label class="lbl" for="fVol">Min $ vol</label>
-          <select id="fVol"><option value="0">any</option><option value="10000000">10M</option>
-            <option value="50000000">50M</option><option value="200000000">200M</option></select></div>
-        <button id="resetFilters" class="ghost sm">Reset</button>
-        <span style="margin-left:auto"></span>
-        <div class="ctl"><label class="lbl" for="viewSel">View</label>
-          <select id="viewSel" style="width:130px"><option value="">— saved views —</option></select>
-          <button id="saveView" class="sm">Save</button>
-          <button id="delView" class="sm ghost">Delete</button></div>
-      </div>
-
-      <div class="tablewrap" id="marketsWrap">
-        <div class="load"><span class="spin"></span>scanning every liquid market…</div>
-      </div>
-    </div>
-
-    <div class="card" data-panel="howto">
-      <h3>How to read this</h3>
-      <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(225px,1fr));margin-top:8px">
-        <div class="note"><strong>Heat</strong> blends how fast a market already moves with whether it is
-          speeding up or winding tight. High heat means a big move is likely. The direction is a coin flip.</div>
-        <div class="note"><strong>Agree</strong> counts how many independent strategy families fired at
-          once. Twelve trend strategies saying the same thing is one opinion, so they are grouped first.</div>
-        <div class="note"><strong>Cost</strong> is the round trip as a share of your risk. Above 33% the
-          trade is refused: fees would eat it before the idea gets a chance.</div>
-        <div class="note warn"><strong>BUY</strong> means the structural boxes are ticked and the cost
-          gate passed. It is not a forecast. Every plan carries a stop that defines the loss in advance.</div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ============ DETAIL ============ -->
-  <section class="panel" id="panel-detail" role="tabpanel">
-    <div id="detail"><div class="card"><p class="muted">Pick a market on the Markets tab.</p></div></div>
-  </section>
-
-  <!-- ============ SWARM ============ -->
-  <section class="panel" id="panel-swarm" role="tabpanel">
-    <div class="card">
-      <h2>The swarm</h2>
-      <p class="small sec" style="margin:4px 0 10px">
-        Every loaded strategy is run against every scanned market on each scan. Votes are grouped
-        into families first, because a dozen strategies that all say "price is above a rising average"
-        are one idea and not twelve, and agreement across <em>different</em> families is the only kind
-        worth counting.
-      </p>
-      <div id="swarmWrap"><div class="load"><span class="spin"></span>loading…</div></div>
-    </div>
-    <div class="card">
-      <div class="bigrow" style="margin-bottom:8px">
-        <h2>Strategies</h2><span class="small muted" id="stratCount"></span>
-        <span style="margin-left:auto"></span>
-        <button id="stratAll" class="sm">Enable all</button>
-        <button id="stratNone" class="sm">Disable all</button>
-      </div>
-      <p class="small sec" style="margin:0 0 10px">Turn any of them off and rescan. Drop a
-        <code>.py</code> file in <code>engine/strategies/custom/</code> to add your own; there is a
-        worked example in that folder.</p>
-      <div id="stratWrap"></div>
-    </div>
-  </section>
-
-  <!-- ============ RESEARCH ============ -->
-  <section class="panel" id="panel-research" role="tabpanel">
-    <div class="card">
-      <div class="bigrow" style="margin-bottom:6px">
-        <h2>Research</h2>
-        <span style="margin-left:auto"></span>
-        <div class="ctl"><label class="lbl" for="rAsset">Market</label>
-          <select id="rAsset"><option value="crypto">Crypto</option><option value="stock">US stocks</option></select></div>
-        <div class="ctl"><label class="lbl" for="rBars">Bars</label>
-          <select id="rBars"><option>1500</option><option selected>3000</option><option>5000</option></select></div>
-        <div class="ctl"><label class="lbl" for="rMarkets">Markets</label>
-          <select id="rMarkets"><option>8</option><option selected>12</option><option>20</option></select></div>
-        <button id="runResearch" class="primary">Run research</button>
-      </div>
-      <p class="small sec" style="margin:4px 0 10px">
-        Backtests every strategy against every market over deep history, splits the period in two, and
-        judges each strategy only on the half it was not built on. The weights the swarm uses come from
-        here. Ranking is by <strong>excess over a control</strong> that buys with no analysis at all,
-        because in a rising market the control makes money too, and anything that cannot beat it is
-        measuring the weather.
-      </p>
-      <div id="researchWrap"><div class="load"><span class="spin"></span>loading…</div></div>
-    </div>
-  </section>
-
-  <!-- ============ PORTFOLIO ============ -->
-  <section class="panel" id="panel-portfolio" role="tabpanel">
-    <div class="card">
-      <div class="bigrow" style="margin-bottom:6px">
-        <h2>Portfolio</h2>
-        <span style="margin-left:auto"></span>
-        <div class="ctl"><label class="lbl" for="pfSel">Book</label>
-          <select id="pfSel" style="width:140px"></select></div>
-        <button id="newPf" class="sm">New book</button>
-      </div>
-      <p class="small sec" style="margin:4px 0 10px">
-        Paper trading with real prices, real fees, real slippage and real position sizing, so the
-        record it produces is a fair prediction of what real money would have done.
-      </p>
-      <div id="pfWrap"><div class="load"><span class="spin"></span>loading…</div></div>
-    </div>
-  </section>
-
-  <!-- ============ ALERTS ============ -->
-  <section class="panel" id="panel-alerts" role="tabpanel">
-    <div class="card">
-      <div class="bigrow" style="margin-bottom:6px">
-        <h2>Automation</h2>
-        <span style="margin-left:auto"></span>
-        <div class="ctl"><label class="lbl" for="autoInt">Every</label>
-          <select id="autoInt"><option value="120">2 min</option><option value="300" selected>5 min</option>
-            <option value="900">15 min</option><option value="1800">30 min</option></select></div>
-        <button id="autoToggle" class="primary">Start</button>
-      </div>
-      <p class="small sec" style="margin:4px 0 10px" id="autoStatus">
-        While it runs the app rescans on that interval, fires any alert rule that matches, marks open
-        paper positions to market, closes anything through its stop, and grades predictions whose
-        horizon has passed. It never sends an order.
-      </p>
-      <div id="alertsWrap"><div class="load"><span class="spin"></span>loading…</div></div>
-    </div>
-  </section>
-
-  <!-- ============ NEWS ============ -->
-  <section class="panel" id="panel-news" role="tabpanel">
-    <div class="card">
-      <h2>Live headlines</h2>
-      <p class="small sec" style="margin:4px 0 10px">Public RSS from five crypto desks. Words that have
-        historically preceded violent repricing are flagged. A flag is a reason to read, never a signal.</p>
-      <div id="newsWrap"><div class="load"><span class="spin"></span>loading…</div></div>
-    </div>
-  </section>
-
-  <!-- ============ LEARNING ============ -->
-  <section class="panel" id="panel-learning" role="tabpanel">
-    <div class="card">
-      <h2>What this app has learned about itself</h2>
-      <p class="small sec" style="margin:4px 0 10px">
-        Every scan writes down its claims <em>before</em> the outcome is known, with the threshold that
-        will later decide whether each claim was right. The numbers below are measured on your own data.
-      </p>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
-        <button id="resolveBtn" class="primary">Grade what is due</button>
-        <button id="reloadLearn">Reload</button>
-      </div>
-      <div id="learnWrap"><div class="load"><span class="spin"></span>loading…</div></div>
-    </div>
-  </section>
-
-  <footer class="small muted" style="padding:10px 2px 26px">
-    Educational research tool, not financial advice. The bots trade practice money only: live prices,
-    no real funds. Crypto is volatile and most retail day traders lose money.
-  </footer>
-</main>
-
-<!-- ============ SETTINGS DRAWER ============ -->
-<div class="scrim" id="scrim"></div>
-<aside class="drawer" id="drawer" aria-label="Settings">
-  <div class="bigrow" style="margin-bottom:10px">
-    <h2>Settings</h2><span style="margin-left:auto"></span>
-    <button id="closeSettings" class="ghost">Close</button>
-  </div>
-
-  <div class="setgroup">
-    <h3>Appearance</h3>
-    <div class="setrow"><span>Theme</span>
-      <select id="setTheme"><option value="neon">Neon (default)</option><option value="auto">Match system</option>
-        <option value="light">Light</option><option value="dark">Dark</option></select></div>
-    <div class="setrow"><span>Accent</span>
-      <div class="swatches" id="accentSwatches"></div></div>
-    <div class="setrow"><span>Density</span>
-      <select id="setDensity"><option value="compact">Compact</option>
-        <option value="normal" selected>Normal</option><option value="roomy">Roomy</option></select></div>
-    <div class="setrow"><span>Text size</span>
-      <span><input id="setFont" type="range" min="12" max="18" step="1" value="14">
-        <span class="mono tiny" id="setFontVal">14px</span></span></div>
-    <p class="tiny muted" style="margin:6px 0 0">Each accent was checked against the LOUD orange for
-      colour-vision deficiency in both themes. Green was offered and dropped because it failed.</p>
-  </div>
-
-  <div class="setgroup">
-    <h3>Panels</h3>
-    <div class="setrow"><span>Summary tiles</span><input type="checkbox" data-panel-toggle="tiles" checked></div>
-    <div class="setrow"><span>Explainer paragraph</span><input type="checkbox" data-panel-toggle="explainer" checked></div>
-    <div class="setrow"><span>"How to read this"</span><input type="checkbox" data-panel-toggle="howto" checked></div>
-    <div class="setrow"><span>Sparklines in the table</span><input type="checkbox" id="setSpark" checked></div>
-  </div>
-
-  <div class="setgroup">
-    <h3>Columns</h3>
-    <p class="tiny muted" style="margin:0 0 6px">Tick what you want to see. Drag is not needed: the
-      order follows this list, and you can move any row with the arrows.</p>
-    <div class="collist" id="colList"></div>
-  </div>
-
-  <div class="setgroup">
-    <h3>Chart indicators</h3>
-    <p class="tiny muted" style="margin:0 0 6px">Overlaid on the Detail chart. Every one is computed
-      locally from exchange candles.</p>
-    <div class="collist" id="indList" style="max-height:200px"></div>
-  </div>
-
-  <div class="setgroup">
-    <h3>Risk model</h3>
-    <div class="setrow"><span>Stop width (× ATR)</span>
-      <input id="setStopAtr" type="number" min="1" max="10" step="0.5" value="4" style="width:72px"></div>
-    <div class="setrow"><span>Target (R)</span>
-      <input id="setTargetR" type="number" min="1" max="6" step="0.5" value="2" style="width:72px"></div>
-    <p class="tiny muted" style="margin:6px 0 0">Wide stops are what survive retail fees: cost in R is
-      the round trip divided by the stop distance, so halving the stop doubles the fee drag.</p>
-  </div>
-
-  <div class="setgroup">
-    <button id="resetAll" class="ghost">Reset everything to defaults</button>
+<aside class="side">
+  <div class="brand"><div class="badge">J</div><div><b>JARVUS</b><span>fleet brain</span></div></div>
+  <nav class="nav" id="nav">
+    <a data-page="command" href="#command"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg><span>Command</span></a>
+    <a data-page="bots" href="#bots"><svg viewBox="0 0 24 24"><rect x="5" y="7" width="14" height="12" rx="2"/><path d="M12 3v4M9 12h.01M15 12h.01M9 16h6"/></svg><span>Bots</span><em id="navBots">–</em></a>
+    <a data-page="brain" href="#brain"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><circle cx="5" cy="6" r="2"/><circle cx="19" cy="6" r="2"/><circle cx="5" cy="18" r="2"/><circle cx="19" cy="18" r="2"/><path d="M7 7l3 3M17 7l-3 3M7 17l3-3M17 17l-3-3"/></svg><span>Brain</span></a>
+    <a data-page="strategies" href="#strategies"><svg viewBox="0 0 24 24"><path d="M4 5a2 2 0 012-2h13v16H6a2 2 0 00-2 2z"/><path d="M4 19V5M8 7h7M8 11h7"/></svg><span>Strategies</span><em id="navStrat">–</em></a>
+    <a data-page="results" href="#results"><svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg><span>Results</span></a>
+    <a data-page="live" href="#live"><svg viewBox="0 0 24 24"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg><span>Live money</span><em id="navLive">OFF</em></a>
+    <a data-page="settings" href="#settings"><svg viewBox="0 0 24 24"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg><span>Settings</span></a>
+  </nav>
+  <div class="side-foot">
+    <div class="mode paper" id="modeChip">PAPER MONEY</div>
+    <div class="fstate"><span class="dot" id="fDot"></span><span id="fText">connecting…</span></div>
+    <div class="tiny dim">Educational tool, not financial advice.</div>
   </div>
 </aside>
 
-<div class="tip" id="tip" role="status" aria-live="polite"></div>
-<script src="/static/app.js"></script>
+<div class="main">
+  <header class="top">
+    <div class="ttl"><div class="l1"><span class="rec"></span><span>Fleet brain</span><span>·</span><span id="hSub">connecting…</span></div><h1 id="pageTitle">Command</h1></div>
+    <div class="hs"><span class="lbl" id="h1l">BTC</span><b id="h1">–</b></div>
+    <div class="hs"><span class="lbl" id="h2l">ETH</span><b id="h2">–</b></div>
+    <div class="hs"><span class="lbl">Trades</span><b id="hT">–</b></div>
+    <div class="hs"><span class="lbl">Win</span><b id="hW">–</b></div>
+    <div class="hs" id="clock"><b id="clk">--:--:--</b><span class="lbl" id="clkd"></span></div>
+  </header>
+  <div class="tape"><div class="run" id="tape"></div></div>
+  <div id="banner"></div>
+
+  <!-- ============================================================ COMMAND -->
+  <section class="page" id="p-command">
+    <div class="row r1">
+      <section class="p pink">
+        <div class="h"><span class="o"></span>Wallet<span class="r" id="wState">–</span></div>
+        <div class="between"><b style="font-size:15px">JARVUS_001</b><span class="live" id="liveTag">LIVE</span></div>
+        <div class="tiny dim" id="wMode">paper account · no real money</div>
+        <div class="lbl" style="margin-top:10px">Balance</div>
+        <div class="big glitch j num" id="eqBig">–</div>
+        <div class="small" id="eqSub"></div>
+        <div class="stat3"><div><div class="lbl">Trades</div><b id="w1">–</b></div><div><div class="lbl">Win</div><b id="w2">–</b></div><div><div class="lbl">Avg R</div><b id="w3">–</b></div></div>
+        <div class="kv tiny" id="acct" style="margin-top:10px"></div>
+        <div class="ctl"><input id="amt" type="number" min="0.01" step="any" placeholder="any amount" aria-label="amount"><button class="hot" data-money="set_balance">Set</button><button data-money="deposit">Add</button></div>
+        <div class="ctl" style="margin-top:5px;grid-template-columns:1fr 1fr"><button data-money="withdraw">Withdraw</button><button class="bad" data-cmd="emergency_stop">E-stop</button></div>
+      </section>
+      <section class="p">
+        <div class="chartbox">
+          <div><div class="h" style="margin-bottom:2px;white-space:nowrap"><span class="o"></span><span id="chartTitle">–</span><span class="px" id="chartPx"></span><span id="chartChg"></span></div>
+            <div class="flex" id="chartPick" style="justify-content:flex-end;gap:4px;margin-bottom:4px"></div>
+            <canvas id="chart" height="300"></canvas></div>
+          <div><div class="h"><span class="o"></span>Order book<span class="r">L2</span></div><div class="book" id="book"></div></div>
+        </div>
+      </section>
+      <section class="p pink">
+        <div class="h"><span class="o"></span>#1 trader · live streak</div>
+        <div class="between" style="flex-wrap:nowrap">
+          <div class="streak"><span class="x">×</span><span class="n glitch j" id="stN">0</span><span class="up" id="stR" style="font-size:16px;font-weight:800"></span></div>
+          <canvas id="stSpark" height="80" style="max-width:52%"></canvas></div>
+        <div class="between" style="margin-top:10px"><div><div class="lbl">First trade</div><b class="up" id="stA">–</b></div><div class="dim" style="font-size:16px">→</div><div style="text-align:right"><div class="lbl">Now</div><b class="up" id="stB">–</b></div></div>
+        <div class="between" style="margin-top:10px"><div><div class="lbl">Bot</div><b class="hotc" id="stBot">–</b></div><div><div class="lbl">Win</div><b id="stW">–</b></div><div style="text-align:right"><div class="lbl">Market</div><b id="stM">–</b></div></div>
+        <div class="tiny muted" id="stSub" style="margin-top:8px"></div>
+        <div class="lbl" style="margin-top:12px">Brain's top picks now</div><div class="kv tiny" id="picks" style="margin-top:4px"></div>
+      </section>
+    </div>
+    <section class="p swarm">
+      <canvas id="net"></canvas>
+      <div class="ov" id="ovTitle">○ <b>Hive mind</b> · <span id="ovCount">0</span> agents · all markets</div>
+      <div class="ov" id="ovLegend"><div><span class="lg" style="background:var(--bad)"></span>Bear</div><div><span class="lg" style="background:var(--good);border-radius:50%"></span>Bull</div>
+        <div><span class="lg" style="background:#6f5f6c;border-radius:50%"></span>Waiting</div><div><span class="lg" style="background:var(--gold);border-radius:50%"></span>In a trade</div>
+        <div><span class="lg" style="background:#f4ecf3;border-radius:50%"></span>Market</div></div>
+      <div class="ov" id="ovStats"></div>
+      <div class="ov" id="ovSide"></div>
+    </section>
+    <div class="row r3">
+      <section class="p"><div class="h"><span class="o"></span>PnL total <b id="pnlT"></b><span class="r" id="pnlR"></span></div><canvas id="pnl" height="170"></canvas></section>
+      <section class="p"><div class="h"><span class="o"></span>Recent<span class="r" id="recR"></span></div><div class="scroll" style="max-height:190px"><table><tbody id="trades"></tbody></table></div></section>
+      <section class="p"><div class="h"><span class="o"></span>Analytics</div><div class="minis">
+        <div><canvas id="a1" height="62"></canvas><div class="lbl">Trades / hour · <b id="a1v" class="hotc"></b></div></div>
+        <div><canvas id="a2" height="62"></canvas><div class="lbl">Volume · <b id="a2v" style="color:#ff4fd8"></b></div></div>
+        <div><canvas id="a3" height="62"></canvas><div class="lbl">Wins · <b id="a3v" class="up"></b></div></div>
+        <div><canvas id="a4" height="62"></canvas><div class="lbl">Losses · <b id="a4v" class="dn"></b></div></div></div></section>
+    </div>
+    <section class="p"><div class="h"><span class="o"></span>Execution log · live<span class="r" id="logR"></span></div><div id="log"></div></section>
+  </section>
+
+  <!-- ============================================================ BOTS -->
+  <section class="page" id="p-bots">
+    <section class="p"><div class="h"><span class="o"></span>Bots by state<span class="r">click a tile to filter</span></div><div class="tiles" id="tiles"></div></section>
+    <section class="p"><div class="h"><span class="o"></span>Every bot<span class="r flex"><input id="q" placeholder="search: bot, strategy, market, state" style="width:280px" aria-label="search bots"><span class="muted" id="count"></span></span></div>
+      <div class="sub">Each bot runs one strategy on one market with its own rules, stops and exits. The brain checks every entry before it happens. Click a bot to see exactly why it did what it did.</div>
+      <div class="scroll tall"><table><thead><tr><th>bot</th><th>strategy</th><th>market</th><th>state</th><th>position</th><th>last decision</th></tr></thead><tbody id="bots"></tbody></table></div></section>
+  </section>
+
+  <!-- ============================================================ BRAIN -->
+  <section class="page" id="p-brain">
+    <div class="pipe">
+      <section class="p step"><span class="n">1</span><h3>Cost gate</h3><p>Fees and spread as a share of the stop ("cost in R"). Above 0.33R the trade is refused; 0.20–0.33R trades at half size.</p><div class="kv" id="g1"></div></section>
+      <section class="p step"><span class="n">2</span><h3>Volatility gate</h3><p>A trained model forecasts whether the next hours will be LOUD or QUIET. QUIET: no new trades. LOUD: 0.6× size. It says how much, never which way.</p><div class="kv" id="g2"></div></section>
+      <section class="p step"><span class="n">3</span><h3>Learned score</h3><p>Expected R per trade from each strategy's tested history plus every closed paper trade, by market and regime. Negative edge: refused.</p><div class="kv" id="g3"></div></section>
+      <section class="p step"><span class="n">4</span><h3>Bench &amp; size</h3><p>Bots that keep losing are benched until their shadow trades recover. Size scales with the edge and the evidence.</p><div class="kv" id="g4"></div></section>
+    </div>
+    <div class="row c2">
+      <section class="p"><div class="h"><span class="o"></span>Markets now · volatility gate and regime<span class="r" id="gateR"></span></div>
+        <div class="scroll" style="max-height:300px"><table><thead><tr><th>market</th><th>next hours</th><th>p(loud)</th><th>p(quiet)</th><th>trend</th><th>volatility</th></tr></thead><tbody id="gates"></tbody></table></div></section>
+      <section class="p"><div class="h"><span class="o"></span>What the refused trades would have made</div>
+        <div class="sub">Every refused trade is followed to its exit as a "shadow". A negative average means refusing it saved money.</div>
+        <div class="scroll" style="max-height:250px"><table><thead><tr><th>reason</th><th class="r">trades</th><th class="r">average</th></tr></thead><tbody id="shadows"></tbody></table></div></section>
+    </div>
+    <div class="row c3">
+      <section class="p"><div class="h"><span class="o"></span>What it learned<span class="r" id="brainMode"></span></div><div class="kv" id="brainKv"></div>
+        <div class="lbl" style="margin:12px 0 4px">How much it trusts each part (learned)</div><div class="kv" id="trust"></div></section>
+      <section class="p"><div class="h"><span class="o"></span>Calibration</div><canvas id="calib" height="130"></canvas>
+        <div class="tiny muted" style="margin-top:6px">Actual win % in each bucket of predicted win chance. Well calibrated = bars rise left to right.</div></section>
+      <section class="p"><div class="h"><span class="o"></span>Insights (written by the brain)</div><div class="ins small scroll" id="insights" style="max-height:230px"></div></section>
+    </div>
+    <div class="row c2">
+      <section class="p"><div class="h"><span class="o"></span>Strategies it rates highest now</div><div class="scroll"><table><thead><tr><th>strategy</th><th class="r">paper trades</th><th class="r">tested prior</th><th class="r">estimate</th></tr></thead><tbody id="bestL"></tbody></table></div></section>
+      <section class="p"><div class="h"><span class="o"></span>Lessons by market regime</div><div class="scroll"><table><thead><tr><th>family</th><th>regime</th><th class="r">trades</th><th class="r">avg R</th></tr></thead><tbody id="regL"></tbody></table></div></section>
+    </div>
+  </section>
+
+  <!-- ============================================================ STRATEGIES -->
+  <section class="page" id="p-strategies">
+    <div class="hero" id="libHero"></div>
+    <section class="p"><div class="h"><span class="o"></span>Strategy library<span class="r" id="libCount"></span></div>
+      <div class="flex" style="margin-bottom:10px">
+        <input id="lq" placeholder="search name, id, idea" style="width:260px" aria-label="search strategies">
+        <select id="lfam" aria-label="family"><option value="">every family</option></select>
+        <select id="lstat" aria-label="status"><option value="">implemented and research</option><option value="implemented">implemented (bots can run it)</option><option value="blocked">research only</option></select>
+        <select id="lmkt" aria-label="market"><option value="">crypto and stocks</option><option value="crypto">crypto</option><option value="stock">stocks</option></select>
+        <select id="lsort" aria-label="sort"><option value="id">sort: id</option><option value="best">sort: best measured R</option><option value="name">sort: name</option></select>
+      </div>
+      <div class="scroll tall"><table><thead><tr><th>id</th><th>strategy</th><th>family</th><th>markets</th><th>tf</th><th>status</th><th class="r">best R after costs</th><th class="r">gross R</th><th class="r">trades</th></tr></thead><tbody id="lib"></tbody></table></div>
+    </section>
+  </section>
+
+  <!-- ============================================================ RESULTS -->
+  <section class="page" id="p-results">
+    <div class="note">Everything on this page was measured, not claimed: chronological splits, costs included, and a correction for how many ideas were tried. Past results do not guarantee future results.</div>
+    <div class="hero" id="resHero"></div>
+    <div class="row c2">
+      <section class="p"><div class="h"><span class="o"></span>The whole software, backtested<span class="r" id="sysR"></span></div><div class="sub" id="sysSub"></div>
+        <table><thead><tr><th>arm</th><th>what runs</th><th class="r">mean / window</th><th class="r">windows +</th><th class="r">max DD</th><th class="r">trades</th><th class="r">avg R</th></tr></thead><tbody id="arms"></tbody></table>
+        <div class="lbl" style="margin:12px 0 4px">Does the brain help? (same window, same bots)</div>
+        <table><thead><tr><th>comparison</th><th class="r">return difference</th><th class="r">95% interval</th><th class="r">first better</th></tr></thead><tbody id="paired"></tbody></table></section>
+      <section class="p"><div class="h"><span class="o"></span>Return per 10-day window, every run</div>
+        <div class="legend" id="histLeg"></div><canvas id="hist" height="250" style="margin-top:6px"></canvas>
+        <div class="tiny muted" style="margin-top:6px">Each bar counts runs whose window return fell in that range. The dashed line is zero.</div></section>
+    </div>
+    <div class="row c2">
+      <section class="p"><div class="h"><span class="o"></span>Strategy tests</div><div class="kv" id="stratKv"></div></section>
+      <section class="p"><div class="h"><span class="o"></span>Volatility gate accuracy (untouched test period)</div>
+        <table><thead><tr><th>market</th><th>forecast</th><th class="r">AUC</th><th class="r">hours flagged</th><th class="r">right when flagged</th><th class="r">base rate</th></tr></thead><tbody id="vg"></tbody></table>
+        <div class="tiny muted" style="margin-top:8px">AUC 0.5 = coin flip. The gate predicts how much a market will move, never which way.</div></section>
+    </div>
+    <section class="p"><div class="h"><span class="o"></span>Best 15 strategy runs at realistic costs</div>
+      <div class="scroll"><table><thead><tr><th>strategy</th><th>market</th><th class="r">trades</th><th class="r">R / trade</th><th class="r">gross R</th><th class="r">win %</th><th class="r">test R (trades)</th><th>significant</th></tr></thead><tbody id="top"></tbody></table></div></section>
+  </section>
+
+  <!-- ============================================================ LIVE MONEY -->
+  <section class="page" id="p-live">
+    <section class="p" id="liveHead"></section>
+    <section class="p"><div class="h"><span class="o"></span>Step 1 · connect a broker</div>
+      <div class="sub">Your API key and secret are sent from this page to Jarvus on this computer and saved encrypted for your Windows user. They are never shown again, never logged and never leave this computer except to sign requests to that broker. Create keys WITHOUT withdrawal permission.</div>
+      <div class="brokers" id="brokers"></div></section>
+    <section class="p" id="armBox"><div class="h"><span class="o"></span>Step 2 · arm real-money trading</div><div id="armBody"></div></section>
+    <section class="p"><div class="h"><span class="o"></span>Which bots have earned real money<span class="r" id="eligR"></span></div>
+      <div class="sub">A bot qualifies only when it was positive on the untouched test data at its venue's real costs AND has at least 20 paper trades with a positive average. The list is re-checked before every live order, so bots join and leave by themselves.</div>
+      <div class="scroll tall"><table><thead><tr><th>bot</th><th>strategy</th><th>market</th><th>earned it?</th><th>why</th></tr></thead><tbody id="elig"></tbody></table></div></section>
+  </section>
+
+  <!-- ============================================================ SETTINGS -->
+  <section class="page" id="p-settings">
+    <div class="row c3">
+      <section class="p pink"><div class="h"><span class="o"></span>Paper account</div>
+        <div class="big glitch num" id="setEq">–</div><div class="small muted" id="setEqSub"></div>
+        <div class="form" style="margin-top:12px">
+          <label class="f">Amount<input id="amt2" type="number" min="0.01" step="any" placeholder="any amount, e.g. 25000"></label>
+          <div class="flex"><button class="hot" data-money2="set_balance">Set balance</button><button data-money2="deposit">Add</button><button data-money2="withdraw">Withdraw</button></div>
+          <div class="tiny muted">Works any time, running or stopped. Open trades are never closed by a balance change, and it does not count as profit or loss.</div>
+        </div></section>
+      <section class="p"><div class="h"><span class="o"></span>Autopilot</div>
+        <div class="between"><div><div class="lbl">Bots</div><b id="apState" style="font-size:18px">–</b></div><div style="text-align:right"><div class="lbl">Restarts itself</div><b id="apAuto">–</b></div></div>
+        <div class="sub" style="margin-top:10px">The bots start with Jarvus and decide everything themselves: what to trade, how much, when to get out. If they ever stop unexpectedly they restart within a minute. Only Stop turns them off.</div>
+        <div class="flex"><button class="good" id="bStart">Start bots</button><button class="bad" id="bStopFleet">Stop bots</button></div></section>
+      <section class="p"><div class="h"><span class="o"></span>Safety switches</div>
+        <div class="gap10">
+          <div class="flex"><button data-cmd="pause">Pause new trades</button><button data-cmd="resume">Resume</button></div>
+          <div class="flex"><button class="danger" data-cmd="emergency_stop">Emergency stop</button><button data-cmd="clear_emergency">Clear emergency</button></div>
+          <div class="tiny muted">Pause: no new entries; open trades keep their stops and exits. Emergency stop: closes every paper position, blocks new trades and disarms real money until cleared.</div>
+        </div></section>
+    </div>
+    <div class="row c3">
+      <section class="p"><div class="h"><span class="o"></span>System health</div><div class="kv" id="sys"></div></section>
+      <section class="p"><div class="h"><span class="o"></span>Market data feeds</div><div class="scroll"><table><thead><tr><th>series</th><th>status</th><th>bars</th><th>bots</th></tr></thead><tbody id="series"></tbody></table></div></section>
+      <section class="p"><div class="h"><span class="o"></span>Alerts</div><div class="scroll"><table><tbody id="events"></tbody></table></div></section>
+    </div>
+    <section class="p"><div class="h"><span class="o"></span>About</div><div class="kv" id="about" style="max-width:720px"></div></section>
+  </section>
+</div>
+
+<aside id="drawer" aria-live="polite"></aside><div id="tip"></div><div id="toast"></div>
+<script src="app.js"></script>
 </body>
 </html>
