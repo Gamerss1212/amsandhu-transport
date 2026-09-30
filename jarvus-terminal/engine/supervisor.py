@@ -152,8 +152,8 @@ class Supervisor:
 
     # ------------------------------------------------------------------ lifecycle
     def running(self, wid: str) -> bool:
-        p = self.procs.get(wid)
-        return bool(p and p["proc"].is_alive())
+        p = self.procs.get(wid) or {}
+        return p.get("proc") is not None and p["proc"].is_alive()
 
     def start(self, wid: str, auto: bool = False) -> dict:
         with self.lock:

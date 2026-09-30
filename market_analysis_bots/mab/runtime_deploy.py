@@ -47,6 +47,13 @@ def utc_day_start(ms: Optional[int] = None) -> int:
     return int(datetime(d.year, d.month, d.day, tzinfo=timezone.utc).timestamp() * 1000)
 
 
+def _utc(ms) -> str:
+    try:
+        return time.strftime("%Y-%m-%d %H:%M:%S UTC", time.gmtime(int(ms) / 1000))
+    except (TypeError, ValueError):
+        return "?"
+
+
 class DeploymentMixin:
     # ================================================================== setup
     def _init_deployments(self):
@@ -685,7 +692,7 @@ class DeploymentMixin:
         br = self.bots.get(bid) if bid else None
         ck.add("engine", "Bot engine running", self.running, "" if self.running else "the fleet is not running")
         ck.add("emergency", "Emergency stop off", not self.emergency,
-               f"active since {self.emergency.get('time')}: {self.emergency.get('reason')}" if self.emergency else "")
+               f"active since {_utc(self.emergency.get('time'))}: {self.emergency.get('reason')}" if self.emergency else "")
         ck.add("storage", "Storage writable", self.storage_ok, "" if self.storage_ok else "storage writes are failing")
         ck.add("bot", "Bot and strategy load", br is not None and self._is_user(br),
                "" if br is not None else f"no bot {bid}")

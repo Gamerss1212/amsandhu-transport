@@ -395,13 +395,21 @@ def post_action(ctx, route, b):
         res = c.test(row["connection_id"])
         APP.notify_connections(wid)
         return {"connection": c.get(row["connection_id"]), "test": res}
-    if route == "/api/connections/test":
+    if route in ("/api/connections/test", "/api/connections/sync"):
+        cid = str(b.get("connection_id"))
         c = APP.conns(wid)
-        res = c.test(str(b.get("connection_id")))
+        row = c.get(cid)
+        if row is None:
+            raise ApiError(404, "unknown connection")
+        if row["provider"] == "jarvus_paper":                # the simulated account lives inside the bot engine
+            if not APP.sup.running(wid):
+                raise ApiError(409, "the simulated account runs inside the bot engine; start the engine to test it")
+            return cmd(wid, "connection_test" if route.endswith("test") else "connection_sync", {"connection_id": cid})
+        if route.endswith("sync"):
+            return c.sync(cid)
+        res = c.test(cid)
         APP.notify_connections(wid)
         return res
-    if route == "/api/connections/sync":
-        return APP.conns(wid).sync(str(b.get("connection_id")))
     if route == "/api/connections/reconnect":
         res = APP.conns(wid).reconnect(str(b.get("connection_id")))
         APP.notify_connections(wid)
@@ -537,6 +545,7 @@ GET_ROUTES = {
     "/api/user_bots": lambda ctx: fleet_json(ctx["wid"], "/api/user_bots", []),
     "/api/strategies": strategies,
     "/api/results": lambda ctx: library.results(),
+    "/api/backtest": lambda ctx: library.backtest_summary(ctx["q"]("strategy"), ctx["q"]("symbol"), ctx["q"]("venue")),
     "/api/markets": markets,
     "/api/candles": candles,
     "/api/markers": markers,

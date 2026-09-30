@@ -216,7 +216,8 @@ class Provider:
             except Exception:                                           # noqa: BLE001
                 est = None
             gate = f.brain.gates.get(br.symbol)
-            age = (int(time.time() * 1000) - (br.last_data + 0)) / 1000 if br.last_data else None
+            from mab.clock import tf_ms
+            age = (int(time.time() * 1000) - (br.last_data + tf_ms(br.tf))) / 1000 if br.last_data else None   # since bar end
             dep = f.dep_cache.get(bid)
             out.append({"bot_id": bid, "user": bool(getattr(br, "user", False)), "name": br.cfg.get("name", bid),
                         "strategy_id": br.c.id, "strategy": br.c.definition.get("name"),

@@ -7,3 +7,4 @@ data/settings.json
 build/
 dist/
 data/fleet/
+data/
