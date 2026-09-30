@@ -66,9 +66,12 @@ def parse(data: bytes, source: str) -> List[dict]:
     for it in root.iter():
         tag = it.tag
         if tag == "item":
-            title, link, pub = it.findtext("title"), it.findtext("link"), it.findtext("pubDate")
+            t = it.find("title")
+            title = "".join(t.itertext()) if t is not None else None       # titles may carry inline markup
+            link, pub = it.findtext("link"), it.findtext("pubDate")
         elif tag == f"{atom}entry":
-            title = it.findtext(f"{atom}title")
+            t = it.find(f"{atom}title")
+            title = "".join(t.itertext()) if t is not None else None
             ln = it.find(f"{atom}link")
             link = ln.get("href") if ln is not None else None
             pub = it.findtext(f"{atom}updated") or it.findtext(f"{atom}published")
