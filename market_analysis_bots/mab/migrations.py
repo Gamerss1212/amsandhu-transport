@@ -168,6 +168,7 @@ CREATE TABLE IF NOT EXISTS broker_orders (
     acked INTEGER,
     updated INTEGER,
     closed INTEGER,
+    flags TEXT,
     raw TEXT
 );
 CREATE INDEX IF NOT EXISTS ix_border_state ON broker_orders (state);
