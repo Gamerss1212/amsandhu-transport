@@ -8,6 +8,11 @@ or loss.
 Sizing uses capital slots: each bot sizes its trades as if it had equity / slots to itself
 (default 20 slots). The portfolio risk layer then caps total exposure, so a fleet of 250 bots
 cannot collectively borrow money it does not have.
+
+Any balance works: a small account is split into fewer slots (each at least `min_slot`, $25 by
+default), so its orders stay above the venues' minimum sizes instead of being refused as dust.
+From 20 x $25 = $500 upward every slot is in use. The number of slots in use is recomputed from
+the equity at every order, so it grows and shrinks with the account.
 """
 
 from __future__ import annotations
@@ -21,10 +26,13 @@ PKey = Tuple[str, str, str]      # (bot_id, venue, instrument)
 
 
 class Account:
+    MIN_SLOT = 25.0                     # smallest slot worth trading: venue minimums are $1 to about $5
+
     def __init__(self, balance: float = 100_000.0, slots: int = 20, currency: str = "USD"):
         self.cash = float(balance)
         self.currency = currency
         self.slots = max(1, int(slots))
+        self.min_slot = self.MIN_SLOT
         self.positions: Dict[PKey, dict] = {}
         self.marks: Dict[Tuple[str, str], Tuple[float, int]] = {}      # (venue, instrument) -> (price, time)
         self.realized = 0.0
@@ -59,8 +67,15 @@ class Account:
                 net_by_inst[k] = net_by_inst.get(k, 0.0) + v
             return {"gross": gross, "net_by_instrument": net_by_inst, "open_positions": len(self.positions)}
 
+    def slots_in_use(self, equity: Optional[float] = None) -> int:
+        eq = max(0.0, self.equity() if equity is None else equity)
+        if not self.min_slot:
+            return self.slots
+        return max(1, min(self.slots, int(eq // self.min_slot)))
+
     def slot_equity(self) -> float:
-        return max(0.0, self.equity()) / self.slots
+        eq = max(0.0, self.equity())
+        return eq / self.slots_in_use(eq)
 
     def twr(self) -> float:
         """Time-weighted return since the account was opened."""
@@ -167,7 +182,7 @@ class Account:
         return {"equity": eq, "cash": self.cash, "currency": self.currency, "realized_pnl": self.realized,
                 "fees": self.fees, "open_positions": ex["open_positions"], "gross_exposure": ex["gross"],
                 "gross_exposure_pct": 100 * ex["gross"] / eq if eq else None, "twr": self.twr(),
-                "slots": self.slots, "slot_equity": self.slot_equity(),
+                "slots": self.slots, "slots_in_use": self.slots_in_use(eq), "slot_equity": self.slot_equity(),
                 "deposits": sum(f["amount"] for f in self.flows if f["kind"] in ("initial", "deposit", "set_balance")
                                 and f["amount"] > 0),
                 "withdrawals": -sum(f["amount"] for f in self.flows if f["amount"] < 0)}

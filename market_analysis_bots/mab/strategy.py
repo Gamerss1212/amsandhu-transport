@@ -281,13 +281,14 @@ class TradeManager:
     forward, restarts and replays all line up."""
 
     def __init__(self, c: Compiled, filler: Filler, equity_fn, lot_size: float = 0.0, min_notional: float = 0.0,
-                 can_short: bool = True, instrument: str = ""):
+                 can_short: bool = True, instrument: str = "", max_participation: Optional[float] = None):
         self.c = c
         self.d = c.definition
         self.filler = filler
         self.equity_fn = equity_fn          # callable -> equity allocated to this bot
         self.lot = lot_size
         self.min_notional = min_notional
+        self.max_participation = max_participation   # entry size at most this share of the market's recent volume
         self.can_short = can_short
         self.instrument = instrument
         self.pos: Optional[Position] = None
@@ -531,6 +532,7 @@ class TradeManager:
             if plan is None:
                 return [{"action": "skip", "bar": t, "reason": "reference price already beyond the stop", "side": side}]
             qty, stop, target = plan
+            qty = self._liquidity_cap(qty, f, i)
             if qty <= 0 or qty * ref < self.min_notional:
                 return [{"action": "rejected", "bar": t, "reason": f"order size below the venue minimum ({qty:.8g} units)"}]
             self.awaiting = {"kind": "entry", "pending": dict(p.__dict__), "first_bar": t + f.step}
@@ -538,6 +540,20 @@ class TradeManager:
                      "stop": stop, "target": target, "reason": reason, "reduce_only": False}]
         self.pending = p
         return [{"action": "order_placed", "bar": t, "kind": kind, "side": side, "price": price}]
+
+    def _liquidity_cap(self, qty: float, f, i: int) -> float:
+        """A big account must not buy more than the market trades: cap the entry at max_participation of the
+        average volume of the last hour of bars (12 five-minute bars), rounded down to the lot size."""
+        if not self.max_participation or f is None or qty <= 0:
+            return qty
+        lo = max(0, i - 11)
+        vols = [f.v[j] for j in range(lo, i + 1) if f.v[j]]
+        if not vols:
+            return qty
+        cap = self.max_participation * sum(vols) / len(vols)
+        if qty > cap:
+            qty = math.floor(cap / self.lot + 1e-9) * self.lot if self.lot else cap
+        return qty
 
     def _plan(self, p: Pending, px: float):
         """(qty, stop, target) for an entry at price px, or None if px is already beyond the stop."""
@@ -649,6 +665,7 @@ class TradeManager:
         qty = min(qty, eq * mp / 100.0 / px)
         if self.lot:
             qty = math.floor(qty / self.lot + 1e-9) * self.lot
+        qty = self._liquidity_cap(qty, f, i)
         if qty <= 0 or qty * px < self.min_notional:
             return [{"action": "rejected", "bar": t, "reason": f"order size below the venue minimum ({qty:.8g} units)"}]
         target = None

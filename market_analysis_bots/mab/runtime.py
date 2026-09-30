@@ -95,7 +95,8 @@ class LiveFiller(BacktestFiller):
 
 
 class BotRunner:
-    def __init__(self, cfg: dict, compiled: Compiled, inst: dict, account: Account):
+    def __init__(self, cfg: dict, compiled: Compiled, inst: dict, account: Account,
+                 max_participation: Optional[float] = None):
         self.cfg = cfg
         self.id = cfg["bot_id"]
         self.c = compiled
@@ -106,7 +107,8 @@ class BotRunner:
                        self.asset_type.startswith("stock") or self.asset_type.startswith("etf"))
         self.filler = LiveFiller(cm)
         self.tm = TradeManager(compiled, self.filler, account.slot_equity, inst.get("lot_size") or 0.0,
-                               inst.get("min_notional") or 0.0, bool(inst.get("can_short")), self.symbol)
+                               inst.get("min_notional") or 0.0, bool(inst.get("can_short")), self.symbol,
+                               max_participation=max_participation)
         self.enabled = bool(cfg.get("enabled", True))
         self.state = "warming" if self.enabled else "disabled"
         self.message = ""
@@ -238,7 +240,8 @@ class Fleet(DeploymentMixin):
             definition["sizing"] = dict(d.get("sizing", {}), **b["sizing"])
         c = compile_strategy(definition, {k: v for k, v in params.items() if k in (d.get("params") or {})},
                              inst["asset_type"])
-        br = BotRunner(b, c, inst, self.account)
+        br = BotRunner(b, c, self._paper_rules(inst, bool(b.get("user"))), self.account,
+                       max_participation=self.cfg.get("paper", {}).get("max_participation", 0.05))
         br.user = bool(b.get("user"))
         br.evaluating = False
         br.filler.cm.fees = FEE_PROFILES[self.fee_profile]
@@ -566,7 +569,7 @@ class Fleet(DeploymentMixin):
             routed = self._live_route(br, frame, i, a, intent)
             if routed is not None:
                 return routed
-        res = self.broker.execute(intent, a["ref_price"], self.registry.get(br.venue, br.symbol))
+        res = self.broker.execute(intent, a["ref_price"], br.inst)
         self.stats["orders"] += 1
         self._save(lambda: self.storage.save_order(dict(res), intent.to_dict()))
         if res["status"] == "rejected":
@@ -772,6 +775,14 @@ class Fleet(DeploymentMixin):
             br.last_decision = f"resting order cancelled by risk: {'; '.join(failed)}"
             return "blocked"
         return "order_placed"
+
+    def _paper_rules(self, inst: dict, user: bool) -> dict:
+        """Order rules for a bot trading the simulated research account. US stocks may be bought in fractions, as
+        Alpaca and other US brokers allow ($1 minimum), so a small balance can still trade them; Canadian listings
+        keep whole shares. Your own bots keep the venue's exact rules (they may run on a real broker)."""
+        if user or inst.get("asset_type") != "stock" or not self.cfg.get("paper", {}).get("fractional_us_stocks", True):
+            return inst
+        return dict(inst, lot_size=1e-6, min_qty=0.0, min_notional=1.0, fractional=True)
 
     def _fallback_exit(self, br: BotRunner, frame, i, a, why: str, already: Optional[dict] = None) -> str:
         """Exits must not fail. If the book walk could not fill an exit, the remainder is closed
@@ -1105,7 +1116,7 @@ class Fleet(DeploymentMixin):
                 break
             if leg == "close":
                 intent.quantity = out[0]["filled_qty"]
-            res = self.broker.execute(intent, px, self.registry.get(br.venue, br.symbol))
+            res = self.broker.execute(intent, px, br.inst)
             self.storage.save_order(dict(res), intent.to_dict())
             for f in res["fills"]:
                 fd = f.to_dict()
