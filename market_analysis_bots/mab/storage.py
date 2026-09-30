@@ -1,11 +1,16 @@
 """SQLite storage: every signal, intent, risk decision, order, fill, trade, health record and
 event, plus bars for replay, bot state for restarts, the account, and the control queue.
 
+* Schema: versioned migrations (mab/migrations.py) run when a database is opened.
 * WAL mode, one connection per thread, writes serialised by a lock, busy timeout.
 * Writes retry briefly; a write that still fails raises StorageError. The runtime treats that as
   a critical fault: it stops opening new trades (open positions keep their stops) until storage
   works again, and keeps the unsaved records in a bounded buffer to flush later.
-* Retention: `prune()` deletes old bars / health rows / signals by age (defaults below).
+* Audit log: `audit()` appends one step of a decision's lifecycle (market update, signal, risk
+  decision, order, acknowledgement, fill, position management, exit) or a control/connection/research
+  event. Payloads are sanitised: anything that looks like a credential is removed before it is written.
+* Retention: `prune()` deletes old bars / health rows / signals by age (defaults below); order,
+  fill, risk and control records in the audit log are kept for a year.
 * Backups: `backup()` writes a consistent copy with SQLite's online backup API and keeps the
   newest N copies.
 * Integrity: `check()` runs PRAGMA integrity_check; `recover` in the CLI restores the newest
@@ -16,59 +21,69 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import sqlite3
 import threading
 import time
 from typing import Any, Dict, Iterable, List, Optional
 
-SCHEMA = """
-CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT);
-CREATE TABLE IF NOT EXISTS bars (venue TEXT, instrument TEXT, tf TEXT, t INTEGER, o REAL, h REAL, l REAL, c REAL,
-    v REAL, recv INTEGER, prov TEXT, PRIMARY KEY (venue, instrument, tf, t)) WITHOUT ROWID;
-CREATE TABLE IF NOT EXISTS signals (id INTEGER PRIMARY KEY, bot_id TEXT, strategy_id TEXT, strategy_version TEXT,
-    config_version TEXT, instrument TEXT, venue TEXT, tf TEXT, bar_time INTEGER, decision_time INTEGER, action TEXT,
-    reason TEXT, features TEXT, rules TEXT);
-CREATE INDEX IF NOT EXISTS ix_signals_bot ON signals (bot_id, bar_time);
-CREATE TABLE IF NOT EXISTS intents (intent_id TEXT PRIMARY KEY, bot_id TEXT, time INTEGER, body TEXT);
-CREATE TABLE IF NOT EXISTS risk_decisions (intent_id TEXT, bot_id TEXT, approved INTEGER, adjusted_qty REAL,
-    checks TEXT, time INTEGER);
-CREATE INDEX IF NOT EXISTS ix_risk_bot ON risk_decisions (bot_id, time);
-CREATE TABLE IF NOT EXISTS orders (order_id TEXT PRIMARY KEY, intent_id TEXT, bot_id TEXT, instrument TEXT,
-    venue TEXT, side TEXT, qty REAL, filled_qty REAL, avg_price REAL, status TEXT, reason TEXT, model TEXT,
-    time INTEGER);
-CREATE TABLE IF NOT EXISTS fills (fill_id TEXT PRIMARY KEY, order_id TEXT, intent_id TEXT, bot_id TEXT,
-    instrument TEXT, venue TEXT, side TEXT, qty REAL, price REAL, fee REAL, liquidity TEXT, time INTEGER,
-    simulated INTEGER, model TEXT);
-CREATE INDEX IF NOT EXISTS ix_fills_bot ON fills (bot_id, time);
-CREATE TABLE IF NOT EXISTS trades (id INTEGER PRIMARY KEY, bot_id TEXT, strategy_id TEXT, instrument TEXT,
-    venue TEXT, side INTEGER, qty REAL, entry_time INTEGER, entry_price REAL, exit_time INTEGER, exit_price REAL,
-    fees REAL, pnl REAL, r REAL, bars INTEGER, entry_reason TEXT, exit_reason TEXT, mfe_r REAL, mae_r REAL);
-CREATE INDEX IF NOT EXISTS ix_trades_bot ON trades (bot_id, exit_time);
-CREATE TABLE IF NOT EXISTS bot_state (bot_id TEXT PRIMARY KEY, state TEXT, updated INTEGER);
-CREATE TABLE IF NOT EXISTS bot_health (time INTEGER, bot_id TEXT, state TEXT, last_eval INTEGER, last_data INTEGER,
-    last_decision TEXT, errors INTEGER, message TEXT);
-CREATE INDEX IF NOT EXISTS ix_health_time ON bot_health (time);
-CREATE TABLE IF NOT EXISTS system_health (time INTEGER PRIMARY KEY, body TEXT);
-CREATE TABLE IF NOT EXISTS equity (time INTEGER PRIMARY KEY, equity REAL, cash REAL, gross REAL, twr REAL);
-CREATE TABLE IF NOT EXISTS events (id INTEGER PRIMARY KEY, time INTEGER, level TEXT, kind TEXT, bot_id TEXT,
-    message TEXT, body TEXT);
-CREATE INDEX IF NOT EXISTS ix_events_time ON events (time);
-CREATE TABLE IF NOT EXISTS kv (key TEXT PRIMARY KEY, value TEXT, updated INTEGER);
-CREATE TABLE IF NOT EXISTS cash_flows (id INTEGER PRIMARY KEY, time INTEGER, kind TEXT, amount REAL,
-    equity_before REAL, equity_after REAL, note TEXT);
-CREATE TABLE IF NOT EXISTS control (id INTEGER PRIMARY KEY, time INTEGER, command TEXT, args TEXT,
-    status TEXT DEFAULT 'pending', result TEXT, done INTEGER);
-CREATE TABLE IF NOT EXISTS experiments (experiment_id TEXT PRIMARY KEY, created INTEGER, kind TEXT, spec TEXT,
-    code_version TEXT, summary TEXT);
-CREATE TABLE IF NOT EXISTS evaluation_results (id INTEGER PRIMARY KEY, experiment_id TEXT, strategy_id TEXT,
-    strategy_version TEXT, instrument TEXT, tf TEXT, period TEXT, config TEXT, dataset TEXT, metrics TEXT,
-    code_version TEXT, seed INTEGER, created INTEGER);
-CREATE INDEX IF NOT EXISTS ix_eval_strategy ON evaluation_results (strategy_id, period);
-"""
+from mab import migrations
 
-SCHEMA_VERSION = "1"
+SCHEMA = migrations.V1                    # the original schema (kept for tools that print it)
+SCHEMA_VERSION = str(migrations.LATEST)
 
-RETENTION_DAYS = {"bars": 14, "bot_health": 3, "system_health": 7, "signals": 30, "equity": 90, "events": 90}
+RETENTION_DAYS = {"bars": 14, "bot_health": 3, "system_health": 7, "signals": 30, "equity": 90, "events": 90,
+                  "connection_snapshots": 30}
+# audit events: routine evaluation records are kept for a short time, everything about orders, money,
+# controls and connections for a year
+AUDIT_SHORT_KINDS = ("market_update", "signal", "data")
+AUDIT_RETENTION_DAYS = {"short": 14, "long": 366}
+
+SEVERITIES = ("debug", "info", "warning", "error", "critical")
+_SECRET_KEY = re.compile(r"(secret|password|passwd|token|api[_-]?key|apikey|signature|authorization|private|"
+                         r"credential|cookie|session)", re.I)
+_SAFE_KEYS = {"input_tokens", "output_tokens", "tokens", "token_budget", "session_close", "max_tokens", "session_id_hash"}
+_PREFIXED = re.compile(r"\b(?:sk|pk|ak|rk)-[A-Za-z0-9_\-]{12,}")
+_OPAQUE = re.compile(r"[A-Za-z0-9+/_\-]{32,}={0,2}")
+
+
+def _mask_opaque(m: "re.Match") -> str:
+    s = m.group(0)
+    # credentials are long mixed-case strings; hashes and ids (lower-case hex, UUID parts) are left readable
+    if any(c.isupper() for c in s) and any(c.islower() for c in s) and any(c.isdigit() for c in s):
+        return "[masked]"
+    return s
+
+
+def _redact_text(s: str) -> str:
+    try:                                          # values the secret store has handed out in this process
+        from mab.secrets_store import RedactingFilter
+        for v in RedactingFilter.values:
+            if v in s:
+                s = s.replace(v, "***")
+    except Exception:                             # noqa: BLE001
+        pass
+    return _OPAQUE.sub(_mask_opaque, _PREFIXED.sub("[masked]", s))
+
+
+def sanitize(obj: Any, depth: int = 0) -> Any:
+    """A copy of obj that is safe to log: keys that name credentials are dropped and long opaque strings
+    that look like keys are masked. Used on every audit payload and summary."""
+    if depth > 6:
+        return "..."
+    if isinstance(obj, dict):
+        out = {}
+        for k, v in obj.items():
+            if isinstance(k, str) and _SECRET_KEY.search(k) and k not in _SAFE_KEYS:
+                out[k] = "[removed]"
+            else:
+                out[k] = sanitize(v, depth + 1)
+        return out
+    if isinstance(obj, (list, tuple)):
+        return [sanitize(v, depth + 1) for v in list(obj)[:500]]
+    if isinstance(obj, str):
+        return _redact_text(obj if len(obj) <= 4000 else obj[:4000] + "...")
+    return obj
 
 
 class StorageError(RuntimeError):
@@ -88,11 +103,10 @@ class Storage:
         self.fail_hook = fail_hook               # test hook: callable() -> raise to simulate storage failure
         self.write_errors = 0
         self.writes = 0
+        self.audit_hook = None                   # callable(event dict) after each audit write (in-process listeners)
         conn = self._conn()
         with self.wlock:
-            conn.executescript(SCHEMA)
-            conn.execute("INSERT OR IGNORE INTO meta VALUES ('schema_version', ?)", (SCHEMA_VERSION,))
-            conn.commit()
+            self.migrated = migrations.migrate(conn, path)
 
     def _conn(self) -> sqlite3.Connection:
         c = getattr(self.local, "conn", None)
@@ -215,6 +229,109 @@ class Storage:
         self.write("INSERT INTO events (time, level, kind, bot_id, message, body) VALUES (?,?,?,?,?,?)",
                    (int(time.time() * 1000), level, kind, bot_id, message, _j(body) if body is not None else None))
 
+    # ------------------------------------------------------------------ audit log (the lifecycle record)
+    def audit(self, kind: str, summary: str, *, stage: str = None, severity: str = "info", mode: str = None,
+              bot_id: str = None, deployment_id: str = None, symbol: str = None, venue: str = None,
+              connection_id: str = None, correlation_id: str = None, order_id: str = None, payload: Any = None,
+              ts: Optional[int] = None) -> int:
+        """Append one audit event and return its id. Evidence goes in `payload` (sanitised: no credentials)."""
+        if severity not in SEVERITIES:
+            severity = "info"
+        t = int(ts if ts is not None else time.time() * 1000)
+        body = _j(sanitize(payload)) if payload is not None else None
+        row = (t, kind, stage, severity, mode, bot_id, deployment_id, symbol, venue, connection_id, correlation_id,
+               order_id, sanitize(str(summary))[:1000], body)
+        last = None
+        for attempt in range(3):
+            try:
+                if self.fail_hook:
+                    self.fail_hook()
+                with self.wlock:
+                    c = self._conn()
+                    cur = c.execute("INSERT INTO audit_events (ts, kind, stage, severity, mode, bot_id, deployment_id,"
+                                    " symbol, venue, connection_id, correlation_id, order_id, summary, payload)"
+                                    " VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)", row)
+                    c.commit()
+                    eid = cur.lastrowid
+                self.writes += 1
+                break
+            except (sqlite3.OperationalError, sqlite3.DatabaseError, OSError) as e:
+                last = e
+                time.sleep(0.05 * (attempt + 1))
+        else:
+            self.write_errors += 1
+            raise StorageError(f"storage write failed: {last}")
+        if self.audit_hook is not None:
+            try:
+                self.audit_hook({"id": eid, "ts": t, "kind": kind, "stage": stage, "severity": severity, "mode": mode,
+                                 "bot_id": bot_id, "deployment_id": deployment_id, "symbol": symbol, "venue": venue,
+                                 "connection_id": connection_id, "correlation_id": correlation_id,
+                                 "order_id": order_id, "summary": row[12]})
+            except Exception:                                           # noqa: BLE001 - a listener never breaks a write
+                pass
+        return eid
+
+    @staticmethod
+    def _audit_row(r: dict) -> dict:
+        if r.get("payload"):
+            try:
+                r["payload"] = json.loads(r["payload"])
+            except ValueError:
+                pass
+        return r
+
+    def audit_since(self, after_id: int = 0, limit: int = 200, min_severity: str = "debug") -> List[dict]:
+        """Events newer than after_id, oldest first (what a live stream sends next)."""
+        sev = SEVERITIES[SEVERITIES.index(min_severity):] if min_severity in SEVERITIES else SEVERITIES
+        q = ("SELECT * FROM audit_events WHERE id > ? AND severity IN (%s) ORDER BY id LIMIT ?"
+             % ",".join("?" * len(sev)))
+        return [self._audit_row(r) for r in self.query(q, (int(after_id), *sev, int(limit)))]
+
+    def audit_last_id(self) -> int:
+        r = self.query("SELECT MAX(id) AS m FROM audit_events")
+        return int(r[0]["m"] or 0) if r else 0
+
+    def audit_search(self, *, text: str = None, kinds: Iterable[str] = None, bot_id: str = None,
+                     deployment_id: str = None, symbol: str = None, mode: str = None, severity: str = None,
+                     correlation_id: str = None, since: int = None, until: int = None, before_id: int = None,
+                     limit: int = 200) -> List[dict]:
+        """Filtered history, newest first. Every filter is optional; text matches summary or ids."""
+        where, args = [], []
+        if text:
+            like = f"%{text}%"
+            where.append("(summary LIKE ? OR bot_id LIKE ? OR symbol LIKE ? OR correlation_id LIKE ? OR order_id LIKE ?)")
+            args += [like] * 5
+        kinds = [k for k in (kinds or []) if k]
+        if kinds:
+            where.append("kind IN (%s)" % ",".join("?" * len(kinds)))
+            args += kinds
+        for col, val in (("bot_id", bot_id), ("deployment_id", deployment_id), ("symbol", symbol), ("mode", mode),
+                         ("correlation_id", correlation_id)):
+            if val:
+                where.append(f"{col} = ?")
+                args.append(val)
+        if severity and severity in SEVERITIES:
+            sev = SEVERITIES[SEVERITIES.index(severity):]
+            where.append("severity IN (%s)" % ",".join("?" * len(sev)))
+            args += list(sev)
+        if since:
+            where.append("ts >= ?")
+            args.append(int(since))
+        if until:
+            where.append("ts <= ?")
+            args.append(int(until))
+        if before_id:
+            where.append("id < ?")
+            args.append(int(before_id))
+        q = "SELECT * FROM audit_events" + (" WHERE " + " AND ".join(where) if where else "") + " ORDER BY id DESC LIMIT ?"
+        args.append(max(1, min(int(limit), 5000)))
+        return [self._audit_row(r) for r in self.query(q, tuple(args))]
+
+    def lifecycle(self, correlation_id: str) -> List[dict]:
+        """Every audit event of one decision, in order: signal -> risk -> order -> ack -> fills -> exit."""
+        return [self._audit_row(r) for r in self.query(
+            "SELECT * FROM audit_events WHERE correlation_id = ? ORDER BY id", (correlation_id,))]
+
     def kv_set(self, key: str, value: Any):
         self.write("INSERT OR REPLACE INTO kv VALUES (?,?,?)", (key, _j(value), int(time.time() * 1000)))
 
@@ -271,7 +388,7 @@ class Storage:
         now_ms = now_ms or int(time.time() * 1000)
         d = dict(RETENTION_DAYS, **(days or {}))
         cols = {"bars": "t", "bot_health": "time", "system_health": "time", "signals": "decision_time",
-                "equity": "time", "events": "time"}
+                "equity": "time", "events": "time", "connection_snapshots": "ts"}
         out = {}
         for table, col in cols.items():
             cut = now_ms - d[table] * 86_400_000
@@ -280,6 +397,15 @@ class Storage:
                 cur = c.execute(f"DELETE FROM {table} WHERE {col} < ?", (cut,))
                 c.commit()
             out[table] = cur.rowcount
+        short = ",".join("?" * len(AUDIT_SHORT_KINDS))
+        with self.wlock:
+            c = self._conn()
+            n1 = c.execute(f"DELETE FROM audit_events WHERE kind IN ({short}) AND ts < ?",
+                           (*AUDIT_SHORT_KINDS, now_ms - AUDIT_RETENTION_DAYS["short"] * 86_400_000)).rowcount
+            n2 = c.execute("DELETE FROM audit_events WHERE ts < ?",
+                           (now_ms - AUDIT_RETENTION_DAYS["long"] * 86_400_000,)).rowcount
+            c.commit()
+        out["audit_events"] = n1 + n2
         return out
 
     def backup(self, dest_dir: str, keep: int = 7) -> str:
