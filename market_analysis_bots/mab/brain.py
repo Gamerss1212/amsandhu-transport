@@ -368,8 +368,9 @@ class FleetBrain:
             n_eff, sd = est["n_eff"], est["sd"]
             action, size = "approve", 1.0
             benched = self.mode == "active" and n_eff >= 30 and est["mean"] + 1.64 * sd < 0
+            # no win probability in the text: it is shown only once the brain's calibration has been measured
             reason = (f"learned edge {edge:+.2f}R (+/-{sd:.2f}, evidence {n_eff:.0f} trades, {regime_text(rkey)}); "
-                      f"win chance {100 * p:.0f}%; fleet {cons['long']} long / {cons['short']} short of {cons['bots']} "
+                      f"fleet {cons['long']} long / {cons['short']} short of {cons['bots']} "
                       f"(track-record weighted {cons['smart_net']:+.2f})")
             kind = None
             gstate = (gate or {}).get("state")
@@ -379,7 +380,7 @@ class FleetBrain:
                     reason = f"costs would take {100 * cost_r:.0f}% of the risk on this trade (limit {100 * COST_VETO_R:.0f}%); " + reason
                 elif gstate == "QUIET":
                     action, size, kind = "veto", 0.0, "quiet"
-                    reason = f"volatility gate QUIET ({100 * gate['p_quiet']:.0f}%): the next hours are likely too quiet to pay the costs; " + reason
+                    reason = "volatility gate QUIET: the next hours are likely too quiet to pay the costs; " + reason
                 elif benched:
                     action, size, kind = "veto", 0.0, "benched"
                     reason = "benched: this strategy keeps losing here (95% confident), so the brain sits it out " \
@@ -419,6 +420,33 @@ class FleetBrain:
             if action != "veto":
                 self.pending[bot_id] = dec
             return dec
+
+    def evaluate_sample(self, strategy_id: str, instrument: str, rkey: Optional[str], f: List[float],
+                        cost_r: Optional[float] = None, gate_state: Optional[str] = None) -> dict:
+        """The decision this brain would make, without randomness and without changing anything (for comparing
+        brain versions on the same recorded trades)."""
+        with self.lock:
+            p = self.p_win(f) if len(f) == len(self.w) else 0.5
+            est = self._combined(strategy_id, instrument, rkey)
+            ctx = (p - self._base_rate()) if self.stats["learned"] >= 30 else 0.0
+            a0, a1, a2 = self.a
+            edge = a0 + a1 * est["mean"] + a2 * ctx
+            if self.mode != "active":
+                return {"action": "approve", "size": 1.0, "edge": edge}
+            if cost_r is not None and cost_r > COST_VETO_R:
+                return {"action": "veto", "size": 0.0, "edge": edge, "kind": "cost"}
+            if gate_state == "QUIET":
+                return {"action": "veto", "size": 0.0, "edge": edge, "kind": "quiet"}
+            if est["n_eff"] >= 30 and est["mean"] + 1.64 * est["sd"] < 0:
+                return {"action": "veto", "size": 0.0, "edge": edge, "kind": "benched"}
+            if est["n_eff"] >= self.min_evidence and edge < self.veto_edge:
+                return {"action": "veto", "size": 0.0, "edge": edge, "kind": "learned"}
+            size = max(0.5, min(1.5, 1.0 + 1.5 * edge))
+            if cost_r is not None and cost_r > COST_HALF_R:
+                size *= 0.5
+            if gate_state == "LOUD":
+                size *= LOUD_SIZE
+            return {"action": "approve", "size": max(0.25, min(1.5, size)), "edge": edge}
 
     # ------------------------------------------------------------------ learn
     def _update(self, sid: str, inst: str, reg: Optional[str], rc: float, w: float) -> List[str]:

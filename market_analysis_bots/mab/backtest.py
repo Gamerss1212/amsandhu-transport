@@ -58,8 +58,11 @@ def session_days(frame: Frame, i0: int, i1: int) -> List[str]:
 def run(c: Compiled, frame: Frame, venue: str = None, capital: float = 10_000.0, cost_mult: float = 1.0,
         start: Optional[int] = None, end: Optional[int] = None, period: str = "full", resolver=None, events=None,
         rs: Optional[RuleSeries] = None, lot_size: float = 0.0, min_notional: float = 0.0,
-        can_short: bool = True, tick: float = 0.0, fees: Optional[dict] = None) -> Result:
-    """fees: a mab.costs.FEE_PROFILES entry overriding the venue's crypto fees."""
+        can_short: bool = True, tick: float = 0.0, fees: Optional[dict] = None,
+        max_participation: Optional[float] = None) -> Result:
+    """fees: a mab.costs.FEE_PROFILES entry overriding the venue's crypto fees.
+    max_participation: liquidity limit - an entry may take at most this fraction of its fill bar's volume; a
+    larger order is filled partially (the rest is treated as not filled, as an immediate-or-cancel order)."""
     t0 = time.time()
     venue = venue or frame.venue
     filler = filler_for(venue, frame.instrument, frame.asset_type, cost_mult, tick)
@@ -77,6 +80,16 @@ def run(c: Compiled, frame: Frame, venue: str = None, capital: float = 10_000.0,
         for a in acts:
             if a["action"] in ("skip", "rejected"):
                 skipped[a["reason"]] = skipped.get(a["reason"], 0) + 1
+            elif a["action"] == "entry" and max_participation and tm.pos is not None:
+                cap = max_participation * (frame.v[i] or 0.0)
+                if cap <= 0:
+                    tm.pos = None
+                    tm.trades_today = max(0, tm.trades_today - 1)
+                    skipped["no volume to fill against (liquidity limit)"] = skipped.get("no volume to fill against (liquidity limit)", 0) + 1
+                elif tm.pos.qty > cap:
+                    tm.pos.fees *= cap / tm.pos.qty
+                    tm.pos.qty = cap
+                    skipped["partial fill: liquidity limit"] = skipped.get("partial fill: liquidity limit", 0) + 1
     if tm.pos is not None and i1 > i0:
         tm.force_exit(frame, i1 - 1, frame.c[i1 - 1], "end of test period")
     days = session_days(frame, i0, i1)

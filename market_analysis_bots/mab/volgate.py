@@ -163,6 +163,35 @@ def _tree_raw(trees, base, x):
 class VolGate:
     def __init__(self, model: Optional[dict] = None):
         self.model = model if model is not None else self.load()
+        self.version = self.model.get("generated") and f"volgate {self.model.get('generated')}"
+        self._rel = {}
+        for asset, m in self.model.items():
+            if not isinstance(m, dict):
+                continue
+            for kind in ("loud", "quiet"):
+                r = m.get(f"reliability_{kind}")
+                if isinstance(r, str):
+                    try:
+                        import ast
+                        r = ast.literal_eval(r)
+                    except (ValueError, SyntaxError):
+                        r = None
+                if r:
+                    self._rel[(asset, kind)] = r
+
+    def evidence(self, asset: str, kind: str, p: Optional[float]) -> Optional[dict]:
+        """What held-out testing says about readings like this one: the observed rate in the test period for
+        readings in the same probability band, with its sample size, the gate's precision when it flags, and
+        the base rate. This, not the raw model output, is what may be shown as a probability."""
+        m = self.model.get(asset) or {}
+        rel = self._rel.get((asset, kind))
+        if p is None or not rel:
+            return None
+        band = min(rel, key=lambda r: abs(r["p"] - p))
+        test = m.get(f"test_{kind}") or {}
+        return {"observed_rate": band.get("actual"), "n": band.get("n"), "band": band.get("p"),
+                "precision_when_flagged": test.get("precision"), "flagged_n": test.get("flagged"),
+                "base_rate": test.get("base_rate"), "auc": test.get("auc"), "period": m.get("period")}
 
     @staticmethod
     def load(path: str = MODEL_PATH) -> dict:
@@ -191,4 +220,5 @@ class VolGate:
             pl = _sig(sum(w * v for w, v in zip(m["w_loud"], x)))
             pq = _sig(sum(w * v for w, v in zip(m["w_quiet"], x)))
         state = "LOUD" if pl >= m["t_loud"] else ("QUIET" if pq >= m["t_quiet"] else "NORMAL")
-        return {"state": state, "p_loud": round(pl, 4), "p_quiet": round(pq, 4)}
+        return {"state": state, "p_loud": round(pl, 4), "p_quiet": round(pq, 4),
+                "evidence": {"loud": self.evidence(asset, "loud", pl), "quiet": self.evidence(asset, "quiet", pq)}}

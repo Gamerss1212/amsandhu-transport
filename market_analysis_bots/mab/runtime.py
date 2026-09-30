@@ -218,6 +218,9 @@ class Fleet(DeploymentMixin):
                 self._add_bot(b, states.get(b["bot_id"]))
             except Exception as e:
                 self._alert("error", "bot_config_invalid", f"{b.get('bot_id')}: {e}", b.get("bot_id"))
+        for br in self.bots.values():
+            if getattr(br, "user", False):
+                self.register_bot_strategy(br)
         self._refresh_deps()
 
     def _add_bot(self, b: dict, saved: Optional[dict]):
@@ -864,6 +867,14 @@ class Fleet(DeploymentMixin):
         return {"profile": name, "label": FEE_PROFILE_LABELS[name]}
 
     def _trade_closed(self, br: BotRunner, trade, dep: Optional[dict] = None):
+        ctx = self.brain.pending.get(br.id)
+        if ctx and trade.r is not None:              # the decision context, for forward evaluation of brain versions
+            self._save(lambda: self.storage.write(
+                "INSERT INTO brain_samples (ts, bot_id, strategy_key, instrument, side, regime, features, cost_r, gate, r, mode)"
+                " VALUES (?,?,?,?,?,?,?,?,?,?,?)", (now_ms(), br.id, ctx.get("strategy_id"), ctx.get("instrument"),
+                                                   ctx.get("side"), ctx.get("regime"), json.dumps(ctx.get("features")),
+                                                   ctx.get("cost_r"), ctx.get("gate"), trade.r,
+                                                   dep["mode"] if dep else "research")))
         for text in self.brain.learn(br.id, self._bkey(br), br.symbol, trade.r):
             self._event("info", "brain_insight", text, br.id)
         td = trade.to_dict()
@@ -949,6 +960,32 @@ class Fleet(DeploymentMixin):
             return self.reconcile()
         if command == "deployments":
             return [self.deployment_view(d) for d in self.deps.list(active_only=bool(args.get("active_only")))]
+        if command == "brain_snapshot":
+            return self.registry_models.snapshot_brain(self.brain, str(args.get("note") or ""))
+        if command == "brain_promote":
+            from mab.research.jobs import JobQueue
+            job = JobQueue(self.storage).get(str(args.get("job_id") or ""))
+            out = self.registry_models.promote_brain(str(args.get("version")), job, "owner", str(args.get("accept") or ""),
+                                                     str(args.get("note") or ""))
+            self.reload_models()
+            return {k: v for k, v in out.items() if k != "blob"}
+        if command == "strategy_approve":
+            from mab.research.jobs import JobQueue
+            job = JobQueue(self.storage).get(str(args.get("job_id") or ""))
+            br = next((b for b in self.bots.values() if b.c.id == args.get("strategy_id")), None)
+            if br is not None:
+                self.register_bot_strategy(br)
+            out = self.registry_models.approve_live(str(args.get("strategy_id")), str(args.get("version")), job, "owner",
+                                                    str(args.get("accept") or ""), str(args.get("note") or ""))
+            return {k: v for k, v in out.items() if k != "definition"}
+        if command == "strategy_retire":
+            out = self.registry_models.retire_strategy(str(args.get("strategy_id")), str(args.get("version")), "owner",
+                                                       str(args.get("note") or ""))
+            return {k: v for k, v in out.items() if k != "definition"}
+        if command == "reload_models":
+            return self.reload_models()
+        if command == "drift_check":
+            return self.drift_cycle()
         if command == "pause":
             self.paused = True
             self.storage.kv_set("paused", True)

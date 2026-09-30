@@ -74,6 +74,16 @@ class DeploymentMixin:
         self.trade_corr: Dict[str, str] = {}
         self._announced: Dict[tuple, int] = {}
         self._dep_cycle = 0
+        from mab.research.registry import Registry
+        self.registry_models = Registry(self.storage)
+        if getattr(self, "volgate", None) is not None:
+            try:
+                self.registry_models.register_volgate(self.volgate)
+            except Exception as e:                                      # noqa: BLE001
+                log.warning("volatility gate not registered: %s", e)
+        self.live_brain = None
+        self.live_brain_version = None
+        self.reload_models()
         self._refresh_deps()
 
     def _ensure_research_conn(self):
@@ -535,6 +545,8 @@ class DeploymentMixin:
         self._account_points()
         if self._dep_cycle % RECONCILE_EVERY == 0:
             self.reconcile()
+        if self._dep_cycle % 60 == 1:
+            self.drift_cycle()
         self.storage.kv_set("dep_peaks", self.dep_peak)
         for cid, rm in self.port_risk.items():
             eq = self.account_equity(cid)
@@ -794,10 +806,15 @@ class DeploymentMixin:
             ck.add("eligibility", "Strategy earned live trading (untouched-test positive and 20+ positive paper trades)",
                    elig, why + (" (requirement waived by the owner in the live authorisation)" if waived and not elig else ""),
                    waived=waived and not elig)
+            ck.add("brain_version", "Approved (frozen) brain version for live scoring", self.live_brain is not None,
+                   f"champion {self.live_brain_version}" if self.live_brain is not None else
+                   "no approved brain snapshot yet: live entries would be scored by the learning brain, which keeps "
+                   "changing; freeze and approve one under Models", required=False)
             if hasattr(self, "strategy_status"):
                 sst = self.strategy_status(br.c.id, br.c.version_hash)
-                ck.add("approved", "This strategy version is approved for live", sst == "live_approved",
-                       f"registry status: {sst}", waived=waived and sst != "live_approved")
+                ck.add("approved", "This strategy version is approved for live (evaluation + owner approval)",
+                       sst == "live_approved", f"registry status: {sst}" + ("" if sst == "live_approved" else
+                       "; run its walk-forward evaluation and approve it under Research"))
         return ck.report()
 
     def _strategy_live_record(self, br) -> tuple:
@@ -1017,6 +1034,7 @@ class DeploymentMixin:
                "params": b["params"], "enabled": True, "user": True}
         self.bot_cfgs.append(cfg)
         self._add_bot(cfg, None)
+        self.register_bot_strategy(self.bots[b["bot_id"]])
         self._refresh_deps()
         self._audit("control", f"bot {b['bot_id']} built: {self.strategies[sid].get('name')} on {inst}",
                     stage="bot_created", bot_id=b["bot_id"], symbol=inst, venue=venue)
@@ -1081,6 +1099,41 @@ class DeploymentMixin:
         self._audit("control", f"{cid}: simulated balance {kind} {float(amount):,.2f} (paper money, not a deposit)",
                     stage="paper_balance", mode="demo" if self.demo else "paper", connection_id=cid, payload=rec)
         return rec
+
+    # ================================================================== models and versions
+    def reload_models(self) -> dict:
+        """Live deployments score with the approved (champion) brain snapshot, which never changes by itself; a
+        promotion takes effect here. Without an approved snapshot, live entries are scored by the learning brain and
+        the readiness check says so."""
+        import json as _json
+        from mab.brain import FleetBrain
+        ch = self.registry_models.champion("brain")
+        if ch and ch.get("blob"):
+            b = FleetBrain(mode=self.brain.mode)
+            b.restore(_json.loads(ch["blob"]))
+            b.gates = self.brain.gates                      # market readings are shared; learned parameters are not
+            b.consensus = self.brain.consensus
+            self.live_brain, self.live_brain_version = b, ch["version"]
+        else:
+            self.live_brain, self.live_brain_version = None, None
+        return {"live_brain": self.live_brain_version}
+
+    def strategy_status(self, strategy_id: str, version_hash: str) -> str:
+        return self.registry_models.status(strategy_id, version_hash)
+
+    def register_bot_strategy(self, br) -> None:
+        try:
+            self.registry_models.register_strategy(br.c.id, br.c.definition, br.c.version_hash, "catalog")
+        except Exception as e:                                          # noqa: BLE001
+            log.debug("strategy version not registered: %s", e)
+
+    def drift_cycle(self) -> list:
+        from mab.research import drift
+        try:
+            return drift.performance(self.storage, self._evaluation_rows)
+        except Exception as e:                                          # noqa: BLE001
+            log.warning("drift check: %s", e)
+            return []
 
     # ================================================================== views
     def deployment_view(self, dep: dict) -> dict:

@@ -380,6 +380,25 @@ CREATE TABLE IF NOT EXISTS drift_reports (
 );
 CREATE INDEX IF NOT EXISTS ix_drift ON drift_reports (subject, ts);
 
+-- The brain's decision context for every closed trade (features, keys, costs, gate) with the trade's result:
+-- what a candidate brain is compared on against the approved one, on trades that closed after the candidate
+-- was frozen (forward, out-of-sample for both).
+CREATE TABLE IF NOT EXISTS brain_samples (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    ts INTEGER NOT NULL,
+    bot_id TEXT,
+    strategy_key TEXT,
+    instrument TEXT,
+    side INTEGER,
+    regime TEXT,
+    features TEXT,
+    cost_r REAL,
+    gate TEXT,
+    r REAL,
+    mode TEXT
+);
+CREATE INDEX IF NOT EXISTS ix_bsamples_ts ON brain_samples (ts);
+
 CREATE TABLE IF NOT EXISTS watchlists (
     name TEXT PRIMARY KEY,
     symbols TEXT NOT NULL,
