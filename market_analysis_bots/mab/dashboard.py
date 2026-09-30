@@ -25,7 +25,11 @@ from urllib.parse import parse_qs, urlparse
 from mab.storage import Storage
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-ALLOWED_COMMANDS = {"set_fee_profile", "live_status", "live_eligibility", "live_arm", "live_disarm", "live_close_all", "pause", "resume", "emergency_stop", "clear_emergency", "deposit", "withdraw", "set_balance",
+ALLOWED_COMMANDS = {"deploy_readiness", "deploy_start", "deploy_pause", "deploy_resume", "deploy_stop", "close_all_positions",
+                    "create_bot", "update_limits", "live_authorize", "live_revoke", "research_autopilot", "paper_balance",
+                    "connection_test", "connection_sync", "reconcile", "deployments", "brain_snapshot", "brain_promote",
+                    "strategy_approve", "strategy_retire", "reload_models", "drift_check", "connections_changed",
+"set_fee_profile", "live_status", "live_eligibility", "live_arm", "live_disarm", "live_close_all", "pause", "resume", "emergency_stop", "clear_emergency", "deposit", "withdraw", "set_balance",
                     "enable_bot", "disable_bot", "test_order"}
 
 
@@ -171,6 +175,130 @@ class Provider:
         st = self.storage.kv_get("account") or {}
         return st.get("positions", [])
 
+    # ---------------------------------------------------------------- views for the three-page app
+    def deployments(self) -> list:
+        if self.fleet is None:
+            return []
+        f = self.fleet
+        rows = f.deps.list()
+        keep = [d for d in rows if d["state"] != "stopped"] + [d for d in rows if d["state"] == "stopped"][-20:]
+        return [f.deployment_view(d) for d in keep]
+
+    def user_bots(self) -> list:
+        if self.fleet is None:
+            return []
+        out = []
+        for b in self.fleet.deps.bots():
+            br = self.fleet.bots.get(b["bot_id"])
+            dep = self.fleet.dep_cache.get(b["bot_id"]) or self.fleet.deps.latest_for(b["bot_id"])
+            out.append(dict(b, loaded=br is not None, strategy_name=(br.c.definition.get("name") if br else None),
+                            timeframe=br.tf if br else None, data_state=br.state if br else None,
+                            last_decision=br.last_decision if br else None,
+                            deployment=None if dep is None else {k: dep.get(k) for k in (
+                                "deployment_id", "state", "mode", "connection_id", "allocation", "limits")}))
+        return out
+
+    def scanner(self) -> list:
+        """Every bot's latest evaluation: the signal, how many rule conditions held, the brain's current estimate for
+        it (with its evidence), the volatility gate for its market, data freshness. No invented confidence."""
+        if self.fleet is None:
+            return []
+        f = self.fleet
+        out = []
+        for bid, br in list(f.bots.items()):
+            sig = br.last_signal or {}
+            rules = sig.get("rules") or []
+            entry = [r for r in rules if r.get("group") == "entry"]
+            passed = sum(1 for r in entry if r.get("passed"))
+            try:
+                est = f.brain._combined(f._bkey(br), br.symbol)
+                est = {"edge_r": round(est["mean"], 3), "sd_r": round(est["sd"], 3), "evidence_trades": round(est["n_eff"], 1)}
+            except Exception:                                           # noqa: BLE001
+                est = None
+            gate = f.brain.gates.get(br.symbol)
+            age = (int(time.time() * 1000) - (br.last_data + 0)) / 1000 if br.last_data else None
+            dep = f.dep_cache.get(bid)
+            out.append({"bot_id": bid, "user": bool(getattr(br, "user", False)), "name": br.cfg.get("name", bid),
+                        "strategy_id": br.c.id, "strategy": br.c.definition.get("name"),
+                        "family": br.c.definition.get("family"), "venue": br.venue, "symbol": br.symbol, "tf": br.tf,
+                        "asset": "stock" if br.venue == "yahoo" else "crypto", "state": br.state,
+                        "action": sig.get("action"), "reason": sig.get("reason"), "bar_time": sig.get("bar_time"),
+                        "conditions": {"passed": passed, "total": len(entry)}, "brain": est,
+                        "gate": None if not gate else {"state": gate.get("state"), "time": gate.get("time"),
+                                                       "evidence": gate.get("evidence")},
+                        "data_age_s": round(age, 1) if age is not None else None,
+                        "position": br.tm.pos is not None, "deployed": bool(dep), "mode": dep["mode"] if dep else None,
+                        "benched": bid in f.brain.bench})
+        return out
+
+    def candles(self, venue: str, symbol: str, tf: str, n: int = 300) -> dict:
+        if self.fleet is None:
+            return {"error": "the bot engine is not running", "t": []}
+        s = self.fleet.hub.get(venue, symbol, tf)
+        if s is not None and len(s.times) >= min(n, 50):
+            times = s.times[-n:]
+            b = [s.bars[t] for t in times]
+            return {"venue": venue, "symbol": symbol, "tf": tf, "source": getattr(b[-1], "provenance", venue) if b else venue,
+                    "t": times, "o": [x.open for x in b], "h": [x.high for x in b], "l": [x.low for x in b],
+                    "c": [x.close for x in b], "v": [x.volume for x in b], "status": s.status(), "live": True}
+        key = (venue, symbol, tf, n)
+        hit = self._books.get(("candles",) + key)
+        if hit and time.time() - hit[0] < 30:
+            return hit[1]
+        ad = self.fleet.hub.adapters.get(venue)
+        if ad is None or not ad.supports(tf):
+            return {"error": f"{venue} has no {tf} bars", "t": []}
+        try:
+            b = ad.bars(symbol, tf, limit=min(n, 300))
+        except Exception as e:                                          # noqa: BLE001
+            return {"error": f"market data unavailable: {type(e).__name__}: {e}", "t": []}
+        out = {"venue": venue, "symbol": symbol, "tf": tf, "source": getattr(b[-1], "provenance", venue) if b else venue,
+               "t": [x.event_time for x in b], "o": [x.open for x in b], "h": [x.high for x in b], "l": [x.low for x in b],
+               "c": [x.close for x in b], "v": [x.volume for x in b], "status": "fetched on request", "live": False}
+        self._books[("candles",) + key] = (time.time(), out)
+        return out
+
+    def markets(self) -> list:
+        """Markets the owner can build bots on: everything the fleet already follows, plus its registry's stocks."""
+        if self.fleet is None:
+            return []
+        seen, out = set(), []
+        for b in self.fleet.bot_cfgs:
+            k = (b["venue"], b["instrument"])
+            if k in seen:
+                continue
+            seen.add(k)
+            inst = self.fleet.registry.get(*k) or {}
+            out.append({"venue": k[0], "symbol": k[1], "asset": "stock" if k[0] == "yahoo" else "crypto",
+                        "quote": inst.get("quote"), "demo": k[0] == "demo"})
+        out.sort(key=lambda x: (x["asset"], x["symbol"]))
+        return out
+
+    def health(self) -> dict:
+        if self.fleet is None:
+            return {"running": False}
+        f = self.fleet
+        h = f.system_health()
+        hub = f.hub.snapshot()
+        series = []
+        now = int(time.time() * 1000)
+        for s in hub.get("series", [])[:400]:
+            row = {k: s.get(k) for k in ("key", "status", "last_bar", "bars", "need", "subscribers", "fetches",
+                                         "last_fetch_error", "last_fetch_ok", "counts", "last_issue") if k in s}
+            if s.get("last_bar"):
+                tf = s["key"].split("/")[-1]
+                from mab.clock import tf_ms
+                row["data_age_s"] = round((now - (s["last_bar"] + tf_ms(tf))) / 1000, 1)
+            series.append(row)
+        from mab.hardware import cpu_percent, describe
+        h.update({"series_detail": series, "http": hub.get("http"), "hardware": describe(),
+                  "cpu_percent": cpu_percent(), "execution": f.engine.health(),
+                  "connections": [{k: c.get(k) for k in ("connection_id", "label", "provider", "environment", "status",
+                                                          "last_sync", "last_error")} for c in f.conns.list()],
+                  "rate_limits": f.engine.health().get("rate_limits"), "live_brain": f.live_brain_version,
+                  "research_autopilot": f.research_autopilot})
+        return h
+
     def control(self, command: str, args: dict) -> dict:
         if command not in ALLOWED_COMMANDS:
             raise ValueError("command not allowed")
@@ -185,7 +313,7 @@ class Provider:
         return {"status": "queued", "note": "the fleet is not running; the command will apply when it starts"}
 
 
-def make_handler(provider: Provider, token: str, page: str):
+def make_handler(provider: Provider, token: str, page: str, api_token: Optional[str] = None):
     class H(BaseHTTPRequestHandler):
         server_version = "mab-dashboard"
 
@@ -194,7 +322,12 @@ def make_handler(provider: Provider, token: str, page: str):
 
         def _host_ok(self) -> bool:
             host = (self.headers.get("Host") or "").split(":")[0]
-            return host in ("127.0.0.1", "localhost")
+            if host not in ("127.0.0.1", "localhost"):
+                return False
+            if api_token:                     # supervised: only the app that started this fleet may talk to it
+                got = self.headers.get("Authorization") or ""
+                return secrets.compare_digest(got, f"Bearer {api_token}")
+            return True
 
         def _send(self, code: int, body, ctype="application/json"):
             data = body if isinstance(body, bytes) else (json.dumps(body, default=str).encode() if ctype ==
@@ -243,6 +376,20 @@ def make_handler(provider: Provider, token: str, page: str):
                     return self._send(200, provider.events())
                 if u.path == "/api/positions":
                     return self._send(200, provider.positions())
+                if u.path == "/api/deployments":
+                    return self._send(200, provider.deployments())
+                if u.path == "/api/user_bots":
+                    return self._send(200, provider.user_bots())
+                if u.path == "/api/scanner":
+                    return self._send(200, provider.scanner())
+                if u.path == "/api/candles":
+                    one = lambda k, d="": (q.get(k) or [d])[0]                     # noqa: E731
+                    return self._send(200, provider.candles(one("venue"), one("symbol"), one("tf", "5m"),
+                                                            max(20, min(1000, int(one("n", "300"))))))
+                if u.path == "/api/markets":
+                    return self._send(200, provider.markets())
+                if u.path == "/api/health":
+                    return self._send(200, provider.health())
                 return self._send(404, {"error": "not found"})
             except Exception as e:
                 return self._send(500, {"error": f"{type(e).__name__}: {e}"})
@@ -273,13 +420,14 @@ class QuietServer(ThreadingHTTPServer):
         super().handle_error(request, client_address)
 
 
-def serve(provider: Provider, host: str = "127.0.0.1", port: int = 8765, block: bool = False):
+def serve(provider: Provider, host: str = "127.0.0.1", port: int = 8765, block: bool = False, token: Optional[str] = None):
     if host not in ("127.0.0.1", "localhost"):
         raise ValueError("the dashboard only listens on this computer (127.0.0.1)")
     with open(os.path.join(HERE, "dashboard.html"), encoding="utf-8") as fh:
         page = fh.read()
-    token = secrets.token_urlsafe(24)
-    httpd = QuietServer((host, port), make_handler(provider, token, page))
+    api_token = token
+    csrf = secrets.token_urlsafe(24)
+    httpd = QuietServer((host, port), make_handler(provider, csrf, page, api_token=api_token))
     httpd.daemon_threads = True
     if block:
         httpd.serve_forever()

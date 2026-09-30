@@ -984,6 +984,10 @@ class Fleet(DeploymentMixin):
             return {k: v for k, v in out.items() if k != "definition"}
         if command == "reload_models":
             return self.reload_models()
+        if command == "connections_changed":                 # credentials added/removed by the app: drop cached clients
+            self.conns._cache.clear()
+            self._refresh_deps()
+            return {"ok": True}
         if command == "drift_check":
             return self.drift_cycle()
         if command == "pause":

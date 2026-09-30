@@ -112,7 +112,9 @@ def cmd_init(a):
 
 
 def run_fleet(limit=None, bot_ids=None, minutes=None, dashboard=True, port=None, config_path=None, stage=None,
-              quiet=False):
+              quiet=False, token=None, port_file=None):
+    """port=0 binds a free port; port_file then receives {"port", "pid"} so a supervisor can find this fleet.
+    token: when set, every request to the fleet's local API must carry "Authorization: Bearer <token>"."""
     from mab.dashboard import Provider, serve
     from mab.runtime import Fleet
     cfg = load_config(config_path)
@@ -131,7 +133,13 @@ def run_fleet(limit=None, bot_ids=None, minutes=None, dashboard=True, port=None,
     httpd = None
     if dashboard:
         d = cfg.get("dashboard", {})
-        httpd = serve(Provider(fleet.storage, fleet), "127.0.0.1", port or d.get("port", 8765))
+        httpd = serve(Provider(fleet.storage, fleet), "127.0.0.1", d.get("port", 8765) if port is None else port,
+                      token=token)
+        if port_file:
+            tmp = port_file + ".tmp"
+            with open(tmp, "w") as fh:
+                json.dump({"port": httpd.server_address[1], "pid": os.getpid(), "started": int(time.time())}, fh)
+            os.replace(tmp, port_file)
         if not quiet:
             print(f"dashboard: http://127.0.0.1:{httpd.server_address[1]}/")
     pidf = project_path(cfg.get("data_dir", "data"), "fleet.pid")

@@ -28,6 +28,7 @@ FEES: Dict[str, Dict[str, float]] = {
     "kraken": {"taker": 0.0080, "maker": 0.0040},     # Kraken Pro $0+ tier, kraken.com/features/fee-schedule
     "okx": {"taker": 0.0010, "maker": 0.0008},        # OKX spot Lv1: NOT verified (page not readable); data source only
     "yahoo": {"taker": 0.0, "maker": 0.0},            # US stocks: commission-free broker assumed
+    "demo": {"taker": 0.0010, "maker": 0.0008},       # the synthetic DEMO market: a low-fee exchange's rates
 }
 
 # Which exchange's fees the crypto bots pay. "venue" (the default) charges each bot its own data venue's
