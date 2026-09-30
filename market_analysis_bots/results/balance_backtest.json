@@ -1,0 +1,153 @@
+{
+ "generated": "2026-09-30 21:00 UTC",
+ "runs": 400,
+ "window_days": 10,
+ "bots_per_run": 60,
+ "fee_profile": "venue",
+ "versions": {
+  "before": {
+   "realistic": true,
+   "max_open": 20
+  },
+  "after": {
+   "realistic": true,
+   "max_open": 20,
+   "min_slot": 25.0,
+   "fractional_us": true,
+   "participation": 0.05
+  }
+ },
+ "results": {
+  "100|before": {
+   "balance": 100,
+   "version": "before",
+   "trades_per_window": 0.0625,
+   "return_mean": -3.1696384437460144e-06,
+   "return_median": 0.0,
+   "return_p05": 0.0,
+   "return_p95": 0.0,
+   "share_positive": 0.0125,
+   "refused_too_small_per_window": 4.715,
+   "refused_no_cash_per_window": 0.0,
+   "capped_by_liquidity_per_window": 0.0
+  },
+  "100|after": {
+   "balance": 100,
+   "version": "after",
+   "trades_per_window": 3.8325,
+   "return_mean": -0.0007750191784065724,
+   "return_median": 0.0,
+   "return_p05": -0.0055177562220062315,
+   "return_p95": 0.0007578720744452205,
+   "share_positive": 0.0725,
+   "refused_too_small_per_window": 0.77,
+   "refused_no_cash_per_window": 0.01,
+   "capped_by_liquidity_per_window": 0.0
+  },
+  "1000|before": {
+   "balance": 1000,
+   "version": "before",
+   "trades_per_window": 0.7925,
+   "return_mean": -1.7232886113771606e-06,
+   "return_median": 0.0,
+   "return_p05": -0.00023017272063030614,
+   "return_p95": 0.0002480005616796177,
+   "share_positive": 0.09,
+   "refused_too_small_per_window": 3.9475,
+   "refused_no_cash_per_window": 0.0,
+   "capped_by_liquidity_per_window": 0.0
+  },
+  "1000|after": {
+   "balance": 1000,
+   "version": "after",
+   "trades_per_window": 4.295,
+   "return_mean": -9.750040603751342e-05,
+   "return_median": 0.0,
+   "return_p05": -0.0009389731019585623,
+   "return_p95": 0.0003266936991963565,
+   "share_positive": 0.13,
+   "refused_too_small_per_window": 0.3125,
+   "refused_no_cash_per_window": 0.0,
+   "capped_by_liquidity_per_window": 0.0
+  },
+  "10000|before": {
+   "balance": 10000,
+   "version": "before",
+   "trades_per_window": 3.135,
+   "return_mean": -7.902540273962061e-05,
+   "return_median": 0.0,
+   "return_p05": -0.0008190376744905414,
+   "return_p95": 0.00028369785034976225,
+   "share_positive": 0.125,
+   "refused_too_small_per_window": 1.4675,
+   "refused_no_cash_per_window": 0.0,
+   "capped_by_liquidity_per_window": 0.0
+  },
+  "10000|after": {
+   "balance": 10000,
+   "version": "after",
+   "trades_per_window": 4.5075,
+   "return_mean": -0.00011620742409803431,
+   "return_median": 0.0,
+   "return_p05": -0.0010791312812483689,
+   "return_p95": 0.00033278447398243927,
+   "share_positive": 0.125,
+   "refused_too_small_per_window": 0.0225,
+   "refused_no_cash_per_window": 0.0,
+   "capped_by_liquidity_per_window": 0.0
+  },
+  "100000|before": {
+   "balance": 100000,
+   "version": "before",
+   "trades_per_window": 4.5375,
+   "return_mean": -0.00011987474350608623,
+   "return_median": 0.0,
+   "return_p05": -0.0011689254520748094,
+   "return_p95": 0.0003327844739826613,
+   "share_positive": 0.125,
+   "refused_too_small_per_window": 0.0,
+   "refused_no_cash_per_window": 0.0,
+   "capped_by_liquidity_per_window": 0.0
+  },
+  "100000|after": {
+   "balance": 100000,
+   "version": "after",
+   "trades_per_window": 4.5375,
+   "return_mean": -0.00012367524322109968,
+   "return_median": 0.0,
+   "return_p05": -0.0011895548697909986,
+   "return_p95": 0.0003327844739826613,
+   "share_positive": 0.1225,
+   "refused_too_small_per_window": 0.0,
+   "refused_no_cash_per_window": 0.0,
+   "capped_by_liquidity_per_window": 0.0
+  },
+  "10000000|before": {
+   "balance": 10000000,
+   "version": "before",
+   "trades_per_window": 4.5375,
+   "return_mean": -0.00012442735792798172,
+   "return_median": 0.0,
+   "return_p05": -0.0012089945501386756,
+   "return_p95": 0.00033278447398243927,
+   "share_positive": 0.1225,
+   "refused_too_small_per_window": 0.0,
+   "refused_no_cash_per_window": 0.0,
+   "capped_by_liquidity_per_window": 0.0
+  },
+  "10000000|after": {
+   "balance": 10000000,
+   "version": "after",
+   "trades_per_window": 4.5375,
+   "return_mean": -0.00010508908258821281,
+   "return_median": 0.0,
+   "return_p05": -0.001063024666172585,
+   "return_p95": 0.00026968718387498924,
+   "share_positive": 0.1425,
+   "refused_too_small_per_window": 0.0,
+   "refused_no_cash_per_window": 0.0,
+   "capped_by_liquidity_per_window": 0.755
+  }
+ },
+ "minutes": 13.9
+}

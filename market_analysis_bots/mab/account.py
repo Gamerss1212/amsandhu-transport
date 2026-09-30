@@ -45,8 +45,14 @@ class Account:
 
     # ------------------------------------------------------------------ valuation
     def mark(self, venue: str, instrument: str, price: float, t: Optional[int] = None):
+        """Value positions at this price. An older price never replaces a newer one (a live quote taken a second
+        ago is not overwritten by the close of a bar that ended an hour ago)."""
+        t = t or now_ms()
         with self.lock:
-            self.marks[(venue, instrument)] = (price, t or now_ms())
+            cur = self.marks.get((venue, instrument))
+            if cur is not None and cur[1] is not None and t < cur[1]:
+                return
+            self.marks[(venue, instrument)] = (price, t)
 
     def position_value(self, p: dict) -> float:
         px = self.marks.get((p["venue"], p["instrument"]), (p["avg_price"], 0))[0]

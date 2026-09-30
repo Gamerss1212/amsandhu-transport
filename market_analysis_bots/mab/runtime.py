@@ -302,7 +302,7 @@ class Fleet(DeploymentMixin):
         self._event("info", "fleet_start", f"fleet started with {sum(1 for b in self.bots.values() if b.enabled)} "
                                            f"enabled bots on {len(self.hub.series)} shared series")
         for fn, name in ((self._dispatch_loop, "dispatcher"), (self._control_loop, "control"),
-                         (self._health_loop, "health")):
+                         (self._health_loop, "health"), (self._mark_loop, "live-prices")):
             t = threading.Thread(target=fn, name=name, daemon=True)
             t.start()
             self.threads.append(t)

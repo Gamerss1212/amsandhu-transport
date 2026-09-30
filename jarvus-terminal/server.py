@@ -197,6 +197,42 @@ def autopilot_switch(ctx, on: bool):
     return out
 
 
+def money_view(ctx):
+    """The account the AI trades, right now. From the running engine (positions valued at live prices); with the
+    engine stopped, from its saved state (valued at the last prices it saw)."""
+    wid, st = ctx["wid"], ctx["st"]
+    if APP.sup.running(wid):
+        d = fleet_json(wid, "/api/money")
+        if d and d.get("equity") is not None:
+            d["engine"] = True
+            return d
+    from mab.account import Account
+    state = st.kv_get("account")
+    if not state:
+        return {"engine": APP.sup.running(wid), "equity": None, "positions": [], "recent_fills": [], "recent_trades": [],
+                "note": "the AI's account opens when the bot engine first starts"}
+    a = Account.from_state(state)
+    rows = []
+    for p in a.positions.values():
+        px = a.marks.get((p["venue"], p["instrument"]), (p["avg_price"], None))
+        cost = abs(p["qty"]) * p["avg_price"]
+        pnl = (px[0] - p["avg_price"]) * p["qty"]
+        rows.append({"bot_id": p["bot_id"], "venue": p["venue"], "symbol": p["instrument"],
+                     "side": "long" if p["qty"] > 0 else "short", "qty": abs(p["qty"]), "entry": p["avg_price"],
+                     "price": px[0], "price_time": px[1], "price_source": "last price the engine saw",
+                     "value": abs(p["qty"]) * px[0], "cost": cost, "pnl": pnl, "pnl_pct": pnl / cost * 100 if cost else None,
+                     "opened": p.get("opened")})
+    eq = a.equity()
+    return {"engine": False, "connection_id": "paper-research", "equity": eq, "cash": a.cash, "currency": a.currency,
+            "invested": sum(r["value"] for r in rows), "unrealized": sum(r["pnl"] for r in rows), "positions": rows,
+            "slots_in_use": a.slots_in_use(eq), "real_money": False, "time": _now(),
+            "recent_fills": st.query("SELECT time, bot_id, instrument, venue, side, qty, price, fee FROM fills"
+                                     " WHERE deployment_id IS NULL ORDER BY time DESC LIMIT 12"),
+            "recent_trades": st.query("SELECT bot_id, instrument, venue, side, qty, entry_price, exit_price, entry_time,"
+                                      " exit_time, fees, pnl, r, exit_reason FROM trades WHERE deployment_id IS NULL"
+                                      " ORDER BY exit_time DESC LIMIT 12")}
+
+
 def snapshot_for_stream(wid):
     """Small state message for the live stream (shared by every open page of the workspace, 1.5 s cache)."""
     hit = APP._snap_cache.get(wid)
@@ -212,6 +248,10 @@ def snapshot_for_stream(wid):
            "accounts": [{k: a.get(k) for k in ("connection_id", "mode", "equity", "buying_power", "allocated",
                                                 "realized_today", "unrealized", "exposure_pct", "daily_drawdown_pct",
                                                 "as_of", "currency")} for a in views.accounts(st)]}
+    if out["engine"]:
+        m = fleet_json(wid, "/api/money")                   # the AI's account at live prices, every couple of seconds
+        if m and m.get("equity") is not None:
+            out["money"] = m
     APP._snap_cache[wid] = (time.time(), out)
     return out
 
@@ -630,6 +670,7 @@ GET_ROUTES = {
     "/api/compare": compare,
     "/api/health": health,
     "/api/autopilot": autopilot_view,
+    "/api/money": money_view,
     "/api/connections": connections_view,
     "/api/research/jobs": lambda ctx: {"jobs": JobQueue(ctx["st"]).list(int(ctx["q"]("limit", "50"))),
                                        "kinds": JOB_KINDS, "counts": JobQueue(ctx["st"]).counts()},

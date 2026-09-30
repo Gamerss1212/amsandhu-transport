@@ -85,6 +85,7 @@ class DeploymentMixin:
                   "since": None, "by": None}
         self.autopilot = ap
         self.research_autopilot = bool(ap.get("on"))
+        self.live_prices: Dict[tuple, tuple] = {}     # (venue, symbol) -> (price, quote time, fetched at, source)
         self.dep_cache: Dict[str, dict] = {}
         self.dep_blocks: Dict[str, str] = {}
         self.dep_peak: Dict[str, float] = dict(self.storage.kv_get("dep_peaks", {}) or {})
@@ -144,9 +145,12 @@ class DeploymentMixin:
         best = None
         for (v, s, tf), ser in list(self.hub.series.items()):
             if v == venue and s == symbol and ser.last_time is not None:
-                t = ser.last_time
+                t = ser.last_time + ser.step                         # the bar's close is the price at its end
                 if best is None or t > best[0]:
-                    best = (t, ser.bars[t].close)
+                    best = (t, ser.bars[ser.last_time].close)
+        live = getattr(self, "live_prices", {}).get((venue, symbol))
+        if live and (best is None or live[1] >= best[0]):
+            return live[0]
         return best[1] if best else None
 
     # ================================================================== state
@@ -1278,6 +1282,97 @@ class DeploymentMixin:
         except Exception as e:                                          # noqa: BLE001
             log.warning("drift check: %s", e)
             return []
+
+    # ================================================================== live prices: the balance moves with the market
+    def _mark_loop(self):
+        every = float(self.cfg.get("mark_interval_s", 10.0))
+        while self.running:
+            time.sleep(every)
+            if not self.running:
+                break
+            try:
+                self.mark_live()
+            except Exception as e:                                      # noqa: BLE001 - never stop trading for this
+                log.debug("live prices: %s", e)
+
+    def _open_instruments(self) -> set:
+        keys = {(p["venue"], p["instrument"]) for p in list(self.account.positions.values())}
+        for sim in list(self.sims.values()):
+            keys |= {(p["venue"], p["instrument"]) for p in list(sim.acct.positions.values())}
+        return keys
+
+    def mark_live(self, stock_every_s: float = 30.0) -> dict:
+        """Value every open position at the market's price right now (the order book's mid for crypto, Yahoo's
+        latest price for stocks), so the balance moves as prices move, not only when a bar closes. Only markets
+        with an open position are asked, so this stays within the venues' request limits."""
+        now = time.time()
+        out = {}
+        for venue, sym in sorted(self._open_instruments()):
+            ad = self.hub.adapters.get(venue)
+            if ad is None or not hasattr(ad, "last_price"):
+                continue
+            prev = self.live_prices.get((venue, sym))
+            if venue == "yahoo" and prev and now - prev[2] < stock_every_s:
+                continue
+            try:
+                q = ad.last_price(sym)
+            except Exception as e:                                      # noqa: BLE001 - keep the last good price
+                log.debug("price %s:%s: %s", venue, sym, e)
+                continue
+            if not q or not q[0] or q[0] <= 0:
+                continue
+            px, t, src = float(q[0]), int(q[1] or now_ms()), q[2]
+            self.live_prices[(venue, sym)] = (px, t, now, src)
+            self.account.mark(venue, sym, px, t)
+            for sim in list(self.sims.values()):
+                sim.acct.mark(venue, sym, px, t)
+            out[f"{venue}:{sym}"] = px
+        return out
+
+    def money_view(self) -> dict:
+        """The account the AI trades, as it stands right now: balance, cash, today's result, and every open
+        position valued at the latest price (with where that price came from)."""
+        a = self.account
+        with a.lock:
+            pos = [dict(p) for p in a.positions.values()]
+            marks = dict(a.marks)
+            cash, eq = a.cash, a.equity()
+            slots, slot_eq = a.slots_in_use(eq), eq / max(1, a.slots_in_use(eq))
+        day0 = utc_day_start()
+        tr = self.storage.query("SELECT COUNT(*) AS n, COALESCE(SUM(pnl),0) AS pnl, COALESCE(SUM(fees),0) AS fees,"
+                                " SUM(CASE WHEN pnl > 0 THEN 1 ELSE 0 END) AS wins FROM trades"
+                                " WHERE deployment_id IS NULL AND exit_time >= ?", (day0,))[0]
+        rows, unreal = [], 0.0
+        for p in pos:
+            px, mt = marks.get((p["venue"], p["instrument"]), (p["avg_price"], None))
+            br = self.bots.get(p["bot_id"])
+            tp = br.tm.pos if br is not None else None
+            qty = p["qty"]
+            cost = abs(qty) * p["avg_price"]
+            pnl = (px - p["avg_price"]) * qty
+            unreal += pnl
+            live = self.live_prices.get((p["venue"], p["instrument"]))
+            rows.append({"bot_id": p["bot_id"], "strategy": br.c.definition.get("name") if br is not None else None,
+                         "venue": p["venue"], "symbol": p["instrument"], "side": "long" if qty > 0 else "short",
+                         "qty": abs(qty), "entry": p["avg_price"], "price": px, "price_time": mt,
+                         "price_source": live[3] if live and abs(live[0] - px) < 1e-12 else "latest bar close",
+                         "value": abs(qty) * px, "cost": cost, "pnl": pnl, "pnl_pct": pnl / cost * 100 if cost else None,
+                         "stop": getattr(tp, "stop", None), "target": getattr(tp, "target", None), "opened": p.get("opened")})
+        rows.sort(key=lambda r: -(r["opened"] or 0))
+        start = self.risk.day_start_equity
+        fills = self.storage.query("SELECT time, bot_id, instrument, venue, side, qty, price, fee FROM fills"
+                                   " WHERE deployment_id IS NULL ORDER BY time DESC LIMIT 12")
+        closed = self.storage.query("SELECT bot_id, instrument, venue, side, qty, entry_price, exit_price, entry_time,"
+                                    " exit_time, fees, pnl, r, exit_reason FROM trades WHERE deployment_id IS NULL"
+                                    " ORDER BY exit_time DESC LIMIT 12")
+        return {"connection_id": RESEARCH_CONN, "mode": "demo" if self.demo else "research", "time": now_ms(),
+                "equity": eq, "cash": cash, "currency": a.currency, "invested": sum(r["value"] for r in rows),
+                "unrealized": unreal, "realized_today": tr["pnl"], "fees_today": tr["fees"], "trades_today": tr["n"],
+                "wins_today": tr["wins"] or 0, "day_start_equity": start,
+                "change_today": (eq - start) if start else None,
+                "change_today_pct": ((eq / start - 1) * 100) if start else None,
+                "slots_in_use": slots, "slot_equity": slot_eq, "positions": rows, "recent_fills": fills,
+                "recent_trades": closed, "autopilot": self.research_autopilot, "real_money": False}
 
     # ================================================================== views
     def deployment_view(self, dep: dict) -> dict:

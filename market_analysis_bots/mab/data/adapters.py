@@ -45,6 +45,13 @@ class Adapter:
     def trades(self, symbol: str, limit: int = 500) -> List[Trade]:
         raise NotImplementedError
 
+    def last_price(self, symbol: str) -> Optional[tuple]:
+        """(price, time_ms, source) right now: the middle of the best bid and ask."""
+        b = self.book(symbol, depth=1)
+        if b is None or not b.bids or not b.asks:
+            return None
+        return (b.bids[0][0] + b.asks[0][0]) / 2.0, b.event_time or now_ms(), f"{self.venue} order book mid"
+
     def book(self, symbol: str, depth: int = 50) -> Optional[BookSnapshot]:
         raise NotImplementedError
 
@@ -299,6 +306,14 @@ class Yahoo(Adapter):
 
     def book(self, symbol, depth=50):
         raise HttpError("yahoo: quotes and order book are not available from free data")
+
+    def last_price(self, symbol):
+        """Latest trade price Yahoo reports for the listing (regular session; delayed for some exchanges)."""
+        meta = self.chart(symbol, "1m", rng="1d").get("meta") or {}
+        px, t = meta.get("regularMarketPrice"), meta.get("regularMarketTime")
+        if not px:
+            return None
+        return float(px), int(t) * 1000 if t else now_ms(), "yahoo last price"
 
 
 def _iso(ms: int) -> str:
