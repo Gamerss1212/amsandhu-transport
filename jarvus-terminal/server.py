@@ -376,8 +376,14 @@ def connections_view(ctx):
     c = APP.conns(wid)
     rows = []
     for r in c.list():
-        latest = c.latest(r["connection_id"])
-        r["latest"] = {k: latest.get(k) for k in ("ts", "equity", "cash", "buying_power", "currency", "latency_ms")} if latest else None
+        if r["provider"] == "jarvus_paper":                  # simulated: the account itself, not a broker snapshot
+            a = views.account(st, r)
+            r["latest"] = {"ts": a.get("as_of"), "equity": a.get("equity"), "cash": a.get("cash"),
+                           "buying_power": a.get("buying_power"), "currency": a.get("currency"), "latency_ms": None}
+            r["last_sync"] = a.get("as_of") if a.get("equity") is not None else r.get("last_sync")
+        else:
+            latest = c.latest(r["connection_id"])
+            r["latest"] = {k: latest.get(k) for k in ("ts", "equity", "cash", "buying_power", "currency", "latency_ms")} if latest else None
         r["funding"] = c.funding(r["connection_id"]) if r["provider"] == "jarvus_paper" else \
             {"label": "Add funds on the provider's site", "note": "opens the provider's own funding page"}
         r["system"] = bool((r.get("options") or {}).get("system"))
@@ -435,9 +441,17 @@ def post_action(ctx, route, b):
         return cmd(wid, "close_all_positions", {"confirm": b.get("confirm")}, wait=120)
     if route in ("/api/autopilot", "/api/research_autopilot"):
         return autopilot_switch(ctx, bool(b.get("on")))
-    if route == "/api/paper_balance":
-        return cmd(wid, "paper_balance", {"connection_id": b.get("connection_id"), "kind": b.get("kind", "set_balance"),
-                                          "amount": b.get("amount")})
+    if route == "/api/paper_balance":                      # simulated money only: never a deposit
+        cid, kind = str(b.get("connection_id") or ""), str(b.get("kind") or "set_balance")
+        try:
+            amount = float(b.get("amount"))
+        except (TypeError, ValueError):
+            raise ApiError(400, "enter an amount")
+        if not (amount > 0 and amount <= 1e12):             # also rejects NaN and infinity
+            raise ApiError(400, "enter an amount above 0 and at most 1,000,000,000,000")
+        if APP.sup.running(wid):
+            return cmd(wid, "paper_balance", {"connection_id": cid, "kind": kind, "amount": amount})
+        return APP.conns(wid).set_sim_balance(cid, kind, amount)
     # ---- connections
     if route == "/api/connections/create":
         creds = b.get("credentials") or {}

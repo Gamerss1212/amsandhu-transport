@@ -1,7 +1,7 @@
 // PAGE 1 - COMMAND CENTER: account figures, the market chart with real entries/exits, building and starting a bot
 // (readiness checks first), bot cards with PAUSE NEW ENTRIES / STOP, equity and drawdown, recent trades, alerts.
 import { S, h, $, api, replace, clear, toast, errorToast, modal, drawer, confirmBox, on, off, modeBadge, stateChip,
-         money, signed, pct, num, r, cls, time, ago, checklist, kvList, table, debounce } from './core.js';
+         money, signed, pct, num, r, cls, time, ago, checklist, kvList, table, debounce, balanceDialog } from './core.js';
 import { PriceChart, LineChart, available as chartsAvailable } from './charts.js';
 
 const st = { account: null, market: null, tf: '5m', ind: { ema21: true, ema50: false, vwap: true, bb: false }, markers: true,
@@ -14,7 +14,8 @@ export function mount(view) {
   const acctSel = h('select#acct-sel', { 'aria-label': 'Account', style: { width: 'auto', minWidth: '220px' }, onchange: (e) => { st.account = e.target.value; renderAccount(); loadEquity(); loadTrades(); } });
   view.append(
     autopilotPanel(),
-    h('section.panel.hot', { style: { marginTop: '12px' } }, h('h2', 'Account', h('span.right', acctSel, h('span.note#acct-src'))), h('div.tiles#acct-tiles')),
+    h('section.panel.hot', { style: { marginTop: '12px' } }, h('h2', 'Account', h('span.right', acctSel,
+      h('button.btn.small.primary#acct-balance', { onclick: () => changeBalance(st.account) }, '✎ Change balance'), h('span.note#acct-src'))), h('div.tiles#acct-tiles')),
     h('div.grid.g-cc-top', { style: { marginTop: '12px' } },
       chartPanel(),
       h('section.panel.hot#builder', h('h2', 'Start a bot', h('span.right', h('span.note', 'readiness checks run first'))), h('div#builder-body', h('div.empty', 'Loading strategies…')))),
@@ -90,8 +91,19 @@ function renderAutopilot() {
     t('In a trade', s2.managing_position ?? '—', 'positions being managed'),
     t('Trades today', td.trades ?? '—', td.trades ? `${td.wins} won · fees ${money(td.fees)}` : 'closed trades'),
     t('Today after fees', td.pnl_after_fees === undefined ? '—' : signed(td.pnl_after_fees), 'simulated money', cls(td.pnl_after_fees)),
-    t('Research account', acct.equity === undefined || acct.equity === null ? '—' : money(acct.equity, acct.currency, 0), acct.open_positions !== undefined ? `${acct.open_positions} open · exposure ${pct(acct.exposure_pct, 0)}` : 'simulated'),
+    h('div.tile', h('div.k', 'AI account (simulated)'),
+      h('div.v', acct.equity === undefined || acct.equity === null ? '—' : money(acct.equity, acct.currency, 0)),
+      h('div.s', acct.open_positions !== undefined ? `${acct.open_positions} open · exposure ${pct(acct.exposure_pct, 0)} · ` : '',
+        h('a', { href: '#', onclick: (e) => { e.preventDefault(); changeBalance('paper-research'); } }, '✎ change balance'))),
     t('Research jobs', a.research && a.research.done_today !== undefined ? `${a.research.done_today} today` : '—', `${rq.queued || 0} queued · ${rq.running || 0} running`));
+}
+
+function changeBalance(cid) {
+  const a = (S.overview && S.overview.accounts || []).find(x => x.connection_id === cid);
+  if (!a) { toast('That account is not ready yet', 'bad'); return; }
+  if (!a.simulated) { toast('Broker balances are what the broker reports: add funds on the broker\'s site (Connections)', 'bad'); return; }
+  const ap = cid === 'paper-research' && st.ap && st.ap.account && st.ap.account.equity !== undefined ? st.ap.account : null;
+  balanceDialog({ ...a, equity: ap ? ap.equity : a.equity, currency: a.currency || (ap && ap.currency) }, () => { loadAutopilot(); setTimeout(() => { loadEquity(); renderAccount(); }, 800); });
 }
 
 async function startAutopilot(e) {
@@ -138,6 +150,8 @@ function renderAccount() {
   const x = live ? { ...a, ...Object.fromEntries(Object.entries(live).filter(([, v]) => v !== undefined)) } : a;
   const cur = x.currency || '';
   replace($('#acct-src'), modeBadge(a.mode), ' ', a.simulated ? 'simulated money · ' : '', x.source || '', x.as_of ? ` · ${time(x.as_of)}` : '');
+  const bb = $('#acct-balance');
+  if (bb) bb.classList.toggle('hidden', !a.simulated);        // broker balances are what the broker reports
   const t = (k, v, s, c) => h('div.tile', h('div.k', k), h(`div.v${c ? '.' + c : ''}`, v), s ? h('div.s', s) : null);
   replace(tiles,
     t('Equity', money(x.equity, cur), a.real_money ? 'real money' : 'simulated'),

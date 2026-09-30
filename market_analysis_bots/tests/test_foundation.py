@@ -119,3 +119,26 @@ def test_sse_stream_resumes_after_last_event_id(tmp_path):
     assert "event: state" in text
     assert stream.parse_last_id(None, "7") == 7 and stream.parse_last_id("x", None) is None
     assert stream.sse("a\nb") == b"data: a\ndata: b\n\n"
+
+
+def test_drawdown_counts_trading_only_not_balance_changes(tmp_path):
+    from mab import views
+    st = Storage(str(tmp_path / "dd.db"))
+    t0 = 10 ** 12
+    pts = [(0, 100_000), (1, 99_000), (2, 49_500), (3, 51_975), (4, 250_000)]
+    for i, eq in pts:
+        st.write("INSERT INTO account_equity (connection_id, ts, mode, equity) VALUES (?,?,?,?)",
+                 ("paper-research", t0 + i * 1000, "paper", eq))
+    # the owner halves the balance (-49,500) just before point 2 and adds 200,000 before point 4
+    st.save_cash_flow({"time": t0 + 1500, "kind": "withdraw", "amount": -49_500, "equity_before": 99_000,
+                       "equity_after": 49_500, "note": "paper-research: balance changed by the owner (simulated)"})
+    st.save_cash_flow({"time": t0 + 3500, "kind": "deposit", "amount": 200_000, "equity_before": 51_975,
+                       "equity_after": 251_975, "note": "paper-research: balance changed by the owner (simulated)"})
+    st.save_cash_flow({"time": t0 + 2500, "kind": "deposit", "amount": 7, "equity_before": 1, "equity_after": 8,
+                       "note": "demo-main: someone else's account"})
+    st.kv_set("sim_account:demo-main", {"cash": 8})
+    d = views.equity_curve(st, "paper-research", since=t0 - 1)
+    dd = [round(x["drawdown_pct"], 3) for x in d["drawdown"]]
+    # trading: -1% (100k -> 99k), then +5% (49.5k -> 51.975k), then -0.79% (251,975 -> 250,000)
+    assert dd[0] == 0 and dd[1] == -1.0 and dd[2] == -1.0 and dd[3] == 0.0 and -0.8 < dd[4] < -0.7, dd
+    assert len(d["cash_flows"]) == 2                                    # the other account's change is not counted

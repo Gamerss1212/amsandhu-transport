@@ -116,15 +116,42 @@ def equity_curve(st, cid: str, since: Optional[int] = None, points: int = 600) -
     if len(rows) > points:
         k = len(rows) / points
         rows = [rows[int(i * k)] for i in range(points)] + [rows[-1]]
-    peak, dd = None, []
+    flows = account_flows(st, cid, since)
+    # Drawdown from time-weighted returns: a balance you change by hand moves the equity line but is never counted
+    # as a gain or a loss, so lowering a paper balance does not show up as a drawdown.
+    idx, peak, prev, prev_ts, fi, dd = 1.0, 1.0, None, None, 0, []
     for r in rows:
-        peak = r["equity"] if peak is None else max(peak, r["equity"])
-        dd.append({"ts": r["ts"], "drawdown_pct": -(peak - r["equity"]) / peak * 100 if peak else 0.0})
-    flows = st.query("SELECT time, kind, amount, note FROM cash_flows WHERE time >= ? ORDER BY time", (since,))
+        while fi < len(flows) and flows[fi]["time"] <= r["ts"]:
+            f = flows[fi]
+            fi += 1
+            if prev_ts is None or f["time"] <= prev_ts:
+                continue
+            # the record holds the equity just before and after the change: chain the return up to it, then rebase
+            if f.get("equity_before") is not None and f.get("equity_after") is not None and prev and prev > 0:
+                idx *= max(0.0, f["equity_before"] / prev)
+                prev = f["equity_after"]
+            elif prev is not None:
+                prev += f["amount"] or 0.0
+        if prev and prev > 0:
+            idx *= max(0.0, r["equity"] / prev)
+        prev, prev_ts = r["equity"], r["ts"]
+        peak = max(peak, idx)
+        dd.append({"ts": r["ts"], "drawdown_pct": (idx / peak - 1) * 100 if peak else 0.0})
     return {"connection_id": cid, "equity": rows, "drawdown": dd,
-            "max_drawdown_pct": min((d["drawdown_pct"] for d in dd), default=0.0),
-            "cash_flows": [f for f in flows if cid in (f.get("note") or "") or cid == "paper-research"],
-            "note": "balance changes on simulated accounts are simulated and excluded from performance"}
+            "max_drawdown_pct": min((d["drawdown_pct"] for d in dd), default=0.0), "cash_flows": flows,
+            "note": "steps in the equity line are balance changes; drawdown counts trading results only"}
+
+
+def account_flows(st, cid: str, since: int = 0) -> List[dict]:
+    """Balance changes of one simulated account. Each is recorded with its account id in the note; older records of
+    the research account carry no id, so anything not naming another simulated account belongs to it."""
+    rows = st.query("SELECT time, kind, amount, equity_before, equity_after, note FROM cash_flows WHERE time >= ?"
+                    " ORDER BY time", (since,))
+    sims = [r["key"][len("sim_account:"):] for r in st.query("SELECT key FROM kv WHERE key LIKE 'sim_account:%'")]
+    others = [x for x in sims + ["paper-research"] if x != cid]
+    if cid == "paper-research":
+        return [f for f in rows if not any(o in (f.get("note") or "") for o in others)]
+    return [f for f in rows if cid in (f.get("note") or "")]
 
 
 def trades(st, mode: str = None, connection_id: str = None, deployment_id: str = None, bot_id: str = None,

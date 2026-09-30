@@ -192,3 +192,42 @@ export function table(cols, rows, { onRow, empty = 'Nothing yet.' } = {}) {
 }
 
 export function debounce(fn, ms = 250) { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; }
+
+// ---------------------------------------------------------------- simulated balance (any simulated account, any time)
+export function balanceDialog(acct, onDone) {
+  const cur = acct.currency || 'USD';
+  const amt = h('input', { type: 'number', min: '1', step: 'any', inputMode: 'decimal', value: String(Math.round(acct.equity || 100000)) });
+  const kind = h('select', h('option', { value: 'set_balance' }, 'Set the balance to'), h('option', { value: 'deposit' }, 'Add'), h('option', { value: 'withdraw' }, 'Remove'));
+  const preview = h('div.note');
+  const upd = () => {
+    const v = Number(amt.value), eq = Number(acct.equity || 0);
+    if (!(v > 0)) { preview.textContent = 'Enter an amount above 0.'; return; }
+    const after = kind.value === 'set_balance' ? v : kind.value === 'deposit' ? eq + v : eq - v;
+    preview.textContent = acct.equity === null || acct.equity === undefined ? `New balance: ${money(after, cur)}`
+      : `Now ${money(eq, cur)} → after: ${money(after, cur)}`;
+  };
+  amt.addEventListener('input', upd); kind.addEventListener('change', upd);
+  const presets = h('div.row', [1000, 10000, 25000, 50000, 100000, 250000, 1000000].map(v =>
+    h('button.btn.small.ghost', { type: 'button', onclick: () => { kind.value = 'set_balance'; amt.value = String(v); upd(); } },
+      v >= 1e6 ? `${v / 1e6}M` : `${v / 1000}k`)));
+  const go = h('button.btn.primary', { type: 'submit' }, 'Apply');
+  const m = modal(`Change balance: ${acct.label || acct.connection_id}`, h('form.stack', {
+    onsubmit: async (e) => {
+      e.preventDefault();
+      go.disabled = true;
+      try {
+        const r = await api('/api/paper_balance', { connection_id: acct.connection_id, kind: kind.value, amount: Number(amt.value) });
+        m.close();
+        toast(`Balance now ${money(r.equity_after, cur)} (simulated money)`, 'good');
+        if (S.refreshOverview) S.refreshOverview();
+        if (onDone) onDone(r);
+      } catch (err) { errorToast(err); go.disabled = false; }
+    }
+  }, h('div.chips', modeBadge(acct.mode || 'paper'), h('span.note', 'simulated money · never a deposit')),
+  presets, h('div.fgrid', h('label.f', 'Action', kind), h('label.f', `Amount (${cur})`, amt)), preview,
+  h('p.note', 'Works any time, with the bots running or stopped. Open positions stay open. The drawdown limit restarts from the new balance, and balance changes are never counted as profit or loss.'),
+  go));
+  upd();
+  return m;
+}
+

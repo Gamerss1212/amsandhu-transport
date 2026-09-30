@@ -182,7 +182,33 @@ def test_the_simulated_account_cannot_be_disconnected_and_funding_never_simulate
     assert code == 400
     code, f, _, _ = owner.req("/api/funding/paper-main")
     assert code == 200 and f["simulated"] is True and f["url"] is None and "never a deposit" in f["note"]
-    assert owner.req("/api/paper_balance", {"connection_id": "paper-main", "amount": 5})[0] == 409   # engine stopped
+
+
+
+def test_paper_balances_change_any_time_even_with_the_engine_stopped(app):
+    a, base, owner = app
+    for cid in ("paper-research", "paper-main"):                     # the AI's account and the owner's
+        code, r, _, _ = owner.req("/api/paper_balance", {"connection_id": cid, "kind": "set_balance", "amount": 25000})
+        assert code == 200 and r["equity_after"] == pytest.approx(25000), r
+    code, r, _, _ = owner.req("/api/paper_balance", {"connection_id": "paper-research", "kind": "deposit", "amount": 5000})
+    assert code == 200 and r["equity_after"] == pytest.approx(30000)
+    code, r, _, _ = owner.req("/api/paper_balance", {"connection_id": "paper-research", "kind": "withdraw", "amount": 20000})
+    assert code == 200 and r["equity_after"] == pytest.approx(10000)
+    accts = {x["connection_id"]: x for x in owner.req("/api/overview")[1]["accounts"]}
+    assert accts["paper-research"]["equity"] == pytest.approx(10000) and accts["paper-main"]["equity"] == pytest.approx(25000)
+    assert accts["paper-research"]["simulated"] is True
+    for bad in (0, -5, "abc", None, 1e13, float("nan")):
+        body = {"connection_id": "paper-main", "kind": "set_balance", "amount": bad}
+        assert owner.req("/api/paper_balance", body)[0] == 400, bad
+    assert owner.req("/api/paper_balance", {"connection_id": "paper-main", "kind": "withdraw", "amount": 10 ** 9})[0] == 400
+    assert owner.req("/api/paper_balance", {"connection_id": "nope", "kind": "set_balance", "amount": 5})[0] == 400
+    _, st, _, _ = owner.req("/api/auth/state")
+    store = a.st(st["workspace"])
+    store.kv_set("risk", {"peak_equity": 100000.0, "day_start_equity": 100000.0})
+    owner.req("/api/paper_balance", {"connection_id": "paper-research", "kind": "set_balance", "amount": 5000})
+    assert store.kv_get("risk")["peak_equity"] == pytest.approx(5000)   # a lower balance is not a drawdown
+    code, ev, _, _ = owner.req("/api/events?kinds=connection&limit=50")
+    assert any(e["stage"] == "paper_balance" for e in ev)
 
 
 def test_live_trading_cannot_be_authorised_without_the_engine_but_can_always_be_revoked(app):

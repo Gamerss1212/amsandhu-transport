@@ -2,7 +2,7 @@
 // identity, environment, status, permissions, buying power and last sync; connect / test / sync / reconnect /
 // disconnect; "Add funds" opens the provider's own site (never a simulated deposit); the separate live-trading
 // authorisation; the AI research assistant's key and budget; news feeds.
-import { S, h, $, api, replace, toast, errorToast, modal, confirmBox, modeBadge, money, time, ago, checklist, kvList } from './core.js';
+import { S, h, $, api, replace, toast, errorToast, modal, confirmBox, modeBadge, money, time, ago, checklist, kvList, balanceDialog } from './core.js';
 
 const st = { data: null, timers: [] };
 
@@ -140,22 +140,11 @@ async function addFunds(c) {
 }
 
 export function simBalance(cid, label, mode) {
-  const amt = h('input', { type: 'number', min: '0', step: '100', value: '100000', inputMode: 'decimal' });
-  const kind = h('select', h('option', { value: 'set_balance' }, 'Set balance to'), h('option', { value: 'deposit' }, 'Add (simulated)'), h('option', { value: 'withdraw' }, 'Remove (simulated)'));
-  const m = modal(`Simulated balance: ${label}`, h('form.stack', {
-    onsubmit: async (e) => {
-      e.preventDefault();
-      try {
-        const r = await api('/api/paper_balance', { connection_id: cid, kind: kind.value, amount: Number(amt.value) });
-        m.close(); toast(`Simulated balance now ${money(r.equity_after)} (not real money)`, 'good');
-        if (S.refreshOverview) S.refreshOverview();
-        load();
-      } catch (err) { errorToast(err); }
-    }
-  }, h('div.chips', modeBadge(mode)),
-  h('p', 'This changes simulated money in a practice account. It is never a deposit and never moves real money. The change is recorded in the log.'),
-  h('div.fgrid', h('label.f', 'Action', kind), h('label.f', 'Amount', amt)),
-  h('button.btn.primary', { type: 'submit' }, 'Apply to the simulated account')));
+  const c = (st.data && st.data.connections || []).find(x => x.connection_id === cid) || {};
+  const lt = c.latest || {};
+  const a = (S.overview && S.overview.accounts || []).find(x => x.connection_id === cid) || {};
+  balanceDialog({ connection_id: cid, label, mode: cid === 'paper-research' ? 'research' : mode,
+    equity: a.equity ?? lt.equity, currency: a.currency || lt.currency }, () => load());
 }
 
 // ---------------------------------------------------------------- add a connection

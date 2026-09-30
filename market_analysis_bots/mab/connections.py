@@ -66,6 +66,7 @@ PROVIDERS = {
                     "permission only; no withdrawals.",
         "docs": "https://apidoc.ndax.io/"},
 }
+RESEARCH_CONN = "paper-research"                 # the simulated account the AI autopilot trades
 DEFAULT_TEST_SYMBOL = {"alpaca": "coinbase:BTC-USD", "kraken": "coinbase:BTC-USD", "ndax": "coinbase:BTC-USD"}
 MAX_SKEW_WARN_MS, MAX_SKEW_FAIL_MS = 5_000, 30_000
 
@@ -129,16 +130,56 @@ class Connections:
         return [self._public(r) for r in self.st.query("SELECT * FROM connections ORDER BY created")]
 
     def ensure_defaults(self, demo: bool = False):
-        """The simulated account every workspace has (paper, or demo in the demo workspace)."""
+        """The simulated accounts every workspace has: the owner's (paper, or demo in the demo workspace) and the
+        research account the AI autopilot trades."""
         cid, env, label = ("demo-main", "demo", "Demo account (simulated)") if demo else \
             ("paper-main", "paper", "Jarvus Paper (simulated)")
-        if self.get(cid) is None:
-            t = _now()
-            self.st.write("INSERT INTO connections (connection_id, provider, environment, label, auth_method, status,"
-                          " options, capabilities, created, updated) VALUES (?,?,?,?,?,?,?,?,?,?)",
-                          (cid, "jarvus_paper", env, label, "none", "connected", "{}", "{}", t, t))
-            self._audit(cid, env, "connection_created", f"{label} is ready (simulated money)")
+        for c, lab, opts in ((cid, label, "{}"), (RESEARCH_CONN, "AI autopilot account (simulated)", '{"system": true}')):
+            if self.get(c) is None:
+                t = _now()
+                self.st.write("INSERT INTO connections (connection_id, provider, environment, label, auth_method, status,"
+                              " options, capabilities, created, updated) VALUES (?,?,?,?,?,?,?,?,?,?)",
+                              (c, "jarvus_paper", env, lab, "none", "connected", opts, "{}", t, t))
+                self._audit(c, env, "connection_created", f"{lab} is ready (simulated money)")
         return cid
+
+    def set_sim_balance(self, cid: str, kind: str, amount: float, default_balance: float = 100_000.0,
+                        slots: int = 20) -> dict:
+        """Change a simulated account's balance while its bot engine is stopped (the engine does it itself when it
+        runs). Simulated money only: never a deposit. Drawdown tracking restarts from the new balance, so a lower
+        balance is not mistaken for a trading loss."""
+        from mab.account import Account
+        c = self.get(cid)
+        if c is None or c["provider"] != "jarvus_paper":
+            raise ValueError("only simulated accounts have a settable balance; broker balances are what the broker reports")
+        if kind not in ("set_balance", "deposit", "withdraw"):
+            raise ValueError("choose set balance, add or remove")
+        research = cid == RESEARCH_CONN
+        key = "account" if research else f"sim_account:{cid}"
+        state = self.st.kv_get(key)
+        if state:
+            acct = Account.from_state(state)
+        else:                                            # never started: open it now at the default balance
+            acct = Account(amount if kind == "set_balance" else default_balance, slots if research else 1)
+            self.st.save_cash_flow(dict(acct.flows[0], note=f"{cid}: opening balance (simulated)"))
+            if kind == "set_balance":
+                kind = None
+        rec = getattr(acct, kind)(float(amount), "balance changed by the owner (simulated)") if kind else acct.flows[0]
+        new = acct.to_state()
+        if not research:
+            new["sim_orders"] = (state or {}).get("sim_orders", {})
+        self.st.kv_set(key, new)
+        if kind:
+            self.st.save_cash_flow(dict(rec, note=f"{cid}: {rec.get('note', '')}"))
+        rk = "risk" if research else f"risk:{cid}"
+        rs = self.st.kv_get(rk)
+        if isinstance(rs, dict):
+            rs["peak_equity"] = rs["day_start_equity"] = acct.equity()
+            self.st.kv_set(rk, rs)
+        self._audit(cid, c["environment"], "paper_balance", f"{cid}: simulated balance now {acct.equity():,.2f} "
+                    "(paper money, not a deposit; set while the engine was stopped)", "info",
+                    {"kind": kind or "opening", "amount": float(amount), "equity_after": acct.equity()})
+        return dict(rec, equity_after=acct.equity())
 
     def _audit(self, cid, env, stage, summary, severity="info", payload=None):
         try:

@@ -1226,14 +1226,16 @@ class DeploymentMixin:
 
     def set_paper_balance(self, cid: str, kind: str, amount: float) -> dict:
         if cid == RESEARCH_CONN:
-            rec = getattr(self.account, kind)(float(amount), "research paper balance (simulated)")
-            self.storage.save_cash_flow(rec)
+            rec = getattr(self.account, kind)(float(amount), "balance changed by the owner (simulated)")
+            self.storage.save_cash_flow(dict(rec, note=f"{cid}: {rec.get('note', '')}"))
             self.risk.reset_peak(self.account.equity())
+            if cid in self.port_risk:
+                self.port_risk[cid].reset_peak(self.account.equity())
             self._persist_account()
         elif cid in self.sims:
             if kind == "withdraw" and float(amount) >= self.sims[cid].acct.equity():
                 raise ValueError("withdraw less than the account holds")
-            rec = self.sims[cid].set_balance(kind, amount)
+            rec = self.sims[cid].set_balance(kind, amount, "balance changed by the owner (simulated)")
             self.storage.save_cash_flow(dict(rec, note=f"{cid}: {rec.get('note', '')}"))
             self._port_risk(cid).reset_peak(self.sims[cid].acct.equity())
         else:
