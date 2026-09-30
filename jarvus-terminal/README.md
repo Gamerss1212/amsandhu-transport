@@ -1,128 +1,120 @@
 # Jarvus
 
-One window for a fleet of **311 trading bots** and the **brain** that checks every trade they want to
-make. The bots run **150 strategies** on crypto and US/Canadian stocks with **paper money** at live
-prices, start by themselves and decide everything on their own. **Real money is off** until you
-connect a broker, set your limits and type an acknowledgement in the app.
+A trading research and paper-trading terminal: **311 bots** running **150 strategies** on crypto and
+US/Canadian stocks, a **brain** that checks every trade they want to make, a research engine that
+keeps testing them, and live visibility into everything they do. **One button starts it all.**
 
-```
-python3 run.py
-```
+**Money:** the bots trade **simulated (paper) money** at live market prices. **Real money is off**
+and stays off until you connect a live account, authorise live trading separately with your own caps,
+and type a confirmation for each live bot. See [docs/LIVE_REQUIREMENTS.md](docs/LIVE_REQUIREMENTS.md)
+for what live use still needs.
 
-Python 3.9+ and an internet connection. No pip, no API keys needed for paper trading.
+## Start
 
 | You have | Do this |
 |---|---|
-| **Windows, no Python** | Double-click `JarvusTerminal.exe`. It opens the app in your browser and keeps a console window open; closing that window stops Jarvus and the bots. |
+| **Windows, no Python** | Double-click `JarvusTerminal.exe`. It opens the app in your browser; keep its window open (closing it stops Jarvus). |
 | Windows with Python | Double-click `Jarvus Terminal.bat` |
-| Mac | Double-click `Jarvus Terminal.command` (the first time: right-click, **Open**) |
-| Linux | `./jarvus-terminal.sh` |
+| Mac | Double-click `Jarvus Terminal.command` (first time: right-click, **Open**) |
+| Linux / any | `python3 run.py` (Python 3.9+; no pip needed) |
 
-**About the Windows warning.** The exe is not code-signed, so Windows SmartScreen may say "Windows
-protected your PC". Click **More info**, then **Run anyway**.
+1. The first time, create your **owner account** on the page that opens (stored as a salted scrypt hash).
+2. On **Command Center**, press **▶ START AUTOPILOT**. That's it.
 
-## The seven pages
+The exe is not code-signed: if Windows SmartScreen says "Windows protected your PC", click
+**More info → Run anyway**.
 
-| Page | What it shows |
+## What the one button does
+
+**START AUTOPILOT** starts the bot engine if it is stopped and then, by itself, with no further input:
+
+* all 311 bots load their markets (crypto from Coinbase, Kraken and OKX public data; stocks from
+  Yahoo) and evaluate their strategy on every closed bar;
+* entries go to the **brain** (cost gate, volatility gate, learned edge, bench and size) which
+  approves, resizes or refuses each one; approved trades fill on the **simulated research account**;
+* stops, targets, trailing stops and time exits are managed automatically;
+* research runs on a schedule: a walk-forward evaluation of the next strategy/market pair every
+  20 minutes (each pair at most weekly), a daily volatility-gate drift check and a daily brain
+  snapshot compared with the approved brain. Results are recorded; **nothing is promoted to live by
+  itself**;
+* it keeps running, and it resumes whenever Jarvus opens, until you press **■ STOP AUTOPILOT**
+  (the bots then stop opening trades; open positions are still managed to their exits).
+
+It never overrides an **EMERGENCY STOP** and never touches real money. The demo workspace has its
+own autopilot (24 bots on synthetic markets).
+
+## The three pages
+
+| Page | What it is for |
 |---|---|
-| **Command** | The live view: paper wallet (set the balance to any amount, any time), price chart and order book, the #1 bot, the hive of all 296 bots around the brain, P&L, recent trades and the execution log of every brain decision. |
-| **Bots** | Every bot, its state and last decision. Click one to see the exact rules, indicator values and checks behind what it did; disable or enable it. |
-| **Brain** | How every entry is decided (cost gate → volatility gate → learned score → bench and size), live gate readings for every market, what refused trades would have made, what it has learned, calibration and its own insights. |
-| **Strategies** | The library: 409 strategies (150 the bots run, 259 research-only), with exact rules, sources, how each fails and its measured results after costs. |
-| **Results** | Everything measured: whole-system simulations at each fee level, the swing lab (5.5 years of hourly data), 14,672 strategy backtests with a correction for how many ideas were tried, and the volatility gate's accuracy. |
-| **Live money** | Connect Kraken, NDAX or Alpaca; see which bots have earned real money; arm or disarm real-money trading. |
-| **Settings** | Your exchange's fees, paper balance, autopilot (start/stop the bots), pause, emergency stop, system health, data feeds and alerts. |
+| **Command Center** | The AUTOPILOT button and its live status; account equity, buying power, allocated capital, realised/unrealised P&L, exposure and daily drawdown; the candlestick chart (timeframes, volume, EMA/VWAP/Bollinger, markers for real fills coloured by mode); building and starting your own bot (strategy, market, mode, account, allocation, risk limits, readiness checks); bot cards with **PAUSE NEW ENTRIES**, **STOP** (keep protective orders or close) and details; equity and drawdown charts; recent trades; alerts. |
+| **Connections** | Every account: the simulated paper account, Alpaca paper/live, Kraken Pro, NDAX. Identity, environment, status, permissions, buying power, last sync, supported assets; connect / test / sync / reconnect / disconnect; **Add funds** opens the provider's own funding page (Jarvus never moves money or simulates a deposit); the separate **live-trading authorisation**; the AI research assistant's key and budget; news feeds. |
+| **Live Intelligence** | Decision feed (live) with the full lifecycle of each decision: market update → signal (every rule condition) → brain → risk checks → order → broker acknowledgement → fills (fees, slippage) → position → exit; scanner with watchlists; bot status; orders, fills, positions and exposure; side-by-side comparison (backtest vs research vs paper vs demo vs live, never mixed); searchable history with CSV/JSON export; research jobs and model registry; service health (queue, latencies, data age, CPU, memory, this computer's hardware). |
 
-## How the bots decide
+**Modes are labelled everywhere:** `DEMO` (synthetic market, simulated money), `PAPER` (simulated money
+at live prices), `PAPER · RESEARCH` (the autopilot fleet's own simulated account), `LIVE` (real money),
+`BACKTEST` (measured on history, not traded). Simulated figures are never shown as real ones.
 
-Each bot runs one strategy on one market: exact entry rules, a stop, a target or exit rule, a time
-limit and its own sizing. Before any entry, the **brain** checks it:
-
-1. **Cost gate.** Fees and spread as a share of the stop ("cost in R"). Above 0.33R the trade is
-   refused; 0.20-0.33R trades at half size. This single rule is why most signals are refused at
-   retail crypto fees: a tight stop plus a 0.8% taker fee costs more than the setup is worth.
-2. **Volatility gate.** A model trained on 5 years of hourly data forecasts whether the next hours
-   will be LOUD or QUIET. QUIET: no new trades. LOUD: 0.6x size. It says how much, never which way.
-3. **Learned score.** Expected R per trade from each strategy's tested history, updated with every
-   closed paper trade, by market and market regime. A negative edge is refused.
-4. **Bench and size.** Bots that keep losing are benched until their shadow trades recover.
-
-Every refused trade is followed to its exit as a "shadow", so the brain learns from what it blocked.
-Everything is local statistics: no AI service, no per-tick model calls.
-
-**Your fees (Settings).** Fees decide most results, so tell Jarvus which exchange you trade crypto on
-(Coinbase, Kraken, NDAX, a low-fee exchange, or each bot's own). Paper fills, the cost gate and the
-brain's starting knowledge then use those fees; the brain keeps what it learns at each fee level apart.
-A limit (maker) entry is counted at the maker fee.
-
-**Swing bots.** The swing lab tested 8 hourly setups with 48 exit structures each on 5.5 years of data.
-The oldest data picked the same shape almost everywhere: a 4 x ATR stop, a 2-3R target, holds of up to
-96 hours and a limit entry, because that is what keeps fees small next to the risk. Three setups stayed
-positive on the untouched recent data at a low-fee exchange (not significant after correction); they
-run as 15 swing bots that hold through the night.
+**EMERGENCY STOP** (top bar) blocks every new entry at once and tries to cancel working entry orders,
+reporting each result. Closing positions is a separate, confirmed step ("CLOSE ALL").
 
 ## What was measured (and what it means)
 
-From the Results page, in plain words:
+In plain words: **no strategy here has been shown to make money after retail costs**. At each bot's own
+exchange's fees the whole system averages slightly below zero per 10-day window; at a low-fee exchange
+about break-even. 143 strategies on 917 strategy-market pairs: none is significant after correcting for
+the number of ideas tried. The volatility gate is the one part with real predictive skill: when it flags
+LOUD on crypto it is right 76% of the time (base rate 31%), and it predicts the size of a move, not its
+direction. Details are on Live Intelligence → Research & models, and in `../market_analysis_bots/results`.
 
-* **Whole software, 1,000 runs x 3 versions at each of 4 fee levels** (60 random bots, random 10-day
-  windows, real sizing, the brain starting only with what it learned before those windows). Average
-  result per window with the full brain: **-0.020%** at each bot's own exchange's fees, **-0.012%** at
-  Kraken's, **+0.001%** at NDAX's (0.20%), **+0.006%** at a low-fee exchange (0.10%). Trading every
-  signal instead loses 3.5% to 12% per window. The brain cuts losses by refusing trades whose costs
-  exceed their edge and by sizing; at low fees it reaches about break-even. **No version makes
-  meaningful money**, and the average trade is still negative at every fee level.
-* **Swing lab** (5.5 years of hourly data, 8 setups x 48 exit structures): nothing survives retail
-  fees; three setups stay slightly positive on the untouched recent data at a low-fee exchange; none
-  is significant after correction.
-* **Strategies:** 143 strategies on 917 strategy-market pairs, 1,834 hypothesis tests. **None is
-  significant after correcting for the number of ideas tried.** At Kraken retail fees, 0 of 353
-  crypto runs were profitable; at a low-fee venue 14 of 353; stocks 102 of 564.
-* **Volatility gate:** when it flags LOUD on crypto it is right 76% of the time (base rate 31%), on
-  5.8% of hours. It predicts size of move, not direction.
+The autopilot's scheduled evaluations keep measuring: each walk-forward test splits the data
+chronologically (60/20/20 with an embargo), charges fees, spread and slippage (and a 2x-cost stress
+test), limits fills to a share of each bar's volume, and compares against random entries with the same
+exits. This is educational research and paper-trading software, not financial advice. Nothing here is
+a promise.
 
-This is an educational research and paper-trading tool, not financial advice, and no result above
-is a promise.
+## Setup details
 
-## Real money (off by default)
+* **Configuration:** environment variables, all optional; see [`.env.example`](.env.example) (port,
+  data folder, research workers and per-job time/memory limits, how many bot engines may run).
+* **Data:** `data/` beside the program: `app.db` (accounts, sessions, workspaces) and one folder per
+  workspace with its database (`mab.db`), backups and logs. Database changes are versioned migrations
+  applied automatically at start (a backup is taken first).
+* **Credentials:** an encrypted vault in `%APPDATA%\mab` (Windows; key protected by DPAPI for your
+  Windows user) or `~/.config/mab` (key in the system keyring, or an owner-only file). Credentials are
+  never shown again, never sent to the page, never logged, never in exports. Paper and live
+  credentials are separate connections.
+* **Network:** the app listens on `127.0.0.1` only. Every change needs the session cookie, a CSRF token
+  and the app's header; foreign Host and Origin headers are refused.
+* **AI research assistant (optional):** add an Anthropic API key under Connections. It uses the
+  `claude-opus-5-5` model through the official `anthropic` SDK (bundled in the exe; `pip install
+  anthropic` when running from source), only when you press a button, within daily request and token
+  budgets. Server-side model fallback on refusals is enabled (`fallbacks: "default"`). It can summarise
+  the log, explain a decision, draft strategy ideas (compiled, validated and registered as untested
+  research versions) and summarise headlines. It cannot place, change or cancel orders; log text and
+  headlines are passed to it as untrusted data.
+* **Hardware:** research runs in separate worker processes on this computer's CPU cores with time and
+  memory limits. No GPU and no remote compute are used; the Health tab shows what this computer has.
 
-1. **Live money → Step 1:** paste an API key and secret for Kraken Pro, NDAX or Alpaca (create the
-   key **without withdrawal permission**). Jarvus saves them encrypted for your Windows user (DPAPI),
-   never shows them again, never logs them, and tests the connection.
-2. **Step 2:** choose the broker, your limits (per trade, total, daily loss, in the broker's
-   currency) and type **I UNDERSTAND THIS TRADES REAL MONEY**. The bots must be running.
-3. A bot trades real money only after it has **earned it**: positive on train, validation and the
-   untouched test at its venue's costs, and at least 20 paper trades with a positive average. The
-   check runs before every order. You can tick "allow bots with no track record" (not recommended).
+## Checks and tests
 
-What is enforced whatever a strategy says: spot only, long only, no leverage; capped-price entries;
-a protective stop **resting on the exchange** after every fill (if it cannot be placed, the position
-is sold at once); a lost response is resolved by the order's client id, never by resending; a
-daily-loss breach, a failed reconciliation or an unexpected broker error **disarms** live trading.
-Emergency stop also disarms. **Disarm now** always works, even with the bots stopped.
+```
+python3 run.py selftest                      # the install, offline (also: JarvusTerminal.exe selftest)
+python3 -m pytest jarvus-terminal/tests      # app server: sign-in, CSRF, isolation, secrets, autopilot, stream
+python3 -m pytest market_analysis_bots/tests # engine: risk limits, duplicate orders, restarts, partial fills,
+                                             # stale data, rejections, emergency controls, providers, research
+```
 
-## Autopilot
-
-The bots start with Jarvus and restart by themselves within a minute if they ever stop (up to 5
-times an hour). Only **Settings → Stop bots** turns them off; **Start bots** turns them back on.
-Updates to Jarvus keep what the brain has learned and the paper account.
-
-## Where things are
-
-* Your data (the bots' database, autopilot state): `data/` beside the program.
-* Broker keys: Windows DPAPI-encrypted store in `%APPDATA%\mab\secrets.json` (Windows); elsewhere the
-  OS keyring or an owner-only file.
-* The app listens on `http://127.0.0.1:8787` only (this computer). Every change must come from the
-  app's own page (Host and Origin checks plus an app header).
-
-`python3 run.py selftest` checks the install offline (library, bots, models, every route, the
-protections, paper balance and broker validation).
+Run the pytest commands from the repository root (pytest is needed for them; the app itself needs no
+packages).
 
 ## For developers
 
-* `server.py`: the app's page and API; fleet data is proxied from the running fleet or read from its
-  database when stopped.
-* `engine/fleet.py`: starts and watches the fleet process (autopilot), commands, brokers, results.
-* `web/`: `index.html`, `app.css`, `app.js` (no framework, no build step).
-* The bots, brain, gates, brokers and live executor live in `../market_analysis_bots/mab`; the
-  strategy library in `../strategies`.
+* [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md): processes, database, execution, risk, research, streams.
+* `server.py`: the page, JSON API and live event stream; `engine/auth.py` (accounts, sessions,
+  workspaces); `engine/supervisor.py` (one bot-engine process per workspace, autostart, research
+  pool); `engine/library.py` (strategy library and measured results).
+* `web/`: `index.html`, `app.css`, `js/` (ES modules, no build step), `vendor/` (TradingView
+  Lightweight Charts, Apache-2.0, with its licence).
+* Engine, brain, execution, providers and research: `../market_analysis_bots/mab`; strategy library:
+  `../strategies`.

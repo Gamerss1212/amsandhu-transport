@@ -30,6 +30,11 @@ def hold(msg: str = "") -> None:
 
 
 def main() -> int:
+    if len(sys.argv) > 1 and sys.argv[1] == "selftest":
+        import selftest
+        code = selftest.main()
+        hold()
+        return code
     try:
         import config
         import server
@@ -46,13 +51,16 @@ def main() -> int:
     print(f"   Opening {url} in your browser.")
     print("   Keep this window open: closing it stops Jarvus and the bots.")
     print()
-    print("   AUTOPILOT: the bots start by themselves and decide everything")
-    print("   (what to trade, how much, when to get out) with PAPER money.")
-    print("   They restart by themselves; only Stop (Settings) turns them off.")
+    print("   First time: create your owner account in the browser page.")
     print()
-    print("   REAL MONEY is OFF. It can only be turned on in the app (Live")
-    print("   money page): a tested broker, your limits and a typed")
-    print("   acknowledgement.")
+    print("   ONE BUTTON: press START AUTOPILOT on Command Center and all")
+    print("   311 bots trade PAPER (simulated) money by themselves: the brain")
+    print("   sizes and vetoes each trade, exits are automatic, research runs")
+    print("   on a schedule. It keeps running and restarts when Jarvus opens.")
+    print()
+    print("   REAL MONEY is OFF. It needs a connected live account, your")
+    print("   separate authorisation (Connections page) with caps, and a")
+    print("   typed START LIVE for each live bot.")
     print()
     print(f"   Your data: {config.DATA_DIR}")
     print("   Educational research tool, not financial advice.")

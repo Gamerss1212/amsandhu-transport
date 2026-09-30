@@ -28,16 +28,28 @@ datas = [
     (os.path.join(STRAT, "results", "swing_lab.json.gz"), "strategies/results"),
 ]
 
-# named explicitly: the fleet runs in a spawned process and imports some modules by name
-hiddenimports = [
-    "config", "server", "engine", "engine.fleet",
-    "mab", "mab.account", "mab.backtest", "mab.brain", "mab.broker", "mab.broker_setup", "mab.cli", "mab.clock",
-    "mab.costs", "mab.dashboard", "mab.expr", "mab.frame", "mab.indicators", "mab.instruments", "mab.live",
-    "mab.metrics", "mab.models", "mab.net", "mab.replay", "mab.risk", "mab.runtime", "mab.secrets_store",
-    "mab.storage", "mab.strategy", "mab.sysbacktest", "mab.volgate",
-    "mab.brokers", "mab.brokers.base", "mab.brokers.kraken", "mab.brokers.ndax", "mab.brokers.alpaca",
-    "mab.data", "mab.data.adapters", "mab.data.hub", "mab.data.quality",
-]
+# named explicitly: the bot engines and research workers run in spawned processes and import modules by name
+from PyInstaller.utils.hooks import collect_submodules
+
+
+def _modules(root, pkg):
+    out = []
+    for dirpath, _, files in os.walk(os.path.join(root, pkg)):
+        if "__pycache__" in dirpath:
+            continue
+        rel = os.path.relpath(dirpath, root).replace(os.sep, ".")
+        for f in files:
+            if f.endswith(".py"):
+                out.append(rel if f == "__init__.py" else f"{rel}.{f[:-3]}")
+    return sorted(out)
+
+
+hiddenimports = ["config", "server", "selftest", "engine", "engine.auth", "engine.supervisor", "engine.library"] \
+    + _modules(MAB, "mab")
+try:                                   # the AI research assistant (optional: the app runs without it)
+    hiddenimports += collect_submodules("anthropic")
+except Exception:                      # noqa: BLE001
+    pass
 
 a = Analysis(
     ["desktop.py"],
