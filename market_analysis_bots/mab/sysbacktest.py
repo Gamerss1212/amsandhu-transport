@@ -131,7 +131,8 @@ def effective_slots(equity: float, slots: int, min_slot: Optional[float]) -> int
 def run(cands: List[Candidate], t0: int, t1: int, arm: str, seed: int = 0, priors: Optional[str] = None,
         families: Optional[Dict[str, str]] = None, capital: float = 100_000.0, slots: int = 20, risk_pct: float = 0.5,
         max_open: int = 40, daily_loss: float = 0.03, realistic: bool = False, min_slot: Optional[float] = None,
-        fractional_us: bool = False, participation: Optional[float] = None, max_notional_pct: float = 100.0) -> dict:
+        fractional_us: bool = False, participation: Optional[float] = None, max_notional_pct: float = 100.0,
+        min_bump: float = 0.0) -> dict:
     """One replay of the candidates entering in [t0, t1). arm: none | gates | brain.
 
     realistic=True models order sizes as the engine places them: risk-based size capped at the slot, venue minimums,
@@ -213,8 +214,15 @@ def run(cands: List[Candidate], t0: int, t1: int, arm: str, seed: int = 0, prior
                     skipped_cash += 1
                     continue
             rules = venue_rules(c.venue, c.inst, c.asset, fractional_us)
+            cap_slot = min(slot_eq * max_notional_pct / 100.0, max(0.0, free))
             if rules["whole_shares"]:
-                notional = math.floor(notional / c.px + 1e-9) * c.px
+                shares = math.floor(notional / c.px + 1e-9)
+                if shares < 1 and min_bump and c.px <= notional * min_bump and c.px <= cap_slot:
+                    shares = 1                                   # one share, when that is within min_bump x the size
+                notional = shares * c.px
+            elif notional < rules["min_notional"] and min_bump and rules["min_notional"] <= notional * min_bump \
+                    and rules["min_notional"] <= cap_slot:
+                notional = rules["min_notional"]                 # up to the venue minimum, within min_bump x the size
             if notional <= 0 or notional < rules["min_notional"]:
                 skipped_size += 1
                 continue

@@ -10,6 +10,8 @@ versions are compared at each balance:
   before   20 fixed capital slots, whole shares only, no liquidity cap
   after    adaptive slots (at least $25 each), fractional US shares ($1 minimum, as Alpaca offers),
            entries capped at 5% of the market's recent dollar volume
+  bump     20 slots kept; an order below the venue minimum is raised to it when that is at most 5x its
+           risk-based size (and fits the slot and the cash); fractional US shares; the same liquidity cap
 
 Writes results/balance_backtest.json and docs/BALANCE_BACKTEST.md.
 """
@@ -38,6 +40,7 @@ BALANCES = [100, 1_000, 10_000, 100_000, 10_000_000]
 VERSIONS = {
     "before": {"realistic": True, "max_open": 20},
     "after": {"realistic": True, "max_open": 20, "min_slot": 25.0, "fractional_us": True, "participation": 0.05},
+    "bump": {"realistic": True, "max_open": 20, "min_bump": 5.0, "fractional_us": True, "participation": 0.05},
 }
 
 
