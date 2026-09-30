@@ -947,6 +947,10 @@ class Fleet(DeploymentMixin):
             return self.live_revoke(str(args.get("reason") or "owner"))
         if command == "research_autopilot":
             return self.set_research_autopilot(bool(args.get("on")))
+        if command == "autopilot":
+            return self.autopilot_set(bool(args.get("on")), str(args.get("by") or "owner")[:40])
+        if command == "autopilot_status":
+            return self.autopilot_status()
         if command == "paper_balance":
             kind = str(args.get("kind") or "set_balance")
             if kind not in ("set_balance", "deposit", "withdraw"):

@@ -137,8 +137,61 @@ def overview(ctx):
                                    "max_total_allocation": la.get("max_total_allocation"),
                                    "daily_loss_limit": la.get("daily_loss_limit"), "time": la.get("time"),
                                    "waive_eligibility": bool(la.get("waive_eligibility"))},
-            "research_autopilot": bool(st.kv_get("research_autopilot", True)), "accounts": accts, "deployments": deps,
+            "research_autopilot": autopilot_on(st), "autopilot": autopilot_on(st), "accounts": accts, "deployments": deps,
             "alerts": views.alerts(st, 24, 30), "default_limits": DEFAULT_LIMITS, "time": _now()}
+
+
+def autopilot_on(st) -> bool:
+    ap = st.kv_get("autopilot")
+    if isinstance(ap, dict):
+        return bool(ap.get("on"))
+    legacy = st.kv_get("research_autopilot")
+    return bool(legacy) if legacy is not None else False
+
+
+def autopilot_view(ctx):
+    wid, st = ctx["wid"], ctx["st"]
+    eng = APP.sup.status(wid)
+    d = fleet_json(wid, "/api/autopilot") if APP.sup.running(wid) else None
+    if not d or d.get("on") is None:
+        ap = st.kv_get("autopilot") or {}
+        d = {"on": autopilot_on(st), "since": ap.get("since"), "by": ap.get("by"), "emergency": bool(st.kv_get("emergency")),
+             "bots": None, "states": {}, "real_money": False, "today": {}, "research": {},
+             "note": "the bot engine is stopped" + ("; it starts when autopilot is switched on" if not autopilot_on(st)
+                                                    else "; autopilot resumes when it starts")}
+    d["engine"] = eng
+    d["autostart"] = bool((APP.auth.workspace(wid) or {}).get("autostart"))
+    return d
+
+
+def autopilot_switch(ctx, on: bool):
+    """The one button. ON: record it (the engine reads it at start), make the engine start with the app, start the
+    engine now if it is stopped, and tell a running engine. OFF: research bots stop opening trades; the engine keeps
+    running so open positions are still managed. Never touches real money; refuses while EMERGENCY STOP is on."""
+    wid, st, s = ctx["wid"], ctx["st"], ctx["session"]
+    if on and st.kv_get("emergency"):
+        raise ApiError(409, "EMERGENCY STOP is on. It was set on purpose, so autopilot will not override it: clear it "
+                            "first (red banner), then press START AUTOPILOT again.")
+    running = APP.sup.running(wid)
+    if running:
+        cmd(wid, "autopilot", {"on": on, "by": s["username"]}, wait=15)
+    else:
+        st.kv_set("autopilot", {"on": on, "since": _now(), "by": s["username"]})
+        st.kv_set("research_autopilot", on)
+        st.audit("control", f"AUTOPILOT {'ON' if on else 'OFF'} (set while the engine was stopped"
+                 + ("; starting it now)" if on else ")"), stage="autopilot", severity="warning",
+                 payload={"on": on, "by": s["username"]})
+    started = None
+    if on:
+        APP.auth.set_autostart(wid, True)                   # from now on the engine starts whenever Jarvus opens
+        if not running and APP.start_engines:
+            try:
+                started = APP.sup.start(wid)
+            except RuntimeError as e:
+                raise ApiError(409, str(e))
+    out = autopilot_view(ctx)
+    out["engine_started"] = bool(started and not started.get("already_running"))
+    return out
 
 
 def snapshot_for_stream(wid):
@@ -377,11 +430,8 @@ def post_action(ctx, route, b):
         return {"cleared": True}
     if route == "/api/close_all":
         return cmd(wid, "close_all_positions", {"confirm": b.get("confirm")}, wait=120)
-    if route == "/api/research_autopilot":
-        if APP.sup.running(wid):
-            return cmd(wid, "research_autopilot", {"on": bool(b.get("on"))})
-        st.kv_set("research_autopilot", bool(b.get("on")))
-        return {"research_autopilot": bool(b.get("on"))}
+    if route in ("/api/autopilot", "/api/research_autopilot"):
+        return autopilot_switch(ctx, bool(b.get("on")))
     if route == "/api/paper_balance":
         return cmd(wid, "paper_balance", {"connection_id": b.get("connection_id"), "kind": b.get("kind", "set_balance"),
                                           "amount": b.get("amount")})
@@ -562,6 +612,7 @@ GET_ROUTES = {
     "/api/exposure": lambda ctx: views.exposure(ctx["st"]),
     "/api/compare": compare,
     "/api/health": health,
+    "/api/autopilot": autopilot_view,
     "/api/connections": connections_view,
     "/api/research/jobs": lambda ctx: {"jobs": JobQueue(ctx["st"]).list(int(ctx["q"]("limit", "50"))),
                                        "kinds": JOB_KINDS, "counts": JobQueue(ctx["st"]).counts()},

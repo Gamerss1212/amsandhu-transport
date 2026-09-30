@@ -13,7 +13,8 @@ export function mount(view) {
   st.builtFor = null;
   const acctSel = h('select#acct-sel', { 'aria-label': 'Account', style: { width: 'auto', minWidth: '220px' }, onchange: (e) => { st.account = e.target.value; renderAccount(); loadEquity(); loadTrades(); } });
   view.append(
-    h('section.panel.hot', h('h2', 'Account', h('span.right', acctSel, h('span.note#acct-src'))), h('div.tiles#acct-tiles')),
+    autopilotPanel(),
+    h('section.panel.hot', { style: { marginTop: '12px' } }, h('h2', 'Account', h('span.right', acctSel, h('span.note#acct-src'))), h('div.tiles#acct-tiles')),
     h('div.grid.g-cc-top', { style: { marginTop: '12px' } },
       chartPanel(),
       h('section.panel.hot#builder', h('h2', 'Start a bot', h('span.right', h('span.note', 'readiness checks run first'))), h('div#builder-body', h('div.empty', 'Loading strategies…')))),
@@ -34,6 +35,8 @@ export function mount(view) {
   };
   st.unsub.push(on('overview', onOverview), on('state', liveState), on('audit', onAudit));
   if (S.overview) onOverview();
+  loadAutopilot();
+  st.timers.push(setInterval(loadAutopilot, 5000));
   loadBuilder();
   st.timers.push(setInterval(() => { loadEquity(); loadTrades(); }, 30000), setInterval(loadCandles, 20000));
 }
@@ -44,13 +47,81 @@ export function unmount() {
   if (st.price) { st.price.destroy(); st.price = null; }
 }
 
+// ---------------------------------------------------------------- AUTOPILOT: the one button
+function autopilotPanel() {
+  return h('section.panel.autopilot#autopilot',
+    h('div.ap-grid',
+      h('div.ap-left',
+        h('div.row', h('span.ap-title', 'AUTOPILOT'), h('span#ap-badge'), h('span#ap-state.note')),
+        h('div#ap-button', { style: { margin: '12px 0' } }),
+        h('p.note#ap-explain')),
+      h('div.tiles#ap-tiles')));
+}
+
+async function loadAutopilot() {
+  if (!$('#autopilot')) return;
+  try { st.ap = await api('/api/autopilot'); renderAutopilot(); } catch (e) { /* shown on the next poll */ }
+}
+
+function renderAutopilot() {
+  const a = st.ap;
+  const box = $('#autopilot');
+  if (!a || !box) return;
+  const demo = S.overview && S.overview.workspace && S.overview.workspace.demo;
+  const n = a.bots ?? (demo ? 24 : 311);
+  box.classList.toggle('on', !!a.on);
+  replace($('#ap-badge'), modeBadge(demo ? 'demo' : 'research'));
+  replace($('#ap-state'), a.on ? h('span.up', `ON since ${time(a.since, true)}${a.by ? ' · ' + a.by : ''}`) : h('span', 'OFF'),
+    a.engine && !a.engine.running ? h('span.down', ' · engine stopped') : null);
+  const btn = a.on
+    ? h('button.btn.warn.ap-btn', { onclick: stopAutopilot }, '■ STOP AUTOPILOT')
+    : h('button.btn.start.ap-btn', { onclick: startAutopilot, disabled: !!a.emergency, title: a.emergency ? 'Clear the emergency stop first' : '' }, `▶ START AUTOPILOT · ${n} BOTS`);
+  replace($('#ap-button'), btn, a.emergency ? h('div.down', { style: { marginTop: '6px' } }, 'EMERGENCY STOP is on: clear it (red banner) to start autopilot.') : null);
+  replace($('#ap-explain'), a.on
+    ? `Running by itself: ${n} bots scan their markets on every closed bar and trade the simulated research account; the brain sizes and vetoes each entry; stops, targets and exits are automatic; a walk-forward evaluation runs every ${(a.research && a.research.every_min) || 20} minutes and the volatility gate and brain are re-checked daily. It restarts with Jarvus. Real money stays off.`
+    : `One press starts everything: the bot engine, all ${n} bots scanning their markets and trading the simulated research account by themselves, the brain sizing and vetoing each trade, automatic exits, and scheduled research. It keeps running and restarts when Jarvus opens. Real money stays off: live trading needs its own authorisation.`);
+  const t = (k, v, sub, c) => h('div.tile', h('div.k', k), h(`div.v${c ? '.' + c : ''}`, v), sub ? h('div.s', sub) : null);
+  const s2 = a.states || {};
+  const td = a.today || {};
+  const acct = a.account || {};
+  const rq = (a.research && a.research.queue) || {};
+  replace($('#ap-tiles'),
+    t('Bots', a.bots ?? '—', a.bots ? `${s2.watching || 0} watching · ${s2.waiting || 0} waiting${s2.error ? ' · ' + s2.error + ' error' : ''}` : 'engine stopped'),
+    t('In a trade', s2.managing_position ?? '—', 'positions being managed'),
+    t('Trades today', td.trades ?? '—', td.trades ? `${td.wins} won · fees ${money(td.fees)}` : 'closed trades'),
+    t('Today after fees', td.pnl_after_fees === undefined ? '—' : signed(td.pnl_after_fees), 'simulated money', cls(td.pnl_after_fees)),
+    t('Research account', acct.equity === undefined || acct.equity === null ? '—' : money(acct.equity, acct.currency, 0), acct.open_positions !== undefined ? `${acct.open_positions} open · exposure ${pct(acct.exposure_pct, 0)}` : 'simulated'),
+    t('Research jobs', a.research && a.research.done_today !== undefined ? `${a.research.done_today} today` : '—', `${rq.queued || 0} queued · ${rq.running || 0} running`));
+}
+
+async function startAutopilot(e) {
+  const b = e.target;
+  b.disabled = true;
+  b.textContent = 'Starting…';
+  try {
+    st.ap = await api('/api/autopilot', { on: true });
+    toast(st.ap.engine_started ? 'Autopilot ON: the engine is starting and the bots load their market data (about a minute)' : 'Autopilot ON: every bot is trading the simulated research account', 'good');
+    st.account = 'paper-research';
+    renderAutopilot();
+    if (S.refreshOverview) setTimeout(S.refreshOverview, 1500);
+  } catch (err) { errorToast(err); loadAutopilot(); }
+}
+async function stopAutopilot() {
+  const ok = await confirmBox('Stop autopilot?', 'The research bots stop opening new trades. Open positions keep being managed until their exits. The engine and any bots you started yourself keep running.', { okLabel: 'Stop autopilot', danger: false });
+  if (!ok) return;
+  try { st.ap = await api('/api/autopilot', { on: false }); toast('Autopilot OFF'); renderAutopilot(); if (S.refreshOverview) S.refreshOverview(); }
+  catch (err) { errorToast(err); }
+}
+
 // ---------------------------------------------------------------- account strip
 function renderAccountSelector() {
   const sel = $('#acct-sel');
   if (!sel || !S.overview) return;
   const accts = S.overview.accounts;
   if (!st.account || !accts.find(a => a.connection_id === st.account)) {
-    st.account = (accts.find(a => a.connection_id === 'paper-main' || a.connection_id === 'demo-main') || accts[0] || {}).connection_id;
+    const own = (S.overview.deployments || []).some(d => d.state !== 'stopped');
+    const pref = S.overview.autopilot && !own ? ['paper-research'] : ['paper-main', 'demo-main'];
+    st.account = (accts.find(a => pref.includes(a.connection_id)) || accts[0] || {}).connection_id;
   }
   replace(sel, accts.map(a => h('option', { value: a.connection_id, selected: a.connection_id === st.account },
     `${a.label}  [${modeText(a.mode)}]`)));
@@ -321,9 +392,7 @@ function renderBots() {
   if (!box || !S.overview) return;
   const deps = S.overview.deployments || [];
   const acts = $('#bots-actions');
-  if (acts) replace(acts, h('label.check', h('input', { type: 'checkbox', checked: S.overview.research_autopilot, onchange: async (e) => {
-    try { await api('/api/research_autopilot', { on: e.target.checked }); toast(`Research fleet autopilot ${e.target.checked ? 'on' : 'off'} (research paper account only)`); S.refreshOverview(); } catch (err) { errorToast(err); e.target.checked = !e.target.checked; }
-  } }), 'Research fleet trades paper by itself'));
+  if (acts) replace(acts, h('span.note', S.overview.autopilot ? 'autopilot is running the research fleet' : 'autopilot is off'));
   const cards = deps.map(botCard);
   cards.push(researchCard());
   replace(box, cards.length ? cards : h('div.empty', 'No bots started yet. Build one on the right: pick a strategy and a market, check readiness, START.'));
@@ -356,7 +425,7 @@ function botCard(d) {
 function researchCard() {
   const a = (S.overview.accounts || []).find(x => x.connection_id === 'paper-research');
   return h('div.card', h('div.row.between', h('div', h('div.title', 'Research fleet'), h('div.sub', 'the registry\'s bots: always evaluating; their signals feed the scanner and the brain')), modeBadge('research')),
-    kvList([['Autopilot', S.overview.research_autopilot ? 'trading its own paper account' : 'watching only'],
+    kvList([['Autopilot', S.overview.autopilot ? 'ON: trading its own simulated account' : 'OFF: watching only'],
       ['Research paper equity', a ? money(a.equity, a.currency) : '—'], ['Realized today', a ? signed(a.realized_today) : '—']]),
     h('div.note', 'Kept apart from your accounts: its results are labelled PAPER · RESEARCH.'),
     h('a.btn.ghost.small', { href: '#/intel' }, 'See every bot live →'));

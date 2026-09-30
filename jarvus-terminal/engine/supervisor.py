@@ -40,7 +40,7 @@ CATALOG = os.path.join(PAYLOAD, "strategies", "catalog.json")
 EVENTS = os.path.join(PAYLOAD, "strategies", "data", "events.json")
 REGISTRY = os.path.join(MAB_DIR, "bots", "registry.json")
 EXAMPLE_CFG = os.path.join(MAB_DIR, "config", "fleet.example.json")
-MAX_FLEETS = int(os.environ.get("JARVUS_MAX_FLEETS", "4"))
+MAX_FLEETS = config.MAX_FLEETS
 DEMO_MAP = {"BTC": "DEMO-BTC", "ETH": "DEMO-ETH", "SOL": "DEMO-SOL", "DOGE": "DEMO-DOGE", "PEPE": "DEMO-MEME",
             "SHIB": "DEMO-MEME", "BONK": "DEMO-MEME", "WIF": "DEMO-MEME", "FLOKI": "DEMO-MEME"}
 
@@ -103,7 +103,7 @@ class Supervisor:
         self._stores: Dict[str, object] = {}
         self._watchdog = None
         self.pool = None
-        self.research_workers = research_workers
+        self.research_workers = research_workers or config.RESEARCH_WORKERS
         self.start_pool = start_pool
 
     # ------------------------------------------------------------------ paths and configuration
@@ -139,7 +139,8 @@ class Supervisor:
                 cfg = json.load(fh)
         demo = w["kind"] == "demo"
         cfg.update({"catalog": CATALOG, "events_file": EVENTS, "bots_file": os.path.join(home, "bots", "registry.json"),
-                    "data_dir": os.path.join(home, "data"), "workspace": wid, "demo": demo})
+                    "data_dir": os.path.join(home, "data"), "workspace": wid, "demo": demo,
+                    "autopilot_default": False})             # research bots wait for START AUTOPILOT
         if demo:
             cfg.setdefault("paper", {})["latency_ms"] = 50
             with open(cfg["bots_file"], "w", encoding="utf-8") as fh:
@@ -213,7 +214,8 @@ class Supervisor:
         if self.start_pool and self.pool is None:
             from mab.research.jobs import Pool
             self.pool = Pool(self.databases, os.path.join(config.DATA_DIR, "research-cache"),
-                             max_workers=self.research_workers).start()
+                             max_workers=self.research_workers, timeout_s=config.JOB_TIMEOUT_S,
+                             max_memory_mb=config.JOB_MEMORY_MB).start()
 
     def databases(self):
         out = []

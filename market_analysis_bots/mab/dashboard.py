@@ -27,6 +27,7 @@ from mab.storage import Storage
 HERE = os.path.dirname(os.path.abspath(__file__))
 ALLOWED_COMMANDS = {"deploy_readiness", "deploy_start", "deploy_pause", "deploy_resume", "deploy_stop", "close_all_positions",
                     "create_bot", "update_limits", "live_authorize", "live_revoke", "research_autopilot", "paper_balance",
+                    "autopilot", "autopilot_status",
                     "connection_test", "connection_sync", "reconcile", "deployments", "brain_snapshot", "brain_promote",
                     "strategy_approve", "strategy_retire", "reload_models", "drift_check", "connections_changed",
 "set_fee_profile", "live_status", "live_eligibility", "live_arm", "live_disarm", "live_close_all", "pause", "resume", "emergency_stop", "clear_emergency", "deposit", "withdraw", "set_balance",
@@ -391,6 +392,9 @@ def make_handler(provider: Provider, token: str, page: str, api_token: Optional[
                     return self._send(200, provider.markets())
                 if u.path == "/api/health":
                     return self._send(200, provider.health())
+                if u.path == "/api/autopilot":
+                    return self._send(200, provider.fleet.autopilot_status() if provider.fleet is not None
+                                      else {"on": None, "running": False})
                 return self._send(404, {"error": "not found"})
             except Exception as e:
                 return self._send(500, {"error": f"{type(e).__name__}: {e}"})

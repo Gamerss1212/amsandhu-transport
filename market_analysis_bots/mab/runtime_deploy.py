@@ -40,6 +40,10 @@ RESEARCH_CONN = "paper-research"
 ACCOUNT_SNAPSHOT_EVERY = 1          # health cycles between simulated-account equity points
 BROKER_SYNC_EVERY = 1               # health cycles between broker account syncs (when a deployment uses it)
 RECONCILE_EVERY = 5
+AUTOPILOT_PRIORITY = 8                      # research queue: the owner's own jobs (priority 5) always go first
+AUTOPILOT_MAX_PENDING = 2                   # autopilot never queues more than this many jobs at once
+AUTOPILOT_WF_EVERY_MS = 20 * 60_000         # one walk-forward evaluation every 20 minutes, in rotation
+AUTOPILOT_REEVAL_MS = 7 * 86_400_000        # each strategy/market pair at most once a week
 
 
 def utc_day_start(ms: Optional[int] = None) -> int:
@@ -71,7 +75,16 @@ class DeploymentMixin:
                                       live_allowed=self._live_allowed)
         self.router = Router(self.engine, self.storage, self.conns.provider, alert=self._dep_alert,
                              slippage_bps=float(self.cfg.get("live_slippage_bps", 30.0)))
-        self.research_autopilot = bool(self.storage.kv_get("research_autopilot", True))
+        # AUTOPILOT (one button): the research fleet trades its simulated account by itself and research runs on a
+        # schedule. It persists, so it resumes when the app restarts. A workspace the app creates starts with it off
+        # (cfg autopilot_default False) until the owner presses START AUTOPILOT; it never touches real money.
+        ap = self.storage.kv_get("autopilot")
+        if not isinstance(ap, dict):
+            legacy = self.storage.kv_get("research_autopilot")
+            ap = {"on": bool(legacy) if legacy is not None else bool(self.cfg.get("autopilot_default", True)),
+                  "since": None, "by": None}
+        self.autopilot = ap
+        self.research_autopilot = bool(ap.get("on"))
         self.dep_cache: Dict[str, dict] = {}
         self.dep_blocks: Dict[str, str] = {}
         self.dep_peak: Dict[str, float] = dict(self.storage.kv_get("dep_peaks", {}) or {})
@@ -554,6 +567,10 @@ class DeploymentMixin:
             self.reconcile()
         if self._dep_cycle % 60 == 1:
             self.drift_cycle()
+        try:
+            self._autopilot_cycle()
+        except Exception as e:                                          # noqa: BLE001 - research never stops trading
+            log.warning("autopilot research schedule: %s", e)
         self.storage.kv_set("dep_peaks", self.dep_peak)
         for cid, rm in self.port_risk.items():
             eq = self.account_equity(cid)
@@ -1083,11 +1100,129 @@ class DeploymentMixin:
         return {"revoked": True, "paused": paused}
 
     def set_research_autopilot(self, on: bool) -> dict:
-        self.research_autopilot = bool(on)
-        self.storage.kv_set("research_autopilot", self.research_autopilot)
-        self._audit("control", f"research fleet autopilot {'ON' if on else 'OFF'} (research paper account only)",
-                    stage="research_autopilot")
+        self.autopilot_set(on)
         return {"research_autopilot": self.research_autopilot}
+
+    # ================================================================== AUTOPILOT: one button, every research bot
+    def autopilot_set(self, on: bool, by: str = "owner") -> dict:
+        on = bool(on)
+        if on and self.emergency:
+            raise ValueError("EMERGENCY STOP is on: clear it first (it was set on purpose, so autopilot never overrides it)")
+        self.autopilot = {"on": on, "since": now_ms(), "by": by}
+        self.storage.kv_set("autopilot", self.autopilot)
+        self.research_autopilot = on
+        self.storage.kv_set("research_autopilot", on)
+        n = sum(1 for b in self.bots.values() if not self._is_user(b))
+        mode = "demo" if self.demo else "research"
+        self._audit("control", (f"AUTOPILOT ON: {n} research bots trade the simulated research account by themselves "
+                                "(the brain sizes and vetoes, exits are automatic) and research runs on a schedule; "
+                                "real money stays off") if on else
+                    "AUTOPILOT OFF: research bots stop opening trades; open positions are still managed until they exit",
+                    stage="autopilot", severity="warning", mode=mode, payload={"on": on, "bots": n, "by": by})
+        return self.autopilot_status()
+
+    def autopilot_status(self) -> dict:
+        from mab.research.jobs import JobQueue
+        states = {"watching": 0, "managing_position": 0, "waiting": 0, "error": 0}
+        n = 0
+        for br in self.bots.values():
+            if self._is_user(br):
+                continue
+            n += 1
+            if br.tm.pos is not None:
+                states["managing_position"] += 1
+            elif br.state in ("degraded", "disabled") or not br.enabled:
+                states["error"] += 1
+            elif br.state in ("warming", "data_unavailable"):
+                states["waiting"] += 1
+            else:
+                states["watching"] += 1
+        day = int(time.time() // 86400 * 86400 * 1000)
+        t = self.storage.query("SELECT COUNT(*) AS n, COALESCE(SUM(pnl),0) AS pnl, COALESCE(SUM(fees),0) AS fees,"
+                               " SUM(CASE WHEN pnl > 0 THEN 1 ELSE 0 END) AS wins FROM trades"
+                               " WHERE deployment_id IS NULL AND exit_time >= ?", (day,))[0]
+        q = JobQueue(self.storage)
+        done_today = self.storage.query("SELECT COUNT(*) AS n FROM research_jobs WHERE requested_by='autopilot' AND"
+                                        " state='done' AND finished >= ?", (day,))[0]["n"]
+        sched = self.storage.kv_get("autopilot_schedule") or {}
+        acct = self.account.summary()
+        return {"on": self.research_autopilot, "since": self.autopilot.get("since"), "by": self.autopilot.get("by"),
+                "emergency": bool(self.emergency), "paused": bool(self.paused), "bots": n, "states": states,
+                "mode": "demo" if self.demo else "research", "real_money": False,
+                "account": {"connection_id": RESEARCH_CONN, "equity": acct.get("equity"), "cash": acct.get("cash"),
+                            "currency": acct.get("currency"), "open_positions": acct.get("open_positions"),
+                            "exposure_pct": acct.get("gross_exposure_pct")},
+                "today": {"trades": t["n"], "pnl_after_fees": t["pnl"], "fees": t["fees"], "wins": t["wins"] or 0},
+                "brain": {"trades_learned": self.brain.stats.get("learned", 0)},
+                "research": {"queue": q.counts(), "done_today": done_today, "last_walk_forward": sched.get("last_wf"),
+                             "last_gate_check": sched.get("last_gate"), "last_brain_check": sched.get("last_brain"),
+                             "evaluated": len(sched.get("evaluated") or {}),
+                             "every_min": AUTOPILOT_WF_EVERY_MS // 60_000},
+                "note": "simulated money only; live trading needs your separate authorisation and a typed START LIVE "
+                        "for each live bot"}
+
+    def _autopilot_cycle(self):
+        """Scheduled research while autopilot is on: one walk-forward evaluation at a time in rotation over the bots'
+        strategy/market pairs, a daily volatility-gate drift check and a daily brain snapshot compared with the approved
+        brain. Results are recorded for the owner; nothing is promoted to live by itself."""
+        if not self.research_autopilot or self.emergency or not self.cfg.get("autopilot_research", True):
+            return
+        from mab.research.jobs import JobQueue
+        q = JobQueue(self.storage)
+        c = q.counts()
+        if c.get("queued", 0) + c.get("running", 0) >= AUTOPILOT_MAX_PENDING:
+            return
+        sched = dict(self.storage.kv_get("autopilot_schedule") or {})
+        now = now_ms()
+        day = 86_400_000
+        if now - sched.get("last_brain", 0) >= day and self.brain.stats.get("learned", 0) >= 30:
+            sched["last_brain"] = now
+            snap = self.registry_models.snapshot_brain(self.brain, "autopilot daily snapshot")
+            champ = self.registry_models.champion("brain")
+            q.submit("brain_eval", {"candidate": snap["version"], "champion": champ["version"] if champ else "none"},
+                     AUTOPILOT_PRIORITY, "autopilot")
+            self._prune_brain_snapshots()
+        elif now - sched.get("last_gate", 0) >= day and getattr(self.brain, "gates", None) is not None:
+            sched["last_gate"] = now
+            venue, inst = ("demo", "DEMO-BTC") if self.demo else ("coinbase", "BTC-USD")
+            q.submit("gate_drift", {"venue": venue, "instrument": inst, "asset": "crypto"}, AUTOPILOT_PRIORITY, "autopilot")
+        elif now - sched.get("last_wf", 0) >= AUTOPILOT_WF_EVERY_MS:
+            sched["last_wf"] = now
+            br = self._next_autopilot_eval(sched)
+            if br is not None:
+                defn = dict(br.c.definition, id=br.c.id, timeframe=br.tf)
+                own = dict(defn.get("params") or {})
+                defn["params"] = dict(own, **{k: v for k, v in (br.c.params or {}).items() if k in own})
+                days = 30 if br.tf in ("1m", "5m") else (60 if br.tf == "15m" else 180)
+                q.submit("walk_forward", {"definition": defn, "venue": br.venue, "instrument": br.symbol, "days": days,
+                                          "draws": 100, "fee_profile": "venue"}, AUTOPILOT_PRIORITY, "autopilot")
+        self.storage.kv_set("autopilot_schedule", sched)
+
+    def _next_autopilot_eval(self, sched: dict):
+        done = dict(sched.get("evaluated") or {})
+        now = now_ms()
+        bots = sorted((b for b in self.bots.values() if not self._is_user(b) and b.enabled), key=lambda b: b.id)
+        if not bots:
+            return None
+        start = int(sched.get("wf_i", 0)) % len(bots)
+        for k in range(len(bots)):
+            br = bots[(start + k) % len(bots)]
+            key = f"{br.c.version_hash}|{br.venue}|{br.symbol}"
+            if now - done.get(key, 0) >= AUTOPILOT_REEVAL_MS:
+                done[key] = now
+                if len(done) > 1000:
+                    done = dict(sorted(done.items(), key=lambda kv: kv[1])[-1000:])
+                sched["evaluated"] = done
+                sched["wf_i"] = (start + k + 1) % len(bots)
+                return br
+        return None
+
+    def _prune_brain_snapshots(self, keep: int = 14):
+        rows = self.storage.query("SELECT version FROM model_versions WHERE model='brain' AND status='candidate'"
+                                  " ORDER BY created DESC")
+        for r in rows[keep:]:
+            self.storage.write("DELETE FROM model_versions WHERE model='brain' AND version=? AND status='candidate'",
+                               (r["version"],))
 
     def set_paper_balance(self, cid: str, kind: str, amount: float) -> dict:
         if cid == RESEARCH_CONN:

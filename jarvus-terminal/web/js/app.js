@@ -68,6 +68,7 @@ function shell() {
       w.kind === 'demo' ? 'Demo workspace' : 'Main workspace')));
   const eng = h('span.pill#engine-pill', h('span.dot'), 'engine …');
   const live = h('span.pill.hide-sm#live-pill', 'live: …');
+  const ap = h('a.pill#ap-pill', { href: '#/command', title: 'AUTOPILOT: every research bot trading simulated money by itself' }, 'autopilot …');
   const streamPill = h('span.pill.hide-sm#stream-pill', { title: 'Live event stream' }, h('span.dot'), 'stream');
   const emergency = h('button.btn.emergency#emergency-btn', { onclick: emergencyFlow, title: 'Block every new entry now' }, '⏻ EMERGENCY STOP');
   const userBtn = h('button.btn.ghost.small', { onclick: userMenu, 'aria-label': 'Account' }, S.user.username);
@@ -76,7 +77,7 @@ function shell() {
       h('div.brand', h('div.logo'), h('div', 'JARVUS', h('small', 'research · paper · live'))),
       nav, h('div.spacer'),
       h('span.row', ws.kind === 'demo' ? modeBadge('demo') : null, wsSel),
-      streamPill, live, eng, emergency, userBtn),
+      ap, streamPill, live, eng, emergency, userBtn),
     h('div#banners'),
     h('main#view'),
     bottom);
@@ -128,6 +129,8 @@ function renderStatus() {
         }
       }, run ? 'Stop' : 'Start'));
   }
+  const app = $('#ap-pill');
+  if (app) replace(app, h(`span.dot${o.autopilot ? '.on' : ''}`), o.autopilot ? 'AUTOPILOT ON' : 'autopilot off');
   const lp = $('#live-pill');
   if (lp) {
     const a = o.live_authorization;

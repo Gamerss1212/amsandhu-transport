@@ -112,9 +112,18 @@ class Storage:
         c = getattr(self.local, "conn", None)
         if c is None:
             c = sqlite3.connect(self.path, timeout=15, check_same_thread=False)
-            c.execute("PRAGMA journal_mode=WAL")
-            c.execute("PRAGMA synchronous=NORMAL")
             c.execute("PRAGMA busy_timeout=15000")
+            # Switching a new database to WAL needs a moment of exclusive access, and SQLite can answer "locked"
+            # at once (without waiting) when several processes open the same new file together: retry briefly.
+            for attempt in range(40):
+                try:
+                    c.execute("PRAGMA journal_mode=WAL")
+                    break
+                except sqlite3.OperationalError as e:
+                    if "locked" not in str(e) or attempt == 39:
+                        raise
+                    time.sleep(0.05 + 0.01 * attempt)
+            c.execute("PRAGMA synchronous=NORMAL")
             c.row_factory = sqlite3.Row
             self.local.conn = c
         return c
