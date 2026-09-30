@@ -83,16 +83,17 @@ def app(tmp_path):
     httpd.server_close()
 
 
-def test_first_run_setup_sign_in_and_sign_out(app):
+def test_opens_without_a_sign_in_page(app):
     a, base, owner = app
     anon = Client(base)
-    code, st, _, _ = anon.req("/api/auth/state")
-    assert code == 200 and st["needs_setup"] is False and st["signed_in"] is False
-    assert anon.req("/api/overview")[0] == 401
+    assert anon.req("/api/overview")[0] == 401                                          # no session cookie yet
+    code, st, _, _ = anon.req("/api/auth/state")                                        # no sign-in page:
+    assert code == 200 and st["signed_in"] is True and anon.token and anon.csrf         # the page opens straight in
+    assert anon.req("/api/overview")[0] == 200
     assert anon.req("/api/auth/setup", {"username": "x", "password": PW})[0] == 400        # only one owner, ever
     code, ov, _, _ = owner.req("/api/overview")
     assert code == 200 and ov["workspace"]["kind"] == "main" and ov["live_authorization"]["authorized"] is False
-    assert ov["autopilot"] is False                                                     # waits for the button
+    assert ov["autopilot"] is True                                                      # the AI trades (paper) by default
     assert owner.req("/api/auth/logout", {})[0] == 200
     assert owner.req("/api/overview")[0] == 401
 
@@ -196,7 +197,8 @@ def test_live_trading_cannot_be_authorised_without_the_engine_but_can_always_be_
 def test_one_button_autopilot_and_emergency_stop_while_the_engine_is_stopped(app):
     a, base, owner = app
     code, ap, _, _ = owner.req("/api/autopilot")
-    assert code == 200 and ap["on"] is False and ap["real_money"] is False
+    assert code == 200 and ap["on"] is True and ap["real_money"] is False
+    owner.req("/api/autopilot", {"on": False})
     code, ap, _, _ = owner.req("/api/autopilot", {"on": True})
     assert code == 200 and ap["on"] is True and ap["autostart"] is True                 # starts with Jarvus from now on
     assert owner.req("/api/overview")[1]["autopilot"] is True

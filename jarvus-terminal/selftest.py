@@ -127,14 +127,13 @@ def main() -> int:
         "/js/app.js", "/js/core.js", "/js/command.js", "/js/connections.js", "/js/intel.js", "/js/charts.js",
         "/vendor/lightweight-charts.standalone.production.js", "/app.css")))
     check("nothing else is served from disk", req("/../server.py")[0] == 404 and req("/config.py")[0] == 404)
-    check("sign-in required", req("/api/overview")[0] == 401)
-    code, d = req("/api/auth/setup", {"username": "selftest", "password": "selftest password"}, csrf=False)
-    check("first-run owner account", code == 200 and bool(jar["token"]))
+    code, d = req("/api/auth/state")
+    check("opens without a sign-in page", code == 200 and d.get("signed_in") and bool(jar["token"]))
     code, ov = req("/api/overview")
     check("Command Center data", code == 200 and ov["workspace"]["kind"] == "main" and ov["live_authorization"]["authorized"] is False)
     check("real money is off", ov["live_authorization"]["authorized"] is False and not ov["emergency"])
     code, ap = req("/api/autopilot")
-    check("autopilot waits for its button", code == 200 and ap["on"] is False and ap["real_money"] is False)
+    check("the AI trades by itself (paper money only)", code == 200 and ap["on"] is True and ap["real_money"] is False)
     code, cn = req("/api/connections")
     ids = [x["connection_id"] for x in cn.get("connections", [])] if code == 200 else []
     check("Connections: the simulated paper account exists", "paper-main" in ids)

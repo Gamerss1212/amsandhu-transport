@@ -182,6 +182,17 @@ class Auth:
         self._w("UPDATE users SET last_login=? WHERE user_id=?", (_now(), uid))
         return token, self.session(token)
 
+    def open_session(self) -> tuple:
+        """No sign-in page: Jarvus is a local app on 127.0.0.1, so the page is opened straight into the owner's
+        workspace. The first run creates the owner account by itself (random password nobody needs)."""
+        if self.needs_setup():
+            self.setup_owner("owner", secrets.token_urlsafe(24))
+        r = self._q("SELECT user_id FROM users WHERE role='owner' ORDER BY created LIMIT 1")
+        uid = r[0]["user_id"]
+        token, csrf = secrets.token_urlsafe(32), secrets.token_urlsafe(24)
+        self._w("INSERT INTO sessions VALUES (?,?,?,?,?,?)", (_th(token), uid, csrf, f"{uid}-main", _now(), _now()))
+        return token, self.session(token)
+
     def session(self, token: Optional[str]) -> Optional[dict]:
         if not token or len(token) > 200:
             return None

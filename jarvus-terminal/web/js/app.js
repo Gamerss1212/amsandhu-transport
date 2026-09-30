@@ -56,7 +56,7 @@ function authScreen(setup) {
   setTimeout(() => user.focus(), 50);
 }
 
-on('signed-out', () => { stopStream(); clearInterval(overviewTimer); authScreen(false); });
+on('signed-out', () => { stopStream(); clearInterval(overviewTimer); setTimeout(boot, 500); });   // reopen, no sign-in page
 
 // ---------------------------------------------------------------- shell
 function shell() {
@@ -77,7 +77,7 @@ function shell() {
       h('div.brand', h('div.logo'), h('div', 'JARVUS', h('small', 'research · paper · live'))),
       nav, h('div.spacer'),
       h('span.row', ws.kind === 'demo' ? modeBadge('demo') : null, wsSel),
-      ap, streamPill, live, eng, emergency, userBtn),
+      ap, streamPill, live, eng, emergency),
     h('div#banners'),
     h('main#view'),
     bottom);

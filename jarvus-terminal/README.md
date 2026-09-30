@@ -2,7 +2,7 @@
 
 A trading research and paper-trading terminal: **311 bots** running **150 strategies** on crypto and
 US/Canadian stocks, a **brain** that checks every trade they want to make, a research engine that
-keeps testing them, and live visibility into everything they do. **One button starts it all.**
+keeps testing them, and live visibility into everything they do. **The AI makes all the trades.**
 
 **Money:** the bots trade **simulated (paper) money** at live market prices. **Real money is off**
 and stays off until you connect a live account, authorise live trading separately with your own caps,
@@ -18,15 +18,16 @@ for what live use still needs.
 | Mac | Double-click `Jarvus Terminal.command` (first time: right-click, **Open**) |
 | Linux / any | `python3 run.py` (Python 3.9+; no pip needed) |
 
-1. The first time, create your **owner account** on the page that opens (stored as a salted scrypt hash).
-2. On **Command Center**, press **▶ START AUTOPILOT**. That's it.
+There is no sign-in page: the app opens straight into Command Center and the **AI makes all the trades
+by itself** (paper money) from the first start. **■ STOP AUTOPILOT** pauses new trades; **▶ START
+AUTOPILOT** resumes them.
 
 The exe is not code-signed: if Windows SmartScreen says "Windows protected your PC", click
 **More info → Run anyway**.
 
-## What the one button does
+## What the AI does by itself
 
-**START AUTOPILOT** starts the bot engine if it is stopped and then, by itself, with no further input:
+The autopilot is on from the first start (and **START AUTOPILOT** turns it back on after a stop). With no input from you:
 
 * all 311 bots load their markets (crypto from Coinbase, Kraken and OKX public data; stocks from
   Yahoo) and evaluate their strategy on every closed bar;
@@ -84,8 +85,9 @@ a promise.
   Windows user) or `~/.config/mab` (key in the system keyring, or an owner-only file). Credentials are
   never shown again, never sent to the page, never logged, never in exports. Paper and live
   credentials are separate connections.
-* **Network:** the app listens on `127.0.0.1` only. Every change needs the session cookie, a CSRF token
-  and the app's header; foreign Host and Origin headers are refused.
+* **Network:** the app listens on `127.0.0.1` only and opens without a sign-in page (anyone using this
+  computer can open it). Every change still needs the page's session cookie, a CSRF token and the app's
+  header, and foreign Host and Origin headers are refused, so websites cannot drive it.
 * **AI research assistant (optional):** add an Anthropic API key under Connections. It uses the
   `claude-opus-5-5` model through the official `anthropic` SDK (bundled in the exe; `pip install
   anthropic` when running from source), only when you press a button, within daily request and token

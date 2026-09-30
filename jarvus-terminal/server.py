@@ -71,6 +71,9 @@ class App:
 
     def boot(self):
         if self.start_engines:
+            for w in self.auth.workspaces():                     # the AI starts trading as soon as Jarvus opens
+                if w["kind"] == "main" and autopilot_on(self.st(w["workspace_id"])):
+                    self.auth.set_autostart(w["workspace_id"], True)
             self.sup.boot()
 
     def st(self, wid):
@@ -146,7 +149,7 @@ def autopilot_on(st) -> bool:
     if isinstance(ap, dict):
         return bool(ap.get("on"))
     legacy = st.kv_get("research_autopilot")
-    return bool(legacy) if legacy is not None else False
+    return bool(legacy) if legacy is not None else True          # on unless the owner pressed STOP
 
 
 def autopilot_view(ctx):
@@ -721,13 +724,22 @@ class Handler(BaseHTTPRequestHandler):
                 return self._file(route)
             if route == "/api/auth/state":
                 s = self._session()
-                out = {"needs_setup": APP.auth.needs_setup(), "signed_in": bool(s)}
+                extra = None
+                if s is None:                                   # no sign-in page: open straight into the app
+                    token, s = APP.auth.open_session()
+                    if APP.start_engines and not APP.sup.running(s["workspace"]) and autopilot_on(APP.st(s["workspace"])):
+                        try:
+                            APP.sup.start(s["workspace"])       # first run: the AI starts trading (paper) now
+                        except RuntimeError:
+                            pass
+                    extra = {"Set-Cookie": f"{COOKIE}={token}; Path=/; HttpOnly; SameSite=Strict; Max-Age={14 * 86400}"}
+                out = {"needs_setup": False, "signed_in": True}
                 if s:
                     out.update({"user": {"user_id": s["user_id"], "username": s["username"], "role": s["role"]},
                                 "csrf": s["csrf"], "workspace": s["workspace"],
                                 "workspaces": [{k: w[k] for k in ("workspace_id", "kind", "label")}
                                                for w in APP.auth.workspaces(s["user_id"])]})
-                return self._json(out)
+                return self._json(out, extra=extra)
             s = self._session()
             if route == "/oauth/callback":
                 return self._oauth_callback(s, u.query)

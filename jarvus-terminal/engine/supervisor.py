@@ -140,7 +140,7 @@ class Supervisor:
         demo = w["kind"] == "demo"
         cfg.update({"catalog": CATALOG, "events_file": EVENTS, "bots_file": os.path.join(home, "bots", "registry.json"),
                     "data_dir": os.path.join(home, "data"), "workspace": wid, "demo": demo,
-                    "autopilot_default": False})             # research bots wait for START AUTOPILOT
+                    "autopilot_default": True})              # the AI trades (paper) from the first start
         if demo:
             cfg.setdefault("paper", {})["latency_ms"] = 50
             with open(cfg["bots_file"], "w", encoding="utf-8") as fh:

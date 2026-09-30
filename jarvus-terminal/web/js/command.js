@@ -52,7 +52,7 @@ function autopilotPanel() {
   return h('section.panel.autopilot#autopilot',
     h('div.ap-grid',
       h('div.ap-left',
-        h('div.row', h('span.ap-title', 'AUTOPILOT'), h('span#ap-badge'), h('span#ap-state.note')),
+        h('div.row', h('span.ap-title', 'AI AUTOPILOT'), h('span#ap-badge'), h('span#ap-state.note')),
         h('div#ap-button', { style: { margin: '12px 0' } }),
         h('p.note#ap-explain')),
       h('div.tiles#ap-tiles')));
@@ -71,14 +71,14 @@ function renderAutopilot() {
   const n = a.bots ?? (demo ? 24 : 311);
   box.classList.toggle('on', !!a.on);
   replace($('#ap-badge'), modeBadge(demo ? 'demo' : 'research'));
-  replace($('#ap-state'), a.on ? h('span.up', `ON since ${time(a.since, true)}${a.by ? ' · ' + a.by : ''}`) : h('span', 'OFF'),
+  replace($('#ap-state'), a.on ? h('span.up', a.since ? `ON since ${time(a.since, true)}` : 'ON: trading by itself') : h('span', 'OFF'),
     a.engine && !a.engine.running ? h('span.down', ' · engine stopped') : null);
   const btn = a.on
     ? h('button.btn.warn.ap-btn', { onclick: stopAutopilot }, '■ STOP AUTOPILOT')
     : h('button.btn.start.ap-btn', { onclick: startAutopilot, disabled: !!a.emergency, title: a.emergency ? 'Clear the emergency stop first' : '' }, `▶ START AUTOPILOT · ${n} BOTS`);
   replace($('#ap-button'), btn, a.emergency ? h('div.down', { style: { marginTop: '6px' } }, 'EMERGENCY STOP is on: clear it (red banner) to start autopilot.') : null);
   replace($('#ap-explain'), a.on
-    ? `Running by itself: ${n} bots scan their markets on every closed bar and trade the simulated research account; the brain sizes and vetoes each entry; stops, targets and exits are automatic; a walk-forward evaluation runs every ${(a.research && a.research.every_min) || 20} minutes and the volatility gate and brain are re-checked daily. It restarts with Jarvus. Real money stays off.`
+    ? `The AI makes every trade: ${n} bots scan their markets on every closed bar and trade the simulated research account; the brain sizes and vetoes each entry; stops, targets and exits are automatic; a walk-forward evaluation runs every ${(a.research && a.research.every_min) || 20} minutes and the volatility gate and brain are re-checked daily. It restarts with Jarvus. Real money stays off.`
     : `One press starts everything: the bot engine, all ${n} bots scanning their markets and trading the simulated research account by themselves, the brain sizing and vetoing each trade, automatic exits, and scheduled research. It keeps running and restarts when Jarvus opens. Real money stays off: live trading needs its own authorisation.`);
   const t = (k, v, sub, c) => h('div.tile', h('div.k', k), h(`div.v${c ? '.' + c : ''}`, v), sub ? h('div.s', sub) : null);
   const s2 = a.states || {};
