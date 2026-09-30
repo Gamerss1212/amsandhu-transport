@@ -382,6 +382,47 @@ class Router:
                              intent_id=intent_id + ":restop", market=True)
         return o
 
+    # ------------------------------------------------------------------ simulated resting orders (paper / demo)
+    def record_virtual_entry(self, dep: dict, *, symbol: str, qty: float, price: float, fee: float, stop, target,
+                             intent_id: str, correlation_id: str = None, model: str = "") -> dict:
+        """A simulated resting entry (stop or limit) filled inside a completed bar: record it like any order and
+        keep the simulated account in step."""
+        o = self.engine.record_simulated(connection_id=dep["connection_id"], mode=dep["mode"], purpose="entry",
+                                         symbol=symbol, side="buy", qty=qty, price=price, fee=fee, intent_id=intent_id,
+                                         deployment_id=dep["deployment_id"], bot_id=dep["bot_id"], order_type="limit",
+                                         ref_price=price, correlation_id=correlation_id, model=model, liquidity="maker")
+        if not o.get("duplicate"):
+            sim = self.resolve(dep["connection_id"])
+            v, s = sim.split(symbol)
+            sim.acct.apply_fill("account", v, s, "buy", qty, price, fee)
+            sim._save()
+        self._save_pos(dep, symbol=symbol, broker_symbol=symbol, side=1, qty=qty, avg_price=price, fees=fee,
+                       opened=now_ms(), entry_order=o["client_order_id"], stop_price=stop, stop_order=None,
+                       target_price=target, status="open", ratio=1.0)
+        self._audit(dep, "position_opened", f"position opened: long {qty:.8g} {symbol} @ {price:.8g} (resting order "
+                    "filled inside the bar, simulated)", payload={"qty": qty, "price": price, "stop": stop, "target": target},
+                    corr=correlation_id or intent_id, symbol=symbol)
+        return o
+
+    def record_virtual_exit(self, dep: dict, *, qty: float, price: float, fee: float, reason: str, intent_id: str,
+                            correlation_id: str = None, model: str = "") -> dict:
+        pos = self.position(dep["deployment_id"])
+        if pos is None:
+            return {"status": "none", "reason": "no open position"}
+        purpose = "protective_stop" if "stop" in reason else "exit"
+        o = self.engine.record_simulated(connection_id=dep["connection_id"], mode=dep["mode"], purpose=purpose,
+                                         symbol=pos["symbol"], side="sell", qty=min(qty, pos["qty"]), price=price, fee=fee,
+                                         intent_id=intent_id, deployment_id=dep["deployment_id"], bot_id=dep["bot_id"],
+                                         order_type="stop" if purpose == "protective_stop" else "limit", ref_price=price,
+                                         correlation_id=correlation_id, model=model,
+                                         liquidity="taker" if purpose == "protective_stop" else "maker")
+        if not o.get("duplicate"):
+            sim = self.resolve(dep["connection_id"])
+            v, s = sim.split(pos["symbol"])
+            sim.acct.apply_fill("account", v, s, "sell", min(qty, pos["qty"]), price, fee)
+            sim._save()
+        return self._book(dep, pos, min(qty, pos["qty"]), price, fee, reason, correlation_id or intent_id, [o])
+
     # ------------------------------------------------------------------ controls
     def cancel_entries(self, deployment_id: str = None, reason: str = "canceled") -> List[dict]:
         """Cancel working ENTRY orders (protective stops stay). Returns each order's outcome."""

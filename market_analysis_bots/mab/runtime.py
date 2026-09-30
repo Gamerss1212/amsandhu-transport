@@ -46,6 +46,7 @@ from mab.instruments import InstrumentRegistry
 from mab.models import BotHealth, OrderIntent, now_ms
 from mab.net import Http
 from mab.risk import RiskLimits, RiskManager
+from mab.runtime_deploy import DeploymentMixin
 from mab.storage import Storage, StorageError
 from mab.strategy import Compiled, TradeManager, compile_strategy, evaluate, explain
 
@@ -128,7 +129,7 @@ class BotRunner:
                                 self.errors, self.message))
 
 
-class Fleet:
+class Fleet(DeploymentMixin):
     def __init__(self, config: dict, strategies: Dict[str, dict], bots: List[dict], base_dir: str = "."):
         self.cfg = config
         self.base = base_dir
@@ -192,24 +193,32 @@ class Fleet:
         self.alerts: deque = deque(maxlen=200)
         self.lock = threading.RLock()
         self.peak_rss_mb = 0.0
+        self._init_deployments()
 
     # ================================================================== setup
     def setup(self, stocks: List[str] = ()):
+        known = {b["bot_id"] for b in self.bot_cfgs}
+        self.bot_cfgs = list(self.bot_cfgs) + [b for b in self.deps.bot_configs() if b["bot_id"] not in known]
         venues = sorted({b["venue"] for b in self.bot_cfgs if b["venue"] != "yahoo"} |
                         {r.split(":", 1)[0] for b in self.bot_cfgs for r in (b.get("refs") or [])
                          if not r.startswith("yahoo:")})
+        if self.demo:
+            venues = sorted(set(venues) | {"demo"})
         stock_syms = sorted({b["instrument"] for b in self.bot_cfgs if b["venue"] == "yahoo"} | set(stocks))
         for b in self.bot_cfgs:
             for extra in (b.get("refs") or []):
                 if extra.startswith("yahoo:"):
                     stock_syms.append(extra.split(":", 1)[1])
         self.registry.load(venues=venues, stocks=stock_syms)
+        for v in venues:
+            self.registry.ensure_venue(v)
         states = self.storage.load_bot_states()
         for b in self.bot_cfgs:
             try:
                 self._add_bot(b, states.get(b["bot_id"]))
             except Exception as e:
                 self._alert("error", "bot_config_invalid", f"{b.get('bot_id')}: {e}", b.get("bot_id"))
+        self._refresh_deps()
 
     def _add_bot(self, b: dict, saved: Optional[dict]):
         d = self.strategies.get(b["strategy_id"])
@@ -227,10 +236,16 @@ class Fleet:
         c = compile_strategy(definition, {k: v for k, v in params.items() if k in (d.get("params") or {})},
                              inst["asset_type"])
         br = BotRunner(b, c, inst, self.account)
+        br.user = bool(b.get("user"))
+        br.evaluating = False
         br.filler.cm.fees = FEE_PROFILES[self.fee_profile]
+        if getattr(br, "user", False):
+            self._apply_dep_to_bot(br, self.dep_cache.get(br.id))
         if saved and not saved.get("corrupt"):
             try:
                 br.tm.restore(saved.get("tm", {}))
+                if saved.get("trade_corr"):
+                    self.trade_corr[br.id] = saved["trade_corr"]
                 if saved.get("disabled_reason"):
                     br.enabled, br.state, br.message = False, "disabled", saved["disabled_reason"]
             except (TypeError, KeyError) as e:
@@ -271,6 +286,13 @@ class Fleet:
     def start(self):
         self.running = True
         self.started_at = now_ms()
+        try:
+            rec = self.engine.recover()
+            if rec["not_sent"] or rec["unknown"]:
+                self._event("warning", "order_recovery", f"restart recovery: {rec['not_sent']} unsent orders marked not sent, "
+                                                         f"{rec['unknown']} in-flight orders checked with their provider")
+        except Exception as e:                                          # noqa: BLE001
+            self._alert("error", "order_recovery_failed", f"order recovery at start failed: {e}")
         self._event("info", "fleet_start", f"fleet started with {sum(1 for b in self.bots.values() if b.enabled)} "
                                            f"enabled bots on {len(self.hub.series)} shared series")
         for fn, name in ((self._dispatch_loop, "dispatcher"), (self._control_loop, "control"),
@@ -340,6 +362,7 @@ class Fleet:
 
     def _evaluate(self, br: BotRunner, frame, added: List[int], initial: bool = False):
         t0 = time.perf_counter()
+        br.evaluating = True
         try:
             status, msg = self._series_status(br)
             br.last_data = frame.last_time
@@ -356,11 +379,16 @@ class Fleet:
                 if i is None:
                     continue
                 live_bar = t == latest
-                entries_ok = (live_bar and status == "ok" and not self.paused and not self.emergency
-                              and self.storage_ok and br.id not in self.risk.paused_bots)
+                base_ok = live_bar and status == "ok" and not self.paused and not self.emergency and self.storage_ok
+                if not getattr(br, "user", False):
+                    base_ok = base_ok and br.id not in self.risk.paused_bots
+                entries_ok = self._entries_allowed_for(br, base_ok)
+                if live_bar and self._dep_of(br) is not None:
+                    self._announce_bar(br, frame, status)
                 for text in self.brain.shadow_step(br.id, frame, i):      # vetoed trades followed on paper
                     self._event("info", "brain_insight", text, br.id)
-                acts = br.tm.on_bar(rs, i, immediate_market=live_bar, entries_allowed=entries_ok)
+                acts = br.tm.on_bar(rs, i, immediate_market=live_bar, entries_allowed=entries_ok,
+                                    strategy_exits=self._strategy_exits_for(br))
                 if live_bar:
                     el, es = rs.values.get("entry_long"), rs.values.get("entry_short")
                     state = 1 if (el and el[i]) else (-1 if (es and es[i]) else 0)
@@ -368,9 +396,11 @@ class Fleet:
                 if not live_bar and acts:
                     for a in acts:
                         a["catch_up"] = True
-                decisions.extend(self._handle(br, frame, rs, i, a) for a in acts)
-                if live_bar:
+                if live_bar:                    # the signal is recorded before anything acts on it (lifecycle order)
                     self._record_signal(br, frame, rs, i, acts, status)
+                    if br.last_signal is not None:
+                        self._audit_signal(br, br.last_signal, status, frame, i)
+                decisions.extend(self._handle(br, frame, rs, i, a) for a in acts)
             br.last_eval = now_ms()
             br.evaluations += 1
             self.stats["evaluations"] += 1
@@ -378,7 +408,7 @@ class Fleet:
                 br.latency_ms.append(br.last_eval - (latest + frame.step))
             if status == "ok":
                 br.errors = 0
-                if self.paused or br.id in self.risk.paused_bots:
+                if self.paused or (not getattr(br, "user", False) and br.id in self.risk.paused_bots):
                     br.state = "paused"
                     br.message = "fleet paused" if self.paused else self.risk.paused_bots.get(br.id, "")
                 elif br.tm.pos is not None or any(d for d in decisions if d):
@@ -403,6 +433,7 @@ class Fleet:
                 self.stats["auto_disabled"] += 1
                 self._alert("critical", "bot_auto_disabled", br.message, br.id)
         finally:
+            br.evaluating = False
             br.eval_ms.append((time.perf_counter() - t0) * 1000)
 
     # ================================================================== decisions
@@ -450,6 +481,14 @@ class Fleet:
 
     def _handle(self, br: BotRunner, frame, rs, i, a: dict) -> Optional[str]:
         act = a["action"]
+        if getattr(br, "user", False):
+            dep = self._dep_of(br)
+            if act == "intent":
+                return self._execute_user_intent(br, frame, i, a, dep)
+            if act == "order_placed":
+                return self._accept_resting(br, frame, i)
+            if act in ("entry", "exit") and dep is not None:
+                return self._handle_user_virtual(br, frame, i, a, dep)
         if act == "intent":
             return self._execute_intent(br, frame, i, a)
         if act == "order_placed":
@@ -479,6 +518,7 @@ class Fleet:
         if a["kind"] == "entry" and not a.get("reduce_only") and self.brain.mode != "off":
             dec = self.brain.score(br.id, self._bkey(br), br.symbol, frame, i, a["side"],
                                    cost_r=self._cost_r(br, a["ref_price"], a.get("stop")), gate=self._gate(br))
+            self._audit_brain(br, None, dec, self._intent_id(br, a, frame.t[i]))
             if dec["action"] == "veto":
                 self.stats["brain_vetoes"] = self.stats.get("brain_vetoes", 0) + 1
                 br.tm.intent_rejected("brain veto: " + dec["reason"])
@@ -504,6 +544,12 @@ class Fleet:
         dec = self.risk.check(intent, self._risk_ctx(br, frame, i, a["ref_price"]))
         self._save(lambda: self.storage.save_intent(intent.to_dict()))
         self._save(lambda: self.storage.save_risk(dec.to_dict()))
+        corr = intent.intent_id if a["kind"] == "entry" else (self.trade_corr.get(br.id) or intent.intent_id)
+        self._audit("risk", f"{br.id}: risk {'approved' if dec.approved else 'REJECTED'} {a['kind']}"
+                    + ("" if dec.approved else ": " + "; ".join(c["check"] for c in dec.checks if not c["passed"])),
+                    stage="risk_approved" if dec.approved else "risk_rejected", severity="info" if dec.approved else "warning",
+                    mode="research", bot_id=br.id, symbol=br.symbol, venue=br.venue, correlation_id=corr,
+                    payload={"checks": dec.checks, "qty": intent.quantity, "reduce_only": intent.reduce_only})
         if not dec.approved:
             self.stats["risk_blocks"] += 1
             failed = [c["check"] + (f" ({c['detail']})" if c["detail"] else "") for c in dec.checks if not c["passed"]]
@@ -533,8 +579,14 @@ class Fleet:
             self.account.apply_fill(br.id, br.venue, br.symbol, f.side, f.quantity, f.price, f.fee, f.event_time)
             self.stats["fills"] += 1
             self._save(lambda fd=fd: self.storage.save_fill(fd))
+            self._audit("fill", f"{br.id} research paper fill: {f.side} {f.quantity:.8g} {br.symbol} @ {f.price:.8g}, "
+                        f"fee {f.fee:.4g} (simulated)", stage="fill", mode="research", bot_id=br.id, symbol=br.symbol,
+                        venue=br.venue, connection_id="paper-research", correlation_id=corr, order_id=res["order_id"],
+                        payload={"qty": f.quantity, "price": f.price, "fee": f.fee, "model": f.model,
+                                 "status": res["status"], "reason": res["reason"]})
         if a["kind"] == "entry":
             br.tm.apply_entry_fill(res["avg_price"], res["filled_qty"], res["fee"], now_ms())
+            self.trade_corr[br.id] = intent.intent_id
             return "entered"
         if res["filled_qty"] < br.tm.pos.qty - 1e-12:
             # partial exit: close the rest at the fallback price so no position is left unmanaged
@@ -666,6 +718,10 @@ class Fleet:
         p = br.tm.pending
         if p is None or p.exit:
             return "order_placed"
+        dep = self._dep_of(br)
+        if getattr(br, "user", False) and (dep is None or dep["state"] != "running"):
+            br.tm.pending = None
+            return "blocked"
         if self.brain.mode != "off":
             px0 = p.price or frame.c[i]
             plan0 = br.tm._plan(p, px0)
@@ -690,7 +746,21 @@ class Fleet:
         a = {"kind": "entry", "side": p.side, "qty": qty, "ref_price": px, "stop": stop, "target": target,
              "reason": p.reason + f" ({p.kind} order)", "reduce_only": False}
         intent = self._intent(br, a, frame.t[i])
-        dec = self.risk.check(intent, self._risk_ctx(br, frame, i, px))
+        if dep is not None:
+            dchecks, q2 = self._dep_checks(dep, br, a)
+            if q2 <= 0:
+                br.tm.pending = None
+                failed = [c["check"] + (f" ({c['detail']})" if c["detail"] else "") for c in dchecks if not c["passed"]]
+                br.last_decision = f"resting order cancelled by deployment limits: {'; '.join(failed)}"
+                self._audit("risk", f"{br.id}: resting order REJECTED - {'; '.join(failed)}", stage="risk_rejected",
+                            severity="warning", mode=dep["mode"], bot_id=br.id, deployment_id=dep["deployment_id"],
+                            symbol=br.symbol, payload={"checks": dchecks})
+                return "blocked"
+            if q2 < qty:
+                p.size = (p.size or 1.0) * q2 / qty
+            dec = self._port_risk(dep["connection_id"]).check(intent, self._port_ctx(dep, br, frame, i, px))
+        else:
+            dec = self.risk.check(intent, self._risk_ctx(br, frame, i, px))
         self._save(lambda: self.storage.save_risk(dec.to_dict()))
         if not dec.approved:
             br.tm.pending = None
@@ -793,14 +863,30 @@ class Fleet:
         self._event("info", "fee_profile", f"crypto fees now: {FEE_PROFILE_LABELS[name]}")
         return {"profile": name, "label": FEE_PROFILE_LABELS[name]}
 
-    def _trade_closed(self, br: BotRunner, trade):
+    def _trade_closed(self, br: BotRunner, trade, dep: Optional[dict] = None):
         for text in self.brain.learn(br.id, self._bkey(br), br.symbol, trade.r):
             self._event("info", "brain_insight", text, br.id)
         td = trade.to_dict()
-        self._save(lambda: self.storage.save_trade(br.id, br.venue, td))
-        ev = self.risk.on_trade_closed(br.id, trade.pnl, self.account.equity())
-        if ev:
-            self._alert(ev["level"], ev["kind"], ev["message"], br.id)
+        mode = dep["mode"] if dep else ("demo" if self.demo else "paper")
+        self._save(lambda: self.storage.save_trade(br.id, br.venue, td, mode, dep["deployment_id"] if dep else None,
+                                                   dep["connection_id"] if dep else "paper-research"))
+        corr = self.trade_corr.pop(br.id, None)
+        if dep is None:
+            ev = self.risk.on_trade_closed(br.id, trade.pnl, self.account.equity())
+            if ev:
+                self._alert(ev["level"], ev["kind"], ev["message"], br.id)
+            self._audit("position", f"{br.id} research paper trade closed ({trade.exit_reason}): {trade.pnl:+.2f} after fees"
+                        + (f", {trade.r:+.2f}R" if trade.r is not None else ""), stage="position_closed",
+                        mode="research", bot_id=br.id, symbol=br.symbol, venue=br.venue, correlation_id=corr,
+                        payload=td)
+        else:
+            ev = self._port_risk(dep["connection_id"]).on_trade_closed(br.id, trade.pnl, self.account_equity(dep["connection_id"]) or 0.0)
+            if ev:
+                self._alert(ev["level"], ev["kind"], ev["message"], br.id)
+            self._audit("exit", f"{br.id} trade closed ({trade.exit_reason}): {trade.pnl:+.2f} after fees"
+                        + (f", {trade.r:+.2f}R" if trade.r is not None else "") + f" [{dep['mode'].upper()}]",
+                        stage="exit", mode=dep["mode"], bot_id=br.id, deployment_id=dep["deployment_id"], symbol=br.symbol,
+                        venue=br.venue, connection_id=dep["connection_id"], correlation_id=corr, payload=td)
 
     # ================================================================== control
     def _control_loop(self):
@@ -819,6 +905,50 @@ class Fleet:
             time.sleep(1.0)
 
     def apply_command(self, command: str, args: dict) -> Any:
+        # ---- the owner's deployments (three-page app)
+        if command == "deploy_readiness":
+            return self.readiness(args)
+        if command == "deploy_start":
+            return self.start_deployment(args)
+        if command == "deploy_pause":
+            return self.pause_deployment(str(args.get("deployment_id")))
+        if command == "deploy_resume":
+            return self.resume_deployment(str(args.get("deployment_id")))
+        if command == "deploy_stop":
+            return self.stop_deployment(str(args.get("deployment_id")), str(args.get("positions") or ""))
+        if command == "close_all_positions":
+            return self.close_all_positions(str(args.get("confirm") or ""))
+        if command == "create_bot":
+            return self.create_user_bot(args)
+        if command == "update_limits":
+            from mab.deploy import validate_limits
+            d = self.deps.get(str(args.get("deployment_id")))
+            if d is None:
+                raise ValueError("unknown deployment")
+            d = self.deps.update(d["deployment_id"], limits=validate_limits(args.get("limits")))
+            self._audit("control", f"{d['bot_id']}: risk limits changed", stage="limits_changed", mode=d["mode"],
+                        bot_id=d["bot_id"], deployment_id=d["deployment_id"], payload=d["limits"])
+            self._refresh_deps()
+            return d
+        if command == "live_authorize":
+            return self.live_authorize(args)
+        if command == "live_revoke":
+            return self.live_revoke(str(args.get("reason") or "owner"))
+        if command == "research_autopilot":
+            return self.set_research_autopilot(bool(args.get("on")))
+        if command == "paper_balance":
+            kind = str(args.get("kind") or "set_balance")
+            if kind not in ("set_balance", "deposit", "withdraw"):
+                raise ValueError("kind must be set_balance, deposit or withdraw")
+            return self.set_paper_balance(str(args.get("connection_id")), kind, float(args.get("amount")))
+        if command == "connection_test":
+            return self.conns.test(str(args.get("connection_id")))
+        if command == "connection_sync":
+            return self.conns.sync(str(args.get("connection_id")))
+        if command == "reconcile":
+            return self.reconcile()
+        if command == "deployments":
+            return [self.deployment_view(d) for d in self.deps.list(active_only=bool(args.get("active_only")))]
         if command == "pause":
             self.paused = True
             self.storage.kv_set("paused", True)
@@ -832,10 +962,7 @@ class Fleet:
         if command == "emergency_stop":
             return self.emergency_stop(args.get("reason", "operator"))
         if command == "clear_emergency":
-            self.emergency = None
-            self.storage.kv_set("emergency", None)
-            self._event("warning", "emergency_cleared", "emergency stop cleared by operator")
-            return "cleared"
+            return self.clear_emergency()
         if command == "stop":
             threading.Thread(target=self.stop, daemon=True).start()
             return "stopping"
@@ -950,35 +1077,6 @@ class Fleet:
                     "; ".join(f"{o['leg']} {o.get('status')} @ {o.get('avg_price')}" for o in out), tid, out)
         return {"bot_id": bot_id, "legs": out}
 
-    def emergency_stop(self, reason: str) -> dict:
-        self.emergency = {"time": now_ms(), "reason": reason}
-        self.storage.kv_set("emergency", self.emergency)
-        if self.live.armed:
-            self.live.disarm(f"emergency stop: {reason}")
-        closed = 0
-        for br in self.bots.values():
-            br.tm.pending = None
-            if br.tm.pos is None:
-                continue
-            s = self.hub.get(br.venue, br.symbol, br.tf)
-            fr = s.frame() if s else None
-            if fr is None or fr.n == 0:
-                continue
-            i = fr.n - 1
-            a = {"kind": "exit", "side": -br.tm.pos.side, "qty": br.tm.pos.qty, "ref_price": fr.c[i],
-                 "reason": f"emergency stop: {reason}", "reduce_only": True}
-            br.tm.awaiting = {"kind": "exit", "reason": a["reason"]}
-            try:
-                self._execute_intent(br, fr, i, dict(a, action="intent"))
-                closed += 1
-            except Exception as e:
-                self._alert("critical", "emergency_flatten_failed", f"{br.id}: {e}", br.id)
-        self._persist_states()
-        self._persist_account()
-        self._event("critical", "emergency_stop", f"emergency stop ({reason}): {closed} positions flattened; "
-                                                  "new entries blocked until cleared")
-        return {"flattened": closed, "reason": reason}
-
     # ================================================================== health
     def _health_loop(self):
         interval = self.cfg.get("health_interval_s", 60)
@@ -992,6 +1090,7 @@ class Fleet:
             try:
                 self.health_cycle()
                 self._live_poll()
+                self._deploy_cycle()
                 self._refresh_gates()
                 day = time.strftime("%Y-%m-%d", time.gmtime())
                 if day != last_prune_day:
@@ -1100,6 +1199,10 @@ class Fleet:
                 "rss_mb": rss, "peak_rss_mb": self.peak_rss_mb, "db_bytes": self.storage.size_bytes(),
                 "threads": threading.active_count(), "paused": self.paused, "emergency": self.emergency,
                 "storage_ok": self.storage_ok, "stats": dict(self.stats), "version": __version__,
+                "deployments": {st: sum(1 for d in self.dep_cache.values() if d["state"] == st)
+                                for st in ("running", "paused", "stopped_retaining", "error")},
+                "research_autopilot": self.research_autopilot, "execution": self.engine.health(),
+                "workspace": self.workspace, "demo": self.demo,
                 "account": self.account.summary(), "broker": dict(self.broker.stats),
                 "brain": {k: v for k, v in self.brain.summary().items() if k in (
                     "mode", "connected_bots", "trades_learned", "scored", "approved", "vetoed", "resized", "win_rate",
@@ -1114,7 +1217,8 @@ class Fleet:
             if br is None:
                 continue
             st[bid] = {"tm": br.tm.state(), "disabled_reason": None if br.enabled else br.message,
-                       "strategy_version": br.c.version_hash, "config_version": br.config_version}
+                       "strategy_version": br.c.version_hash, "config_version": br.config_version,
+                       "trade_corr": self.trade_corr.get(bid)}
         self._save(lambda: self.storage.save_bot_states(st))
 
     def _persist_account(self):

@@ -85,6 +85,21 @@ class InstrumentRegistry:
             self._save_cache()
         return added
 
+    def ensure_venue(self, venue: str) -> bool:
+        """Load one venue's instruments if none are known yet (a bot on a venue no other bot uses)."""
+        if any(v == venue for v, _ in self.items) or venue == "yahoo":
+            return True
+        try:
+            ad = ADAPTERS[venue](self.http)
+            for r in ad.instruments():
+                r["tier"] = tier_for(r["symbol"], r["asset_type"])
+                self.items[(venue, r["symbol"])] = r
+            self._save_cache()
+            return True
+        except (HttpError, KeyError, ValueError) as e:
+            self.errors[venue] = str(e)
+            return False
+
     # ------------------------------------------------------------------ query
     def get(self, venue: str, symbol: str) -> Optional[dict]:
         return self.items.get((venue, symbol))

@@ -316,3 +316,5 @@ def _parse_iso(s: str) -> int:
 
 
 ADAPTERS = {"coinbase": Coinbase, "kraken": Kraken, "okx": OKX, "yahoo": Yahoo}
+
+from mab.data import demo as _demo  # noqa: E402,F401  (registers the synthetic DEMO venue)

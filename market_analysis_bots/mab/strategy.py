@@ -298,6 +298,12 @@ class TradeManager:
         self.last_exit_time = -10 ** 15
         self.last_bar_time = None
         self.awaiting: Optional[dict] = None   # a live intent sent to the paper engine, not yet answered
+        # set by the fleet for a deployment: its own risk per trade and position cap (fractions of its equity), and
+        # whether its stops rest on a broker (then stops are the broker's job, and a target reached becomes an
+        # exit order instead of a simulated fill)
+        self.risk_pct_override: Optional[float] = None
+        self.max_notional_pct_override: Optional[float] = None
+        self.broker_managed = False
         s = self.d.get("session") or {}
         self.entry_start = _hhmm(s.get("entry_start"))
         self.entry_end = _hhmm(s.get("entry_end"))
@@ -320,7 +326,8 @@ class TradeManager:
         self.awaiting = None      # an unanswered intent is not re-sent after a restart; the decision is logged as lost
 
     # ------------------------------------------------------------------ main step
-    def on_bar(self, rs: RuleSeries, i: int, immediate_market: bool = False, entries_allowed: bool = True) -> List[dict]:
+    def on_bar(self, rs: RuleSeries, i: int, immediate_market: bool = False, entries_allowed: bool = True,
+               strategy_exits: bool = True) -> List[dict]:
         """Process completed bar i. Returns the actions taken, for the decision log.
 
         Backtests pass immediate_market=False: a market order decided at bar i fills at bar
@@ -372,10 +379,19 @@ class TradeManager:
                     out.extend(self._open(f, i, p, px, "taker" if p.kind in ("stop", "oco") else "maker", intrabar=True))
         # 2) protective exits inside this bar (stop before target: the conservative assumption)
         if self.pos is not None and self.pos.first_bar <= t:
-            out.extend(self._check_exits(f, i, entry_bar=self.pos.intrabar_entry and self.pos.first_bar == t))
+            if self.broker_managed:
+                out.extend(self._broker_target(f, i, immediate_market))
+            else:
+                out.extend(self._check_exits(f, i, entry_bar=self.pos.intrabar_entry and self.pos.first_bar == t))
         # 3) end-of-bar decisions
         flat_due = self._flat_due(f, i)
-        if self.pos is not None and self.pos.first_bar <= t:
+        if not strategy_exits:
+            if self.pos is not None and self.pos.first_bar <= t:
+                ps = self.pos
+                ps.mfe = max(ps.mfe, ((h - ps.entry_price) if ps.side > 0 else (ps.entry_price - l)) / ps.risk_per_unit)
+                ps.mae = min(ps.mae, ((l - ps.entry_price) if ps.side > 0 else (ps.entry_price - h)) / ps.risk_per_unit)
+            return out
+        if self.pos is not None and self.pos.first_bar <= t and self.awaiting is None:
             ps = self.pos
             ps.mfe = max(ps.mfe, ((h - ps.entry_price) if ps.side > 0 else (ps.entry_price - l)) / ps.risk_per_unit)
             ps.mae = min(ps.mae, ((l - ps.entry_price) if ps.side > 0 else (ps.entry_price - h)) / ps.risk_per_unit)
@@ -535,9 +551,9 @@ class TradeManager:
         if risk is None or risk <= 0:
             return None
         eq = self.equity_fn()
-        sz = self.d.get("sizing") or {}
-        qty = eq * float(sz.get("risk_pct", 0.5)) / 100.0 / risk * float(p.size or 1.0)
-        qty = min(qty, eq * float(sz.get("max_notional_pct", 100.0)) / 100.0 / px)
+        rp, mp = self._sizing()
+        qty = eq * rp / 100.0 / risk * float(p.size or 1.0)
+        qty = min(qty, eq * mp / 100.0 / px)
         if self.lot:
             qty = math.floor(qty / self.lot + 1e-9) * self.lot
         target = None
@@ -546,6 +562,33 @@ class TradeManager:
             if (target - px) * side <= 0:
                 target = None
         return qty, stop, target
+
+    def _sizing(self) -> Tuple[float, float]:
+        sz = self.d.get("sizing") or {}
+        rp = self.risk_pct_override if self.risk_pct_override is not None else float(sz.get("risk_pct", 0.5))
+        mp = float(sz.get("max_notional_pct", 100.0))
+        if self.max_notional_pct_override is not None:
+            mp = min(mp, self.max_notional_pct_override)
+        return rp, mp
+
+    def _broker_target(self, f, i, immediate_market: bool) -> List[dict]:
+        """Stops rest on the broker; a profit target reached on a completed bar becomes an exit order."""
+        ps = self.pos
+        if ps.target is None or self.awaiting is not None or not immediate_market:
+            return []
+        h, l = f.h[i], f.l[i]
+        if (ps.side > 0 and h >= ps.target) or (ps.side < 0 and l <= ps.target):
+            self.awaiting = {"kind": "exit", "reason": "profit target reached"}
+            return [{"action": "intent", "kind": "exit", "bar": f.t[i], "side": -ps.side, "qty": ps.qty,
+                     "ref_price": f.c[i], "reason": "profit target reached", "reduce_only": True}]
+        return []
+
+    def effective_stop(self) -> Optional[float]:
+        ps = self.pos
+        if ps is None:
+            return None
+        stops = [x for x in (ps.stop, ps.trail) if x is not None]
+        return (max(stops) if ps.side > 0 else min(stops)) if stops else None
 
     # ------------------------------------------------------------------ live fills (paper engine callbacks)
     def apply_entry_fill(self, px: float, qty: float, fee: float, fill_time: int) -> dict:
@@ -601,9 +644,9 @@ class TradeManager:
         if risk is None or risk <= 0:
             return [{"action": "skip", "bar": t, "reason": "fill price already beyond the stop", "side": side}]
         eq = self.equity_fn()
-        sz = self.d.get("sizing") or {}
-        qty = eq * float(sz.get("risk_pct", 0.5)) / 100.0 / risk * float(p.size or 1.0)
-        qty = min(qty, eq * float(sz.get("max_notional_pct", 100.0)) / 100.0 / px)
+        rp, mp = self._sizing()
+        qty = eq * rp / 100.0 / risk * float(p.size or 1.0)
+        qty = min(qty, eq * mp / 100.0 / px)
         if self.lot:
             qty = math.floor(qty / self.lot + 1e-9) * self.lot
         if qty <= 0 or qty * px < self.min_notional:

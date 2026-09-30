@@ -193,13 +193,14 @@ class Storage:
                     f["quantity"], f["price"], f["fee"], f["liquidity"], f["event_time"], int(f["simulated"]),
                     f["model"]))
 
-    def save_trade(self, bot_id: str, venue: str, t: dict):
+    def save_trade(self, bot_id: str, venue: str, t: dict, mode: str = "paper", deployment_id: str = None,
+                   connection_id: str = None):
         self.write("INSERT INTO trades (bot_id, strategy_id, instrument, venue, side, qty, entry_time, entry_price,"
-                   " exit_time, exit_price, fees, pnl, r, bars, entry_reason, exit_reason, mfe_r, mae_r)"
-                   " VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                   " exit_time, exit_price, fees, pnl, r, bars, entry_reason, exit_reason, mfe_r, mae_r, mode,"
+                   " deployment_id, connection_id) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
                    (bot_id, t["strategy_id"], t["instrument"], venue, t["side"], t["qty"], t["entry_time"],
                     t["entry_price"], t["exit_time"], t["exit_price"], t["fees"], t["pnl"], t["r"], t["bars"],
-                    t["entry_reason"], t["exit_reason"], t["mfe_r"], t["mae_r"]))
+                    t["entry_reason"], t["exit_reason"], t["mfe_r"], t["mae_r"], mode, deployment_id, connection_id))
 
     def save_bot_states(self, states: Dict[str, dict]):
         now = int(time.time() * 1000)
