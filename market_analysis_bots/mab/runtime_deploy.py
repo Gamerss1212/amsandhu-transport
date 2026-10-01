@@ -1331,6 +1331,32 @@ class DeploymentMixin:
             out[f"{venue}:{sym}"] = px
         return out
 
+    def decision_summary(self, minutes: int = 60, recent: int = 6) -> dict:
+        """What the AI decided in the last hour, counted from the audit log: how many entry signals the bots raised,
+        how many the brain let through, and why it refused the rest. The AI trades rarely on purpose: most signals
+        would cost more in fees than they are expected to earn."""
+        since = now_ms() - minutes * 60_000
+        rows = self.storage.audit_search(kinds=["brain"], mode="research", since=since, limit=2000)
+        refused: Dict[str, int] = {}
+        taken = 0
+        latest = []
+        for r in rows:
+            p = r.get("payload") or {}
+            act = p.get("action")
+            if act is None:
+                continue
+            if act == "veto":
+                k = p.get("veto_kind") or "learned"
+                refused[k] = refused.get(k, 0) + 1
+            else:
+                taken += 1
+            if len(latest) < recent:
+                latest.append({"time": r["ts"], "bot_id": r.get("bot_id"), "symbol": r.get("symbol"), "action": act,
+                               "kind": p.get("veto_kind"), "summary": r.get("summary")})
+        n_refused = sum(refused.values())
+        return {"minutes": minutes, "signals": taken + n_refused, "approved": taken, "refused": n_refused,
+                "refused_by": refused, "latest": latest, "brain_mode": self.brain.mode}
+
     def money_view(self) -> dict:
         """The account the AI trades, as it stands right now: balance, cash, today's result, and every open
         position valued at the latest price (with where that price came from)."""
@@ -1368,7 +1394,8 @@ class DeploymentMixin:
                                     " exit_time, fees, pnl, r, exit_reason FROM trades WHERE deployment_id IS NULL"
                                     " ORDER BY exit_time DESC LIMIT 12")
         return {"connection_id": RESEARCH_CONN, "mode": "demo" if self.demo else "research", "time": now_ms(),
-                "equity": eq, "cash": cash, "currency": a.currency, "invested": sum(r["value"] for r in rows),
+                "decisions": self.decision_summary(), "equity": eq, "cash": cash, "currency": a.currency,
+                "invested": sum(r["value"] for r in rows),
                 "unrealized": unreal, "realized_today": tr["pnl"], "fees_today": tr["fees"], "trades_today": tr["n"],
                 "wins_today": tr["wins"] or 0, "day_start_equity": start,
                 "change_today": (eq - start) if start else None,

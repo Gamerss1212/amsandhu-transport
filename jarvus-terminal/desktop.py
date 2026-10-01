@@ -48,7 +48,8 @@ def main() -> int:
     print("  " + "=" * 62)
     print("   JARVUS")
     print("  " + "=" * 62)
-    print(f"   Opening {url} in your browser.")
+    print(f"   {'Running in the background; open' if '--background' in sys.argv[1:] else 'Opening'} {url}"
+          f"{'' if '--background' in sys.argv[1:] else ' in your browser'}.")
     print("   Keep this window open: closing it stops Jarvus and the bots.")
     print()
     print("   The AI makes all the trades by itself: 311 bots trade PAPER")
@@ -72,7 +73,8 @@ def main() -> int:
         except Exception:                                # noqa: BLE001
             pass
 
-    threading.Thread(target=open_later, daemon=True).start()
+    if "--background" not in sys.argv[1:]:               # started with Windows: no browser, the AI just trades
+        threading.Thread(target=open_later, daemon=True).start()
     try:
         server.serve()
     except KeyboardInterrupt:

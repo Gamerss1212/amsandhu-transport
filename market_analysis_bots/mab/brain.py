@@ -129,6 +129,9 @@ class FleetBrain:
         self.mode = mode
         self.veto_edge = veto_edge
         self.min_evidence = min_evidence
+        self.cost_veto_r = COST_VETO_R        # settings the experiments in tools/brain_experiments.py vary
+        self.deterministic = False            # True: decide on the learned edge itself, not a random draw from it
+        self.min_trade_evidence = 0.0         # unknown strategies (evidence below this) are not traded
         self.rng = random.Random(seed)
         self.post: Dict[str, dict] = {}
         self.w = [0.0] * len(FEATURES)
@@ -364,7 +367,8 @@ class FleetBrain:
             z = [1.0, est["mean"], ctx]
             a0, a1, a2 = self.a
             edge = a0 + a1 * est["mean"] + a2 * ctx
-            sample = a0 + a1 * self.rng.gauss(est["mean"], est["sd"]) + a2 * ctx        # Thompson draw
+            sample = edge if self.deterministic else \
+                a0 + a1 * self.rng.gauss(est["mean"], est["sd"]) + a2 * ctx        # Thompson draw
             n_eff, sd = est["n_eff"], est["sd"]
             action, size = "approve", 1.0
             benched = self.mode == "active" and n_eff >= 30 and est["mean"] + 1.64 * sd < 0
@@ -375,9 +379,9 @@ class FleetBrain:
             kind = None
             gstate = (gate or {}).get("state")
             if self.mode == "active":
-                if cost_r is not None and cost_r > COST_VETO_R:
+                if cost_r is not None and cost_r > self.cost_veto_r:
                     action, size, kind = "veto", 0.0, "cost"
-                    reason = f"costs would take {100 * cost_r:.0f}% of the risk on this trade (limit {100 * COST_VETO_R:.0f}%); " + reason
+                    reason = f"costs would take {100 * cost_r:.0f}% of the risk on this trade (limit {100 * self.cost_veto_r:.0f}%); " + reason
                 elif gstate == "QUIET":
                     action, size, kind = "veto", 0.0, "quiet"
                     reason = "volatility gate QUIET: the next hours are likely too quiet to pay the costs; " + reason
@@ -387,6 +391,9 @@ class FleetBrain:
                              "and follows its signals as shadow trades until they improve; " + reason
                 elif n_eff >= self.min_evidence and sample < self.veto_edge:
                     action, size, kind = "veto", 0.0, "learned"
+                elif n_eff < self.min_trade_evidence:
+                    action, size, kind = "veto", 0.0, "learned"
+                    reason = "not enough evidence on this strategy here yet; " + reason
                 else:
                     size = max(0.5, min(1.5, 1.0 + 1.5 * edge))
                     if cost_r is not None and cost_r > COST_HALF_R:

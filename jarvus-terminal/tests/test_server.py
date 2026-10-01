@@ -327,3 +327,109 @@ def test_money_view_shows_the_ais_open_trades_and_the_fee_level(app):
     assert owner.req("/api/fees", {"profile": "kraken"})[1]["current"] == "kraken"
     assert owner.req("/api/fees", {"profile": "free-money"})[0] == 400
     assert owner.req("/api/fees", {"profile": "kraken"}, csrf=False)[0] == 403
+
+
+def test_stopping_the_engine_stops_the_ai_and_starting_it_again_resumes_it(app):
+    a, base, owner = app
+    assert owner.req("/api/autopilot")[1]["on"] is True
+    code, out, _, _ = owner.req("/api/engine/stop", {})
+    assert code == 200
+    assert owner.req("/api/autopilot")[1]["on"] is False                                 # stays off after a restart too
+    code, ap, _, _ = owner.req("/api/engine/start", {})
+    assert code == 200 and ap["on"] is True
+    owner.req("/api/engine/stop", {})
+    owner.req("/api/emergency", {"reason": "test"})
+    code, out, _, _ = owner.req("/api/engine/start", {})                                 # an emergency stop still wins:
+    assert code == 200 and "EMERGENCY" in out["note"]                                    # it runs, but opens nothing new
+    assert owner.req("/api/autopilot")[1]["on"] is False                                 # and the AI stays off
+
+
+def test_start_with_windows_is_a_per_user_run_entry_and_says_when_it_is_unavailable(app):
+    a, base, owner = app
+    code, st, _, _ = owner.req("/api/startup")
+    assert code == 200 and st["supported"] is False and "Windows app" in st["note"]       # from source / Linux
+    assert owner.req("/api/startup", {"on": True})[0] == 400
+    from engine import startup
+
+    class FakeKey:
+        pass
+
+    class FakeReg:
+        HKEY_CURRENT_USER, KEY_READ, KEY_SET_VALUE, REG_SZ = 1, 2, 3, 4
+
+        def __init__(self):
+            self.values = {}
+
+        def OpenKey(self, root, path, res, access):
+            reg = self
+            if path != startup.RUN_KEY:
+                raise OSError
+
+            class K:
+                def __enter__(s): return s
+                def __exit__(s, *a): return False
+            return K()
+
+        def QueryValueEx(self, key, name):
+            if name not in self.values:
+                raise OSError
+            return (self.values[name], 1)
+
+        def CreateKeyEx(self, root, path, res, access):
+            assert path == startup.RUN_KEY                                                # HKCU only: no admin rights
+            return FakeKey()
+
+        def SetValueEx(self, key, name, res, typ, val):
+            self.values[name] = val
+
+        def DeleteValue(self, key, name):
+            if name not in self.values:
+                raise OSError
+            del self.values[name]
+
+        def CloseKey(self, key):
+            pass
+
+    reg = FakeReg()
+    on = startup.set_enabled(True, reg=reg, force=True)
+    assert on["supported"] and on["enabled"] and "--background" in reg.values["Jarvus"] and "/min" in reg.values["Jarvus"]
+    off = startup.set_enabled(False, reg=reg, force=True)
+    assert off["enabled"] is False and "Jarvus" not in reg.values
+    assert startup.set_enabled(False, reg=reg, force=True)["enabled"] is False            # removing twice is fine
+
+
+def test_goal_calculator_answers_from_measured_windows_and_says_when_a_goal_is_out_of_reach(app, monkeypatch):
+    a, base, owner = app
+    from engine import library, projection
+    inputs = {"generated": "test", "window_days": 10, "runs": 40, "period": ["2026-06-09", "2026-09-30"], "profiles": {
+        "ndax": {"100": {"returns": [-0.004, 0.0, 0.002, 0.001] * 10, "trades_per_window": 3.8},
+                 "100000": {"returns": [-0.0002, 0.0001] * 20, "trades_per_window": 4.5}},
+        "venue": {"100": {"returns": [0.0] * 40}}}}
+    monkeypatch.setattr(library, "_projection", inputs)
+    code, r, _, _ = owner.req("/api/projection?balance=100&days=90&target=300000&fees=ndax")
+    assert code == 200 and r["tier"] == 100 and r["windows"] == 9 and r["fees"] == "ndax"
+    g = r["goal"]
+    assert g["needed_per_day_pct"] == pytest.approx(((300000 / 100) ** (1 / 90) - 1) * 100) and 9.2 < g["needed_per_day_pct"] < 9.4
+    assert g["share_reaching"] == 0.0 and g["multiple"] == pytest.approx(3000.0)           # out of reach, said plainly
+    assert r["outcome"]["p05"] <= r["outcome"]["median"] <= r["outcome"]["p95"] <= r["outcome"]["best"]
+    assert r["even_the_best_window_every_time"] == pytest.approx(100 * 1.002 ** 9)
+    code, r2, _, _ = owner.req("/api/projection?balance=100&days=90&target=300000&fees=ndax")
+    assert r2["outcome"] == r["outcome"]                                                    # same question, same answer
+    big = owner.req("/api/projection?balance=250000&days=30")[1]
+    assert big["tier"] == 100000 and big["windows"] == 3                                    # nearest measured balance
+    assert owner.req("/api/projection?balance=abc")[0] == 400
+    assert owner.req("/api/projection?balance=0&days=90")[0] == 400
+    assert owner.req("/api/projection?balance=100&days=3")[0] == 400
+    fallback = owner.req("/api/projection?balance=100&days=90&fees=coinbase")[1]
+    assert fallback["fees"] == "venue"                                                      # nearest profile that was measured
+    monkeypatch.setattr(library, "_projection", {})
+    assert owner.req("/api/projection?balance=100&days=90")[0] == 400                       # nothing bundled: it says so
+
+
+def test_projection_math_compounds_windows():
+    from engine import projection
+    inp = {"window_days": 10, "profiles": {"ndax": {"1000": {"returns": [0.01] * 20}}}}
+    r = projection.project(inp, "ndax", 1000.0, 90, 2000.0)
+    assert r["outcome"]["median"] == pytest.approx(1000 * 1.01 ** 9) and r["outcome"]["worst"] == r["outcome"]["best"]
+    assert r["share_ending_up"] == 1.0 and r["goal"]["share_reaching"] == 0.0
+    assert r["goal"]["times_the_best_window"] == pytest.approx(((2.0) ** (1 / 9) - 1) / 0.01)

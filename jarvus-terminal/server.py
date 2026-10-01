@@ -233,6 +233,25 @@ def money_view(ctx):
                                       " ORDER BY exit_time DESC LIMIT 12")}
 
 
+def projection_view(ctx):
+    """What could a balance become over a horizon, from the measured backtest windows (see engine/projection.py)."""
+    from engine import projection
+    from engine.supervisor import DEFAULT_FEE_PROFILE
+    q = ctx["q"]
+    fees = q("fees") or ctx["st"].kv_get("fee_profile") or DEFAULT_FEE_PROFILE
+    bal = q("balance")
+    if not bal:
+        bal = (money_view(ctx) or {}).get("equity") or 100.0
+    try:
+        balance, days = float(bal), int(float(q("days") or 90))
+        target = float(q("target")) if q("target") else None
+    except ValueError:
+        raise ApiError(400, "balance, days and target must be numbers")
+    if any(x != x for x in (balance, target or 0.0)):          # NaN
+        raise ApiError(400, "balance, days and target must be numbers")
+    return projection.project(library.projection_inputs(), fees, balance, days, target)
+
+
 def fees_view(ctx):
     """Which exchange's fees the AI pays in paper trading. Fees decide most results, so this should be the exchange
     you would really trade on."""
@@ -474,10 +493,22 @@ def funding(ctx, cid):
 def post_action(ctx, route, b):
     wid, st = ctx["wid"], ctx["st"]
     s = ctx["session"]
-    if route == "/api/engine/start":
-        return APP.sup.start(wid)
+    if route == "/api/engine/start":                      # Start = run the AI (an emergency stop still wins)
+        try:
+            return autopilot_switch(ctx, True)
+        except ApiError as e:
+            if e.code != 409 or not st.kv_get("emergency"):
+                raise
+            out = APP.sup.start(wid) if APP.start_engines else {"ok": True, "engine_started": False}
+            out["note"] = "EMERGENCY STOP is on: the engine runs (it manages open positions) but opens no new trades"
+            return out
     if route == "/api/engine/stop":
-        return APP.sup.stop(wid)
+        out = APP.sup.stop(wid)
+        st.kv_set("autopilot", {"on": False, "since": _now(), "by": s["username"] + " (stopped the engine)"})
+        st.kv_set("research_autopilot", False)                # an engine stopped on purpose stays off after a restart
+        st.audit("control", "bot engine stopped by the owner: AUTOPILOT is OFF until it is started again",
+                 stage="autopilot", severity="warning")
+        return out
     if route == "/api/bots/create":
         return cmd(wid, "create_bot", {k: b.get(k) for k in ("strategy_id", "venue", "instrument", "name", "params")})
     if route == "/api/deploy/readiness":
@@ -509,6 +540,11 @@ def post_action(ctx, route, b):
         return autopilot_switch(ctx, bool(b.get("on")))
     if route == "/api/fees":
         return fees_set(ctx, str(b.get("profile") or ""))
+    if route == "/api/startup":
+        from engine import startup
+        out = startup.set_enabled(bool(b.get("on")))
+        st.audit("control", f"start with Windows {'ON' if out['enabled'] else 'OFF'}", stage="startup")
+        return out
     if route == "/api/paper_balance":                      # simulated money only: never a deposit
         cid, kind = str(b.get("connection_id") or ""), str(b.get("kind") or "set_balance")
         try:
@@ -700,6 +736,8 @@ GET_ROUTES = {
     "/api/autopilot": autopilot_view,
     "/api/money": money_view,
     "/api/fees": fees_view,
+    "/api/projection": projection_view,
+    "/api/startup": lambda ctx: __import__("engine.startup", fromlist=["x"]).status(),
     "/api/connections": connections_view,
     "/api/research/jobs": lambda ctx: {"jobs": JobQueue(ctx["st"]).list(int(ctx["q"]("limit", "50"))),
                                        "kinds": JOB_KINDS, "counts": JobQueue(ctx["st"]).counts()},

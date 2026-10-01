@@ -70,6 +70,21 @@ def strategy(sid: str) -> dict:
 _results = None
 
 
+_projection = None
+
+
+def projection_inputs() -> dict:
+    """Measured per-window returns of the whole system by fee level and starting balance (goal calculator input)."""
+    global _projection
+    if _projection is None:
+        try:
+            with open(os.path.join(PAYLOAD, "market_analysis_bots", "results", "projection_inputs.json"), encoding="utf-8") as fh:
+                _projection = json.load(fh)
+        except (OSError, ValueError):
+            _projection = {}
+    return _projection
+
+
 def results() -> dict:
     """Digest of every measurement shipped with this build: strategy runs, full-system runs, volatility gate."""
     global _results

@@ -132,7 +132,7 @@ def run(cands: List[Candidate], t0: int, t1: int, arm: str, seed: int = 0, prior
         families: Optional[Dict[str, str]] = None, capital: float = 100_000.0, slots: int = 20, risk_pct: float = 0.5,
         max_open: int = 40, daily_loss: float = 0.03, realistic: bool = False, min_slot: Optional[float] = None,
         fractional_us: bool = False, participation: Optional[float] = None, max_notional_pct: float = 100.0,
-        min_bump: float = 0.0) -> dict:
+        min_bump: float = 0.0, brain_opts: Optional[dict] = None, skip_weekends: bool = False) -> dict:
     """One replay of the candidates entering in [t0, t1). arm: none | gates | brain.
 
     realistic=True models order sizes as the engine places them: risk-based size capped at the slot, venue minimums,
@@ -147,6 +147,8 @@ def run(cands: List[Candidate], t0: int, t1: int, arm: str, seed: int = 0, prior
     brain = None
     if arm in ("gates", "brain"):
         brain = FleetBrain(mode="active", seed=seed)
+        for k, v in (brain_opts or {}).items():
+            setattr(brain, k, v)
         if arm == "brain" and priors:
             for k, pth in enumerate([priors] if isinstance(priors, str) else priors):
                 brain.load_priors(pth, segment="train", add=k > 0)
@@ -169,6 +171,9 @@ def run(cands: List[Candidate], t0: int, t1: int, arm: str, seed: int = 0, prior
         if kind == 1:
             if halted:
                 skipped_halt += 1
+                continue
+            if skip_weekends and c.asset == "crypto" and ((t // DAY) + 3) % 7 >= 5:          # Saturday / Sunday (UTC); day 0 was a Thursday
+                vetoes["weekend"] = vetoes.get("weekend", 0) + 1
                 continue
             if len(open_) >= max_open:
                 skipped_cap += 1

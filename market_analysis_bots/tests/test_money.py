@@ -131,3 +131,18 @@ def test_a_huge_account_cannot_buy_more_than_the_market_trades():
     assert tm._liquidity_cap(100.0, SimpleNamespace(v=[0.0] * 30), 29) == 100.0         # no volume data: no cap
     free = TradeManager(c, filler, lambda: 10 ** 9, 1e-8, 1.0, False, "BTC-USD")
     assert free._liquidity_cap(100.0, f, 29) == 100.0                                   # the cap is optional (your own bots)
+
+
+def test_the_money_view_explains_what_the_ai_decided_lately(tmp_path):
+    fl = make(tmp_path)
+    fl.brain.mode = "active"
+    assert fl.money_view()["decisions"]["signals"] == 0
+    for kind in ("cost", "cost", "learned"):
+        fl._audit("brain", f"BOT-1: brain veto - {kind}", stage="brain", mode="research", bot_id="R-0", symbol="DEMO-BTC",
+                  payload={"action": "veto", "veto_kind": kind})
+    fl._audit("brain", "BOT-2: brain approve", stage="brain", mode="research", bot_id="R-1", symbol="DEMO-ETH",
+              payload={"action": "approve", "veto_kind": None})
+    d = fl.money_view()["decisions"]
+    assert d["signals"] == 4 and d["approved"] == 1 and d["refused"] == 3
+    assert d["refused_by"] == {"cost": 2, "learned": 1} and len(d["latest"]) == 4
+    assert d["latest"][0]["symbol"] == "DEMO-ETH"                                      # newest first

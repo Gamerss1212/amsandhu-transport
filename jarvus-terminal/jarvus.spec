@@ -20,6 +20,7 @@ datas = [
     (os.path.join(MAB, "config", "fleet.example.json"), "market_analysis_bots/config"),
     (os.path.join(MAB, "results", "system_backtest_summary.json"), "market_analysis_bots/results"),
     (os.path.join(MAB, "results", "system_backtest_profiles.json"), "market_analysis_bots/results"),   # the same system at each fee level
+    (os.path.join(MAB, "results", "projection_inputs.json"), "market_analysis_bots/results"),          # goal calculator input
     (os.path.join(STRAT, "catalog.json"), "strategies"),
     (os.path.join(STRAT, "sources.json"), "strategies"),
     (os.path.join(STRAT, "data", "events.json"), "strategies/data"),

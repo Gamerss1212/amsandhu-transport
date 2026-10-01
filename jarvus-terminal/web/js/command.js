@@ -10,12 +10,13 @@ const st = { account: null, market: null, tf: '5m', ind: { ema21: true, ema50: f
 export function mount(view) {
   st.charts = []; st.timers = []; st.unsub = [];
   st.markets = null; st.market = null; st.account = null; st.price = null;   // per workspace: never reuse another's
-  st.moneyLine = null; st.moneyChartLoaded = false; st.lastEquity = undefined; st.fillsPrimed = false; st.seenFills = new Set();
+  st.sinceDone = false; st.moneyLine = null; st.moneyChartLoaded = false; st.lastEquity = undefined; st.fillsPrimed = false; st.seenFills = new Set();
   st.builtFor = null;
   const acctSel = h('select#acct-sel', { 'aria-label': 'Account', style: { width: 'auto', minWidth: '220px' }, onchange: (e) => { st.account = e.target.value; renderAccount(); loadEquity(); loadTrades(); } });
   view.append(
     moneyPanel(),
     autopilotPanel(),
+    goalPanel(),
     h('section.panel.hot', { style: { marginTop: '12px' } }, h('h2', 'Account', h('span.right', acctSel,
       h('button.btn.small.primary#acct-balance', { onclick: () => changeBalance(st.account) }, '✎ Change balance'), h('span.note#acct-src'))), h('div.tiles#acct-tiles')),
     h('div.grid.g-cc-top', { style: { marginTop: '12px' } },
@@ -63,7 +64,9 @@ function moneyPanel() {
         h('div.money-big#money-big', '—'),
         h('div.money-change#money-change'),
         h('div.money-sub#money-sub'),
-        h('p.note#money-note')),
+        h('p.note#money-note'),
+        h('div#money-since'),
+        h('div#money-decisions')),
       h('div.money-chart#money-chart')),
     h('h3', { style: { marginTop: '12px' } }, 'Open trades right now', h('span.right.note', 'valued at the market price, updating live')),
     h('div.scroll#money-positions'),
@@ -72,13 +75,34 @@ function moneyPanel() {
       h('div', h('h3', 'Latest closed trades'), h('div.scroll#money-closed'))));
 }
 
+const LS = 'jv_last_seen';
+function lastSeen() { try { return Number(localStorage.getItem(LS)) || 0; } catch { return 0; } }
+function markSeen() { try { localStorage.setItem(LS, String(Date.now())); } catch { /* private window: no summary next time */ } }
+
 async function loadMoney() {
   if (!$('#money')) return;
   try {
     const m = await api('/api/money');
     renderMoney(m);
     if (!st.moneyChartLoaded) loadMoneyChart();
+    if (!st.sinceDone) { st.sinceDone = true; showSince(); }
   } catch { /* next poll */ }
+}
+
+// what the AI did while you were away: closed trades since the page was last open (realized, after fees)
+async function showSince() {
+  const since = lastSeen();
+  markSeen();
+  st.timers.push(setInterval(markSeen, 60000));
+  if (!since || Date.now() - since < 10 * 60000) return;
+  try {
+    const rows = (await api('/api/trades?connection=paper-research&limit=500')).filter(t => t.exit_time >= since);
+    const pnl = rows.reduce((a, t) => a + (t.pnl || 0), 0), wins = rows.filter(t => t.pnl > 0).length;
+    replace($('#money-since'), h('div.banner' + (rows.length ? '' : '.demo'), { style: { marginTop: '10px' } },
+      h('b', `Since you last looked (${ago(since)}): `),
+      rows.length ? [`${rows.length} trade${rows.length === 1 ? '' : 's'} closed, ${wins} won, `, h('b', { class: cls(pnl) }, `${signed(pnl)} after fees`), ' (simulated).']
+                  : 'no trades closed. The AI skips most signals because fees would eat the move, so quiet periods are normal.'));
+  } catch { /* the summary is optional */ }
 }
 
 async function loadMoneyChart() {
@@ -120,6 +144,17 @@ function renderMoney(m) {
     h('span', 'Closed today ', h('b', { class: cls(m.realized_today) }, signed(m.realized_today)), ` (${m.trades_today || 0} trades, fees ${money(m.fees_today || 0, cur)})`));
   replace($('#money-note'), m.engine === false ? 'The bot engine is stopped: this is the last saved state.' :
     `Every open trade is priced from the live market every few seconds, so this number moves like a real account. Simulated money: nothing here is real. ${m.slots_in_use ? m.slots_in_use + ' capital slots in use.' : ''}`);
+  const d = m.decisions;
+  const WHY = { cost: 'fees too high for the move', learned: 'expected result negative', quiet: 'market too quiet', benched: 'strategy benched (keeps losing)' };
+  replace($('#money-decisions'), d ? h('div', { style: { marginTop: '10px' } },
+    h('div.k.note', { style: { letterSpacing: '0.1em', textTransform: 'uppercase' } }, `What the AI decided in the last ${d.minutes} minutes`),
+    h('p', { style: { margin: '4px 0' } }, d.signals
+      ? [h('b', String(d.signals)), ` entry signals: `, h('b.up', String(d.approved)), ' taken, ', h('b', String(d.refused)), ' refused',
+         d.refused ? [' (', Object.entries(d.refused_by).sort((a, b) => b[1] - a[1]).map(([k, n]) => `${n} ${WHY[k] || k}`).join(' · '), ')'] : null, '.']
+      : 'No entry signals. The AI only acts when a strategy fires and the costs are worth it, so quiet stretches are normal.'),
+    (d.latest || []).length ? h('ul.fills', d.latest.map(x => h('li', h('span.t', time(x.time)), h(`span.${x.action === 'veto' ? 'sell' : 'buy'}`, x.action === 'veto' ? 'SKIP' : 'TAKE'),
+      h('span', `${x.symbol || ''}`, h('span.note', ` · ${x.action === 'veto' ? (WHY[x.kind] || x.kind) : 'approved by the brain'}`)), h('span.note', x.bot_id || '')))) : null,
+    h('a', { href: '#/intel' }, 'See every decision and its evidence →')) : null);
   replace($('#money-live'), h(`span.dot${m.engine === false ? '.warn' : '.on'}`), m.engine === false ? 'engine stopped' : `live · ${time(m.time)}`);
   replace($('#money-positions'), table([
     { label: 'Market', v: p => h('span', h('b', p.symbol), h('div.note', `${p.venue} · ${p.bot_id}`)) },
@@ -150,6 +185,50 @@ function renderMoney(m) {
   ], m.recent_trades || [], { empty: 'No closed trades yet.' }));
 }
 
+// ---------------------------------------------------------------- GOAL CALCULATOR: measured, not promised
+function goalPanel() {
+  const bal = h('input#goal-balance', { type: 'number', min: '1', step: 'any', inputMode: 'decimal', 'aria-label': 'Starting balance' });
+  const days = h('select#goal-days', [30, 90, 180, 365].map(d => h('option', { value: d, selected: d === 90 }, `${d} days`)));
+  const target = h('input#goal-target', { type: 'number', min: '1', step: 'any', inputMode: 'decimal', 'aria-label': 'Goal' });
+  const go = debounce(runGoal, 350);
+  [bal, days, target].forEach(el => el.addEventListener('input', go));
+  const presets = h('div.row', [['2×', 2], ['10×', 10], ['100×', 100], ['3,000×', 3000]].map(([lab, x]) =>
+    h('button.btn.small.ghost', { type: 'button', onclick: () => { target.value = String(Math.round(Number(bal.value || 100) * x)); runGoal(); } }, lab)));
+  return h('section.panel#goal', h('details', { ontoggle: (e) => { if (e.target.open) { if (!bal.value) { bal.value = String(Math.round((st.lastEquity || 100000) * 100) / 100); target.value = String(Math.round(Number(bal.value) * 10)); } runGoal(); } } },
+    h('summary.dim', { style: { cursor: 'pointer', fontWeight: 700 } }, 'What could my balance become? Goal calculator (measured, not promised)'),
+    h('div.stack', { style: { marginTop: '10px' } },
+      h('p.note', 'Built from the whole software replayed on recent real market data, window after window, at your exchange\'s fees and your balance. Type a balance and a goal to see what it would take and what the measurements say.'),
+      h('div.fgrid3', h('label.f', 'Starting balance', bal), h('label.f', 'Time', days), h('label.f', 'Goal (what you want it to become)', target)),
+      presets, h('div#goal-out', h('div.empty', 'Open this and choose a balance.')))));
+}
+
+async function runGoal() {
+  const out = $('#goal-out');
+  if (!out) return;
+  const b = Number($('#goal-balance').value), t = Number($('#goal-target').value), d = $('#goal-days').value;
+  if (!(b >= 1)) { replace(out, h('div.empty', 'Enter a starting balance of at least 1.')); return; }
+  try {
+    const r = await api(`/api/projection?balance=${b}&days=${d}${t > 0 ? '&target=' + t : ''}`);
+    const o = r.outcome, cur = (S.overview && S.overview.accounts || []).find(x => x.connection_id === 'paper-research');
+    const c = (cur && cur.currency) || 'USD';
+    const m = (x) => money(x, c, x < 1000 ? 2 : 0);
+    const g = r.goal;
+    replace(out, h('div.stack',
+      h('div', h('b', `${m(r.balance)} over ${r.days} days`), ` (${r.windows} windows of ${r.window_days} days, ${r.fees.replace('_', '-')} fees, measured at the ${m(r.tier)} balance size): `,
+        'the middle outcome is ', h('b', m(o.median)), `; 9 in 10 simulated outcomes end between ${m(o.p05)} and ${m(o.p95)}.`),
+      table([{ label: 'Worst', n: true, v: () => m(o.worst), cls: () => o.worst < r.balance ? 'down' : 'up' }, { label: '5th %', n: true, v: () => m(o.p05), cls: () => o.p05 < r.balance ? 'down' : 'up' },
+        { label: 'Middle', n: true, v: () => m(o.median), cls: () => o.median < r.balance ? 'down' : 'up' }, { label: '95th %', n: true, v: () => m(o.p95), cls: () => o.p95 < r.balance ? 'down' : 'up' },
+        { label: 'Best of ' + 5000, n: true, v: () => m(o.best), cls: () => o.best < r.balance ? 'down' : 'up' }], [1]),
+      h('p.note', `Ends higher than it started in ${(r.share_ending_up * 100).toFixed(0)}% of simulations; loses 10% or more in ${(r.share_losing_10pct * 100).toFixed(0)}%. Average ${r.mean_window_pct >= 0 ? '+' : ''}${r.mean_window_pct.toFixed(3)}% per ${r.window_days} days; best window ${r.best_window_pct >= 0 ? '+' : ''}${r.best_window_pct.toFixed(2)}%, worst ${r.worst_window_pct.toFixed(2)}%.`),
+      g ? h('div.banner' + (g.share_reaching > 0.05 ? '' : '.demo'), h('div',
+        h('b', `Your goal: ${m(g.target)} (${g.multiple >= 10 ? g.multiple.toFixed(0) : g.multiple.toFixed(1)}× your balance) in ${r.days} days.`), ' ',
+        `It needs about +${g.needed_per_day_pct.toFixed(2)}% EVERY day (+${g.needed_per_window_pct.toFixed(1)}% every ${r.window_days} days). The best ${r.window_days}-day window measured was ${r.best_window_pct >= 0 ? '+' : ''}${r.best_window_pct.toFixed(2)}%. `,
+        h('b', `${(g.share_reaching * 100).toFixed(1)}% of ${g.simulations.toLocaleString()} simulated paths reached it.`), ' ',
+        `Even repeating the single best window every time ends at ${m(r.even_the_best_window_every_time)}.`)) : null,
+      h('p.note', `Based on ${r.sample.windows_measured} random ${r.window_days}-day windows from ${r.sample.period ? r.sample.period.join(' to ') : 'recent history'}. A short sample, not a forecast: markets change, and past windows do not promise future ones. Leverage or all-in bets would raise the spread of outcomes, mostly toward losing everything.`)));
+  } catch (e) { replace(out, h('div.empty', e.message)); }
+}
+
 // ---------------------------------------------------------------- AUTOPILOT: the one button
 function autopilotPanel() {
   return h('section.panel.autopilot#autopilot',
@@ -159,6 +238,7 @@ function autopilotPanel() {
         h('div#ap-button', { style: { margin: '12px 0' } }),
         h('label.f', { style: { maxWidth: '420px', marginBottom: '8px' } }, 'Exchange fees the AI pays (pick the one you really trade on)', h('select#ap-fees', { onchange: setFees })),
         h('p.note#ap-fees-note'),
+        h('label.check#ap-startup-row.hidden', h('input#ap-startup', { type: 'checkbox', onchange: setStartup }), 'Start Jarvus when Windows starts, so the AI keeps trading without you opening anything'),
         h('p.note#ap-explain')),
       h('div.tiles#ap-tiles')));
 }
@@ -167,6 +247,23 @@ async function loadAutopilot() {
   if (!$('#autopilot')) return;
   try { st.ap = await api('/api/autopilot'); renderAutopilot(); } catch (e) { /* shown on the next poll */ }
   if (!st.fees || !$('#ap-fees').options.length) loadFees();
+  if (st.startup === undefined) loadStartup();
+}
+
+async function loadStartup() {
+  st.startup = null;
+  try {
+    st.startup = await api('/api/startup');
+    const row = $('#ap-startup-row');
+    if (!row || !st.startup.supported) return;                // only the Windows app can do this
+    row.classList.remove('hidden');
+    $('#ap-startup').checked = !!st.startup.enabled;
+    row.title = st.startup.note;
+  } catch { /* shown on the next poll */ }
+}
+async function setStartup(e) {
+  try { st.startup = await api('/api/startup', { on: e.target.checked }); toast(st.startup.enabled ? 'Jarvus will start with Windows and keep the AI trading in the background' : 'Jarvus will not start with Windows', 'good'); }
+  catch (err) { errorToast(err); e.target.checked = !e.target.checked; }
 }
 
 async function loadFees() {
