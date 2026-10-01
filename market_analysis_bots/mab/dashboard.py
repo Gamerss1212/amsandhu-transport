@@ -394,6 +394,8 @@ def make_handler(provider: Provider, token: str, page: str, api_token: Optional[
                     return self._send(200, provider.health())
                 if u.path == "/api/money":
                     return self._send(200, provider.fleet.money_view() if provider.fleet is not None else {"running": False})
+                if u.path == "/api/analysis":
+                    return self._send(200, provider.fleet.analysis_view() if provider.fleet is not None else {"running": False})
                 if u.path == "/api/autopilot":
                     return self._send(200, provider.fleet.autopilot_status() if provider.fleet is not None
                                       else {"on": None, "running": False})

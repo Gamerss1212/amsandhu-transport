@@ -327,6 +327,8 @@ def test_money_view_shows_the_ais_open_trades_and_the_fee_level(app):
     assert owner.req("/api/fees", {"profile": "kraken"})[1]["current"] == "kraken"
     assert owner.req("/api/fees", {"profile": "free-money"})[0] == 400
     assert owner.req("/api/fees", {"profile": "kraken"}, csrf=False)[0] == 403
+    code, an, _, _ = owner.req("/api/analysis")                                        # the AI's own analysis needs the engine
+    assert code == 200 and an["engine"] is False and an["markets"] == [] and "START AUTOPILOT" in an["note"]
 
 
 def test_stopping_the_engine_stops_the_ai_and_starting_it_again_resumes_it(app):

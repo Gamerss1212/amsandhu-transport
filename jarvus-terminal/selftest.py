@@ -147,6 +147,8 @@ def main() -> int:
     check("backtest summary route", code == 200)
     code, mv = req("/api/money")
     check("Your money (the AI's account) route", code == 200 and mv.get("real_money") in (False, None) and "positions" in mv)
+    code, an = req("/api/analysis")
+    check("What the AI sees route", code == 200 and isinstance(an.get("markets"), list))
     code, fe = req("/api/fees")
     check("exchange fee levels, NDAX by default", code == 200 and fe.get("current") == "ndax" and len(fe.get("profiles", [])) >= 4)
     code, su = req("/api/startup")

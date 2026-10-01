@@ -197,6 +197,18 @@ def autopilot_switch(ctx, on: bool):
     return out
 
 
+def analysis_view(ctx):
+    """What the AI sees right now, market by market, straight from its own models (the running engine)."""
+    wid = ctx["wid"]
+    if APP.sup.running(wid):
+        d = fleet_json(wid, "/api/analysis")
+        if d and d.get("markets") is not None:
+            d["engine"] = True
+            return d
+    return {"engine": False, "markets": [], "insights": [], "learned_best": [], "learned_worst": [],
+            "note": "The AI's analysis appears while the bot engine runs (press START AUTOPILOT)."}
+
+
 def money_view(ctx):
     """The account the AI trades, right now. From the running engine (positions valued at live prices); with the
     engine stopped, from its saved state (valued at the last prices it saw)."""
@@ -735,6 +747,7 @@ GET_ROUTES = {
     "/api/health": health,
     "/api/autopilot": autopilot_view,
     "/api/money": money_view,
+    "/api/analysis": analysis_view,
     "/api/fees": fees_view,
     "/api/projection": projection_view,
     "/api/startup": lambda ctx: __import__("engine.startup", fromlist=["x"]).status(),

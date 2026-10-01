@@ -15,6 +15,7 @@ export function mount(view) {
   const acctSel = h('select#acct-sel', { 'aria-label': 'Account', style: { width: 'auto', minWidth: '220px' }, onchange: (e) => { st.account = e.target.value; renderAccount(); loadEquity(); loadTrades(); } });
   view.append(
     moneyPanel(),
+    analysisPanel(),
     autopilotPanel(),
     goalPanel(),
     h('section.panel.hot', { style: { marginTop: '12px' } }, h('h2', 'Account', h('span.right', acctSel,
@@ -43,6 +44,9 @@ export function mount(view) {
   st.timers.push(setInterval(loadAutopilot, 5000));
   loadMoney();
   st.timers.push(setInterval(loadMoney, 15000));                 // the stream updates it every couple of seconds; this is the fallback
+  st.anaAll = false;
+  loadAnalysis();
+  st.timers.push(setInterval(() => { if (!document.hidden) loadAnalysis(); }, 10000));
   st.unsub.push(on('state', (d) => { if (d.money) renderMoney(d.money); }));
   loadBuilder();
   st.timers.push(setInterval(() => { loadEquity(); loadTrades(); }, 30000), setInterval(loadCandles, 20000));
@@ -186,6 +190,86 @@ function renderMoney(m) {
   ], m.recent_trades || [], { empty: 'No closed trades yet.' }));
 }
 
+// ---------------------------------------------------------------- WHAT THE AI SEES: its own reading of every market
+const WHY_SKIP = { cost: 'fees too high for the move', learned: 'expected result negative', quiet: 'market too quiet', benched: 'strategy benched (keeps losing)' };
+function analysisPanel() {
+  return h('section.panel#analysis', { style: { marginTop: '12px' } },
+    h('h2', 'What the AI sees right now', h('span.right', h('span.note#ana-time'))),
+    h('p.note#ana-who'), h('div#ana-table', h('div.empty', 'Loading the AI\'s analysis…')),
+    h('div.grid.g-2', { style: { marginTop: '10px' } },
+      h('div', h('h3', 'What it has learned so far'), h('div#ana-insights')),
+      h('div', h('h3', 'Strategies it trusts most and least'), h('div#ana-learned'))));
+}
+
+async function loadAnalysis() {
+  try { renderAnalysis(await api('/api/analysis')); } catch { /* next poll */ }
+}
+
+function pctTxt(x) { return x === null || x === undefined ? '—' : `${Math.round(x * 100)}%`; }
+
+function volCell(v) {
+  if (!v) return h('span.note', 'no forecast yet (needs 200 hours of data)');
+  const tag = h(`span.badge.${v.state === 'LOUD' ? 'warn' : v.state === 'QUIET' ? 'sim' : 'paper'}`, v.state);
+  const hrs = v.horizon_hours ? `next ${v.horizon_hours} h` : 'next hours';
+  let why;
+  if (v.state === 'LOUD') why = `${hrs}: a big move followed ${pctTxt(v.big_move_rate)} of readings like this in testing (${(v.big_move_n || 0).toLocaleString()} cases; usually ${pctTxt(v.big_move_base)})`;
+  else if (v.state === 'QUIET') why = `${hrs}: a quiet stretch followed ${pctTxt(v.quiet_rate)} of readings like this in testing (${(v.quiet_n || 0).toLocaleString()} cases; usually ${pctTxt(v.quiet_base)}). The AI skips new trades.`;
+  else why = `${hrs}: no strong call either way`;
+  return h('span', tag, h('div.note', why));
+}
+
+function trendCell(t) {
+  if (!t) return h('span.note', 'warming up');
+  const arrow = t.direction === 'up' ? '▲' : t.direction === 'down' ? '▼' : '↔';
+  return h('span', h(`span.${t.direction === 'up' ? 'up' : t.direction === 'down' ? 'down' : 'dim'}`, `${arrow} ${t.text}`),
+    h('div.note', t.volatile ? 'moving more than usual' : 'calmer than usual'));
+}
+
+function renderAnalysis(a) {
+  if (!$('#analysis')) return;
+  replace($('#ana-time'), a.engine === false ? 'engine stopped' : `updated ${time(a.time)}`);
+  if (a.engine === false) {
+    replace($('#ana-who'), a.note || '');
+    replace($('#ana-table'), h('div.empty', 'Start the autopilot to see the AI analyse every market.'));
+    replace($('#ana-insights')); replace($('#ana-learned'));
+    return;
+  }
+  replace($('#ana-who'), h('b', 'Every decision here is made by the software. '), `How: ${a.decided_by.replace(/^the software: /, '')} `,
+    h('br'), h('b', 'Up or down? '), `${a.direction.charAt(0).toUpperCase()}${a.direction.slice(1)}`);
+  const rows = a.markets || [];
+  const shown = st.anaAll ? rows : rows.slice(0, 10);
+  replace($('#ana-table'),
+    table([
+      { label: 'Market', v: m => h('span', h('b', m.symbol), h('div.note', `${m.venue} · ${m.bots} bot${m.bots === 1 ? '' : 's'} watching`)) },
+      { label: 'Price', n: true, v: m => h('span', { title: m.price_source || '' }, num(m.price)) },
+      { label: 'Trend (last 20 candles)', v: m => trendCell(m.trend) },
+      { label: 'Forecast: how much it will move', v: m => volCell(m.volatility) },
+      { label: 'The bots right now', v: m => h('span', m.signals ? h('b.up', `${m.signals} want to enter`) : h('span.dim', 'no entry signal'),
+        h('div.note', m.stance.bots ? `entry rules: ${m.stance.long} say buy · ${m.stance.short} say sell · of ${m.stance.bots}` : 'no fresh candles (market closed?)')) },
+      { label: 'Best strategy here (learned)', v: m => !m.best ? '—' : h('span', m.best.strategy || m.best.bot_id,
+        h('div.note', m.best.evidence_trades >= 8 ? `${r(m.best.edge_r)} per trade expected (${Math.round(m.best.evidence_trades)} trades of evidence)` : 'too little evidence yet')) },
+      { label: 'Latest decision', v: m => !m.decision ? h('span.note', 'none yet') : h('span',
+        h(`b.${m.decision.action === 'veto' ? 'down' : 'up'}`, m.decision.action === 'veto' ? 'SKIP' : 'TAKE'),
+        h('div.note', `${m.decision.action === 'veto' ? (WHY_SKIP[m.decision.kind] || 'refused') : 'approved by the brain'} · ${ago(m.decision.time)}`)) },
+      { label: 'AI holds', v: m => !m.position ? '—' : h('span', h('b', m.position.side.toUpperCase()),
+        h('div.note', m.position.pnl === null ? '' : h('span', { class: cls(m.position.pnl) }, `${signed(m.position.pnl)} open`))) },
+    ], shown, { empty: 'Waiting for the first candles…' }),
+    rows.length > 10 ? h('button.btn.small.ghost', { style: { marginTop: '8px' }, onclick: () => { st.anaAll = !st.anaAll; renderAnalysis(a); } },
+      st.anaAll ? 'Show fewer' : `Show all ${rows.length} markets`) : null);
+  replace($('#ana-insights'), (a.insights || []).length
+    ? h('ul.fills', a.insights.map(x => h('li', h('span.t', time(x.time)), h('span', x.text))))
+    : h('div.empty', 'Nothing statistically clear yet. The brain only states a lesson once a pattern holds over enough closed trades (t ≥ 2).'));
+  const lcols = [
+    { label: 'Strategy', v: x => h('span', h('b', x.strategy), h('div.note', x.markets || '')) },
+    { label: 'Expected per trade', n: true, v: x => h('span', { class: cls(x.estimate_r) }, r(x.estimate_r)) },
+    { label: 'Evidence', n: true, v: x => h('span.note', `${Math.round(x.evidence_trades)} trades (${Math.round(x.own_trades)} its own)`) }];
+  replace($('#ana-learned'), (a.learned_best || []).length
+    ? h('div', h('p.note', 'Learned from tested history, then updated with every trade the AI closes. R = the amount a trade risks; the brain refuses strategies it expects to lose.'),
+      h('div.note', 'Most trusted'), table(lcols, a.learned_best),
+      (a.learned_worst || []).length ? [h('div.note', { style: { marginTop: '8px' } }, 'Least trusted'), table(lcols, a.learned_worst)] : null)
+    : h('div.empty', 'No closed trades to learn from yet. The brain starts from tested history and updates with every trade the AI closes.'));
+}
+
 // ---------------------------------------------------------------- GOAL CALCULATOR: measured, not promised
 function goalPanel() {
   const bal = h('input#goal-balance', { type: 'number', min: '1', step: 'any', inputMode: 'decimal', 'aria-label': 'Starting balance' });
@@ -199,6 +283,7 @@ function goalPanel() {
     h('summary.dim', { style: { cursor: 'pointer', fontWeight: 700 } }, 'What could my balance become? Goal calculator (measured, not promised)'),
     h('div.stack', { style: { marginTop: '10px' } },
       h('p.note', 'Built from the whole software replayed on recent real market data, window after window, at your exchange\'s fees and your balance. Type a balance and a goal to see what it would take and what the measurements say.'),
+      h('p.note', h('b', 'This is only arithmetic for the goal you type. '), 'The AI never sees it or aims for it: it has no profit target and decides trade by trade from its own analysis (above).'),
       h('div.fgrid3', h('label.f', 'Starting balance', bal), h('label.f', 'Time', days), h('label.f', 'Goal (what you want it to become)', target)),
       presets, h('div#goal-out', h('div.empty', 'Open this and choose a balance.')))));
 }

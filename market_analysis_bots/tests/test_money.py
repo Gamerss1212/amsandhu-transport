@@ -152,3 +152,32 @@ def test_the_money_view_explains_what_the_ai_decided_lately(tmp_path):
     assert d["signals"] == 4 and d["approved"] == 1 and d["refused"] == 3
     assert d["refused_by"] == {"cost": 2, "learned": 1} and len(d["latest"]) == 4
     assert d["latest"][0]["symbol"] == "DEMO-ETH"                                      # newest first
+
+
+# ------------------------------------------------------------------ what the AI sees
+def test_the_analysis_view_shows_the_software_s_own_reading_of_each_market(tmp_path):
+    fl = make(tmp_path)
+    a = fl.analysis_view()
+    assert a["bots"] == 3 and {m["symbol"] for m in a["markets"]} == {"DEMO-BTC", "DEMO-ETH", "DEMO-SOL"}
+    assert "not forecast" in a["direction"] and "3 rule-based bots" in a["decided_by"]
+    assert fl.analysis_view() is a                                                     # served from the 5 s cache
+    # the brain's own readings: a trend, a volatility forecast with its tested evidence, a decision, a position
+    fl.brain.market["DEMO-ETH"] = {"trend": "up", "vol": "volatile", "er": 0.42, "vr": 1.3, "t": now_ms(), "price": 3_000.0}
+    fl.brain.gates["DEMO-ETH"] = {"state": "LOUD", "p_loud": 0.71, "p_quiet": 0.05, "time": now_ms(), "venue": "demo",
+                                  "evidence": {"loud": {"observed_rate": 0.78, "n": 900, "base_rate": 0.31},
+                                               "quiet": {"observed_rate": 0.04, "n": 1200, "base_rate": 0.36}}}
+    fl.brain.recent.append({"kind": "decision", "time": now_ms(), "bot_id": "R-1", "strategy_id": "x", "instrument": "DEMO-ETH",
+                            "side": 1, "p_win": 0.61, "edge": -0.08, "action": "veto", "size": 0.0, "regime": None,
+                            "benched": False, "veto_kind": "cost", "gate": "LOUD"})
+    fl.account.apply_fill("R-2", "demo", "DEMO-SOL", "buy", 3.0, 150.0, 0.5)
+    fl._ana_cache = None
+    a = fl.analysis_view()
+    first, eth = a["markets"][0], next(m for m in a["markets"] if m["symbol"] == "DEMO-ETH")
+    assert first["symbol"] == "DEMO-SOL" and first["position"]["side"] == "long"       # held markets come first
+    assert a["markets"][1]["symbol"] == "DEMO-ETH"                                     # then the latest decision
+    assert eth["trend"]["text"] == "trending up" and eth["trend"]["volatile"] is True
+    v = eth["volatility"]
+    assert v["state"] == "LOUD" and v["big_move_rate"] == 0.78 and v["big_move_n"] == 900 and v["big_move_base"] == 0.31
+    assert eth["decision"]["action"] == "veto" and eth["decision"]["kind"] == "cost"
+    assert eth["best"]["evidence_trades"] >= 0 and eth["bots"] == 1
+    assert "p_win" not in str(a) and "0.61" not in str(a)                              # no uncalibrated win chance anywhere

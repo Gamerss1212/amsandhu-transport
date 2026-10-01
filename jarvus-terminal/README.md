@@ -75,6 +75,30 @@ own autopilot (24 bots on synthetic markets).
   the exchange you would really trade on. The AI sizes and filters every trade with those fees. Coinbase
   Advanced's entry tier (1.20%) makes it refuse nearly every crypto signal.
 
+## What the AI sees (its own analysis, live)
+
+Under **Your money**, **What the AI sees right now** shows the software's own reading of every market it
+trades, refreshed every few seconds. Nobody types in trades, targets or predictions; each column comes
+straight from a model or a count inside the engine:
+
+* **Trend (last 20 candles)**: up, down or sideways, and whether the market is moving more or less than usual;
+* **Forecast: how much it will move**: the volatility gate's call for the next 12 hours (crypto) or 7 hours
+  (stocks), LOUD, NORMAL or QUIET, with how often a big move (or a quiet stretch) actually followed readings
+  like it in held-out testing, how many cases that rests on, and the usual rate. On QUIET the AI opens nothing;
+* **The bots right now**: how many bots on that market want to enter, and how many entry rules say buy or sell;
+* **Best strategy here (learned)**: the strategy the brain trusts most on that market, its expected result
+  per trade in R (the amount a trade risks) and how many trades of evidence that rests on;
+* **Latest decision**: TAKE or SKIP, and why (fees too high for the move, expected result negative, market
+  too quiet, strategy benched);
+* **AI holds**: the open trade on that market, if any, and its profit or loss.
+
+Below it: the lessons the brain has learned (stated only once a pattern holds over enough closed trades) and
+the strategies it trusts most and least. **Which way prices will go is not forecast**: tested on years of data,
+no model here could tell up from down well enough to pay the fees, so the AI does not guess. It predicts how
+much markets move and learns what each strategy really earns, and it decides trade by trade from that. The
+goal calculator's numbers (like "+9.3% a day") are only arithmetic for the goal you type; the AI never sees
+them and has no profit target.
+
 ## Any balance
 
 Set the balance to $100 or $10,000,000 with **✎ Change balance**; the AI adapts:
@@ -104,7 +128,7 @@ It is a measurement of recent history, not a forecast.
 
 | Page | What it is for |
 |---|---|
-| **Command Center** | **Your money** (live balance, open trades, buys and sells, what the AI decided); the AUTOPILOT button, its status, fee selector, start-with-Windows switch and goal calculator; account equity, buying power, allocated capital, realised/unrealised P&L, exposure and daily drawdown; the candlestick chart (timeframes, volume, EMA/VWAP/Bollinger, markers for real fills coloured by mode); building and starting your own bot (strategy, market, mode, account, allocation, risk limits, readiness checks); bot cards with **PAUSE NEW ENTRIES**, **STOP** (keep protective orders or close) and details; equity and drawdown charts; recent trades; alerts. |
+| **Command Center** | **Your money** (live balance, open trades, buys and sells, what the AI decided); **What the AI sees** (its live analysis of every market: trend, volatility forecast with tested accuracy, the bots' signals, the strategy it trusts most there, its latest decision); the AUTOPILOT button, its status, fee selector, start-with-Windows switch and goal calculator; account equity, buying power, allocated capital, realised/unrealised P&L, exposure and daily drawdown; the candlestick chart (timeframes, volume, EMA/VWAP/Bollinger, markers for real fills coloured by mode); building and starting your own bot (strategy, market, mode, account, allocation, risk limits, readiness checks); bot cards with **PAUSE NEW ENTRIES**, **STOP** (keep protective orders or close) and details; equity and drawdown charts; recent trades; alerts. |
 | **Connections** | Every account: the simulated paper account, Alpaca paper/live, Kraken Pro, NDAX. Identity, environment, status, permissions, buying power, last sync, supported assets; connect / test / sync / reconnect / disconnect; **Add funds** opens the provider's own funding page (Jarvus never moves money or simulates a deposit); the separate **live-trading authorisation**; the AI research assistant's key and budget; news feeds. |
 | **Live Intelligence** | Decision feed (live) with the full lifecycle of each decision: market update → signal (every rule condition) → brain → risk checks → order → broker acknowledgement → fills (fees, slippage) → position → exit; scanner with watchlists; bot status; orders, fills, positions and exposure; side-by-side comparison (backtest vs research vs paper vs demo vs live, never mixed); searchable history with CSV/JSON export; research jobs and model registry; service health (queue, latencies, data age, CPU, memory, this computer's hardware). |
 

@@ -1408,6 +1408,113 @@ class DeploymentMixin:
                 "slots_in_use": slots, "slot_equity": slot_eq, "positions": rows, "recent_fills": fills,
                 "recent_trades": closed, "autopilot": self.research_autopilot, "real_money": False}
 
+    TREND_TEXT = {"up": "trending up", "down": "trending down", "range": "moving sideways"}
+
+    def analysis_view(self) -> dict:
+        """What the AI sees right now, market by market, from its own models; nothing in it is typed in by a person
+        and nothing is a target. For each market: the trend of the last 20 candles, the volatility gate's forecast for
+        the next hours together with what held-out testing says about forecasts like it, how the bots on that market
+        stand, the brain's learned estimate for the best strategy there (with how many trades it rests on), the
+        brain's latest decision and whether the AI holds a position. Which way prices go is not forecast: no model
+        here has shown it can tell up from down well enough to pay the fees, so none is shown."""
+        hit = getattr(self, "_ana_cache", None)
+        if hit and time.time() - hit[0] < 5:
+            return hit[1]
+        b = self.brain
+        with self.account.lock:
+            held = {(p["venue"], p["instrument"]): dict(p) for p in self.account.positions.values()}
+        markets: Dict[tuple, dict] = {}
+        with b.lock:
+            latest = {}
+            for d in list(b.recent):
+                if d.get("kind") == "decision":
+                    latest[d["instrument"]] = d                    # newest last: the last one wins
+            regimes = {k: dict(v) for k, v in b.market.items()}
+            gates = {k: dict(v) for k, v in b.gates.items()}
+            insights = [{"time": x["time"], "text": x["text"]} for x in list(b.insights)[-8:]][::-1]
+            active: Dict[str, set] = {}                         # strategy key -> the kinds of market it trades
+            for br in self.bots.values():
+                if not getattr(br, "user", False):
+                    active.setdefault(self._bkey(br), set()).add("stocks" if br.venue == "yahoo" else "crypto")
+            learned = []
+            for k, p in b.post.items():                            # tested history (priors) plus the AI's own trades
+                e = b.estimate(k) if k.startswith("S:") and k[2:] in active else None
+                if e and e["n_eff"] >= b.min_evidence:
+                    kinds = active[k[2:]]
+                    learned.append({"strategy": b.names.get(k[2:], k[2:]), "markets": " and ".join(sorted(kinds)),
+                                    "evidence_trades": round(e["n_eff"], 1), "own_trades": round(p["n"], 1),
+                                    "estimate_r": round(e["mean"], 3)})
+            for br in list(self.bots.values()):
+                if getattr(br, "user", False):
+                    continue                                       # your own bots are yours, not the AI's
+                key = (br.venue, br.symbol)
+                m = markets.get(key)
+                if m is None:
+                    m = markets[key] = {"venue": br.venue, "symbol": br.symbol,
+                                        "asset": "stock" if br.venue == "yahoo" else "crypto",
+                                        "bots": 0, "signals": 0, "best": None}
+                m["bots"] += 1
+                if str((br.last_signal or {}).get("action", "")).startswith("enter"):
+                    m["signals"] += 1
+                try:
+                    est = b._combined(self._bkey(br), br.symbol)
+                except Exception:                                  # noqa: BLE001
+                    continue
+                rank = (est["n_eff"] >= b.min_evidence, est["mean"])          # evidence-backed estimates first
+                if m["best"] is None or rank > (m["best"]["evidence_trades"] >= b.min_evidence, m["best"]["edge_r"]):
+                    m["best"] = {"strategy": br.c.definition.get("name"), "bot_id": br.id, "timeframe": br.tf,
+                                 "edge_r": round(est["mean"], 3), "evidence_trades": round(est["n_eff"], 1)}
+            stance = {sym: b.consensus_of(sym) for sym in {m["symbol"] for m in markets.values()}}
+        vg = getattr(self, "volgate", None)
+        rows = []
+        for key, m in markets.items():
+            sym = m["symbol"]
+            live = getattr(self, "live_prices", {}).get(key)
+            price = live[0] if live else self._last_price(*key)
+            reg = regimes.get(sym)
+            m["price"] = price
+            m["price_source"] = live[3] if live else "latest candle close"
+            m["trend"] = None if not reg else {"direction": reg["trend"], "text": self.TREND_TEXT.get(reg["trend"]),
+                                               "volatile": reg["vol"] == "volatile", "efficiency": reg["er"]}
+            g = gates.get(sym)
+            if g and g.get("state") not in (None, "UNKNOWN"):
+                ev = g.get("evidence") or {}
+                lo, qu = ev.get("loud") or {}, ev.get("quiet") or {}
+                m["volatility"] = {"state": g["state"], "time": g.get("time"),
+                                   "horizon_hours": ((vg.model.get(m["asset"]) or {}).get("horizon_hours") if vg else None),
+                                   "big_move_rate": lo.get("observed_rate"), "big_move_n": lo.get("n"),
+                                   "big_move_base": lo.get("base_rate"), "quiet_rate": qu.get("observed_rate"),
+                                   "quiet_n": qu.get("n"), "quiet_base": qu.get("base_rate")}
+            else:
+                m["volatility"] = None
+            c = stance.get(sym) or {}
+            m["stance"] = {"bots": c.get("bots", 0), "long": c.get("long", 0), "short": c.get("short", 0)}
+            d = latest.get(sym)
+            m["decision"] = None if not d else {"time": d["time"], "action": d["action"], "kind": d.get("veto_kind"),
+                                                "edge_r": d.get("edge"), "bot_id": d.get("bot_id"),
+                                                "strategy": b.names.get(d.get("strategy_id"), d.get("strategy_id"))}
+            p = held.get(key)
+            m["position"] = None if not p else {"side": "long" if p["qty"] > 0 else "short", "qty": abs(p["qty"]),
+                                                "entry": p["avg_price"], "bot_id": p["bot_id"],
+                                                "pnl": None if price is None else (price - p["avg_price"]) * p["qty"]}
+            rows.append(m)
+        loud = {"LOUD": 0, "NORMAL": 1, "QUIET": 2}
+        rows.sort(key=lambda m: (m["position"] is None, -(m["decision"] or {}).get("time", 0) // 3_600_000,
+                                 -m["signals"], loud.get((m["volatility"] or {}).get("state"), 3), -m["bots"], m["symbol"]))
+        learned.sort(key=lambda x: x["estimate_r"], reverse=True)
+        n_bots = sum(m["bots"] for m in rows)
+        out = {"time": now_ms(), "brain_mode": b.mode, "bots": n_bots, "markets": rows,
+               "decisions": self.decision_summary(), "insights": insights,
+               "learned_best": learned[:4], "learned_worst": learned[-4:][::-1] if len(learned) > 4 else [],
+               "direction": "not forecast: tested on years of data, no model here could tell up from down well enough "
+                            "to pay the fees, so the AI does not guess. It forecasts how much a market is likely to "
+                            "move (the volatility gate) and learns what each strategy really earns.",
+               "decided_by": f"the software: {n_bots} rule-based bots raise signals, the brain checks each one (fees, "
+                             "volatility forecast, what that strategy has earned here, what the other bots see) and "
+                             "takes or refuses it; nobody types in trades or targets."}
+        self._ana_cache = (time.time(), out)
+        return out
+
     # ================================================================== views
     def deployment_view(self, dep: dict) -> dict:
         br = self.bots.get(dep["bot_id"])
