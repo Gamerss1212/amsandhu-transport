@@ -1335,6 +1335,9 @@ class DeploymentMixin:
         """What the AI decided in the last hour, counted from the audit log: how many entry signals the bots raised,
         how many the brain let through, and why it refused the rest. The AI trades rarely on purpose: most signals
         would cost more in fees than they are expected to earn."""
+        hit = getattr(self, "_dec_cache", None)
+        if hit and time.time() - hit[0] < 15 and hit[1] == (minutes, recent):    # refreshed every ~2 s by open pages
+            return hit[2]
         since = now_ms() - minutes * 60_000
         rows = self.storage.audit_search(kinds=["brain"], mode="research", since=since, limit=2000)
         refused: Dict[str, int] = {}
@@ -1354,8 +1357,10 @@ class DeploymentMixin:
                 latest.append({"time": r["ts"], "bot_id": r.get("bot_id"), "symbol": r.get("symbol"), "action": act,
                                "kind": p.get("veto_kind"), "summary": r.get("summary")})
         n_refused = sum(refused.values())
-        return {"minutes": minutes, "signals": taken + n_refused, "approved": taken, "refused": n_refused,
-                "refused_by": refused, "latest": latest, "brain_mode": self.brain.mode}
+        out = {"minutes": minutes, "signals": taken + n_refused, "approved": taken, "refused": n_refused,
+               "refused_by": refused, "latest": latest, "brain_mode": self.brain.mode}
+        self._dec_cache = (time.time(), (minutes, recent), out)
+        return out
 
     def money_view(self) -> dict:
         """The account the AI trades, as it stands right now: balance, cash, today's result, and every open

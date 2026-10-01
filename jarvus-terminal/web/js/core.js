@@ -199,12 +199,15 @@ export function balanceDialog(acct, onDone) {
   const amt = h('input', { type: 'number', min: '1', step: 'any', inputMode: 'decimal', value: String(Math.round(acct.equity || 100000)) });
   const kind = h('select', h('option', { value: 'set_balance' }, 'Set the balance to'), h('option', { value: 'deposit' }, 'Add'), h('option', { value: 'withdraw' }, 'Remove'));
   const preview = h('div.note');
+  const warn = h('div.down');
   const upd = () => {
-    const v = Number(amt.value), eq = Number(acct.equity || 0);
+    const v = Number(amt.value), eq = Number(acct.equity || 0), inv = Number(acct.invested ?? acct.exposure ?? 0);
+    warn.textContent = '';
     if (!(v > 0)) { preview.textContent = 'Enter an amount above 0.'; return; }
     const after = kind.value === 'set_balance' ? v : kind.value === 'deposit' ? eq + v : eq - v;
     preview.textContent = acct.equity === null || acct.equity === undefined ? `New balance: ${money(after, cur)}`
       : `Now ${money(eq, cur)} → after: ${money(after, cur)}`;
+    if (inv > 0 && after < inv) warn.textContent = `Heads up: ${money(inv, cur)} is in open trades. A balance below that leaves cash negative until those trades close, and the AI opens no new trades meanwhile. The open trades are not closed for you.`;
   };
   amt.addEventListener('input', upd); kind.addEventListener('change', upd);
   const presets = h('div.row', [1000, 10000, 25000, 50000, 100000, 250000, 1000000].map(v =>
@@ -224,7 +227,7 @@ export function balanceDialog(acct, onDone) {
       } catch (err) { errorToast(err); go.disabled = false; }
     }
   }, h('div.chips', modeBadge(acct.mode || 'paper'), h('span.note', 'simulated money · never a deposit')),
-  presets, h('div.fgrid', h('label.f', 'Action', kind), h('label.f', `Amount (${cur})`, amt)), preview,
+  presets, h('div.fgrid', h('label.f', 'Action', kind), h('label.f', `Amount (${cur})`, amt)), preview, warn,
   h('p.note', 'Works any time, with the bots running or stopped. Open positions stay open. The drawdown limit restarts from the new balance, and balance changes are never counted as profit or loss.'),
   go));
   upd();

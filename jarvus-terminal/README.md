@@ -4,6 +4,11 @@ A trading research and paper-trading terminal: **311 bots** running **150 strate
 US/Canadian stocks, a **brain** that checks every trade they want to make, a research engine that
 keeps testing them, and live visibility into everything they do. **The AI makes all the trades.**
 
+**What "the AI" is:** 311 rule-based bots plus the **brain**, a statistical learner that runs on this computer
+(it scores each entry from fees, volatility and what each strategy has actually achieved, and learns from every
+closed trade). No language model is called to trade or on any market tick; the optional Claude assistant
+(Connections) only explains decisions and drafts ideas for testing, and cannot place orders.
+
 **Money:** the bots trade **simulated (paper) money** at live market prices. **Real money is off**
 and stays off until you connect a live account, authorise live trading separately with your own caps,
 and type a confirmation for each live bot. See [docs/LIVE_REQUIREMENTS.md](docs/LIVE_REQUIREMENTS.md)
@@ -25,6 +30,25 @@ AUTOPILOT** resumes them.
 The exe is not code-signed: if Windows SmartScreen says "Windows protected your PC", click
 **More info → Run anyway**.
 
+## Your money, live
+
+The top of Command Center is **Your money**: the account the AI trades, as a big balance that moves with
+the market. Every open trade is valued at the market's price right now (the order book's middle price for
+crypto, Yahoo's latest price for stocks, refreshed every few seconds), so the number goes up and down like a
+real account. It shows today's change, cash, money in trades, open profit/loss, every open trade (bought at,
+price now, worth now, profit/loss, stop, target, how long held), the latest buys and sells (each also pops
+up the moment it happens), the latest closed trades, a live chart, a plain-English count of what the AI
+decided in the last hour (signals seen, taken, refused and why), and a "since you last looked" summary when
+you return after a while.
+
+The money is **simulated**: nothing on this panel is real. **✎ Change balance** sets it to any amount at
+any time (see *Any balance* below); changing it is never counted as profit or loss.
+
+**The AI trades rarely, on purpose.** Of every 100 entry signals the bots raise, the brain refuses about 97
+because the exchange's fees would cost more than the move is expected to earn. At NDAX's fees that is a few
+trades per day across all 311 bots. A flat balance for hours is normal, not a fault; the decision count under
+the balance shows what it considered.
+
 ## What the AI does by itself
 
 The autopilot is on from the first start (and **START AUTOPILOT** turns it back on after a stop). With no input from you:
@@ -44,11 +68,43 @@ The autopilot is on from the first start (and **START AUTOPILOT** turns it back 
 It never overrides an **EMERGENCY STOP** and never touches real money. The demo workspace has its
 own autopilot (24 bots on synthetic markets).
 
+* **Start with Windows** (Windows app only; a switch in the AI panel): Jarvus starts minimised when you sign
+  in to Windows, with no browser window, and the AI keeps trading. Pressing **Stop** in the top bar stops
+  everything, including the AI, and it stays off after a restart until you press **Start**.
+* **Exchange fees** (a selector in the AI panel; NDAX 0.20% by default): fees decide most results, so choose
+  the exchange you would really trade on. The AI sizes and filters every trade with those fees. Coinbase
+  Advanced's entry tier (1.20%) makes it refuse nearly every crypto signal.
+
+## Any balance
+
+Set the balance to $100 or $10,000,000 with **✎ Change balance**; the AI adapts:
+
+* a small account uses **fewer, larger capital slots** (at least $25 each; all 20 slots from $500 up), so its
+  orders stay above the exchanges' minimum sizes instead of being refused as dust;
+* the AI's paper account can buy **fractions of US shares** ($1 minimum, as Alpaca and other US brokers
+  allow); Canadian listings and bots you start yourself keep the exchange's exact rules;
+* an entry is capped at **5% of the market's recent volume**, so a very large balance cannot buy more than the
+  market trades.
+
+Measured ([docs/BALANCE_BACKTEST.md](../market_analysis_bots/docs/BALANCE_BACKTEST.md)): at $100 the old rule
+placed 0.06 trades per 10 days (99% of approved trades were too small to place); now 3.8. From $100 to
+$100,000 the AI places 3.8 to 4.5 trades per 10-day window.
+
+## What could my balance become? (the goal calculator)
+
+Open **What could my balance become?** on Command Center, type a balance, a time and a goal. It replays the
+measured results of the whole software (hundreds of random 10-day windows of real recent market data, at your
+exchange's fees and your balance size) window after window, shows the spread of outcomes, and says what the
+goal would **require**. For example, $100 → $300,000 in 90 days needs about +9.3% **every day** for 90 days;
+the best 10-day window measured was a small fraction of one day's requirement, and none of 5,000 simulated
+paths came close. Anything that claimed otherwise (all-in bets, leverage) would mostly just lose the money.
+It is a measurement of recent history, not a forecast.
+
 ## The three pages
 
 | Page | What it is for |
 |---|---|
-| **Command Center** | The AUTOPILOT button and its live status; account equity, buying power, allocated capital, realised/unrealised P&L, exposure and daily drawdown; the candlestick chart (timeframes, volume, EMA/VWAP/Bollinger, markers for real fills coloured by mode); building and starting your own bot (strategy, market, mode, account, allocation, risk limits, readiness checks); bot cards with **PAUSE NEW ENTRIES**, **STOP** (keep protective orders or close) and details; equity and drawdown charts; recent trades; alerts. |
+| **Command Center** | **Your money** (live balance, open trades, buys and sells, what the AI decided); the AUTOPILOT button, its status, fee selector, start-with-Windows switch and goal calculator; account equity, buying power, allocated capital, realised/unrealised P&L, exposure and daily drawdown; the candlestick chart (timeframes, volume, EMA/VWAP/Bollinger, markers for real fills coloured by mode); building and starting your own bot (strategy, market, mode, account, allocation, risk limits, readiness checks); bot cards with **PAUSE NEW ENTRIES**, **STOP** (keep protective orders or close) and details; equity and drawdown charts; recent trades; alerts. |
 | **Connections** | Every account: the simulated paper account, Alpaca paper/live, Kraken Pro, NDAX. Identity, environment, status, permissions, buying power, last sync, supported assets; connect / test / sync / reconnect / disconnect; **Add funds** opens the provider's own funding page (Jarvus never moves money or simulates a deposit); the separate **live-trading authorisation**; the AI research assistant's key and budget; news feeds. |
 | **Live Intelligence** | Decision feed (live) with the full lifecycle of each decision: market update → signal (every rule condition) → brain → risk checks → order → broker acknowledgement → fills (fees, slippage) → position → exit; scanner with watchlists; bot status; orders, fills, positions and exposure; side-by-side comparison (backtest vs research vs paper vs demo vs live, never mixed); searchable history with CSV/JSON export; research jobs and model registry; service health (queue, latencies, data age, CPU, memory, this computer's hardware). |
 

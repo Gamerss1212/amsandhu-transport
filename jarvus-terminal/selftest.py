@@ -145,6 +145,17 @@ def main() -> int:
         check(f"route {p}", code == 200)
     code, bt = req("/api/backtest?strategy=" + lib["strategies"][0]["id"])
     check("backtest summary route", code == 200)
+    code, mv = req("/api/money")
+    check("Your money (the AI's account) route", code == 200 and mv.get("real_money") in (False, None) and "positions" in mv)
+    code, fe = req("/api/fees")
+    check("exchange fee levels, NDAX by default", code == 200 and fe.get("current") == "ndax" and len(fe.get("profiles", [])) >= 4)
+    code, su = req("/api/startup")
+    check("start-with-Windows status", code == 200 and "supported" in su)
+    code, pj = req("/api/projection?balance=100&days=90&target=300000")
+    check("goal calculator answers from the bundled measurements", code == 200 and pj.get("goal", {}).get("share_reaching") == 0.0
+          and 9.0 < pj["goal"]["needed_per_day_pct"] < 9.6, str(pj)[:160])
+    code, pj2 = req("/api/projection?balance=100000&days=30")
+    check("goal calculator at another balance size", code == 200 and pj2.get("tier", 0) >= 10000)
 
     print("\n  Protections")
     check("a change without the CSRF token is refused", req("/api/emergency", {"reason": "x"}, csrf=False)[0] == 403)

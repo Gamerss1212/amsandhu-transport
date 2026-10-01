@@ -142,3 +142,25 @@ def test_drawdown_counts_trading_only_not_balance_changes(tmp_path):
     # trading: -1% (100k -> 99k), then +5% (49.5k -> 51.975k), then -0.79% (251,975 -> 250,000)
     assert dd[0] == 0 and dd[1] == -1.0 and dd[2] == -1.0 and dd[3] == 0.0 and -0.8 < dd[4] < -0.7, dd
     assert len(d["cash_flows"]) == 2                                    # the other account's change is not counted
+
+
+def test_daily_drawdown_tile_ignores_balance_changes(tmp_path):
+    from mab import views
+    st = Storage(str(tmp_path / "dd2.db"))
+    t0 = views.day_start() + 3_600_000
+    for i, eq in enumerate([100_000, 101_000, 1_000, 1_010]):                  # the owner cut the balance to ~1,000
+        st.write("INSERT INTO account_equity (connection_id, ts, mode, equity) VALUES (?,?,?,?)",
+                 ("paper-research", t0 + i * 1000, "paper", eq))
+    st.save_cash_flow({"time": t0 + 1500, "kind": "set_balance", "amount": -100_000, "equity_before": 101_000,
+                       "equity_after": 1_000, "note": "paper-research: balance changed by the owner (simulated)"})
+    conn = {"connection_id": "paper-research", "provider": "jarvus_paper", "environment": "paper", "label": "x", "status": "connected"}
+    st.kv_set("account", {"cash": 1_010.0, "currency": "USD", "slots": 20, "positions": [], "marks": [], "realized": 0.0,
+                          "fees": 0.0, "flows": [], "twr_index": 1.0, "twr_anchor": 1_010.0})
+    a = views.account(st, conn)
+    assert a["equity"] == 1_010.0
+    assert a["daily_drawdown_pct"] == 0.0                                       # up 1% then up 1%: no drawdown at all
+    st.write("INSERT INTO account_equity (connection_id, ts, mode, equity) VALUES (?,?,?,?)", ("paper-research", t0 + 4000, "paper", 1_000))
+    st.kv_set("account", {"cash": 990.0, "currency": "USD", "slots": 20, "positions": [], "marks": [], "realized": 0.0,
+                          "fees": 0.0, "flows": [], "twr_index": 1.0, "twr_anchor": 990.0})
+    a = views.account(st, conn)
+    assert 1.9 < a["daily_drawdown_pct"] < 2.0                                  # 1,010 -> 990 is a real 1.98% fall

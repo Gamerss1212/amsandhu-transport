@@ -95,6 +95,10 @@ def test_small_accounts_use_fewer_larger_slots():
     assert Account(10_000_000).slots_in_use() == 20
     assert Account(10).slots_in_use() == 1 and Account(10).slot_equity() == pytest.approx(10.0)
     assert Account(0.0).slot_equity() == 0.0
+    drift = Account(100_000.0)
+    drift.set_balance(100.0)                                                           # 100.00000000000728 or 99.99999999999
+    drift.cash = 100.0 - 1e-9
+    assert drift.slots_in_use() == 4                                                   # float dust must not cost a slot
     a = Account(100)
     a.set_balance(2_000.0)                                                             # grows with the account
     assert a.slots_in_use() == 20 and a.slot_equity() == pytest.approx(100.0)
@@ -137,11 +141,13 @@ def test_the_money_view_explains_what_the_ai_decided_lately(tmp_path):
     fl = make(tmp_path)
     fl.brain.mode = "active"
     assert fl.money_view()["decisions"]["signals"] == 0
+    assert fl.money_view()["decisions"] is fl.money_view()["decisions"]               # served from the 15 s cache
     for kind in ("cost", "cost", "learned"):
         fl._audit("brain", f"BOT-1: brain veto - {kind}", stage="brain", mode="research", bot_id="R-0", symbol="DEMO-BTC",
                   payload={"action": "veto", "veto_kind": kind})
     fl._audit("brain", "BOT-2: brain approve", stage="brain", mode="research", bot_id="R-1", symbol="DEMO-ETH",
               payload={"action": "approve", "veto_kind": None})
+    fl._dec_cache = None                                                               # the summary is cached for 15 s
     d = fl.money_view()["decisions"]
     assert d["signals"] == 4 and d["approved"] == 1 and d["refused"] == 3
     assert d["refused_by"] == {"cost": 2, "learned": 1} and len(d["latest"]) == 4

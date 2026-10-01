@@ -77,7 +77,7 @@ class Account:
         eq = max(0.0, self.equity() if equity is None else equity)
         if not self.min_slot:
             return self.slots
-        return max(1, min(self.slots, int(eq // self.min_slot)))
+        return max(1, min(self.slots, int((eq + 1e-6) // self.min_slot)))     # 99.9999999 after a set-balance is 100
 
     def slot_equity(self) -> float:
         eq = max(0.0, self.equity())

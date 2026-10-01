@@ -93,11 +93,15 @@ def account(st, c: dict) -> dict:
     tot = st.query(tq, a)[0]
     today = st.query(tq + " AND exit_time >= ?", a + (day_start(),))[0]
     out.update(realized_total=tot["s"], trades_total=tot["n"], realized_today=today["s"], trades_today=today["n"])
-    eq = st.query("SELECT ts, equity FROM account_equity WHERE connection_id=? AND ts >= ? ORDER BY ts", (cid, day_start()))
+    eq = st.query("SELECT ts, equity FROM account_equity WHERE connection_id=? AND ts >= ? AND equity IS NOT NULL ORDER BY ts",
+                  (cid, day_start()))
     if out["equity"] is not None:
-        peak = max([e["equity"] for e in eq if e["equity"] is not None] + [out["equity"]])
-        out["daily_drawdown_pct"] = (peak - out["equity"]) / peak * 100 if peak > 0 else 0.0
-        out["day_peak"] = peak
+        # from today's trading peak, with balance changes taken out (lowering a paper balance is not a loss)
+        rows = [dict(e) for e in eq] + [{"ts": now_ms(), "equity": out["equity"]}]
+        idxs = twr_index(rows, account_flows(st, cid, day_start()))
+        top = max(idxs + [1.0])
+        out["daily_drawdown_pct"] = (top - idxs[-1]) / top * 100 if top > 0 else 0.0
+        out["day_peak"] = max([e["equity"] for e in eq] + [out["equity"]])
     if out["equity"] and out["exposure"] is not None:
         out["exposure_pct"] = out["exposure"] / out["equity"] * 100
     return out
@@ -119,14 +123,27 @@ def equity_curve(st, cid: str, since: Optional[int] = None, points: int = 600) -
     flows = account_flows(st, cid, since)
     # Drawdown from time-weighted returns: a balance you change by hand moves the equity line but is never counted
     # as a gain or a loss, so lowering a paper balance does not show up as a drawdown.
-    idx, peak, prev, prev_ts, fi, dd = 1.0, 1.0, None, None, 0, []
+    idxs = twr_index(rows, flows)
+    peak, dd = 1.0, []
+    for r, idx in zip(rows, idxs):
+        peak = max(peak, idx)
+        dd.append({"ts": r["ts"], "drawdown_pct": (idx / peak - 1) * 100 if peak else 0.0})
+    return {"connection_id": cid, "equity": rows, "drawdown": dd,
+            "max_drawdown_pct": min((d["drawdown_pct"] for d in dd), default=0.0), "cash_flows": flows,
+            "note": "steps in the equity line are balance changes; drawdown counts trading results only"}
+
+
+def twr_index(rows: List[dict], flows: List[dict]) -> List[float]:
+    """Trading performance as an index (1.0 at the first point), one value per equity point: each interval's return
+    is chained, and a balance change in between is taken out. A change record holds the equity just before and after
+    it, so the return up to it is chained first and the account is rebased to the equity after it."""
+    idx, prev, prev_ts, fi, out = 1.0, None, None, 0, []
     for r in rows:
         while fi < len(flows) and flows[fi]["time"] <= r["ts"]:
             f = flows[fi]
             fi += 1
             if prev_ts is None or f["time"] <= prev_ts:
                 continue
-            # the record holds the equity just before and after the change: chain the return up to it, then rebase
             if f.get("equity_before") is not None and f.get("equity_after") is not None and prev and prev > 0:
                 idx *= max(0.0, f["equity_before"] / prev)
                 prev = f["equity_after"]
@@ -135,11 +152,8 @@ def equity_curve(st, cid: str, since: Optional[int] = None, points: int = 600) -
         if prev and prev > 0:
             idx *= max(0.0, r["equity"] / prev)
         prev, prev_ts = r["equity"], r["ts"]
-        peak = max(peak, idx)
-        dd.append({"ts": r["ts"], "drawdown_pct": (idx / peak - 1) * 100 if peak else 0.0})
-    return {"connection_id": cid, "equity": rows, "drawdown": dd,
-            "max_drawdown_pct": min((d["drawdown_pct"] for d in dd), default=0.0), "cash_flows": flows,
-            "note": "steps in the equity line are balance changes; drawdown counts trading results only"}
+        out.append(idx)
+    return out
 
 
 def account_flows(st, cid: str, since: int = 0) -> List[dict]:

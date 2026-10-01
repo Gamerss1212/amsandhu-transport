@@ -51,7 +51,7 @@ def project(inputs: dict, fees: str, balance: float, days: int, target: Optional
     finals.sort()
     best, worst = max(rets), min(rets)
     out = {
-        "fees": used, "balance": balance, "days": days, "windows": n, "window_days": win, "tier": tier,
+        "fees": used, "requested_fees": fees, "balance": balance, "days": days, "windows": n, "window_days": win, "tier": tier,
         "sample": {"windows_measured": len(rets), "period": inputs.get("period"), "generated": inputs.get("generated")},
         "outcome": {"worst": finals[0], "p05": _q(finals, 0.05), "p25": _q(finals, 0.25), "median": _q(finals, 0.5),
                     "p75": _q(finals, 0.75), "p95": _q(finals, 0.95), "best": finals[-1]},

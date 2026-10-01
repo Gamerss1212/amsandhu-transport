@@ -121,6 +121,7 @@ function renderMoney(m) {
   const demo = S.overview && S.overview.workspace && S.overview.workspace.demo;
   replace($('#money-title'), modeBadge(demo ? 'demo' : 'research'), ' ', demo ? 'DEMO ACCOUNT · SIMULATED' : 'PAPER ACCOUNT · SIMULATED MONEY');
   const cur = m.currency || 'USD';
+  st.money = m;
   if (m.equity === null || m.equity === undefined) {
     replace($('#money-big'), '—'); replace($('#money-change')); replace($('#money-sub'));
     replace($('#money-note'), m.note || 'Waiting for the bot engine to open the account…');
@@ -214,6 +215,7 @@ async function runGoal() {
     const m = (x) => money(x, c, x < 1000 ? 2 : 0);
     const g = r.goal;
     replace(out, h('div.stack',
+      r.requested_fees && r.requested_fees !== r.fees ? h('p.note.down', `Your selected fee level (${r.requested_fees}) has no measurement bundled yet; showing the nearest measured level (${r.fees}).`) : null,
       h('div', h('b', `${m(r.balance)} over ${r.days} days`), ` (${r.windows} windows of ${r.window_days} days, ${r.fees.replace('_', '-')} fees, measured at the ${m(r.tier)} balance size): `,
         'the middle outcome is ', h('b', m(o.median)), `; 9 in 10 simulated outcomes end between ${m(o.p05)} and ${m(o.p95)}.`),
       table([{ label: 'Worst', n: true, v: () => m(o.worst), cls: () => o.worst < r.balance ? 'down' : 'up' }, { label: '5th %', n: true, v: () => m(o.p05), cls: () => o.p05 < r.balance ? 'down' : 'up' },
@@ -328,7 +330,9 @@ function changeBalance(cid) {
   if (!a) { toast('That account is not ready yet', 'bad'); return; }
   if (!a.simulated) { toast('Broker balances are what the broker reports: add funds on the broker\'s site (Connections)', 'bad'); return; }
   const ap = cid === 'paper-research' && st.ap && st.ap.account && st.ap.account.equity !== undefined ? st.ap.account : null;
-  balanceDialog({ ...a, equity: ap ? ap.equity : a.equity, currency: a.currency || (ap && ap.currency) }, () => { loadAutopilot(); setTimeout(() => { loadEquity(); renderAccount(); }, 800); });
+  const live = cid === 'paper-research' ? st.money : null;                       // the account right now, at live prices
+  balanceDialog({ ...a, equity: live ? live.equity : (ap ? ap.equity : a.equity), invested: live ? live.invested : a.exposure,
+    currency: a.currency || (ap && ap.currency) }, () => { loadAutopilot(); setTimeout(() => { loadEquity(); renderAccount(); }, 800); });
 }
 
 async function startAutopilot(e) {

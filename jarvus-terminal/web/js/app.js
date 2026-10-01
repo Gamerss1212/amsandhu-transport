@@ -120,10 +120,10 @@ function renderStatus() {
         onclick: async () => {
           try {
             if (run) {
-              if (!await confirmBox('Stop the bot engine?', 'All bots in this workspace stop evaluating. Open positions keep their protective orders on the broker (simulated positions are not managed while stopped).', { danger: true, okLabel: 'Stop engine' })) return;
+              if (!await confirmBox('Stop the bot engine?', 'The AI stops trading and every bot stops evaluating, and it stays off, even after Jarvus restarts, until you press Start. Open positions keep their protective orders on the broker (simulated positions are not managed while stopped).', { danger: true, okLabel: 'Stop engine' })) return;
               await api('/api/engine/stop', {});
             } else await api('/api/engine/start', {});
-            toast(run ? 'Engine stopping' : 'Engine starting (the bots load data for a few seconds)');
+            toast(run ? 'Engine stopping: the AI is off until you press Start' : 'Starting: the AI trades again once the bots have loaded their data (about a minute)');
             setTimeout(refreshOverview, 2500);
           } catch (e) { errorToast(e); }
         }

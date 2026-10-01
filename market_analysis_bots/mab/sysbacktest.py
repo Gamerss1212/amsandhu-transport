@@ -125,7 +125,7 @@ def effective_slots(equity: float, slots: int, min_slot: Optional[float]) -> int
     each would be too small to place orders the venues accept (min_slot per slot)."""
     if not min_slot:
         return slots
-    return max(1, min(slots, int(max(0.0, equity) // min_slot)))
+    return max(1, min(slots, int((max(0.0, equity) + 1e-6) // min_slot)))
 
 
 def run(cands: List[Candidate], t0: int, t1: int, arm: str, seed: int = 0, priors: Optional[str] = None,
