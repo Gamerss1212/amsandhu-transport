@@ -130,6 +130,12 @@ test), limits fills to a share of each bar's volume, and compares against random
 exits. This is educational research and paper-trading software, not financial advice. Nothing here is
 a promise.
 
+**Can the AI be made smarter?** Sixteen changes to its brain were tested the honest way (chosen on earlier
+windows, judged on later ones; [docs/BRAIN_EXPERIMENTS.md](../market_analysis_bots/docs/BRAIN_EXPERIMENTS.md)).
+Every change that looked better simply traded less and paid fewer fees; none can be told apart from not
+trading at all, and the test period is too short to separate them, so none was shipped. The brain's real
+job is to refuse trades that fees would eat, and it does that.
+
 ## Setup details
 
 * **Configuration:** environment variables, all optional; see [`.env.example`](.env.example) (port,
