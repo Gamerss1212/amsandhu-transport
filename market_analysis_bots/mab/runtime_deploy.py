@@ -113,7 +113,7 @@ class DeploymentMixin:
             self.storage.write("INSERT INTO connections (connection_id, provider, environment, label, auth_method, status,"
                                " options, capabilities, created, updated) VALUES (?,?,?,?,?,?,?,?,?,?)",
                                (RESEARCH_CONN, "jarvus_paper", "demo" if self.demo else "paper",
-                                "Research fleet paper (simulated)", "none", "connected", '{"system": true}', "{}", t, t))
+                                "Your paper account: the AI trades this (simulated)", "none", "connected", '{"system": true}', "{}", t, t))
 
     def _make_sim(self, cid: str, env: str, balance: float, pcfg: dict):
         st = self.storage.kv_get(f"sim_account:{cid}")
@@ -1285,9 +1285,11 @@ class DeploymentMixin:
 
     # ================================================================== live prices: the balance moves with the market
     def _mark_loop(self):
-        every = float(self.cfg.get("mark_interval_s", 10.0))
+        base = float(self.cfg.get("mark_interval_s", 5.0))
         while self.running:
-            time.sleep(every)
+            # about one price request per market per pass; many open markets slow the pass so the venues' request
+            # limits are never pressed (20 open markets: every 12 s; one: every 5 s)
+            time.sleep(max(base, 0.6 * len(self._open_instruments())))
             if not self.running:
                 break
             try:

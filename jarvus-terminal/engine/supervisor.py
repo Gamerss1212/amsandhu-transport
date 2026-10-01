@@ -41,6 +41,7 @@ EVENTS = os.path.join(PAYLOAD, "strategies", "data", "events.json")
 REGISTRY = os.path.join(MAB_DIR, "bots", "registry.json")
 EXAMPLE_CFG = os.path.join(MAB_DIR, "config", "fleet.example.json")
 MAX_FLEETS = config.MAX_FLEETS
+DEFAULT_FEE_PROFILE = "ndax"      # the owner trades on NDAX / Kraken Pro; retail Coinbase fees would block nearly every trade
 DEMO_MAP = {"BTC": "DEMO-BTC", "ETH": "DEMO-ETH", "SOL": "DEMO-SOL", "DOGE": "DEMO-DOGE", "PEPE": "DEMO-MEME",
             "SHIB": "DEMO-MEME", "BONK": "DEMO-MEME", "WIF": "DEMO-MEME", "FLOKI": "DEMO-MEME"}
 
@@ -140,7 +141,8 @@ class Supervisor:
         demo = w["kind"] == "demo"
         cfg.update({"catalog": CATALOG, "events_file": EVENTS, "bots_file": os.path.join(home, "bots", "registry.json"),
                     "data_dir": os.path.join(home, "data"), "workspace": wid, "demo": demo,
-                    "autopilot_default": True})              # the AI trades (paper) from the first start
+                    "autopilot_default": True,               # the AI trades (paper) from the first start
+                    "fee_profile_default": DEFAULT_FEE_PROFILE})  # until the owner picks their exchange
         if demo:
             cfg.setdefault("paper", {})["latency_ms"] = 50
             with open(cfg["bots_file"], "w", encoding="utf-8") as fh:

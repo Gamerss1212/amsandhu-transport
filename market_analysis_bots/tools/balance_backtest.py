@@ -52,7 +52,12 @@ def main():
     ap.add_argument("--bots-per-run", type=int, default=60)
     ap.add_argument("--workers", type=int, default=4)
     ap.add_argument("--fee-profile", default="venue")
+    ap.add_argument("--balances", default=",".join(str(b) for b in BALANCES))
+    ap.add_argument("--versions", default=",".join(VERSIONS))
+    ap.add_argument("--out", default="balance_backtest")
     a = ap.parse_args()
+    balances = [float(x) for x in a.balances.split(",") if x]
+    versions = {k: VERSIONS[k] for k in a.versions.split(",") if k}
     t0 = time.time()
     SBT.init(a.cache, a.fee_profile)
     with open(os.path.join(ROOT, "bots", "registry.json")) as fh:
@@ -84,11 +89,12 @@ def main():
         windows.append((w0, w0 + a.window_days * DAY, sorted((c for b in subset for c in by_bot.get(b, [])), key=lambda c: c.t_in)))
     out = {"generated": time.strftime("%Y-%m-%d %H:%M UTC", time.gmtime()), "runs": a.runs, "window_days": a.window_days,
            "bots_per_run": a.bots_per_run, "fee_profile": a.fee_profile, "versions": VERSIONS, "results": {}}
-    for bal in BALANCES:
-        for name, kw in VERSIONS.items():
+    for bal in balances:
+        for name, kw in versions.items():
             rows = [SB.run(cs, w0, w1, "brain", seed=12345 + n, priors=priors, families=families, capital=float(bal), **kw)
                     for n, (w0, w1, cs) in enumerate(windows)]
             ret = sorted(r["return"] for r in rows)
+            bal = int(bal) if float(bal).is_integer() else bal
             k = f"{bal}|{name}"
             out["results"][k] = {
                 "balance": bal, "version": name,
@@ -99,6 +105,7 @@ def main():
                 "refused_too_small_per_window": sum(r["skipped_size"] for r in rows) / len(rows),
                 "refused_no_cash_per_window": sum(r["skipped_cash"] for r in rows) / len(rows),
                 "capped_by_liquidity_per_window": sum(r["capped_liquidity"] for r in rows) / len(rows),
+                "returns": [round(r["return"], 7) for r in rows],
             }
             x = out["results"][k]
             print(f"{bal:>11,} {name:6}  trades/window {x['trades_per_window']:6.2f}  refused-too-small "
@@ -106,9 +113,11 @@ def main():
                   f"{x['capped_by_liquidity_per_window']:5.2f}  mean {x['return_mean'] * 100:+.4f}%  positive "
                   f"{x['share_positive'] * 100:5.1f}%", flush=True)
     out["minutes"] = round((time.time() - t0) / 60, 1)
-    with open(os.path.join(ROOT, "results", "balance_backtest.json"), "w") as fh:
-        json.dump(out, fh, indent=1)
-    write_report(out)
+    out["versions"] = versions
+    with open(os.path.join(ROOT, "results", f"{a.out}.json"), "w") as fh:
+        json.dump(out, fh)
+    if a.out == "balance_backtest":
+        write_report(out)
 
 
 def write_report(o):

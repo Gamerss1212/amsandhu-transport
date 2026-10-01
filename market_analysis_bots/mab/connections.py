@@ -132,9 +132,11 @@ class Connections:
     def ensure_defaults(self, demo: bool = False):
         """The simulated accounts every workspace has: the owner's (paper, or demo in the demo workspace) and the
         research account the AI autopilot trades."""
-        cid, env, label = ("demo-main", "demo", "Demo account (simulated)") if demo else \
-            ("paper-main", "paper", "Jarvus Paper (simulated)")
-        for c, lab, opts in ((cid, label, "{}"), (RESEARCH_CONN, "AI autopilot account (simulated)", '{"system": true}')):
+        cid, env, label = ("demo-main", "demo", "Demo account for bots you start yourself (simulated)") if demo else \
+            ("paper-main", "paper", "Paper account for bots you start yourself (simulated)")
+        for c, lab, opts in ((cid, label, "{}"), (RESEARCH_CONN, "Your paper account: the AI trades this (simulated)", '{"system": true}')):
+            if self.get(c) is not None and self.get(c)["label"] != lab and self.get(c)["provider"] == "jarvus_paper":
+                self.st.write("UPDATE connections SET label=? WHERE connection_id=?", (lab, c))
             if self.get(c) is None:
                 t = _now()
                 self.st.write("INSERT INTO connections (connection_id, provider, environment, label, auth_method, status,"

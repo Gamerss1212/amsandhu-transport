@@ -233,6 +233,32 @@ def money_view(ctx):
                                       " ORDER BY exit_time DESC LIMIT 12")}
 
 
+def fees_view(ctx):
+    """Which exchange's fees the AI pays in paper trading. Fees decide most results, so this should be the exchange
+    you would really trade on."""
+    from mab.costs import FEE_PROFILES, FEE_PROFILE_LABELS
+    from engine.supervisor import DEFAULT_FEE_PROFILE
+    cur = ctx["st"].kv_get("fee_profile") or DEFAULT_FEE_PROFILE
+    return {"current": cur, "profiles": [{"name": k, "label": FEE_PROFILE_LABELS[k],
+                                          "taker": (v or {}).get("taker"), "maker": (v or {}).get("maker")}
+                                         for k, v in FEE_PROFILES.items()],
+            "note": "stocks are commission-free at every level; the AI refuses trades whose fees would eat the expected move"}
+
+
+def fees_set(ctx, name: str):
+    from mab.costs import FEE_PROFILES, FEE_PROFILE_LABELS
+    if name not in FEE_PROFILES:
+        raise ApiError(400, "choose one of the listed exchanges")
+    wid, st = ctx["wid"], ctx["st"]
+    if APP.sup.running(wid):
+        cmd(wid, "set_fee_profile", {"profile": name})
+    else:
+        st.kv_set("fee_profile", name)
+        st.audit("control", f"fee level set to {FEE_PROFILE_LABELS[name]} (engine stopped; applies when it starts)",
+                 stage="fee_profile")
+    return fees_view(ctx)
+
+
 def snapshot_for_stream(wid):
     """Small state message for the live stream (shared by every open page of the workspace, 1.5 s cache)."""
     hit = APP._snap_cache.get(wid)
@@ -481,6 +507,8 @@ def post_action(ctx, route, b):
         return cmd(wid, "close_all_positions", {"confirm": b.get("confirm")}, wait=120)
     if route in ("/api/autopilot", "/api/research_autopilot"):
         return autopilot_switch(ctx, bool(b.get("on")))
+    if route == "/api/fees":
+        return fees_set(ctx, str(b.get("profile") or ""))
     if route == "/api/paper_balance":                      # simulated money only: never a deposit
         cid, kind = str(b.get("connection_id") or ""), str(b.get("kind") or "set_balance")
         try:
@@ -671,6 +699,7 @@ GET_ROUTES = {
     "/api/health": health,
     "/api/autopilot": autopilot_view,
     "/api/money": money_view,
+    "/api/fees": fees_view,
     "/api/connections": connections_view,
     "/api/research/jobs": lambda ctx: {"jobs": JobQueue(ctx["st"]).list(int(ctx["q"]("limit", "50"))),
                                        "kinds": JOB_KINDS, "counts": JobQueue(ctx["st"]).counts()},

@@ -303,3 +303,27 @@ def test_assistant_key_is_validated_and_never_returned(app):
     assert key.encode() not in raw
     code, d, _, _ = owner.req("/api/assistant/forget", {})
     assert code == 200 and d["has_key"] is False
+
+
+def test_money_view_shows_the_ais_open_trades_and_the_fee_level(app):
+    a, base, owner = app
+    from mab.account import Account
+    _, st, _, _ = owner.req("/api/auth/state")
+    store = a.st(st["workspace"])
+    code, m, _, _ = owner.req("/api/money")
+    assert code == 200 and m["equity"] is None and m["positions"] == []              # the account opens with the engine
+    acct = Account(100_000.0, 20)
+    acct.apply_fill("BOT-9", "coinbase", "BTC-USD", "buy", 0.1, 50_000.0, 6.0)
+    acct.mark("coinbase", "BTC-USD", 51_000.0)
+    store.kv_set("account", acct.to_state())
+    code, m, _, _ = owner.req("/api/money")
+    p = m["positions"][0]
+    assert code == 200 and m["engine"] is False and m["real_money"] is False
+    assert p["symbol"] == "BTC-USD" and p["side"] == "long" and p["price"] == 51_000.0
+    assert p["pnl"] == pytest.approx(100.0) and p["pnl_pct"] == pytest.approx(2.0)
+    assert m["equity"] == pytest.approx(100_000.0 - 6.0 + 100.0) and m["unrealized"] == pytest.approx(100.0)
+    code, f, _, _ = owner.req("/api/fees")                                              # NDAX until the owner picks another
+    assert code == 200 and f["current"] == "ndax" and {"ndax", "kraken", "coinbase", "low_fee", "venue"} <= {x["name"] for x in f["profiles"]}
+    assert owner.req("/api/fees", {"profile": "kraken"})[1]["current"] == "kraken"
+    assert owner.req("/api/fees", {"profile": "free-money"})[0] == 400
+    assert owner.req("/api/fees", {"profile": "kraken"}, csrf=False)[0] == 403

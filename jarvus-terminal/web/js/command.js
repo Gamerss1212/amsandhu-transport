@@ -10,9 +10,11 @@ const st = { account: null, market: null, tf: '5m', ind: { ema21: true, ema50: f
 export function mount(view) {
   st.charts = []; st.timers = []; st.unsub = [];
   st.markets = null; st.market = null; st.account = null; st.price = null;   // per workspace: never reuse another's
+  st.moneyLine = null; st.moneyChartLoaded = false; st.lastEquity = undefined; st.fillsPrimed = false; st.seenFills = new Set();
   st.builtFor = null;
   const acctSel = h('select#acct-sel', { 'aria-label': 'Account', style: { width: 'auto', minWidth: '220px' }, onchange: (e) => { st.account = e.target.value; renderAccount(); loadEquity(); loadTrades(); } });
   view.append(
+    moneyPanel(),
     autopilotPanel(),
     h('section.panel.hot', { style: { marginTop: '12px' } }, h('h2', 'Account', h('span.right', acctSel,
       h('button.btn.small.primary#acct-balance', { onclick: () => changeBalance(st.account) }, '✎ Change balance'), h('span.note#acct-src'))), h('div.tiles#acct-tiles')),
@@ -38,6 +40,9 @@ export function mount(view) {
   if (S.overview) onOverview();
   loadAutopilot();
   st.timers.push(setInterval(loadAutopilot, 5000));
+  loadMoney();
+  st.timers.push(setInterval(loadMoney, 15000));                 // the stream updates it every couple of seconds; this is the fallback
+  st.unsub.push(on('state', (d) => { if (d.money) renderMoney(d.money); }));
   loadBuilder();
   st.timers.push(setInterval(() => { loadEquity(); loadTrades(); }, 30000), setInterval(loadCandles, 20000));
 }
@@ -48,6 +53,103 @@ export function unmount() {
   if (st.price) { st.price.destroy(); st.price = null; }
 }
 
+// ---------------------------------------------------------------- YOUR MONEY: the account the AI trades, moving with the market
+function moneyPanel() {
+  return h('section.panel.money#money',
+    h('h2', 'Your money', h('span.right', h('span.live-dot#money-live'), h('button.btn.small.primary', { onclick: () => changeBalance('paper-research') }, '✎ Change balance'))),
+    h('div.money-grid',
+      h('div',
+        h('div.money-title#money-title', 'PAPER ACCOUNT'),
+        h('div.money-big#money-big', '—'),
+        h('div.money-change#money-change'),
+        h('div.money-sub#money-sub'),
+        h('p.note#money-note')),
+      h('div.money-chart#money-chart')),
+    h('h3', { style: { marginTop: '12px' } }, 'Open trades right now', h('span.right.note', 'valued at the market price, updating live')),
+    h('div.scroll#money-positions'),
+    h('div.grid.g-2', { style: { marginTop: '12px' } },
+      h('div', h('h3', 'Latest buys and sells'), h('div#money-fills')),
+      h('div', h('h3', 'Latest closed trades'), h('div.scroll#money-closed'))));
+}
+
+async function loadMoney() {
+  if (!$('#money')) return;
+  try {
+    const m = await api('/api/money');
+    renderMoney(m);
+    if (!st.moneyChartLoaded) loadMoneyChart();
+  } catch { /* next poll */ }
+}
+
+async function loadMoneyChart() {
+  if (!$('#money-chart') || !chartsAvailable()) return;
+  try {
+    const d = await api('/api/equity?connection=paper-research&since=' + (Date.now() - 24 * 3600 * 1000));
+    if (!st.moneyLine) { st.moneyLine = new LineChart($('#money-chart'), { color: '#22d3ee' }); st.charts.push(st.moneyLine); }
+    st.moneyLine.set(d.equity, 'equity');
+    st.moneyChartLoaded = true;
+  } catch { /* chart is optional */ }
+}
+
+function renderMoney(m) {
+  const box = $('#money');
+  if (!box) return;
+  const demo = S.overview && S.overview.workspace && S.overview.workspace.demo;
+  replace($('#money-title'), modeBadge(demo ? 'demo' : 'research'), ' ', demo ? 'DEMO ACCOUNT · SIMULATED' : 'PAPER ACCOUNT · SIMULATED MONEY');
+  const cur = m.currency || 'USD';
+  if (m.equity === null || m.equity === undefined) {
+    replace($('#money-big'), '—'); replace($('#money-change')); replace($('#money-sub'));
+    replace($('#money-note'), m.note || 'Waiting for the bot engine to open the account…');
+    return;
+  }
+  const big = $('#money-big');
+  const prev = st.lastEquity;
+  big.textContent = money(m.equity, cur);
+  if (prev !== undefined && Math.abs(m.equity - prev) > 1e-9) {
+    big.classList.remove('flash-up', 'flash-down'); void big.offsetWidth;
+    big.classList.add(m.equity > prev ? 'flash-up' : 'flash-down');
+  }
+  st.lastEquity = m.equity;
+  if (st.moneyLine && m.engine && m.time) st.moneyLine.append(m.time, m.equity);
+  const ch = m.change_today, chp = m.change_today_pct;
+  replace($('#money-change'), ch === null || ch === undefined ? null :
+    h('span', { class: cls(ch) }, `${ch >= 0 ? '▲' : '▼'} ${signed(ch)} ${cur}  (${chp >= 0 ? '+' : ''}${(chp || 0).toFixed(2)}%)  today`));
+  replace($('#money-sub'),
+    h('span', 'Cash ', h('b', money(m.cash, cur))), h('span', 'In trades ', h('b', money(m.invested, cur))),
+    h('span', 'Open P&L ', h('b', { class: cls(m.unrealized) }, signed(m.unrealized))),
+    h('span', 'Closed today ', h('b', { class: cls(m.realized_today) }, signed(m.realized_today)), ` (${m.trades_today || 0} trades, fees ${money(m.fees_today || 0, cur)})`));
+  replace($('#money-note'), m.engine === false ? 'The bot engine is stopped: this is the last saved state.' :
+    `Every open trade is priced from the live market every few seconds, so this number moves like a real account. Simulated money: nothing here is real. ${m.slots_in_use ? m.slots_in_use + ' capital slots in use.' : ''}`);
+  replace($('#money-live'), h(`span.dot${m.engine === false ? '.warn' : '.on'}`), m.engine === false ? 'engine stopped' : `live · ${time(m.time)}`);
+  replace($('#money-positions'), table([
+    { label: 'Market', v: p => h('span', h('b', p.symbol), h('div.note', `${p.venue} · ${p.bot_id}`)) },
+    { label: 'Side', v: p => p.side, cls: p => p.side === 'long' ? 'up' : 'down' },
+    { label: 'Size', n: true, v: p => num(p.qty, 6), },
+    { label: 'Bought at', n: true, v: p => num(p.entry) },
+    { label: 'Price now', n: true, v: p => h('span', { title: `${p.price_source || ''}${p.price_time ? ' · ' + time(p.price_time) : ''}` }, num(p.price)) },
+    { label: 'Worth now', n: true, v: p => money(p.value, cur) },
+    { label: 'Profit / loss', n: true, v: p => h('span', { class: `pnl-pill ${cls(p.pnl)}` }, `${signed(p.pnl)}${p.pnl_pct === null || p.pnl_pct === undefined ? '' : `  ${p.pnl_pct >= 0 ? '+' : ''}${p.pnl_pct.toFixed(2)}%`}`) },
+    { label: 'Stop', n: true, v: p => p.stop ? num(p.stop) : '—' },
+    { label: 'Target', n: true, v: p => p.target ? num(p.target) : '—' },
+    { label: 'Held', v: p => ago(p.opened).replace(' ago', '') },
+  ], m.positions || [], { empty: m.engine === false ? 'No open trades in the saved state.' : 'No open trades yet. The AI enters when a strategy fires and the costs are worth it; it skips most signals on purpose.' }));
+  const known = st.seenFills || (st.seenFills = new Set());
+  const fresh = [];
+  for (const f of (m.recent_fills || [])) { const k = `${f.time}|${f.bot_id}|${f.side}|${f.price}`; if (!known.has(k)) { known.add(k); fresh.push(f); } }
+  if (st.fillsPrimed) for (const f of fresh.slice(0, 3)) {
+    toast(`${f.side === 'buy' ? 'BOUGHT' : 'SOLD'} ${num(f.qty, 6)} ${f.instrument} @ ${num(f.price)} (simulated)`, f.side === 'buy' ? 'good' : '');
+  }
+  st.fillsPrimed = true;
+  replace($('#money-fills'), (m.recent_fills || []).length ? h('ul.fills', (m.recent_fills || []).map(f => h(`li${fresh.includes(f) && st.fillsPrimed ? '.new' : ''}`,
+    h('span.t', time(f.time)), h(`span.${f.side}`, String(f.side).toUpperCase()),
+    h('span', `${num(f.qty, 6)} ${f.instrument}`, h('span.note', ` @ ${num(f.price)}`)), h('span.note', `fee ${money(f.fee, cur)}`)))) : h('div.empty', 'No buys or sells yet. They appear here the moment the AI makes them.'));
+  replace($('#money-closed'), table([
+    { label: 'Closed', v: t => time(t.exit_time) }, { label: 'Market', v: t => t.instrument },
+    { label: 'P&L', n: true, v: t => h('span', { class: `pnl-pill ${cls(t.pnl)}` }, signed(t.pnl)) },
+    { label: 'Why', v: t => t.exit_reason },
+  ], m.recent_trades || [], { empty: 'No closed trades yet.' }));
+}
+
 // ---------------------------------------------------------------- AUTOPILOT: the one button
 function autopilotPanel() {
   return h('section.panel.autopilot#autopilot',
@@ -55,6 +157,8 @@ function autopilotPanel() {
       h('div.ap-left',
         h('div.row', h('span.ap-title', 'AI AUTOPILOT'), h('span#ap-badge'), h('span#ap-state.note')),
         h('div#ap-button', { style: { margin: '12px 0' } }),
+        h('label.f', { style: { maxWidth: '420px', marginBottom: '8px' } }, 'Exchange fees the AI pays (pick the one you really trade on)', h('select#ap-fees', { onchange: setFees })),
+        h('p.note#ap-fees-note'),
         h('p.note#ap-explain')),
       h('div.tiles#ap-tiles')));
 }
@@ -62,6 +166,30 @@ function autopilotPanel() {
 async function loadAutopilot() {
   if (!$('#autopilot')) return;
   try { st.ap = await api('/api/autopilot'); renderAutopilot(); } catch (e) { /* shown on the next poll */ }
+  if (!st.fees || !$('#ap-fees').options.length) loadFees();
+}
+
+async function loadFees() {
+  try {
+    st.fees = await api('/api/fees');
+    const sel = $('#ap-fees');
+    if (!sel) return;
+    replace(sel, st.fees.profiles.map(p => h('option', { value: p.name, selected: p.name === st.fees.current }, p.label)));
+    showFeeNote();
+  } catch { /* shown on the next poll */ }
+}
+function showFeeNote() {
+  const f = st.fees, n = $('#ap-fees-note');
+  if (!f || !n) return;
+  const p = f.profiles.find(x => x.name === f.current) || {};
+  const hi = (p.taker || 0) >= 0.008;
+  replace(n, p.taker ? `Crypto trades cost ${(p.taker * 100).toFixed(2)}% per side at market (${(p.maker * 100).toFixed(2)}% with limit orders). ` : 'Each bot pays its own data source\'s fees. ',
+    hi ? h('span.down', 'At this level fees are larger than most price moves, so the AI will skip nearly every crypto signal. ') : null,
+    'Stocks are commission-free. Fee level changes how the AI sizes and filters trades from the next bar.');
+}
+async function setFees(e) {
+  try { st.fees = await api('/api/fees', { profile: e.target.value }); showFeeNote(); toast('Fee level saved: the AI now judges every trade with these fees', 'good'); }
+  catch (err) { errorToast(err); loadFees(); }
 }
 
 function renderAutopilot() {
@@ -91,7 +219,7 @@ function renderAutopilot() {
     t('In a trade', s2.managing_position ?? '—', 'positions being managed'),
     t('Trades today', td.trades ?? '—', td.trades ? `${td.wins} won · fees ${money(td.fees)}` : 'closed trades'),
     t('Today after fees', td.pnl_after_fees === undefined ? '—' : signed(td.pnl_after_fees), 'simulated money', cls(td.pnl_after_fees)),
-    h('div.tile', h('div.k', 'AI account (simulated)'),
+    h('div.tile', h('div.k', 'Paper account (simulated)'),
       h('div.v', acct.equity === undefined || acct.equity === null ? '—' : money(acct.equity, acct.currency, 0)),
       h('div.s', acct.open_positions !== undefined ? `${acct.open_positions} open · exposure ${pct(acct.exposure_pct, 0)} · ` : '',
         h('a', { href: '#', onclick: (e) => { e.preventDefault(); changeBalance('paper-research'); } }, '✎ change balance'))),
@@ -441,7 +569,7 @@ function researchCard() {
   return h('div.card', h('div.row.between', h('div', h('div.title', 'Research fleet'), h('div.sub', 'the registry\'s bots: always evaluating; their signals feed the scanner and the brain')), modeBadge('research')),
     kvList([['Autopilot', S.overview.autopilot ? 'ON: trading its own simulated account' : 'OFF: watching only'],
       ['Research paper equity', a ? money(a.equity, a.currency) : '—'], ['Realized today', a ? signed(a.realized_today) : '—']]),
-    h('div.note', 'Kept apart from your accounts: its results are labelled PAPER · RESEARCH.'),
+    h('div.note', 'This is the account the AI trades (see Your money at the top).'),
     h('a.btn.ghost.small', { href: '#/intel' }, 'See every bot live →'));
 }
 

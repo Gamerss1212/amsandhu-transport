@@ -158,7 +158,7 @@ class Fleet(DeploymentMixin):
                        on_bars=self._on_bars)
         p = config.get("paper", {})
         self.broker = PaperBroker(self.hub, self.account, p.get("latency_ms", 150), p.get("max_slippage_bps", 50))
-        self.fee_profile = self.storage.kv_get("fee_profile", "venue") or "venue"
+        self.fee_profile = self.storage.kv_get("fee_profile", config.get("fee_profile_default", "venue")) or "venue"
         if self.fee_profile not in FEE_PROFILES:
             self.fee_profile = "venue"
         self.broker.fee_profile = FEE_PROFILES[self.fee_profile]

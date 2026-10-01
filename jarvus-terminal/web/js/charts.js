@@ -131,7 +131,15 @@ export class LineChart {
       seen.add(t); data.push({ time: t, value: p[key] });
     }
     this.s.setData(data);
+    this.last = data.length ? data[data.length - 1].time : 0;
     this.chart.timeScale().fitContent();
+  }
+  // live point (the newest second replaces itself; older points are never rewritten)
+  append(ts, value) {
+    if (value === null || value === undefined) return;
+    const t = Math.floor(ts / 1000);
+    if (this.last && t < this.last) return;
+    try { this.s.update({ time: t, value }); this.last = t; } catch { /* out of order: ignore */ }
   }
   destroy() { try { this.chart.remove(); } catch { /* ignore */ } }
 }
