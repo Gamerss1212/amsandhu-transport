@@ -49,3 +49,35 @@ negative, smaller bets always look better. The shipped rule never takes more ris
 is the one used. The honest reading: at $100 the result is dominated by fees and minimum order sizes, whatever
 the sizing rule.
 
+## At each fee level (the goal calculator's inputs)
+
+The same replay ("after" engine, 400 windows of 10 days, 2026-06-09 to 2026-09-30) at every fee level the app
+offers, generated 2026-10-01 by `tools/balance_backtest.py --fee-profile <level> --versions after` and collected by
+`tools/extract_projection_inputs.py` into `results/projection_inputs.json`. Mean return per 10-day window, with a
+bootstrap 95% interval:
+
+| Balance | Each bot's own exchange | Coinbase | Kraken Pro | NDAX | Low-fee (0.10%/0.08%) |
+|---|---|---|---|---|---|
+| $100 | -0.078% [-0.103, -0.054] | -0.074% [-0.099, -0.051] | -0.024% [-0.057, +0.008] | +0.074% [+0.007, +0.145] | +0.116% [+0.020, +0.218] |
+| $1,000 | -0.010% [-0.014, -0.006] | -0.009% [-0.013, -0.005] | -0.000% [-0.006, +0.006] | +0.015% [+0.003, +0.027] | +0.022% [+0.005, +0.040] |
+| $10,000 | -0.012% [-0.016, -0.007] | -0.011% [-0.015, -0.007] | -0.002% [-0.009, +0.004] | +0.013% [+0.001, +0.025] | +0.020% [+0.003, +0.038] |
+| $100,000 | -0.012% [-0.017, -0.008] | -0.012% [-0.016, -0.007] | -0.003% [-0.009, +0.003] | +0.011% [-0.000, +0.024] | +0.023% [+0.008, +0.039] |
+| $10,000,000 | -0.011% [-0.015, -0.007] | -0.010% [-0.014, -0.006] | -0.008% [-0.013, -0.004] | -0.007% [-0.013, -0.001] | -0.003% [-0.009, +0.003] |
+| trades per window | 3.8 to 4.5 | 3.6 to 4.3 | 4.6 to 5.1 | 8.8 to 9.1 | 13.1 to 13.4 |
+
+**How to read it.** Lower fees let the brain approve more trades (13 per window at 0.10% instead of 4 at each
+exchange's own fees) and move the average from slightly negative to slightly positive. Do not read the positive
+cells as an edge:
+
+* the amounts are tiny: +0.074% per 10 days on $100 is about 7 cents;
+* the intervals are too narrow. The 400 windows start on only about 100 different days of one three-month period,
+  so they overlap heavily; there are roughly ten independent 10-day stretches in it, not 400;
+* another sample of the same period at NDAX fees (the brain experiments, `BRAIN_EXPERIMENTS.md`) gave the current
+  brain -0.004% and -0.010% per window at $10,000, the opposite sign. Results this close to zero flip with the
+  sample;
+* at $10,000,000 the 5% volume cap trims the larger orders and every fee level is slightly negative.
+
+So: at a low-fee exchange the system is about break-even, at each exchange's own fees it loses slowly, and at no
+fee level does it show a reliable profit. The goal calculator replays exactly these window results, so what it
+shows can never be better than this table.
+
