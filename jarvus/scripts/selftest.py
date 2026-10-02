@@ -387,6 +387,31 @@ check("system test: majors stop for the day after 2 trades (the 3rd and 4th sign
 _tk, _, _, _eq = stt.simulate([_cd(_mon, r=2.0)], _btc, _rules61)
 check("system test: a LOUD trade risks 0.6% and a +2R result adds 1.2%", abs(_eq - 10_120.0) < 1e-6, str(_eq))
 
+_rules7 = dict(stt.DEFAULT_RULES, **stt.V7)
+_tk, _sk, _, _ = stt.simulate([_cd(_mon, gate="N", coin="DOGE", kind="meme", setup="momentum4h")], _btc, _rules7)
+check("v7: a meme P7 trade is taken on a NORMAL hour at full meme risk (0.5%)", len(_tk) == 1 and abs(_tk[0]["risk_pct"] - 0.005) < 1e-9, str(_sk))
+_tk, _sk, _, _ = stt.simulate([_cd(_mon, gate="N", setup="momentum4h")], _btc, _rules7)
+check("v7: a majors P7 trade still waits for LOUD", not _tk and "gate not LOUD" in _sk)
+_tk, _sk, _, _ = stt.simulate([_cd(_mon, gate="N", coin="DOGE", kind="meme", setup="rsi2")], _btc, _rules7)
+check("v7: other meme setups still wait for LOUD", not _tk)
+
+print("== P7 4h momentum detector ==")
+import momentum as mom  # noqa: E402
+_t0 = int(datetime(2026, 9, 1, tzinfo=timezone.utc).timestamp() * 1000)
+_n = 400
+_o = [100.0 + 0.01 * k for k in range(_n)]
+_c = [x + 0.02 for x in _o]
+_hh = [x + 0.3 for x in _c]
+_ll = [x - 0.3 for x in _o]
+_v = [100.0] * _n
+for k in range(_n - 4, _n):                                      # the last 4h bar: a big green candle
+    _o[k], _c[k], _hh[k], _ll[k] = 103.9 + (k - _n + 4) * 1.0, 104.9 + (k - _n + 4) * 1.0, 105.0 + (k - _n + 4) * 1.0, 103.8 + (k - _n + 4) * 1.0
+_ts = [_t0 + k * _H for k in range(_n)]
+_m = mom.signals(_ts, _o, _hh, _ll, _c, _v)
+check("P7 fires on a big green 4h candle, on its last 1h bar, with an ATR(4h)",
+      (_n - 1) in _m and "big green 4h candle" in _m[_n - 1][0] and _m[_n - 1][1] > 0, str(list(_m.items())[-2:]))
+check("P7 does not fire on a quiet steady rise", not [k for k in _m if k < _n - 4])
+
 print("== jarvus.py (one-call card) ==")
 import jarvus as jv  # noqa: E402
 _t0 = int(datetime(2026, 9, 1, tzinfo=timezone.utc).timestamp() * 1000)

@@ -16,10 +16,10 @@ You are **Jarvus**, Abhi's spot crypto trading caller. He wants **only** where t
 4. "Where is it going / will it go up?": one line: `Direction can't be predicted; next 12h: <move from the script>.` Never guess a direction or a price.
 5. No scripts or network: ask for the coin's price and his venue in one line; if given, reply `WAIT` unless every rule below is met, then `Buy · Sell · Stop · Size` only.
 
-## The rules the script applies (v6.1, backtested 2021–2026)
+## The rules the script applies (v7 = v6.1 + P7, backtested 2021–2026)
 
-BUY only when all hold: volatility gate **LOUD** · majors not Sat/Sun · a playbook fired (P1/P3/P6 need 1h and 4h uptrends) · memes: BTC above 200-day and BTC 4h up, not 7 PM–midnight MT · cost ≤ 0.33R (half size 0.20–0.33).
-Orders: buy limit 0.1% under the close · stop 4×ATR(1h) · sell all at 2R · out after 96h · never widen the stop. Risk 0.6% majors (0.3% memes), one majors position, 2 majors trades a day, stop for the day at −3R or 3 losses. Spot only.
+BUY only when all hold: volatility gate **LOUD** (memes: LOUD, or NORMAL when P7 fired) · majors not Sat/Sun · a playbook fired (P1/P3/P6 need 1h and 4h uptrends; P7 = a 4h candle that closed in the last 3h was a big green candle, a volume spike or a big 24h rally) · memes: BTC above 200-day and BTC 4h up, not 7 PM–midnight MT · cost ≤ 0.33R (half size 0.20–0.33).
+Orders: buy limit 0.1% under the close · stop 4×ATR(1h) (P7: 4×ATR(4h)) · sell all at 2R · out after 96h · never widen the stop. Risk 0.6% majors (0.3% memes; 0.5% for a meme P7 on a NORMAL hour), one majors position, 2 majors trades a day, stop for the day at −3R or 3 losses. Spot only.
 
 ## Knowledge (never read reference files; ask the library)
 
@@ -1328,7 +1328,7 @@ Odds: most launches go to near zero; a few go up 100×. Survivorship makes the w
 
 ### Jarvus's meme rules
 aka: meme rules, can i trade memes, meme risk
-What: listed memes only through the scripts: BTC above its 200-day average and BTC's 4h trend up; volatility gate LOUD; not 7 PM–midnight MT; risk 0.3% per trade; at most 2 open. Backtested 2021–2026: +0.19R per trade at NDAX fees, thin since March 2025.
+What: listed memes only through the scripts: BTC above its 200-day average and BTC's 4h trend up; volatility gate LOUD (or NORMAL when P7 4h momentum fired, risk 0.5%); not 7 PM–midnight MT; risk 0.3% per trade; at most 2 open. Backtested 2021–2026 at NDAX fees: v6.1 +0.19R per trade, v7 (with P7) +0.33R; P7 was picked from the same history, so treat it as promising, not proven.
 Fresh launches: the hard-fail list must pass first (`python3 scripts/know.py "meme sleeve" --full`).
 
 ### Meme coin lifecycle
@@ -1409,8 +1409,8 @@ What: scalping = seconds–minutes; day trading = in and out the same day; swing
 Evidence: large studies of retail day traders (e.g. Barber, Lee, Liu & Odean on Taiwan; Chague, De-Losso & Giovannetti on Brazil) found the great majority lose money. Jarvus's own tests: pure intraday lost after fees in every test; 4×ATR stops with up to 96-hour holds survived.
 
 ### Jarvus playbooks
-id: p1_trend_pullback, p3_breakout_retest, p4_sweep_reclaim, p6_orb · aka: playbooks, p1, p3, p4, p6, trend pullback, breakout retest, sweep reclaim, orb, opening range breakout
-What: Jarvus's mechanical setups (rules in `scripts/ladder.py`): P1 pullback to the 21 EMA in an uptrend, P3 retest of a broken level, P4 sweep of a low that closes back above, P6 opening-range breakout (US open), plus the RSI(2) dip. Live, they count only with the gate LOUD and the other v6.1 rules.
+id: p1_trend_pullback, p3_breakout_retest, p4_sweep_reclaim, p6_orb · aka: playbooks, p1, p3, p4, p6, p7, 4h momentum, momentum playbook, trend pullback, breakout retest, sweep reclaim, orb, opening range breakout
+What: Jarvus's mechanical setups (rules in `scripts/ladder.py`): P1 pullback to the 21 EMA in an uptrend, P3 retest of a broken level, P4 sweep of a low that closes back above, P6 opening-range breakout (US open), the RSI(2) dip, and (v7) P7 4h momentum: a 4h big green candle, volume spike or big 24h rally, stop 4×ATR(4h); memes may take P7 on NORMAL hours (backtest: memes +0.19 → +0.33R per trade; jarvus-backtest.md §11). Live, they count only with the gate LOUD and the other v6.1 rules.
 
 ### Order types
 aka: order types, market order, limit order, stop order, stop limit, stop loss order, oco, trailing stop, post only, ioc, fok, reduce only
@@ -7047,6 +7047,71 @@ python3 scripts/system_test.py --data DIR --version v6.1 --group memes --fees nd
 python3 scripts/system_test.py --data DIR --battery --md report.md # every rule switched off, 3 fee levels, 200 windows
 python3 scripts/system_test.py --data DIR --compare --md compare.md   # v6 vs v6.1 with 100 windows each
 ```
+
+## 11. v7: P7 4h momentum added (Oct 2026)
+
+Source: `tools/measure_signals.py` found that momentum signals on completed 4h candles beat random entries
+(`references/kb-measured.md`). P7 = a 4h candle that closed in the last 3 hours was a big green candle, a volume
+spike on a green candle, or a big 24h rally (`scripts/momentum.py`); stop 4×ATR(4h), one exit at 2R, 96h.
+Run through the whole rulebook (`system_test.py --version v7`):
+
+- Added with LOUD-only entries, P7 did not help (majors +0.230 → +0.220R, memes +0.186 → +0.144R): it took the
+  one position slot from better trades.
+- Memes allowed to take P7 on NORMAL hours too (P7 alone on memes earned +0.284R over 166 trades with the gate at
+  LOUD or NORMAL): memes **+0.186 → +0.330R per trade** (t 4.0), better in all three periods (A +0.278, B +0.320,
+  C +0.756), +25.9% vs +4.2% over the whole test, 59 of 100 random 90-day windows up instead of 39. Kraken fees:
+  +0.066 → +0.247R. That is v7.
+- Majors with P7 are about neutral (+0.220 vs +0.230R; 54 vs 49 windows up).
+- Caution: P7's signals were picked from the same history, so periods B and C are not fully unseen for it.
+  Treat it as promising, not proven; re-check after 20 live or paper P7 trades.
+
+## majors, kraken fees
+
+| Variant | Trades | Win | Avg R | t | Return | Max DD | A avg R (n) | B avg R (n) | C avg R (n) |
+|---|---|---|---|---|---|---|---|---|---|
+| v6.1 | 89 | 53% | +0.217 | 1.76 | +9.3% | 2.5% | +0.239 (68) | +0.049 (14) | +0.342 (7) |
+| v7 (P7 LOUD only) | 100 | 51% | +0.170 | 1.51 | +10.1% | 4.0% | +0.193 (79) | -0.021 (15) | +0.354 (6) |
+| v7a (memes: P7 also on NORMAL) | 100 | 51% | +0.170 | 1.51 | +10.1% | 4.0% | +0.193 (79) | -0.021 (15) | +0.354 (6) |
+
+## majors, ndax fees
+
+| Variant | Trades | Win | Avg R | t | Return | Max DD | A avg R (n) | B avg R (n) | C avg R (n) |
+|---|---|---|---|---|---|---|---|---|---|
+| v6.1 | 106 | 53% | +0.230 | 2.02 | +23.2% | 3.6% | +0.298 (80) | -0.076 (16) | +0.172 (10) |
+| v7 (P7 LOUD only) | 112 | 54% | +0.220 | 2.06 | +22.2% | 3.8% | +0.295 (86) | -0.127 (17) | +0.155 (9) |
+| v7a (memes: P7 also on NORMAL) | 112 | 54% | +0.220 | 2.06 | +22.2% | 3.8% | +0.295 (86) | -0.127 (17) | +0.155 (9) |
+
+## majors: 100 random 90-day windows (v6.1, NDAX fees, fresh account each time)
+
+Return per window: median +0.00%, 10th percentile -0.58%, 90th +2.38%, best +5.51%, worst -2.71%; positive in 49 of 100; average trades per window 4.5; average return +0.54%; windows with no trade 12; of the windows that traded, 49 up and 39 flat or down.
+
+## majors: 100 random 90-day windows (v7a, NDAX fees, fresh account each time)
+
+Return per window: median +0.04%, 10th percentile -0.58%, 90th +2.63%, best +5.57%, worst -2.25%; positive in 54 of 100; average trades per window 4.9; average return +0.54%; windows with no trade 10; of the windows that traded, 54 up and 36 flat or down.
+
+## memes, kraken fees
+
+| Variant | Trades | Win | Avg R | t | Return | Max DD | A avg R (n) | B avg R (n) | C avg R (n) |
+|---|---|---|---|---|---|---|---|---|---|
+| v6.1 | 144 | 42% | +0.066 | 0.62 | +1.9% | 2.9% | -0.010 (90) | +0.010 (37) | +0.590 (17) |
+| v7 (P7 LOUD only) | 154 | 39% | +0.047 | 0.47 | +1.7% | 3.3% | +0.002 (97) | -0.101 (40) | +0.656 (17) |
+| v7a (memes: P7 also on NORMAL) | 194 | 50% | +0.247 | 2.97 | +14.6% | 3.3% | +0.188 (130) | +0.250 (47) | +0.692 (17) |
+
+## memes, ndax fees
+
+| Variant | Trades | Win | Avg R | t | Return | Max DD | A avg R (n) | B avg R (n) | C avg R (n) |
+|---|---|---|---|---|---|---|---|---|---|
+| v6.1 | 152 | 45% | +0.186 | 1.8 | +4.2% | 3.3% | +0.134 (98) | +0.102 (37) | +0.666 (17) |
+| v7 (P7 LOUD only) | 155 | 42% | +0.144 | 1.45 | +4.0% | 2.6% | +0.105 (98) | -0.010 (40) | +0.731 (17) |
+| v7a (memes: P7 also on NORMAL) | 195 | 54% | +0.330 | 4.01 | +25.9% | 3.4% | +0.278 (131) | +0.320 (47) | +0.756 (17) |
+
+## memes: 100 random 90-day windows (v6.1, NDAX fees, fresh account each time)
+
+Return per window: median +0.00%, 10th percentile -1.58%, 90th +2.23%, best +3.46%, worst -2.00%; positive in 39 of 100; average trades per window 8.8; average return +0.18%; windows with no trade 18; of the windows that traded, 39 up and 43 flat or down.
+
+## memes: 100 random 90-day windows (v7a, NDAX fees, fresh account each time)
+
+Return per window: median +0.40%, 10th percentile -1.08%, 90th +4.00%, best +5.15%, worst -2.62%; positive in 59 of 100; average trades per window 11.1; average return +1.06%; windows with no trade 18; of the windows that traded, 59 up and 23 flat or down.
 
 
 <!-- ===== references/terminal-evidence.md ===== -->

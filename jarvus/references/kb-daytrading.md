@@ -8,8 +8,8 @@ What: scalping = seconds–minutes; day trading = in and out the same day; swing
 Evidence: large studies of retail day traders (e.g. Barber, Lee, Liu & Odean on Taiwan; Chague, De-Losso & Giovannetti on Brazil) found the great majority lose money. Jarvus's own tests: pure intraday lost after fees in every test; 4×ATR stops with up to 96-hour holds survived.
 
 ### Jarvus playbooks
-id: p1_trend_pullback, p3_breakout_retest, p4_sweep_reclaim, p6_orb · aka: playbooks, p1, p3, p4, p6, trend pullback, breakout retest, sweep reclaim, orb, opening range breakout
-What: Jarvus's mechanical setups (rules in `scripts/ladder.py`): P1 pullback to the 21 EMA in an uptrend, P3 retest of a broken level, P4 sweep of a low that closes back above, P6 opening-range breakout (US open), plus the RSI(2) dip. Live, they count only with the gate LOUD and the other v6.1 rules.
+id: p1_trend_pullback, p3_breakout_retest, p4_sweep_reclaim, p6_orb · aka: playbooks, p1, p3, p4, p6, p7, 4h momentum, momentum playbook, trend pullback, breakout retest, sweep reclaim, orb, opening range breakout
+What: Jarvus's mechanical setups (rules in `scripts/ladder.py`): P1 pullback to the 21 EMA in an uptrend, P3 retest of a broken level, P4 sweep of a low that closes back above, P6 opening-range breakout (US open), the RSI(2) dip, and (v7) P7 4h momentum: a 4h big green candle, volume spike or big 24h rally, stop 4×ATR(4h); memes may take P7 on NORMAL hours (backtest: memes +0.19 → +0.33R per trade; jarvus-backtest.md §11). Live, they count only with the gate LOUD and the other v6.1 rules.
 
 ### Order types
 aka: order types, market order, limit order, stop order, stop limit, stop loss order, oco, trailing stop, post only, ioc, fok, reduce only

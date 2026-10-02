@@ -10,7 +10,7 @@ Odds: most launches go to near zero; a few go up 100×. Survivorship makes the w
 
 ### Jarvus's meme rules
 aka: meme rules, can i trade memes, meme risk
-What: listed memes only through the scripts: BTC above its 200-day average and BTC's 4h trend up; volatility gate LOUD; not 7 PM–midnight MT; risk 0.3% per trade; at most 2 open. Backtested 2021–2026: +0.19R per trade at NDAX fees, thin since March 2025.
+What: listed memes only through the scripts: BTC above its 200-day average and BTC's 4h trend up; volatility gate LOUD (or NORMAL when P7 4h momentum fired, risk 0.5%); not 7 PM–midnight MT; risk 0.3% per trade; at most 2 open. Backtested 2021–2026 at NDAX fees: v6.1 +0.19R per trade, v7 (with P7) +0.33R; P7 was picked from the same history, so treat it as promising, not proven.
 Fresh launches: the hard-fail list must pass first (`python3 scripts/know.py "meme sleeve" --full`).
 
 ### Meme coin lifecycle

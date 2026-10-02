@@ -52,6 +52,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import events  # noqa: E402
 import ladder  # noqa: E402
+import momentum  # noqa: E402
 import volgate  # noqa: E402
 from snapshot import load_csv  # noqa: E402
 
@@ -93,7 +94,7 @@ def s_orb_legacy(i, d, x):
 
 
 SETUP_FN = dict(ladder.SETUPS, orb_legacy=s_orb_legacy)
-PREP_VERSION = 2                                  # bump when a setup or the gate changes: rebuilds caches
+PREP_VERSION = 3                                  # bump when a setup or the gate changes: rebuilds caches
 
 
 # ------------------------------------------------------------------ data
@@ -181,8 +182,11 @@ def prepare(args):
     sig = {}
     for name, fn in list(SETUP_FN.items()):
         sig[name] = [i for i in range(205, n - 2) if fn(i, d, x) == "long"]
+    m4 = momentum.signals(t, d["open"], d["high"], d["low"], d["close"], d["volume"])
+    sig["momentum4h"] = sorted(i for i in m4 if 205 <= i < n - 2)
+    atr4 = {i: m4[i][1] for i in sig["momentum4h"]}
     out = {"version": PREP_VERSION, "coin": coin, "t": t, "o": d["open"], "h": d["high"], "l": d["low"], "c": d["close"],
-           "atr": x["atr"], "gate": gstate, "trend4": trend4, "up1": up1, "bull": bull, "sig": sig}
+           "atr": x["atr"], "gate": gstate, "trend4": trend4, "up1": up1, "bull": bull, "sig": sig, "atr4": atr4}
     with open(cache, "wb") as fh:
         pickle.dump(out, fh)
     return out
@@ -269,7 +273,12 @@ def candidates(preps, coins, fees, rules):
         kind = "major" if coin in MAJORS else "meme"
         for s in rules["setups"]:
             for i in p["sig"].get(s, []):
-                tp = trade_path(p, i, s, fees, kind, entry=rules["entry"], stop_atr=rules["stop_atr"], rung=rules["rung"],
+                stop_atr = rules["stop_atr"]
+                if s == "momentum4h":                              # P7: stop 4x ATR(4h), expressed in 1h ATRs
+                    if not p["atr"][i]:
+                        continue
+                    stop_atr *= p["atr4"][i] / p["atr"][i]
+                tp = trade_path(p, i, s, fees, kind, entry=rules["entry"], stop_atr=stop_atr, rung=rules["rung"],
                                 target_r=rules["target_r"], tp1_bars=rules["tp1_bars"], horizon=rules["horizon"])
                 if tp is None:
                     continue
@@ -373,7 +382,7 @@ def simulate(cands, btc, rules, equity0=10_000.0):
             if g == "Q":
                 skip("gate QUIET")
                 continue
-            if rules["gate"] == "loud_only" and g != "L":
+            if rules["gate"] == "loud_only" and g != "L" and not (g == "N" and setup in rules.get("normal_ok", {}).get(kind, ())):
                 skip("gate not LOUD")
                 continue
             if g == "L":
@@ -540,6 +549,8 @@ def run_one(job):
 # v6.1: what the backtest supported (chosen on period A, checked on B and C; see references/jarvus-backtest.md)
 V61 = {"setups": ["trend_pullback", "breakout_retest", "sweep_reclaim", "orb", "rsi2"], "gate": "loud_only",
        "tp1_bars": 0, "rung": None}
+# v7: v6.1 plus P7 4h momentum (tools/measure_signals.py); memes may take P7 on NORMAL hours too (full size, 0.5%)
+V7 = dict(V61, setups=V61["setups"] + ["momentum4h"], normal_ok={"meme": ["momentum4h"]})
 
 VARIANTS = {
     "jarvus_v6 (as written)": {},
@@ -632,7 +643,7 @@ def main():
     ap.add_argument("--download", action="store_true")
     ap.add_argument("--battery", action="store_true", help="every rule switched off one at a time, x groups x fees, + windows")
     ap.add_argument("--compare", action="store_true", help="v6 as written vs v6.1, x groups x fees, + windows for both")
-    ap.add_argument("--version", default="v6.1", choices=["v6", "v6.1"], help="rules for a single run")
+    ap.add_argument("--version", default="v7", choices=["v6", "v6.1", "v7"], help="rules for a single run")
     ap.add_argument("--group", default="majors", choices=["majors", "memes", "all"])
     ap.add_argument("--fees", default="ndax", choices=sorted(FEES))
     ap.add_argument("--windows", type=int, default=100)
@@ -657,7 +668,7 @@ def main():
         res = battery(a.data, a.groups.split(","), a.fee_levels.split(","), a.windows, a.workers)
     else:
         _init(a.data)
-        res = [run_one((f"jarvus_{a.version}", a.group, a.fees, V61 if a.version == "v6.1" else {}))]
+        res = [run_one((f"jarvus_{a.version}", a.group, a.fees, V7 if a.version == "v7" else V61 if a.version == "v6.1" else {}))]
     if a.out:
         with open(a.out, "w") as fh:
             json.dump(res, fh, indent=1, default=str)

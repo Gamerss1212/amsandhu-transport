@@ -27,6 +27,7 @@ sys.path.insert(0, HERE)
 import decide  # noqa: E402
 import events  # noqa: E402
 import ladder  # noqa: E402
+import momentum  # noqa: E402
 import volgate  # noqa: E402
 from fetch_ohlcv import fetch_candles, fetch_coinbase  # noqa: E402
 
@@ -34,6 +35,7 @@ MEMES = {"DOGE", "SHIB", "PEPE", "BONK", "WIF", "FLOKI", "FARTCOIN", "TRUMP", "M
 BEST5 = ["SOL", "ETH", "BTC", "DOGE", "BONK"]
 LOUD_RIGHT = {"crypto": "76%"}                    # held-out test precision of a LOUD call (base rate 31%)
 TREND = {"trend_pullback": "P1", "breakout_retest": "P3", "orb": "P6"}
+MOMENTUM = {"momentum4h": "P7"}
 REVERSION = {"sweep_reclaim": "P4", "rsi2": "RSI2"}
 
 
@@ -100,36 +102,47 @@ def analyse_rows(rows):
             continue
         if any(fn(k, d, x) == "long" for k in range(max(205, n - 3), n)):
             fired.append(name)
+    m4 = momentum.signals([r[0] for r in rows], d["open"], d["high"], d["low"], d["close"], d["volume"])
+    atr4 = None
+    for k in range(max(0, n - 3), n):                            # a 4h candle that closed in the last 3 hours
+        if k in m4:
+            fired.append("momentum4h")
+            atr4 = m4[k][1]
     return {"d": d, "x": x, "rows": rows, "up1": up1, "up4": up4, "fired": fired, "close": d["close"][i],
-            "atr": x["atr"][i], "t": rows[-1][0]}
+            "atr": x["atr"][i], "t": rows[-1][0], "atr4": atr4}
 
 
 def evaluate(sym, account, fees):
     base = sym.upper().replace("-USD", "").replace("USDT", "").replace("/USD", "")
     meme = base in MEMES
-    src, rows = fetch_candles(f"{base}-USD", "1h", 420, "coinbase")
+    src, rows = fetch_candles(f"{base}-USD", "1h", 900, "coinbase")
     a = analyse_rows(rows)
     g = volgate.read_rows(volgate.VolGate(), rows, "crypto")
     gate = g.get("state", "UNKNOWN")
     close, atr = a["close"], a["atr"]
     entry = close * 0.999
-    stop = entry - 4 * atr
+    trend_ok = [s for s in a["fired"] if s in TREND and a["up1"] and a["up4"]]
+    rev_ok = [s for s in a["fired"] if s in REVERSION]
+    mom_ok = [s for s in a["fired"] if s in MOMENTUM]
+    setups = trend_ok + rev_ok + mom_ok
+    meme_normal_p7 = meme and gate == "NORMAL" and bool(mom_ok)        # v7: memes may take P7 on NORMAL hours
+    if meme_normal_p7:
+        setups = mom_ok
+    p7_plan = bool(mom_ok) and (meme_normal_p7 or setups == mom_ok)
+    stop = entry - 4 * (a["atr4"] if p7_plan and a["atr4"] else atr)         # P7: 4x ATR(4h)
     target = entry + 2 * (entry - stop)
     c = decide.cost_r(entry, stop, True, fees, 0.10 if meme else 0.02)
-    risk_pct = (0.5 if meme else 1.0) * 0.6
+    risk_pct = 0.5 if meme_normal_p7 else (0.5 if meme else 1.0) * 0.6
     if c["cost_r"] > 0.20:
         risk_pct *= 0.5
     risk_amt = account * risk_pct / 100
     units = risk_amt / (entry - stop) if entry > stop else 0
     mt = mt_now()
     why, verdict = [], "BUY"
-    trend_ok = [s for s in a["fired"] if s in TREND and a["up1"] and a["up4"]]
-    rev_ok = [s for s in a["fired"] if s in REVERSION]
-    setups = trend_ok + rev_ok
     if not meme and mt.weekday() >= 5:
         verdict, why = "WAIT", why + ["weekend: no new majors trades"]
-    if gate != "LOUD":
-        verdict, why = "WAIT", why + [f"gate {gate}: trade only on LOUD"]
+    if gate != "LOUD" and not meme_normal_p7:
+        verdict, why = "WAIT", why + [f"gate {gate}: trade only on LOUD" + (" (memes: or NORMAL with P7)" if meme else "")]
     if meme:
         b = btc_regime()
         if b.get("bull") is False:
@@ -144,7 +157,7 @@ def evaluate(sym, account, fees):
         verdict = verdict if verdict != "BUY" else "WAIT"
         why.append("no playbook fired in the last 3 hours" + ("" if a["up1"] and a["up4"] else " (and 1h/4h trend not both up)"))
     return {"sym": f"{base}-USD", "meme": meme, "src": src, "close": close, "gate": gate, "up1": a["up1"], "up4": a["up4"],
-            "setups": [TREND.get(s) or REVERSION.get(s) for s in setups], "entry": entry, "stop": stop, "target": target,
+            "setups": [TREND.get(s) or REVERSION.get(s) or MOMENTUM.get(s) for s in setups], "entry": entry, "stop": stop, "target": target,
             "stop_pct": (entry - stop) / entry * 100, "cost_r": c["cost_r"], "risk_pct": risk_pct, "risk_amt": risk_amt,
             "units": units, "notional": units * entry, "verdict": verdict, "why": why, "mt": mt,
             "bar": datetime.fromtimestamp(a["t"] / 1000, timezone.utc).strftime("%H:%M")}

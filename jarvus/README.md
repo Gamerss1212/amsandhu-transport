@@ -5,6 +5,12 @@ Jarvus is a terse, spot-only crypto day-trading assistant for Abhi: Majors
 secondary. It returns the call (BUY / WAIT / NO, and on BUY where to buy, sell and
 stop, the size and the exit time), keeps the journal, coaches on tilt, and teaches.
 
+## v7 rule change: P7 4h momentum
+
+The best signals from the measurement became playbook P7 (`scripts/momentum.py`). In the full-rulebook backtest,
+memes allowed to take P7 on NORMAL hours went from +0.19R to +0.33R per trade (better in all three periods, 59 vs 39
+of 100 windows up); majors were about neutral. Details and the caution: `references/jarvus-backtest.md` §11.
+
 ## What v7 adds: a measured trading library, read one entry at a time
 
 - **~220 short entries** in `references/kb-*.md`: every common candlestick pattern, chart pattern and
@@ -21,7 +27,7 @@ stop, the size and the exit time), keeps the journal, coaches on tilt, and teach
   (mostly on 4h): big green candle, volume spike on a green candle, RSI(14) above 70, MFI above 80, Donchian 55,
   Keltner breakout, five green candles, big 24h rally, plus the 50/200 golden cross on memes 1h. Reversal candle
   patterns, chart patterns, MACD, oversold RSI/stochastics and the ICT entries did not. Results:
-  `references/kb-measured.md`, `assets/signal_results.json`. These are research findings, not new trading rules.
+  `references/kb-measured.md`, `assets/signal_results.json`.
 - SKILL.md routes every knowledge question to `know.py` (no more reading or grepping reference files).
 
 ## What v6.3 changed: only the call, nothing else
