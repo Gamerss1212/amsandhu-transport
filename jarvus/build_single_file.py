@@ -16,7 +16,7 @@ ORDER = ["SKILL.md"] + [f"references/{f}" for f in [
     "playbooks.md", "strategy-encyclopedia.md", "probability-and-prediction.md",
     "regimes-and-cycles.md", "altcoins-and-memecoins.md", "execution-and-order-types.md",
     "psychology-and-rules.md", "journal-and-backtesting.md", "worked-examples.md", "glossary.md",
-    "terminal-evidence.md", "decision-engine.md", "any-balance-and-goals.md", "live-trading-and-brokers.md",
+    "jarvus-backtest.md", "terminal-evidence.md", "decision-engine.md", "any-balance-and-goals.md", "live-trading-and-brokers.md",
     "strategy-scoreboard.md", "strategy-library-untested.md", "handbook-day-trading.md", "handbook-memecoins.md",
     "sources-knowledge-pack.md", "rule-language.md"]] + \
     [f"assets/{f}" for f in [
@@ -38,7 +38,8 @@ def main() -> None:
                  "The skill folder ships `events.py`, `scan.py`, `fetch_ohlcv.py`, `snapshot.py`, "
                  "`confluence.py`, `position_size.py`, `journal.py`, `journal_stats.py`, `backtest.py`, "
                  "`ladder.py` (the 80% Mode engine), `experiment_80.py`, `volgate.py` (the trained volatility gate), "
-                 "`decide.py` (the Terminal's decision engine), `goal.py` (the goal calculator) and `selftest.py`. A plain "
+                 "`decide.py` (the Terminal's decision engine), `goal.py` (the goal calculator), `system_test.py` "
+                 "(Jarvus's rulebook backtested) and `selftest.py`. A plain "
                  "claude.ai chat cannot run them or reach exchange APIs, so there ask for the key "
                  "numbers (price, today's high/low, PDH/PDL/PDC, funding) and say which data is missing. Without "
                  "the scripts, apply the decision engine by hand (decision-engine.md section 10) and read the gate "

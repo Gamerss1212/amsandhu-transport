@@ -25,6 +25,7 @@ from position_size import compute  # noqa: E402
 from tradestats import summarize  # noqa: E402
 import backtest  # noqa: E402
 import snapshot  # noqa: E402
+import ladder  # noqa: E402
 
 FAILS = []
 
@@ -194,11 +195,28 @@ print("== confluence ==")
 import confluence
 _snap_now = ts[-1] + timedelta(minutes=15)
 _s = snapshot.analyze(d, 3, now=_snap_now)
+_px = _s["price"]
 _res = confluence.score(_s, _s, {"funding_rate_8h_pct": 0.01}, "long", datetime(2026, 9, 17, 14, 0, tzinfo=timezone.utc),
-                        entry=_s["price"], stop=_s["price"] - 1.0 * (_s["atr14"] or 1), target=_s["price"] + 2.5 * (_s["atr14"] or 1))
-check("confluence returns a 0-10 score with ten rows", 0 <= _res["score"] <= 10 and len(_res["rows"]) == 10)
-check("confluence awards reward and stop-quality points for a 2.5R plan at 1 ATR", 
-      all(r["points"] == 1 for r in _res["rows"] if r["factor"] in (9, 10)), str([r for r in _res["rows"] if r["factor"] in (9, 10)]))
+                        entry=_px, stop=_px * 0.97, target=_px + 2.5 * _px * 0.03, gate="LOUD", fees="ndax")
+check("confluence scores the eleven SKILL.md factors (0 = volatility gate)", len(_res["rows"]) == 11 and _res["max"] == 11
+      and 0 <= _res["score"] <= 11)
+check("a 3% stop at NDAX (0.15R of costs) earns the reward and stop-quality points",
+      all(r["points"] == 1 for r in _res["rows"] if r["factor"] in (0, 9, 10)) and not _res["blocked"],
+      str([r for r in _res["rows"] if r["factor"] in (9, 10)]))
+_tight = confluence.score(_s, _s, {}, "long", datetime(2026, 9, 17, 14, 0, tzinfo=timezone.utc),
+                          entry=_px, stop=_px * 0.99, target=_px * 1.03, gate="LOUD", fees="ndax")
+check("a 1% stop at NDAX (0.44R of costs) is blocked by the cost gate, whatever the score",
+      _tight["blocked"] and _tight["grade"] == "skip" and next(r for r in _tight["rows"] if r["factor"] == 10)["points"] == 0,
+      str(_tight["blocked"]))
+check("Kraken Pro's entry tier makes the same 3% stop a NO (1.64% round trip = 0.55R)",
+      confluence.score(_s, _s, {}, "long", datetime(2026, 9, 17, 14, 0, tzinfo=timezone.utc), entry=_px, stop=_px * 0.97,
+                       target=_px * 1.075, gate="LOUD", fees="kraken")["blocked"] is not None)
+check("v6.1: a NORMAL gate means wait for LOUD",
+      confluence.score(_s, _s, {}, "long", datetime(2026, 9, 17, 14, 0, tzinfo=timezone.utc), entry=_px, stop=_px * 0.97,
+                       target=_px * 1.075, gate="NORMAL")["blocked"] == "volatility gate NORMAL: wait for LOUD")
+check("a QUIET gate blocks whatever the score",
+      confluence.score(_s, _s, {}, "long", datetime(2026, 9, 17, 14, 0, tzinfo=timezone.utc), entry=_px, stop=_px * 0.97,
+                       target=_px * 1.075, gate="QUIET")["grade"] == "skip")
 check("confluence awards the session point at 14:00 UTC on a weekday", next(r for r in _res["rows"] if r["factor"] == 7)["points"] == 1)
 _res2 = confluence.score(_s, _s, {"funding_rate_8h_pct": 0.01}, "long", datetime(2026, 9, 16, 17, 50, tzinfo=timezone.utc))
 check("confluence denies the calendar point 10 min before FOMC", next(r for r in _res2["rows"] if r["factor"] == 8)["points"] == 0)
@@ -311,20 +329,63 @@ print("== decision engine (the Terminal's brain) ==")
 import decide as dc  # noqa: E402
 _c1 = dc.cost_r(100.0, 98.0, False, "ndax", 0.02)
 check("NDAX round trip 0.44% on a 2% stop = 0.22R", close(_c1["cost_r"], 0.22, 1e-6), str(_c1))
-check("cost above 0.33R is refused", dc.decide(dc.cost_r(100.0, 99.5, False, "kraken", 0.02), "NORMAL", None)["action"] == "SKIP")
+check("cost above 0.33R is refused", dc.decide(dc.cost_r(100.0, 99.5, False, "kraken", 0.02), "LOUD", None)["kind"] == "cost")
 check("QUIET is refused", dc.decide(dc.cost_r(100.0, 96.0, True, "ndax", 0.02), "QUIET", None)["kind"] == "quiet")
-check("0.20-0.33R cost halves the size", dc.decide(_c1, "NORMAL", None)["size"] == 0.5)
+check("v6.1: NORMAL waits for LOUD", dc.decide(dc.cost_r(100.0, 96.0, True, "ndax", 0.02), "NORMAL", None)["kind"] == "not_loud")
+check("--allow-normal restores the Terminal's rule (NORMAL trades)", dc.decide(dc.cost_r(100.0, 96.0, True, "ndax", 0.02), "NORMAL", None, True)["action"] == "TAKE")
+check("0.20-0.33R cost halves the size", dc.decide(_c1, "NORMAL", None, True)["size"] == 0.5)
 check("LOUD with fine costs = 0.6x", dc.decide(dc.cost_r(100.0, 96.0, True, "ndax", 0.02), "LOUD", None)["size"] == 0.6)
 _neg = dc.estimate({"mean": -0.4, "trades": 200}, [])
 check("history counts as at most 25 pseudo-trades", _neg["evidence"] == 25.0)
-check("a measured negative edge is refused", dc.decide(dc.cost_r(100.0, 96.0, True, "ndax", 0.02), "NORMAL", _neg)["action"] == "SKIP")
+check("a measured negative edge is refused", dc.decide(dc.cost_r(100.0, 96.0, True, "ndax", 0.02), "LOUD", _neg)["kind"] == "learned")
 _own = dc.estimate({"mean": -0.4, "trades": 200}, [1.0] * 40)
 check("his own trades overturn history (40 wins at +1R beat 25 pseudo-trades at -0.4R)", _own["mean"] > 0.4, str(_own))
-_pos = dc.decide(dc.cost_r(100.0, 96.0, True, "ndax", 0.02), "NORMAL", {"mean": 0.2, "sd": 0.1, "evidence": 30, "own_trades": 5})
-check("a positive edge sizes up, at most 1.5x", _pos["action"] == "RESIZE" and close(_pos["size"], 1.3, 1e-6), str(_pos))
+_pos = dc.decide(dc.cost_r(100.0, 96.0, True, "ndax", 0.02), "LOUD", {"mean": 0.2, "sd": 0.1, "evidence": 30, "own_trades": 5})
+check("a positive edge sizes up (1.3x), then LOUD's 0.6x", _pos["action"] == "RESIZE" and close(_pos["size"], 0.78, 1e-6), str(_pos))
 _pr = dc.strategy_prior("STRAT-407", "SOL-USD", "ndax")
 check("scoreboard lookup interpolates NDAX between low-fee and retail runs",
       _pr and _pr["mean"] is not None and abs(_pr["mean"] - (0.183 + (-0.011 - 0.183) * (0.002 - 0.001) / 0.007)) < 0.02, str(_pr)[:200])
+
+print("== system test (Jarvus backtested) ==")
+import system_test as stt  # noqa: E402
+_t0 = int(datetime(2026, 1, 12, 0, 0, tzinfo=timezone.utc).timestamp() * 1000)    # a Monday in US winter time
+_n = 245
+_d = {"ts": [datetime.fromtimestamp((_t0 + k * 3_600_000) / 1000, timezone.utc) for k in range(_n)],
+      "open": [100.0] * _n, "high": [100.2] * _n, "low": [99.8] * _n, "close": [100.0] * _n, "volume": [100.0] * _n}
+_base = 216                                          # 2026-01-21 00:00 UTC
+for _h, (_hi, _cl, _v) in {13: (100.5, 100.1, 100.0), 14: (101.0, 100.8, 300.0), 15: (101.4, 101.2, 300.0)}.items():
+    _d["high"][_base + _h], _d["close"][_base + _h], _d["volume"][_base + _h] = _hi, _cl, _v
+_x = ladder._ctx(_d)
+_fixed = [k for k in range(_base, _n) if ladder.s_orb(k, _d, _x) == "long"]
+_legacy = [k for k in range(_base, _n) if stt.s_orb_legacy(k, _d, _x) == "long"]
+check("ORB fixed: in US winter the open range is the 14:00 UTC bar (break at 15:00)", _fixed == [_base + 15], str(_fixed))
+check("ORB before the fix fired inside the opening hour itself (14:00)", _legacy == [_base + 14], str(_legacy))
+
+_H = 3_600_000
+_mon = int(datetime(2026, 1, 12, 15, 0, tzinfo=timezone.utc).timestamp() * 1000)
+_sat = int(datetime(2026, 1, 17, 15, 0, tzinfo=timezone.utc).timestamp() * 1000)
+_btc = {"t": [_mon - _H, _sat - _H], "bull": [True, True], "trend4": [True, True]}
+
+
+def _cd(t, gate="L", rt=0.1, r=-1.0, coin="BTC", kind="major", setup="breakout_retest", hold=2):
+    return {"coin": coin, "kind": kind, "setup": setup, "t_dec": t, "t_exit": t + hold * _H, "gate": gate, "up1": True,
+            "trend4": True, "rt_cost_r": rt, "r": r, "gross_r": r + 0.1, "cost_r": 0.1, "risk": 2.0, "entry": 100.0}
+
+
+_rules61 = dict(stt.DEFAULT_RULES, **stt.V61)
+_tk, _sk, _, _ = stt.simulate([_cd(_sat)], _btc, _rules61)
+check("system test: no new majors trade at the weekend (M4)", not _tk and "weekend (M4)" in _sk)
+_tk, _sk, _, _ = stt.simulate([_cd(_mon, gate="N")], _btc, _rules61)
+check("system test: v6.1 waits when the gate is NORMAL", not _tk and "gate not LOUD" in _sk)
+_tk, _sk, _, _ = stt.simulate([_cd(_mon, gate="N")], _btc, stt.DEFAULT_RULES)
+check("system test: v6 as written traded NORMAL hours", len(_tk) == 1)
+_tk, _sk, _, _ = stt.simulate([_cd(_mon, rt=0.4)], _btc, _rules61)
+check("system test: cost above 0.33R is refused", not _tk and "cost > 0.33R" in _sk)
+_seq = [_cd(_mon + k * 3 * _H, coin=c) for k, c in enumerate(["BTC", "ETH", "SOL", "BTC"])]
+_tk, _sk, _, _ = stt.simulate(_seq, _btc, dict(_rules61, engine=False))
+check("system test: majors stop for the day after 2 trades (the 3rd and 4th signals are refused)", len(_tk) == 2, str(_sk))
+_tk, _, _, _eq = stt.simulate([_cd(_mon, r=2.0)], _btc, _rules61)
+check("system test: a LOUD trade risks 0.6% and a +2R result adds 1.2%", abs(_eq - 10_120.0) < 1e-6, str(_eq))
 
 print("== goal calculator ==")
 import goal as gl  # noqa: E402

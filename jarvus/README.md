@@ -1,4 +1,4 @@
-# Jarvus v6 — Abhi's spot trading skill, with the Jarvus Terminal built in
+# Jarvus v6.1 — Abhi's spot trading skill, with the Jarvus Terminal built in, backtested
 
 Jarvus is a terse, spot-only crypto day-trading assistant for Abhi: Majors
 (BTC / ETH / SOL on NDAX or Kraken Pro) primary, a survival-sized meme sleeve
@@ -6,7 +6,24 @@ secondary. It returns a Signal Card (BUY / WAIT / NO with entry, stop, targets,
 size and a confluence grade), keeps the journal, reports expectancy, coaches on
 tilt, and teaches.
 
-## What v6 adds: the whole Jarvus Terminal
+## What v6.1 adds: Jarvus backtested, fixed and improved
+
+Jarvus's whole rulebook was turned into code (`scripts/system_test.py`) and replayed on 5.75 years of
+Coinbase hourly data for BTC, ETH, SOL and six memecoins (900+ backtests; `references/jarvus-backtest.md`,
+full tables in `assets/system-test-results.md`).
+
+- **As written, v6 lost money** on majors at every fee level (NDAX: −0.073R per trade, t −3.0, up in 2 of
+  100 random 90-day windows) and was slightly negative on memecoins. Every protective rule cut the losses.
+- **Six problems fixed, each proved by a test:** confluence's stop-quality point rewarded tight stops (now
+  judged on cost in R); confluence used a fixed 0.14R cost and the old 10-factor grading (now real costs, 11
+  factors); `position_size.py` assumed 0.05% fees (now NDAX 0.20% by default); the ORB setup used the wrong
+  hour from November to March; the Signal Card's 8-candle time stop cut 4× ATR trades before they could work;
+  NORMAL-gate trading lost money in every version.
+- **v6.1 rules:** enter only when the gate says LOUD, stop 4× ATR, one exit at 2R, up to 96 hours (plus every
+  existing protective rule). Chosen on 2021 to Mar 2025, then checked on later data: majors +0.230R per
+  trade, +23.2%, max drawdown 3.6%; memes +0.186R. Small and slow, thin after Mar 2025, and said so.
+
+## What v6 added: the whole Jarvus Terminal
 
 The Terminal (a desktop program with 311 bots, a learning brain, a trained volatility gate and paper
 trading at live prices, Sept–Oct 2026) is retired. Everything it knew and measured, and the way it
@@ -81,7 +98,7 @@ jarvus/
 │                             memecoin-screening-rules.json
 └── scripts/                  fetch_ohlcv, snapshot, scan, confluence, position_size, journal,
                               journal_stats, backtest, events, indicators, tradestats, ladder,
-                              experiment_80, volgate, decide, goal, selftest
+                              experiment_80, volgate, decide, goal, system_test, selftest
 ```
 
 ## Install
@@ -108,7 +125,7 @@ python3 ~/.claude/skills/jarvus/scripts/selftest.py
 `Jarvus events` · `Jarvus routine` · `Jarvus teach <topic>` · `Jarvus what about <strategy>` ·
 `Jarvus backtest <rule>` · `Jarvus journal` · `Jarvus review` · `Jarvus kill` ·
 `Jarvus gate [coins]` · `Jarvus decide <entry> <stop> [target]` · `Jarvus goal <balance> [goal] [days]` ·
-`Jarvus scoreboard <strategy|market>` · `Jarvus fees` · `Jarvus live`
+`Jarvus scoreboard <strategy|market>` · `Jarvus fees` · `Jarvus live` · `Jarvus system test`
 
 ## Disclaimer
 

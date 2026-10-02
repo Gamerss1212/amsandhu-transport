@@ -6,7 +6,10 @@ refused it. This script applies the same checks, in the same order, with the sam
 trade, so Jarvus decides the way the software did (Abhi still clicks buy or sell):
 
   1. COST GATE    round-trip costs / risk = cost in R. Above 0.33R -> SKIP. 0.20-0.33R -> half size.
-  2. VOLATILITY   gate QUIET -> SKIP (the next hours are unlikely to pay the fees). LOUD -> 0.6x size.
+  2. VOLATILITY   v6.1: enter only when the gate says LOUD (0.6x size). NORMAL or unknown -> SKIP (wait), QUIET ->
+                  SKIP. Jarvus's own backtest (references/jarvus-backtest.md, 762 runs on 2021-2026 hourly data) found
+                  every NORMAL-gate version losing after costs and LOUD-only entries positive on later data too.
+                  --allow-normal restores the Terminal's original rule (NORMAL trades at full size).
   3. BENCH        the strategy's estimate is confidently negative (30+ trades of evidence and
                   mean + 1.64 x standard error < 0) -> SKIP until it improves.
   4. LEARNED EDGE with 8+ trades of evidence and an expected result below -0.05R per trade -> SKIP.
@@ -158,7 +161,7 @@ def estimate(prior: Optional[dict], own: list) -> Optional[dict]:
 
 
 # ------------------------------------------------------------------ the decision
-def decide(c: dict, gate: str, est: Optional[dict]) -> dict:
+def decide(c: dict, gate: str, est: Optional[dict], allow_normal: bool = False) -> dict:
     reasons, action, size, kind = [], "TAKE", 1.0, None
     cr = c["cost_r"]
     if cr > COST_VETO_R:
@@ -170,6 +173,11 @@ def decide(c: dict, gate: str, est: Optional[dict]) -> dict:
     if gate == "QUIET":
         return {"action": "SKIP", "size": 0.0, "kind": "quiet",
                 "reasons": ["volatility gate QUIET: the coming hours are unlikely to move enough to pay the fees"]}
+    if gate != "LOUD" and not allow_normal:
+        return {"action": "SKIP", "size": 0.0, "kind": "not_loud",
+                "reasons": [("volatility gate NORMAL" if gate == "NORMAL" else "volatility gate unknown (run --gate auto)") +
+                            ": wait for LOUD. In Jarvus's backtest every version that also traded NORMAL hours lost after "
+                            "costs; LOUD-only entries were positive (references/jarvus-backtest.md)"]}
     if est is not None:
         benched = est["evidence"] >= BENCH_EVIDENCE and est["mean"] + 1.64 * est["sd"] < 0
         if benched:
@@ -216,6 +224,7 @@ def main() -> int:
     ap.add_argument("--maker", action="store_true", help="entry is a limit (maker) order")
     ap.add_argument("--slip-pct", type=float, default=0.02, help="slippage per side in %% (majors ~0.02, alts 0.05-0.2)")
     ap.add_argument("--gate", default="UNKNOWN", help="LOUD | NORMAL | QUIET | auto (needs --symbol)")
+    ap.add_argument("--allow-normal", action="store_true", help="the Terminal's original rule: also trade NORMAL hours")
     ap.add_argument("--symbol", help="for --gate auto, e.g. BTC or SPY (with --stock)")
     ap.add_argument("--stock", action="store_true")
     ap.add_argument("--strategy", help="scoreboard id (STRAT-407) or part of the name")
@@ -238,7 +247,7 @@ def main() -> int:
     prior = strategy_prior(a.strategy, a.market, level) if a.strategy else None
     own = journal_rs(a.journal, a.playbook) if a.journal else []
     est = estimate(prior, own)
-    d = decide(c, gate, est)
+    d = decide(c, gate, est, a.allow_normal)
     now = datetime.now(timezone.utc)
     weekend = now.weekday() >= 5
     out = {"decision": d["action"], "size_multiplier": d["size"], "skip_kind": d["kind"], "reasons": d["reasons"],
@@ -250,7 +259,7 @@ def main() -> int:
         out["target_r_gross"] = round(gross, 2)
         out["target_r_net"] = round(gross - c["cost_r"], 2)
         if out["target_r_net"] < 2.0:
-            out["reasons"] = out["reasons"] + [f"note: target is {out['target_r_net']:.2f}R after costs; Jarvus wants 2R net to TP2"]
+            out["reasons"] = out["reasons"] + [f"note: target is {out['target_r_net']:.2f}R after costs; Jarvus wants 2R net to the target"]
     if weekend and not a.stock:
         out["reasons"] = out["reasons"] + ["note: it is the weekend (UTC): no new majors trades (rule M4; measured zero edge)"]
     if a.account:

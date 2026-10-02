@@ -1,0 +1,7380 @@
+[
+ {
+  "trades": 489,
+  "skips": {
+   "engine: benched": 5096,
+   "weekend (M4)": 4108,
+   "bear regime: only reversion setups": 2128,
+   "trend setup without 1h+4h uptrend (M0)": 1434,
+   "already in this coin": 1225,
+   "majors: one position / 2 trades a day": 628,
+   "engine: negative learned edge": 432,
+   "gate QUIET": 349,
+   "cost > 0.33R": 45,
+   "drawdown break (-10R)": 12
+  },
+  "end_equity": 8365.6,
+  "return_pct": -16.34,
+  "win_rate": 0.409,
+  "avg_r": -0.0757,
+  "sum_r": -37.0,
+  "pf": 0.683,
+  "avg_cost_r": 0.0965,
+  "avg_gross_r": 0.0207,
+  "t_stat": -3.11,
+  "max_dd_pct": 18.56,
+  "by_setup": {
+   "breakout_retest": {
+    "n": 310,
+    "avg_r": -0.0577
+   },
+   "orb_dst": {
+    "n": 36,
+    "avg_r": -0.1038
+   },
+   "rsi2": {
+    "n": 105,
+    "avg_r": -0.0959
+   },
+   "sweep_reclaim": {
+    "n": 26,
+    "avg_r": -0.1184
+   },
+   "trend_pullback": {
+    "n": 12,
+    "avg_r": -0.1847
+   }
+  },
+  "periods": {
+   "A": {
+    "n": 412,
+    "avg_r": -0.0735,
+    "sum_r": -30.29,
+    "pnl": -1473.7
+   },
+   "B": {
+    "n": 64,
+    "avg_r": -0.1376,
+    "sum_r": -8.81,
+    "pnl": -248.35
+   },
+   "C": {
+    "n": 13,
+    "avg_r": 0.1614,
+    "sum_r": 2.1,
+    "pnl": 87.66
+   }
+  },
+  "trades_per_month": 7.11,
+  "days": 2092,
+  "name": "all (ORB fixed) | gate as written | half 1R + 2R, 8-bar stop",
+  "group": "majors",
+  "fees": "ndax",
+  "candidates": 15946
+ },
+ {
+  "trades": 301,
+  "skips": {
+   "weekend (M4)": 3554,
+   "already in this coin": 3324,
+   "engine: benched": 2703,
+   "bear regime: only reversion setups": 1972,
+   "majors: one position / 2 trades a day": 1924,
+   "trend setup without 1h+4h uptrend (M0)": 1393,
+   "engine: negative learned edge": 400,
+   "gate QUIET": 302,
+   "cost > 0.33R": 39,
+   "drawdown break (-10R)": 34
+  },
+  "end_equity": 8198.75,
+  "return_pct": -18.01,
+  "win_rate": 0.512,
+  "avg_r": -0.0688,
+  "sum_r": -20.72,
+  "pf": 0.863,
+  "avg_cost_r": 0.104,
+  "avg_gross_r": 0.035,
+  "t_stat": -1.18,
+  "max_dd_pct": 18.66,
+  "by_setup": {
+   "breakout_retest": {
+    "n": 107,
+    "avg_r": 0.0506
+   },
+   "orb_dst": {
+    "n": 25,
+    "avg_r": 0.0962
+   },
+   "rsi2": {
+    "n": 61,
+    "avg_r": -0.1322
+   },
+   "sweep_reclaim": {
+    "n": 9,
+    "avg_r": -0.3064
+   },
+   "trend_pullback": {
+    "n": 99,
+    "avg_r": -0.1789
+   }
+  },
+  "periods": {
+   "A": {
+    "n": 246,
+    "avg_r": -0.0675,
+    "sum_r": -16.6,
+    "pnl": -1419.43
+   },
+   "B": {
+    "n": 43,
+    "avg_r": -0.0473,
+    "sum_r": -2.03,
+    "pnl": -152.96
+   },
+   "C": {
+    "n": 12,
+    "avg_r": -0.1744,
+    "sum_r": -2.09,
+    "pnl": -228.86
+   }
+  },
+  "trades_per_month": 4.37,
+  "days": 2092,
+  "name": "all (ORB fixed) | gate as written | half 1R + 2R, 96h",
+  "group": "majors",
+  "fees": "ndax",
+  "candidates": 15946
+ },
+ {
+  "trades": 442,
+  "skips": {
+   "already in this coin": 4907,
+   "majors: one position / 2 trades a day": 3768,
+   "weekend (M4)": 3242,
+   "bear regime: only reversion setups": 1497,
+   "trend setup without 1h+4h uptrend (M0)": 1272,
+   "engine: benched": 317,
+   "gate QUIET": 253,
+   "engine: negative learned edge": 203,
+   "cost > 0.33R": 32,
+   "drawdown break (-10R)": 13
+  },
+  "end_equity": 7776.42,
+  "return_pct": -22.24,
+  "win_rate": 0.398,
+  "avg_r": -0.0766,
+  "sum_r": -33.85,
+  "pf": 0.873,
+  "avg_cost_r": 0.1102,
+  "avg_gross_r": 0.0334,
+  "t_stat": -1.31,
+  "max_dd_pct": 24.51,
+  "by_setup": {
+   "breakout_retest": {
+    "n": 89,
+    "avg_r": 0.1878
+   },
+   "orb_dst": {
+    "n": 8,
+    "avg_r": -0.6398
+   },
+   "rsi2": {
+    "n": 280,
+    "avg_r": -0.1107
+   },
+   "sweep_reclaim": {
+    "n": 8,
+    "avg_r": -0.2851
+   },
+   "trend_pullback": {
+    "n": 57,
+    "avg_r": -0.2134
+   }
+  },
+  "periods": {
+   "A": {
+    "n": 329,
+    "avg_r": -0.0869,
+    "sum_r": -28.58,
+    "pnl": -2050.65
+   },
+   "B": {
+    "n": 64,
+    "avg_r": -0.0339,
+    "sum_r": -2.17,
+    "pnl": -165.45
+   },
+   "C": {
+    "n": 49,
+    "avg_r": -0.0634,
+    "sum_r": -3.11,
+    "pnl": -7.47
+   }
+  },
+  "trades_per_month": 6.42,
+  "days": 2092,
+  "name": "all (ORB fixed) | gate as written | one exit 2R, 96h",
+  "group": "majors",
+  "fees": "ndax",
+  "candidates": 15946
+ },
+ {
+  "trades": 147,
+  "skips": {
+   "gate not LOUD": 10546,
+   "weekend (M4)": 4157,
+   "gate QUIET": 377,
+   "already in this coin": 353,
+   "engine: negative learned edge": 148,
+   "bear regime: only reversion setups": 111,
+   "majors: one position / 2 trades a day": 65,
+   "trend setup without 1h+4h uptrend (M0)": 42
+  },
+  "end_equity": 9631.54,
+  "return_pct": -3.68,
+  "win_rate": 0.476,
+  "avg_r": -0.0537,
+  "sum_r": -7.89,
+  "pf": 0.749,
+  "avg_cost_r": 0.0733,
+  "avg_gross_r": 0.0194,
+  "t_stat": -1.26,
+  "max_dd_pct": 5.14,
+  "by_setup": {
+   "breakout_retest": {
+    "n": 53,
+    "avg_r": 0.0109
+   },
+   "orb_dst": {
+    "n": 12,
+    "avg_r": 0.0126
+   },
+   "rsi2": {
+    "n": 31,
+    "avg_r": -0.2423
+   },
+   "sweep_reclaim": {
+    "n": 11,
+    "avg_r": -0.1394
+   },
+   "trend_pullback": {
+    "n": 40,
+    "avg_r": 0.0106
+   }
+  },
+  "periods": {
+   "A": {
+    "n": 122,
+    "avg_r": -0.0868,
+    "sum_r": -10.59,
+    "pnl": -446.76
+   },
+   "B": {
+    "n": 19,
+    "avg_r": 0.0136,
+    "sum_r": 0.26,
+    "pnl": 5.7
+   },
+   "C": {
+    "n": 6,
+    "avg_r": 0.4059,
+    "sum_r": 2.44,
+    "pnl": 72.6
+   }
+  },
+  "trades_per_month": 2.14,
+  "days": 2092,
+  "name": "all (ORB fixed) | LOUD only | half 1R + 2R, 8-bar stop",
+  "group": "majors",
+  "fees": "ndax",
+  "candidates": 15946
+ },
+ {
+  "trades": 118,
+  "skips": {
+   "gate not LOUD": 9846,
+   "weekend (M4)": 3826,
+   "already in this coin": 1492,
+   "gate QUIET": 373,
+   "majors: one position / 2 trades a day": 162,
+   "bear regime: only reversion setups": 85,
+   "trend setup without 1h+4h uptrend (M0)": 42,
+   "engine: negative learned edge": 2
+  },
+  "end_equity": 11773.41,
+  "return_pct": 17.73,
+  "win_rate": 0.602,
+  "avg_r": 0.1548,
+  "sum_r": 18.27,
+  "pf": 1.461,
+  "avg_cost_r": 0.0801,
+  "avg_gross_r": 0.2347,
+  "t_stat": 1.82,
+  "max_dd_pct": 3.18,
+  "by_setup": {
+   "breakout_retest": {
+    "n": 45,
+    "avg_r": 0.3159
+   },
+   "orb_dst": {
+    "n": 3,
+    "avg_r": 0.8533
+   },
+   "rsi2": {
+    "n": 55,
+    "avg_r": 0.1018
+   },
+   "sweep_reclaim": {
+    "n": 6,
+    "avg_r": -0.5101
+   },
+   "trend_pullback": {
+    "n": 9,
+    "avg_r": -0.1158
+   }
+  },
+  "periods": {
+   "A": {
+    "n": 91,
+    "avg_r": 0.1911,
+    "sum_r": 17.39,
+    "pnl": 1668.71
+   },
+   "B": {
+    "n": 17,
+    "avg_r": 0.0534,
+    "sum_r": 0.91,
+    "pnl": 108.25
+   },
+   "C": {
+    "n": 10,
+    "avg_r": -0.0026,
+    "sum_r": -0.03,
+    "pnl": -3.55
+   }
+  },
+  "trades_per_month": 1.71,
+  "days": 2092,
+  "name": "all (ORB fixed) | LOUD only | half 1R + 2R, 96h",
+  "group": "majors",
+  "fees": "ndax",
+  "candidates": 15946
+ },
+ {
+  "trades": 106,
+  "skips": {
+   "gate not LOUD": 9822,
+   "weekend (M4)": 3825,
+   "already in this coin": 1513,
+   "gate QUIET": 371,
+   "majors: one position / 2 trades a day": 182,
+   "bear regime: only reversion setups": 85,
+   "trend setup without 1h+4h uptrend (M0)": 42
+  },
+  "end_equity": 12322.21,
+  "return_pct": 23.22,
+  "win_rate": 0.528,
+  "avg_r": 0.2298,
+  "sum_r": 24.35,
+  "pf": 1.594,
+  "avg_cost_r": 0.0833,
+  "avg_gross_r": 0.3128,
+  "t_stat": 2.02,
+  "max_dd_pct": 3.65,
+  "by_setup": {
+   "breakout_retest": {
+    "n": 42,
+    "avg_r": 0.4876
+   },
+   "orb_dst": {
+    "n": 2,
+    "avg_r": 1.2765
+   },
+   "rsi2": {
+    "n": 50,
+    "avg_r": 0.0773
+   },
+   "sweep_reclaim": {
+    "n": 5,
+    "avg_r": -0.7057
+   },
+   "trend_pullback": {
+    "n": 7,
+    "avg_r": 0.1412
+   }
+  },
+  "periods": {
+   "A": {
+    "n": 80,
+    "avg_r": 0.2982,
+    "sum_r": 23.85,
+    "pnl": 2110.43
+   },
+   "B": {
+    "n": 16,
+    "avg_r": -0.0763,
+    "sum_r": -1.22,
+    "pnl": 22.89
+   },
+   "C": {
+    "n": 10,
+    "avg_r": 0.1721,
+    "sum_r": 1.72,
+    "pnl": 188.89
+   }
+  },
+  "trades_per_month": 1.54,
+  "days": 2092,
+  "name": "all (ORB fixed) | LOUD only | one exit 2R, 96h",
+  "group": "majors",
+  "fees": "ndax",
+  "candidates": 15946
+ },
+ {
+  "trades": 234,
+  "skips": {
+   "trend setup without 1h+4h uptrend (M0)": 1246,
+   "bear regime: only reversion setups": 927,
+   "weekend (M4)": 868,
+   "engine: benched": 440,
+   "already in this coin": 389,
+   "engine: negative learned edge": 315,
+   "majors: one position / 2 trades a day": 257,
+   "gate QUIET": 73,
+   "cost > 0.33R": 4,
+   "drawdown break (-10R)": 2
+  },
+  "end_equity": 9066.74,
+  "return_pct": -9.33,
+  "win_rate": 0.393,
+  "avg_r": -0.0774,
+  "sum_r": -18.12,
+  "pf": 0.689,
+  "avg_cost_r": 0.0997,
+  "avg_gross_r": 0.0221,
+  "t_stat": -2.12,
+  "max_dd_pct": 13.37,
+  "by_setup": {
+   "breakout_retest": {
+    "n": 195,
+    "avg_r": -0.0653
+   },
+   "orb_dst": {
+    "n": 39,
+    "avg_r": -0.1379
+   }
+  },
+  "periods": {
+   "A": {
+    "n": 206,
+    "avg_r": -0.0726,
+    "sum_r": -14.96,
+    "pnl": -762.95
+   },
+   "B": {
+    "n": 28,
+    "avg_r": -0.1129,
+    "sum_r": -3.16,
+    "pnl": -170.31
+   }
+  },
+  "trades_per_month": 3.4,
+  "days": 2090,
+  "name": "P3 + P6 | gate as written | half 1R + 2R, 8-bar stop",
+  "group": "majors",
+  "fees": "ndax",
+  "candidates": 4755
+ },
+ {
+  "trades": 173,
+  "skips": {
+   "trend setup without 1h+4h uptrend (M0)": 1240,
+   "bear regime: only reversion setups": 925,
+   "weekend (M4)": 815,
+   "already in this coin": 638,
+   "majors: one position / 2 trades a day": 567,
+   "engine: negative learned edge": 249,
+   "engine: benched": 78,
+   "gate QUIET": 66,
+   "cost > 0.33R": 3,
+   "drawdown break (-10R)": 1
+  },
+  "end_equity": 9579.44,
+  "return_pct": -4.21,
+  "win_rate": 0.514,
+  "avg_r": -0.0474,
+  "sum_r": -8.2,
+  "pf": 0.902,
+  "avg_cost_r": 0.107,
+  "avg_gross_r": 0.0594,
+  "t_stat": -0.62,
+  "max_dd_pct": 10.56,
+  "by_setup": {
+   "breakout_retest": {
+    "n": 134,
+    "avg_r": -0.0067
+   },
+   "orb_dst": {
+    "n": 39,
+    "avg_r": -0.1871
+   }
+  },
+  "periods": {
+   "A": {
+    "n": 127,
+    "avg_r": -0.0554,
+    "sum_r": -7.03,
+    "pnl": -407.4
+   },
+   "B": {
+    "n": 38,
+    "avg_r": -0.044,
+    "sum_r": -1.67,
+    "pnl": 29.84
+   },
+   "C": {
+    "n": 8,
+    "avg_r": 0.0627,
+    "sum_r": 0.5,
+    "pnl": -43.0
+   }
+  },
+  "trades_per_month": 2.52,
+  "days": 2090,
+  "name": "P3 + P6 | gate as written | half 1R + 2R, 96h",
+  "group": "majors",
+  "fees": "ndax",
+  "candidates": 4755
+ },
+ {
+  "trades": 156,
+  "skips": {
+   "trend setup without 1h+4h uptrend (M0)": 1238,
+   "bear regime: only reversion setups": 922,
+   "weekend (M4)": 818,
+   "already in this coin": 587,
+   "majors: one position / 2 trades a day": 574,
+   "engine: negative learned edge": 312,
+   "gate QUIET": 67,
+   "engine: benched": 62,
+   "drawdown break (-10R)": 16,
+   "cost > 0.33R": 3
+  },
+  "end_equity": 8986.72,
+  "return_pct": -10.13,
+  "win_rate": 0.372,
+  "avg_r": -0.1366,
+  "sum_r": -21.32,
+  "pf": 0.779,
+  "avg_cost_r": 0.1052,
+  "avg_gross_r": -0.0317,
+  "t_stat": -1.41,
+  "max_dd_pct": 17.18,
+  "by_setup": {
+   "breakout_retest": {
+    "n": 122,
+    "avg_r": -0.1025
+   },
+   "orb_dst": {
+    "n": 34,
+    "avg_r": -0.259
+   }
+  },
+  "periods": {
+   "A": {
+    "n": 119,
+    "avg_r": -0.1187,
+    "sum_r": -14.13,
+    "pnl": -643.51
+   },
+   "B": {
+    "n": 29,
+    "avg_r": -0.2794,
+    "sum_r": -8.1,
+    "pnl": -360.02
+   },
+   "C": {
+    "n": 8,
+    "avg_r": 0.1143,
+    "sum_r": 0.91,
+    "pnl": -9.76
+   }
+  },
+  "trades_per_month": 2.27,
+  "days": 2090,
+  "name": "P3 + P6 | gate as written | one exit 2R, 96h",
+  "group": "majors",
+  "fees": "ndax",
+  "candidates": 4755
+ },
+ {
+  "trades": 69,
+  "skips": {
+   "gate not LOUD": 3439,
+   "weekend (M4)": 871,
+   "already in this coin": 127,
+   "gate QUIET": 81,
+   "bear regime: only reversion setups": 71,
+   "engine: negative learned edge": 37,
+   "trend setup without 1h+4h uptrend (M0)": 35,
+   "majors: one position / 2 trades a day": 25
+  },
+  "end_equity": 9995.81,
+  "return_pct": -0.04,
+  "win_rate": 0.478,
+  "avg_r": 0.0023,
+  "sum_r": 0.16,
+  "pf": 1.011,
+  "avg_cost_r": 0.0793,
+  "avg_gross_r": 0.0814,
+  "t_stat": 0.03,
+  "max_dd_pct": 2.28,
+  "by_setup": {
+   "breakout_retest": {
+    "n": 55,
+    "avg_r": -0.0049
+   },
+   "orb_dst": {
+    "n": 14,
+    "avg_r": 0.0303
+   }
+  },
+  "periods": {
+   "A": {
+    "n": 50,
+    "avg_r": -0.0439,
+    "sum_r": -2.19,
+    "pnl": -139.68
+   },
+   "B": {
+    "n": 13,
+    "avg_r": 0.0191,
+    "sum_r": 0.25,
+    "pnl": 10.85
+   },
+   "C": {
+    "n": 6,
+    "avg_r": 0.35,
+    "sum_r": 2.1,
+    "pnl": 124.64
+   }
+  },
+  "trades_per_month": 1.0,
+  "days": 2090,
+  "name": "P3 + P6 | LOUD only | half 1R + 2R, 8-bar stop",
+  "group": "majors",
+  "fees": "ndax",
+  "candidates": 4755
+ },
+ {
+  "trades": 60,
+  "skips": {
+   "gate not LOUD": 3363,
+   "weekend (M4)": 840,
+   "already in this coin": 250,
+   "gate QUIET": 80,
+   "bear regime: only reversion setups": 70,
+   "majors: one position / 2 trades a day": 57,
+   "trend setup without 1h+4h uptrend (M0)": 35
+  },
+  "end_equity": 11347.61,
+  "return_pct": 13.48,
+  "win_rate": 0.65,
+  "avg_r": 0.279,
+  "sum_r": 16.74,
+  "pf": 2.009,
+  "avg_cost_r": 0.078,
+  "avg_gross_r": 0.3568,
+  "t_stat": 2.34,
+  "max_dd_pct": 2.31,
+  "by_setup": {
+   "breakout_retest": {
+    "n": 55,
+    "avg_r": 0.248
+   },
+   "orb_dst": {
+    "n": 5,
+    "avg_r": 0.6207
+   }
+  },
+  "periods": {
+   "A": {
+    "n": 45,
+    "avg_r": 0.3485,
+    "sum_r": 15.68,
+    "pnl": 1257.1
+   },
+   "B": {
+    "n": 10,
+    "avg_r": 0.0335,
+    "sum_r": 0.33,
+    "pnl": 25.09
+   },
+   "C": {
+    "n": 5,
+    "avg_r": 0.1453,
+    "sum_r": 0.73,
+    "pnl": 65.42
+   }
+  },
+  "trades_per_month": 0.87,
+  "days": 2090,
+  "name": "P3 + P6 | LOUD only | half 1R + 2R, 96h",
+  "group": "majors",
+  "fees": "ndax",
+  "candidates": 4755
+ },
+ {
+  "trades": 58,
+  "skips": {
+   "gate not LOUD": 3348,
+   "weekend (M4)": 840,
+   "already in this coin": 263,
+   "gate QUIET": 80,
+   "bear regime: only reversion setups": 70,
+   "majors: one position / 2 trades a day": 61,
+   "trend setup without 1h+4h uptrend (M0)": 35
+  },
+  "end_equity": 12078.38,
+  "return_pct": 20.78,
+  "win_rate": 0.603,
+  "avg_r": 0.4135,
+  "sum_r": 23.98,
+  "pf": 2.326,
+  "avg_cost_r": 0.0786,
+  "avg_gross_r": 0.4919,
+  "t_stat": 2.67,
+  "max_dd_pct": 2.33,
+  "by_setup": {
+   "breakout_retest": {
+    "n": 53,
+    "avg_r": 0.3853
+   },
+   "orb_dst": {
+    "n": 5,
+    "avg_r": 0.7123
+   }
+  },
+  "periods": {
+   "A": {
+    "n": 43,
+    "avg_r": 0.5125,
+    "sum_r": 22.04,
+    "pnl": 1879.39
+   },
+   "B": {
+    "n": 10,
+    "avg_r": 0.0803,
+    "sum_r": 0.8,
+    "pnl": 80.52
+   },
+   "C": {
+    "n": 5,
+    "avg_r": 0.228,
+    "sum_r": 1.14,
+    "pnl": 118.47
+   }
+  },
+  "trades_per_month": 0.84,
+  "days": 2090,
+  "name": "P3 + P6 | LOUD only | one exit 2R, 96h",
+  "group": "majors",
+  "fees": "ndax",
+  "candidates": 4755
+ },
+ {
+  "trades": 326,
+  "skips": {
+   "weekend (M4)": 2527,
+   "bear regime: only reversion setups": 2183,
+   "engine: benched": 1830,
+   "trend setup without 1h+4h uptrend (M0)": 1445,
+   "already in this coin": 669,
+   "majors: one position / 2 trades a day": 423,
+   "engine: negative learned edge": 297,
+   "gate QUIET": 245,
+   "drawdown break (-10R)": 24,
+   "cost > 0.33R": 13
+  },
+  "end_equity": 8616.03,
+  "return_pct": -13.84,
+  "win_rate": 0.387,
+  "avg_r": -0.0869,
+  "sum_r": -28.33,
+  "pf": 0.656,
+  "avg_cost_r": 0.1026,
+  "avg_gross_r": 0.0155,
+  "t_stat": -2.85,
+  "max_dd_pct": 17.5,
+  "by_setup": {
+   "breakout_retest": {
+    "n": 251,
+    "avg_r": -0.0783
+   },
+   "orb_dst": {
+    "n": 65,
+    "avg_r": -0.112
+   },
+   "trend_pullback": {
+    "n": 10,
+    "avg_r": -0.1386
+   }
+  },
+  "periods": {
+   "A": {
+    "n": 274,
+    "avg_r": -0.0841,
+    "sum_r": -23.04,
+    "pnl": -1177.31
+   },
+   "B": {
+    "n": 52,
+    "avg_r": -0.1017,
+    "sum_r": -5.29,
+    "pnl": -206.66
+   }
+  },
+  "trades_per_month": 4.74,
+  "days": 2092,
+  "name": "P1 + P3 + P6 | gate as written | half 1R + 2R, 8-bar stop",
+  "group": "majors",
+  "fees": "ndax",
+  "candidates": 9982
+ },
+ {
+  "trades": 251,
+  "skips": {
+   "weekend (M4)": 2241,
+   "bear regime: only reversion setups": 2167,
+   "already in this coin": 1833,
+   "majors: one position / 2 trades a day": 1694,
+   "trend setup without 1h+4h uptrend (M0)": 1426,
+   "gate QUIET": 215,
+   "engine: negative learned edge": 108,
+   "drawdown break (-10R)": 38,
+   "cost > 0.33R": 9
+  },
+  "end_equity": 8580.03,
+  "return_pct": -14.2,
+  "win_rate": 0.522,
+  "avg_r": -0.0634,
+  "sum_r": -15.9,
+  "pf": 0.873,
+  "avg_cost_r": 0.114,
+  "avg_gross_r": 0.0504,
+  "t_stat": -0.99,
+  "max_dd_pct": 20.46,
+  "by_setup": {
+   "breakout_retest": {
+    "n": 105,
+    "avg_r": 0.0624
+   },
+   "orb_dst": {
+    "n": 20,
+    "avg_r": -0.1552
+   },
+   "trend_pullback": {
+    "n": 126,
+    "avg_r": -0.1536
+   }
+  },
+  "periods": {
+   "A": {
+    "n": 188,
+    "avg_r": -0.0496,
+    "sum_r": -9.32,
+    "pnl": -850.86
+   },
+   "B": {
+    "n": 51,
+    "avg_r": -0.088,
+    "sum_r": -4.49,
+    "pnl": -441.05
+   },
+   "C": {
+    "n": 12,
+    "avg_r": -0.1744,
+    "sum_r": -2.09,
+    "pnl": -128.05
+   }
+  },
+  "trades_per_month": 3.65,
+  "days": 2092,
+  "name": "P1 + P3 + P6 | gate as written | half 1R + 2R, 96h",
+  "group": "majors",
+  "fees": "ndax",
+  "candidates": 9982
+ },
+ {
+  "trades": 225,
+  "skips": {
+   "weekend (M4)": 2208,
+   "bear regime: only reversion setups": 2167,
+   "already in this coin": 1813,
+   "majors: one position / 2 trades a day": 1608,
+   "trend setup without 1h+4h uptrend (M0)": 1429,
+   "engine: negative learned edge": 296,
+   "gate QUIET": 219,
+   "cost > 0.33R": 9,
+   "drawdown break (-10R)": 8
+  },
+  "end_equity": 9035.87,
+  "return_pct": -9.64,
+  "win_rate": 0.422,
+  "avg_r": -0.0355,
+  "sum_r": -8.0,
+  "pf": 0.939,
+  "avg_cost_r": 0.1153,
+  "avg_gross_r": 0.0795,
+  "t_stat": -0.43,
+  "max_dd_pct": 21.12,
+  "by_setup": {
+   "breakout_retest": {
+    "n": 111,
+    "avg_r": 0.0892
+   },
+   "orb_dst": {
+    "n": 8,
+    "avg_r": -0.7266
+   },
+   "trend_pullback": {
+    "n": 106,
+    "avg_r": -0.114
+   }
+  },
+  "periods": {
+   "A": {
+    "n": 175,
+    "avg_r": -0.0351,
+    "sum_r": -6.15,
+    "pnl": -557.53
+   },
+   "B": {
+    "n": 39,
+    "avg_r": -0.0084,
+    "sum_r": -0.33,
+    "pnl": -289.77
+   },
+   "C": {
+    "n": 11,
+    "avg_r": -0.138,
+    "sum_r": -1.52,
+    "pnl": -116.82
+   }
+  },
+  "trades_per_month": 3.27,
+  "days": 2092,
+  "name": "P1 + P3 + P6 | gate as written | one exit 2R, 96h",
+  "group": "majors",
+  "fees": "ndax",
+  "candidates": 9982
+ },
+ {
+  "trades": 110,
+  "skips": {
+   "gate not LOUD": 6592,
+   "weekend (M4)": 2534,
+   "gate QUIET": 264,
+   "already in this coin": 252,
+   "bear regime: only reversion setups": 117,
+   "majors: one position / 2 trades a day": 58,
+   "trend setup without 1h+4h uptrend (M0)": 42,
+   "engine: negative learned edge": 13
+  },
+  "end_equity": 10127.0,
+  "return_pct": 1.27,
+  "win_rate": 0.5,
+  "avg_r": 0.0236,
+  "sum_r": 2.6,
+  "pf": 1.133,
+  "avg_cost_r": 0.0725,
+  "avg_gross_r": 0.0959,
+  "t_stat": 0.46,
+  "max_dd_pct": 3.23,
+  "by_setup": {
+   "breakout_retest": {
+    "n": 55,
+    "avg_r": 0.0511
+   },
+   "orb_dst": {
+    "n": 11,
+    "avg_r": -0.0264
+   },
+   "trend_pullback": {
+    "n": 44,
+    "avg_r": 0.0018
+   }
+  },
+  "periods": {
+   "A": {
+    "n": 85,
+    "avg_r": -0.0011,
+    "sum_r": -0.09,
+    "pnl": -34.48
+   },
+   "B": {
+    "n": 19,
+    "avg_r": 0.0136,
+    "sum_r": 0.26,
+    "pnl": 11.06
+   },
+   "C": {
+    "n": 6,
+    "avg_r": 0.4059,
+    "sum_r": 2.44,
+    "pnl": 150.41
+   }
+  },
+  "trades_per_month": 1.6,
+  "days": 2092,
+  "name": "P1 + P3 + P6 | LOUD only | half 1R + 2R, 8-bar stop",
+  "group": "majors",
+  "fees": "ndax",
+  "candidates": 9982
+ },
+ {
+  "trades": 68,
+  "skips": {
+   "gate not LOUD": 6347,
+   "weekend (M4)": 2412,
+   "already in this coin": 645,
+   "gate QUIET": 262,
+   "bear regime: only reversion setups": 112,
+   "majors: one position / 2 trades a day": 94,
+   "trend setup without 1h+4h uptrend (M0)": 42
+  },
+  "end_equity": 11943.67,
+  "return_pct": 19.44,
+  "win_rate": 0.691,
+  "avg_r": 0.3381,
+  "sum_r": 22.99,
+  "pf": 2.353,
+  "avg_cost_r": 0.0733,
+  "avg_gross_r": 0.4112,
+  "t_stat": 3.06,
+  "max_dd_pct": 2.9,
+  "by_setup": {
+   "breakout_retest": {
+    "n": 49,
+    "avg_r": 0.3518
+   },
+   "orb_dst": {
+    "n": 3,
+    "avg_r": 0.3722
+   },
+   "trend_pullback": {
+    "n": 16,
+    "avg_r": 0.2897
+   }
+  },
+  "periods": {
+   "A": {
+    "n": 51,
+    "avg_r": 0.4045,
+    "sum_r": 20.63,
+    "pnl": 1708.06
+   },
+   "B": {
+    "n": 12,
+    "avg_r": 0.058,
+    "sum_r": 0.7,
+    "pnl": 62.34
+   },
+   "C": {
+    "n": 5,
+    "avg_r": 0.3333,
+    "sum_r": 1.67,
+    "pnl": 173.28
+   }
+  },
+  "trades_per_month": 0.99,
+  "days": 2092,
+  "name": "P1 + P3 + P6 | LOUD only | half 1R + 2R, 96h",
+  "group": "majors",
+  "fees": "ndax",
+  "candidates": 9982
+ },
+ {
+  "trades": 63,
+  "skips": {
+   "gate not LOUD": 6340,
+   "weekend (M4)": 2401,
+   "already in this coin": 667,
+   "gate QUIET": 260,
+   "bear regime: only reversion setups": 112,
+   "majors: one position / 2 trades a day": 97,
+   "trend setup without 1h+4h uptrend (M0)": 42
+  },
+  "end_equity": 12621.48,
+  "return_pct": 26.21,
+  "win_rate": 0.635,
+  "avg_r": 0.4797,
+  "sum_r": 30.22,
+  "pf": 2.634,
+  "avg_cost_r": 0.0753,
+  "avg_gross_r": 0.5548,
+  "t_stat": 3.2,
+  "max_dd_pct": 3.26,
+  "by_setup": {
+   "breakout_retest": {
+    "n": 47,
+    "avg_r": 0.5111
+   },
+   "orb_dst": {
+    "n": 3,
+    "avg_r": 0.4785
+   },
+   "trend_pullback": {
+    "n": 13,
+    "avg_r": 0.3666
+   }
+  },
+  "periods": {
+   "A": {
+    "n": 46,
+    "avg_r": 0.5439,
+    "sum_r": 25.02,
+    "pnl": 2105.85
+   },
+   "B": {
+    "n": 12,
+    "avg_r": 0.1387,
+    "sum_r": 1.66,
+    "pnl": 146.35
+   },
+   "C": {
+    "n": 5,
+    "avg_r": 0.7083,
+    "sum_r": 3.54,
+    "pnl": 369.28
+   }
+  },
+  "trades_per_month": 0.92,
+  "days": 2092,
+  "name": "P1 + P3 + P6 | LOUD only | one exit 2R, 96h",
+  "group": "majors",
+  "fees": "ndax",
+  "candidates": 9982
+ },
+ {
+  "trades": 490,
+  "skips": {
+   "engine: benched": 5146,
+   "weekend (M4)": 4092,
+   "bear regime: only reversion setups": 2117,
+   "trend setup without 1h+4h uptrend (M0)": 1449,
+   "already in this coin": 1261,
+   "majors: one position / 2 trades a day": 628,
+   "engine: negative learned edge": 403,
+   "gate QUIET": 345,
+   "cost > 0.33R": 45,
+   "drawdown break (-10R)": 3
+  },
+  "end_equity": 8436.9,
+  "return_pct": -15.63,
+  "win_rate": 0.402,
+  "avg_r": -0.0727,
+  "sum_r": -35.6,
+  "pf": 0.689,
+  "avg_cost_r": 0.0968,
+  "avg_gross_r": 0.0239,
+  "t_stat": -3.03,
+  "max_dd_pct": 17.94,
+  "by_setup": {
+   "breakout_retest": {
+    "n": 309,
+    "avg_r": -0.0523
+   },
+   "orb": {
+    "n": 38,
+    "avg_r": -0.1078
+   },
+   "rsi2": {
+    "n": 104,
+    "avg_r": -0.0985
+   },
+   "sweep_reclaim": {
+    "n": 27,
+    "avg_r": -0.1075
+   },
+   "trend_pullback": {
+    "n": 12,
+    "avg_r": -0.1847
+   }
+  },
+  "periods": {
+   "A": {
+    "n": 412,
+    "avg_r": -0.0717,
+    "sum_r": -29.54,
+    "pnl": -1422.41
+   },
+   "B": {
+    "n": 65,
+    "avg_r": -0.1255,
+    "sum_r": -8.16,
+    "pnl": -229.38
+   },
+   "C": {
+    "n": 13,
+    "avg_r": 0.1614,
+    "sum_r": 2.1,
+    "pnl": 88.69
+   }
+  },
+  "trades_per_month": 7.12,
+  "days": 2092,
+  "name": "jarvus_v6 (as written)",
+  "group": "majors",
+  "fees": "ndax",
+  "candidates": 15979
+ },
+ {
+  "trades": 1099,
+  "skips": {
+   "weekend (M4)": 4009,
+   "already in this coin": 2509,
+   "majors: one position / 2 trades a day": 2427,
+   "bear regime: only reversion setups": 1999,
+   "engine: benched": 1967,
+   "trend setup without 1h+4h uptrend (M0)": 1398,
+   "gate QUIET": 319,
+   "engine: negative learned edge": 200,
+   "drawdown break (-10R)": 16,
+   "3 losses in a row": 3
+  },
+  "end_equity": 8410.11,
+  "return_pct": -15.9,
+  "win_rate": 0.479,
+  "avg_r": -0.0349,
+  "sum_r": -38.4,
+  "pf": 0.837,
+  "avg_cost_r": 0.0494,
+  "avg_gross_r": 0.0142,
+  "t_stat": -2.17,
+  "max_dd_pct": 19.71,
+  "by_setup": {
+   "breakout_retest": {
+    "n": 207,
+    "avg_r": -0.0265
+   },
+   "orb_dst": {
+    "n": 67,
+    "avg_r": 0.0578
+   },
+   "rsi2": {
+    "n": 499,
+    "avg_r": -0.0427
+   },
+   "sweep_reclaim": {
+    "n": 88,
+    "avg_r": -0.0659
+   },
+   "trend_pullback": {
+    "n": 238,
+    "avg_r": -0.0406
+   }
+  },
+  "periods": {
+   "A": {
+    "n": 929,
+    "avg_r": -0.0304,
+    "sum_r": -28.23,
+    "pnl": -960.66
+   },
+   "B": {
+    "n": 146,
+    "avg_r": -0.0854,
+    "sum_r": -12.47,
+    "pnl": -685.98
+   },
+   "C": {
+    "n": 24,
+    "avg_r": 0.0957,
+    "sum_r": 2.3,
+    "pnl": 56.75
+   }
+  },
+  "trades_per_month": 15.97,
+  "days": 2092,
+  "name": "all (ORB fixed) | gate as written | half 1R + 2R, 8-bar stop",
+  "group": "majors",
+  "fees": "low",
+  "candidates": 15946
+ },
+ {
+  "trades": 489,
+  "skips": {
+   "already in this coin": 4878,
+   "majors: one position / 2 trades a day": 3832,
+   "weekend (M4)": 3232,
+   "bear regime: only reversion setups": 1505,
+   "trend setup without 1h+4h uptrend (M0)": 1264,
+   "engine: benched": 269,
+   "gate QUIET": 255,
+   "engine: negative learned edge": 191,
+   "drawdown break (-10R)": 31
+  },
+  "end_equity": 8352.98,
+  "return_pct": -16.47,
+  "win_rate": 0.489,
+  "avg_r": -0.051,
+  "sum_r": -24.96,
+  "pf": 0.898,
+  "avg_cost_r": 0.0484,
+  "avg_gross_r": -0.0029,
+  "t_stat": -1.1,
+  "max_dd_pct": 23.47,
+  "by_setup": {
+   "breakout_retest": {
+    "n": 90,
+    "avg_r": 0.0752
+   },
+   "orb_dst": {
+    "n": 14,
+    "avg_r": -0.0554
+   },
+   "rsi2": {
+    "n": 323,
+    "avg_r": -0.1404
+   },
+   "sweep_reclaim": {
+    "n": 9,
+    "avg_r": -0.2747
+   },
+   "trend_pullback": {
+    "n": 53,
+    "avg_r": 0.3183
+   }
+  },
+  "periods": {
+   "A": {
+    "n": 368,
+    "avg_r": -0.0595,
+    "sum_r": -21.88,
+    "pnl": -1693.37
+   },
+   "B": {
+    "n": 72,
+    "avg_r": 0.0329,
+    "sum_r": 2.37,
+    "pnl": 123.42
+   },
+   "C": {
+    "n": 49,
+    "avg_r": -0.111,
+    "sum_r": -5.44,
+    "pnl": -77.07
+   }
+  },
+  "trades_per_month": 7.11,
+  "days": 2092,
+  "name": "all (ORB fixed) | gate as written | half 1R + 2R, 96h",
+  "group": "majors",
+  "fees": "low",
+  "candidates": 15946
+ },
+ {
+  "trades": 447,
+  "skips": {
+   "already in this coin": 4907,
+   "majors: one position / 2 trades a day": 3435,
+   "weekend (M4)": 3277,
+   "bear regime: only reversion setups": 1461,
+   "trend setup without 1h+4h uptrend (M0)": 1263,
+   "engine: benched": 443,
+   "engine: negative learned edge": 414,
+   "gate QUIET": 246,
+   "drawdown break (-10R)": 53
+  },
+  "end_equity": 8257.95,
+  "return_pct": -17.42,
+  "win_rate": 0.396,
+  "avg_r": -0.0438,
+  "sum_r": -19.58,
+  "pf": 0.924,
+  "avg_cost_r": 0.0492,
+  "avg_gross_r": 0.0052,
+  "t_stat": -0.75,
+  "max_dd_pct": 20.59,
+  "by_setup": {
+   "breakout_retest": {
+    "n": 92,
+    "avg_r": 0.1493
+   },
+   "orb_dst": {
+    "n": 8,
+    "avg_r": -0.8387
+   },
+   "rsi2": {
+    "n": 295,
+    "avg_r": -0.0673
+   },
+   "sweep_reclaim": {
+    "n": 8,
+    "avg_r": -0.2483
+   },
+   "trend_pullback": {
+    "n": 44,
+    "avg_r": -0.1082
+   }
+  },
+  "periods": {
+   "A": {
+    "n": 333,
+    "avg_r": -0.0463,
+    "sum_r": -15.42,
+    "pnl": -1570.9
+   },
+   "B": {
+    "n": 63,
+    "avg_r": -0.0398,
+    "sum_r": -2.51,
+    "pnl": -156.25
+   },
+   "C": {
+    "n": 51,
+    "avg_r": -0.0323,
+    "sum_r": -1.65,
+    "pnl": -14.9
+   }
+  },
+  "trades_per_month": 6.5,
+  "days": 2092,
+  "name": "all (ORB fixed) | gate as written | one exit 2R, 96h",
+  "group": "majors",
+  "fees": "low",
+  "candidates": 15946
+ },
+ {
+  "trades": 158,
+  "skips": {
+   "gate not LOUD": 10533,
+   "weekend (M4)": 4128,
+   "already in this coin": 406,
+   "gate QUIET": 377,
+   "bear regime: only reversion setups": 112,
+   "engine: negative learned edge": 102,
+   "majors: one position / 2 trades a day": 86,
+   "trend setup without 1h+4h uptrend (M0)": 42,
+   "engine: benched": 2
+  },
+  "end_equity": 9972.19,
+  "return_pct": -0.28,
+  "win_rate": 0.519,
+  "avg_r": -0.0127,
+  "sum_r": -2.01,
+  "pf": 0.93,
+  "avg_cost_r": 0.0335,
+  "avg_gross_r": 0.0206,
+  "t_stat": -0.33,
+  "max_dd_pct": 2.95,
+  "by_setup": {
+   "breakout_retest": {
+    "n": 60,
+    "avg_r": 0.074
+   },
+   "orb_dst": {
+    "n": 10,
+    "avg_r": -0.0055
+   },
+   "rsi2": {
+    "n": 44,
+    "avg_r": -0.1337
+   },
+   "sweep_reclaim": {
+    "n": 11,
+    "avg_r": -0.1109
+   },
+   "trend_pullback": {
+    "n": 33,
+    "avg_r": 0.0214
+   }
+  },
+  "periods": {
+   "A": {
+    "n": 125,
+    "avg_r": -0.037,
+    "sum_r": -4.62,
+    "pnl": -194.93
+   },
+   "B": {
+    "n": 26,
+    "avg_r": -0.0042,
+    "sum_r": -0.11,
+    "pnl": -3.02
+   },
+   "C": {
+    "n": 7,
+    "avg_r": 0.3885,
+    "sum_r": 2.72,
+    "pnl": 170.14
+   }
+  },
+  "trades_per_month": 2.3,
+  "days": 2092,
+  "name": "all (ORB fixed) | LOUD only | half 1R + 2R, 8-bar stop",
+  "group": "majors",
+  "fees": "low",
+  "candidates": 15946
+ },
+ {
+  "trades": 118,
+  "skips": {
+   "gate not LOUD": 9836,
+   "weekend (M4)": 3825,
+   "already in this coin": 1503,
+   "gate QUIET": 373,
+   "majors: one position / 2 trades a day": 162,
+   "bear regime: only reversion setups": 85,
+   "trend setup without 1h+4h uptrend (M0)": 42,
+   "engine: negative learned edge": 2
+  },
+  "end_equity": 12121.09,
+  "return_pct": 21.21,
+  "win_rate": 0.61,
+  "avg_r": 0.1954,
+  "sum_r": 23.06,
+  "pf": 1.614,
+  "avg_cost_r": 0.0346,
+  "avg_gross_r": 0.2298,
+  "t_stat": 2.3,
+  "max_dd_pct": 3.68,
+  "by_setup": {
+   "breakout_retest": {
+    "n": 45,
+    "avg_r": 0.3569
+   },
+   "orb_dst": {
+    "n": 3,
+    "avg_r": 0.8816
+   },
+   "rsi2": {
+    "n": 55,
+    "avg_r": 0.1466
+   },
+   "sweep_reclaim": {
+    "n": 6,
+    "avg_r": -0.4837
+   },
+   "trend_pullback": {
+    "n": 9,
+    "avg_r": -0.09
+   }
+  },
+  "periods": {
+   "A": {
+    "n": 91,
+    "avg_r": 0.2297,
+    "sum_r": 20.91,
+    "pnl": 1882.62
+   },
+   "B": {
+    "n": 17,
+    "avg_r": 0.0999,
+    "sum_r": 1.7,
+    "pnl": 209.09
+   },
+   "C": {
+    "n": 10,
+    "avg_r": 0.0454,
+    "sum_r": 0.45,
+    "pnl": 29.39
+   }
+  },
+  "trades_per_month": 1.71,
+  "days": 2092,
+  "name": "all (ORB fixed) | LOUD only | half 1R + 2R, 96h",
+  "group": "majors",
+  "fees": "low",
+  "candidates": 15946
+ },
+ {
+  "trades": 106,
+  "skips": {
+   "gate not LOUD": 9822,
+   "weekend (M4)": 3825,
+   "already in this coin": 1513,
+   "gate QUIET": 371,
+   "majors: one position / 2 trades a day": 182,
+   "bear regime: only reversion setups": 85,
+   "trend setup without 1h+4h uptrend (M0)": 42
+  },
+  "end_equity": 12634.15,
+  "return_pct": 26.34,
+  "win_rate": 0.538,
+  "avg_r": 0.2765,
+  "sum_r": 29.31,
+  "pf": 1.757,
+  "avg_cost_r": 0.0365,
+  "avg_gross_r": 0.3128,
+  "t_stat": 2.43,
+  "max_dd_pct": 3.79,
+  "by_setup": {
+   "breakout_retest": {
+    "n": 42,
+    "avg_r": 0.5342
+   },
+   "orb_dst": {
+    "n": 2,
+    "avg_r": 1.3016
+   },
+   "rsi2": {
+    "n": 50,
+    "avg_r": 0.1289
+   },
+   "sweep_reclaim": {
+    "n": 5,
+    "avg_r": -0.6777
+   },
+   "trend_pullback": {
+    "n": 7,
+    "avg_r": 0.1731
+   }
+  },
+  "periods": {
+   "A": {
+    "n": 80,
+    "avg_r": 0.3418,
+    "sum_r": 27.34,
+    "pnl": 2345.25
+   },
+   "B": {
+    "n": 16,
+    "avg_r": -0.0197,
+    "sum_r": -0.31,
+    "pnl": 60.94
+   },
+   "C": {
+    "n": 10,
+    "avg_r": 0.2284,
+    "sum_r": 2.28,
+    "pnl": 227.97
+   }
+  },
+  "trades_per_month": 1.54,
+  "days": 2092,
+  "name": "all (ORB fixed) | LOUD only | one exit 2R, 96h",
+  "group": "majors",
+  "fees": "low",
+  "candidates": 15946
+ },
+ {
+  "trades": 408,
+  "skips": {
+   "trend setup without 1h+4h uptrend (M0)": 1246,
+   "bear regime: only reversion setups": 927,
+   "weekend (M4)": 862,
+   "already in this coin": 603,
+   "majors: one position / 2 trades a day": 535,
+   "engine: negative learned edge": 80,
+   "gate QUIET": 69,
+   "drawdown break (-10R)": 25
+  },
+  "end_equity": 9544.13,
+  "return_pct": -4.56,
+  "win_rate": 0.431,
+  "avg_r": -0.0223,
+  "sum_r": -9.11,
+  "pf": 0.899,
+  "avg_cost_r": 0.0491,
+  "avg_gross_r": 0.0266,
+  "t_stat": -0.79,
+  "max_dd_pct": 11.07,
+  "by_setup": {
+   "breakout_retest": {
+    "n": 292,
+    "avg_r": -0.0066
+   },
+   "orb_dst": {
+    "n": 116,
+    "avg_r": -0.0621
+   }
+  },
+  "periods": {
+   "A": {
+    "n": 313,
+    "avg_r": -0.0146,
+    "sum_r": -4.57,
+    "pnl": -226.28
+   },
+   "B": {
+    "n": 82,
+    "avg_r": -0.0903,
+    "sum_r": -7.4,
+    "pnl": -399.23
+   },
+   "C": {
+    "n": 13,
+    "avg_r": 0.2198,
+    "sum_r": 2.86,
+    "pnl": 169.64
+   }
+  },
+  "trades_per_month": 5.93,
+  "days": 2090,
+  "name": "P3 + P6 | gate as written | half 1R + 2R, 8-bar stop",
+  "group": "majors",
+  "fees": "low",
+  "candidates": 4755
+ },
+ {
+  "trades": 192,
+  "skips": {
+   "trend setup without 1h+4h uptrend (M0)": 1238,
+   "bear regime: only reversion setups": 922,
+   "weekend (M4)": 806,
+   "already in this coin": 684,
+   "majors: one position / 2 trades a day": 636,
+   "engine: negative learned edge": 212,
+   "gate QUIET": 65
+  },
+  "end_equity": 9852.08,
+  "return_pct": -1.48,
+  "win_rate": 0.516,
+  "avg_r": 0.006,
+  "sum_r": 1.15,
+  "pf": 1.013,
+  "avg_cost_r": 0.0482,
+  "avg_gross_r": 0.054,
+  "t_stat": 0.08,
+  "max_dd_pct": 8.93,
+  "by_setup": {
+   "breakout_retest": {
+    "n": 139,
+    "avg_r": 0.0328
+   },
+   "orb_dst": {
+    "n": 53,
+    "avg_r": -0.0643
+   }
+  },
+  "periods": {
+   "A": {
+    "n": 143,
+    "avg_r": 0.0182,
+    "sum_r": 2.61,
+    "pnl": -5.39
+   },
+   "B": {
+    "n": 41,
+    "avg_r": -0.0583,
+    "sum_r": -2.39,
+    "pnl": -139.65
+   },
+   "C": {
+    "n": 8,
+    "avg_r": 0.117,
+    "sum_r": 0.94,
+    "pnl": -2.88
+   }
+  },
+  "trades_per_month": 2.79,
+  "days": 2090,
+  "name": "P3 + P6 | gate as written | half 1R + 2R, 96h",
+  "group": "majors",
+  "fees": "low",
+  "candidates": 4755
+ },
+ {
+  "trades": 183,
+  "skips": {
+   "trend setup without 1h+4h uptrend (M0)": 1234,
+   "bear regime: only reversion setups": 919,
+   "weekend (M4)": 811,
+   "majors: one position / 2 trades a day": 678,
+   "already in this coin": 658,
+   "engine: negative learned edge": 190,
+   "gate QUIET": 65,
+   "engine: benched": 17
+  },
+  "end_equity": 9248.09,
+  "return_pct": -7.52,
+  "win_rate": 0.399,
+  "avg_r": -0.0274,
+  "sum_r": -5.02,
+  "pf": 0.951,
+  "avg_cost_r": 0.0488,
+  "avg_gross_r": 0.0211,
+  "t_stat": -0.3,
+  "max_dd_pct": 16.29,
+  "by_setup": {
+   "breakout_retest": {
+    "n": 131,
+    "avg_r": 0.0207
+   },
+   "orb_dst": {
+    "n": 52,
+    "avg_r": -0.1487
+   }
+  },
+  "periods": {
+   "A": {
+    "n": 133,
+    "avg_r": -0.0182,
+    "sum_r": -2.42,
+    "pnl": -270.57
+   },
+   "B": {
+    "n": 42,
+    "avg_r": -0.0951,
+    "sum_r": -3.99,
+    "pnl": -490.99
+   },
+   "C": {
+    "n": 8,
+    "avg_r": 0.1746,
+    "sum_r": 1.4,
+    "pnl": 9.65
+   }
+  },
+  "trades_per_month": 2.66,
+  "days": 2090,
+  "name": "P3 + P6 | gate as written | one exit 2R, 96h",
+  "group": "majors",
+  "fees": "low",
+  "candidates": 4755
+ },
+ {
+  "trades": 69,
+  "skips": {
+   "gate not LOUD": 3439,
+   "weekend (M4)": 871,
+   "already in this coin": 127,
+   "gate QUIET": 81,
+   "bear regime: only reversion setups": 71,
+   "engine: negative learned edge": 37,
+   "trend setup without 1h+4h uptrend (M0)": 35,
+   "majors: one position / 2 trades a day": 25
+  },
+  "end_equity": 10202.49,
+  "return_pct": 2.02,
+  "win_rate": 0.536,
+  "avg_r": 0.0477,
+  "sum_r": 3.29,
+  "pf": 1.264,
+  "avg_cost_r": 0.0354,
+  "avg_gross_r": 0.0828,
+  "t_stat": 0.72,
+  "max_dd_pct": 1.93,
+  "by_setup": {
+   "breakout_retest": {
+    "n": 55,
+    "avg_r": 0.042
+   },
+   "orb_dst": {
+    "n": 14,
+    "avg_r": 0.0699
+   }
+  },
+  "periods": {
+   "A": {
+    "n": 50,
+    "avg_r": -0.0011,
+    "sum_r": -0.06,
+    "pnl": -9.15
+   },
+   "B": {
+    "n": 13,
+    "avg_r": 0.072,
+    "sum_r": 0.94,
+    "pnl": 56.24
+   },
+   "C": {
+    "n": 6,
+    "avg_r": 0.4014,
+    "sum_r": 2.41,
+    "pnl": 155.4
+   }
+  },
+  "trades_per_month": 1.0,
+  "days": 2090,
+  "name": "P3 + P6 | LOUD only | half 1R + 2R, 8-bar stop",
+  "group": "majors",
+  "fees": "low",
+  "candidates": 4755
+ },
+ {
+  "trades": 60,
+  "skips": {
+   "gate not LOUD": 3363,
+   "weekend (M4)": 840,
+   "already in this coin": 250,
+   "gate QUIET": 80,
+   "bear regime: only reversion setups": 70,
+   "majors: one position / 2 trades a day": 57,
+   "trend setup without 1h+4h uptrend (M0)": 35
+  },
+  "end_equity": 11615.97,
+  "return_pct": 16.16,
+  "win_rate": 0.667,
+  "avg_r": 0.3192,
+  "sum_r": 19.15,
+  "pf": 2.214,
+  "avg_cost_r": 0.0335,
+  "avg_gross_r": 0.3525,
+  "t_stat": 2.67,
+  "max_dd_pct": 2.09,
+  "by_setup": {
+   "breakout_retest": {
+    "n": 55,
+    "avg_r": 0.2882
+   },
+   "orb_dst": {
+    "n": 5,
+    "avg_r": 0.6608
+   }
+  },
+  "periods": {
+   "A": {
+    "n": 45,
+    "avg_r": 0.3871,
+    "sum_r": 17.42,
+    "pnl": 1448.0
+   },
+   "B": {
+    "n": 10,
+    "avg_r": 0.0786,
+    "sum_r": 0.79,
+    "pnl": 75.77
+   },
+   "C": {
+    "n": 5,
+    "avg_r": 0.1892,
+    "sum_r": 0.95,
+    "pnl": 92.2
+   }
+  },
+  "trades_per_month": 0.87,
+  "days": 2090,
+  "name": "P3 + P6 | LOUD only | half 1R + 2R, 96h",
+  "group": "majors",
+  "fees": "low",
+  "candidates": 4755
+ },
+ {
+  "trades": 58,
+  "skips": {
+   "gate not LOUD": 3348,
+   "weekend (M4)": 840,
+   "already in this coin": 263,
+   "gate QUIET": 80,
+   "bear regime: only reversion setups": 70,
+   "majors: one position / 2 trades a day": 61,
+   "trend setup without 1h+4h uptrend (M0)": 35
+  },
+  "end_equity": 12345.86,
+  "return_pct": 23.46,
+  "win_rate": 0.621,
+  "avg_r": 0.458,
+  "sum_r": 26.56,
+  "pf": 2.55,
+  "avg_cost_r": 0.0341,
+  "avg_gross_r": 0.4919,
+  "t_stat": 2.95,
+  "max_dd_pct": 2.17,
+  "by_setup": {
+   "breakout_retest": {
+    "n": 53,
+    "avg_r": 0.4302
+   },
+   "orb_dst": {
+    "n": 5,
+    "avg_r": 0.7523
+   }
+  },
+  "periods": {
+   "A": {
+    "n": 43,
+    "avg_r": 0.5546,
+    "sum_r": 23.85,
+    "pnl": 2058.25
+   },
+   "B": {
+    "n": 10,
+    "avg_r": 0.1311,
+    "sum_r": 1.31,
+    "pnl": 137.33
+   },
+   "C": {
+    "n": 5,
+    "avg_r": 0.2812,
+    "sum_r": 1.41,
+    "pnl": 150.28
+   }
+  },
+  "trades_per_month": 0.84,
+  "days": 2090,
+  "name": "P3 + P6 | LOUD only | one exit 2R, 96h",
+  "group": "majors",
+  "fees": "low",
+  "candidates": 4755
+ },
+ {
+  "trades": 464,
+  "skips": {
+   "weekend (M4)": 2513,
+   "bear regime: only reversion setups": 2183,
+   "trend setup without 1h+4h uptrend (M0)": 1444,
+   "engine: benched": 1343,
+   "already in this coin": 927,
+   "majors: one position / 2 trades a day": 754,
+   "gate QUIET": 238,
+   "engine: negative learned edge": 100,
+   "drawdown break (-10R)": 16
+  },
+  "end_equity": 9244.76,
+  "return_pct": -7.55,
+  "win_rate": 0.453,
+  "avg_r": -0.0234,
+  "sum_r": -10.85,
+  "pf": 0.893,
+  "avg_cost_r": 0.0491,
+  "avg_gross_r": 0.0255,
+  "t_stat": -0.89,
+  "max_dd_pct": 12.96,
+  "by_setup": {
+   "breakout_retest": {
+    "n": 283,
+    "avg_r": 0.0113
+   },
+   "orb_dst": {
+    "n": 109,
+    "avg_r": -0.072
+   },
+   "trend_pullback": {
+    "n": 72,
+    "avg_r": -0.0862
+   }
+  },
+  "periods": {
+   "A": {
+    "n": 367,
+    "avg_r": -0.0163,
+    "sum_r": -6.0,
+    "pnl": -347.25
+   },
+   "B": {
+    "n": 80,
+    "avg_r": -0.0921,
+    "sum_r": -7.37,
+    "pnl": -478.59
+   },
+   "C": {
+    "n": 17,
+    "avg_r": 0.1481,
+    "sum_r": 2.52,
+    "pnl": 70.6
+   }
+  },
+  "trades_per_month": 6.74,
+  "days": 2092,
+  "name": "P1 + P3 + P6 | gate as written | half 1R + 2R, 8-bar stop",
+  "group": "majors",
+  "fees": "low",
+  "candidates": 9982
+ },
+ {
+  "trades": 254,
+  "skips": {
+   "weekend (M4)": 2223,
+   "bear regime: only reversion setups": 2167,
+   "already in this coin": 1844,
+   "majors: one position / 2 trades a day": 1762,
+   "trend setup without 1h+4h uptrend (M0)": 1425,
+   "gate QUIET": 216,
+   "engine: negative learned edge": 80,
+   "drawdown break (-10R)": 11
+  },
+  "end_equity": 10095.7,
+  "return_pct": 0.96,
+  "win_rate": 0.524,
+  "avg_r": 0.014,
+  "sum_r": 3.55,
+  "pf": 1.03,
+  "avg_cost_r": 0.0513,
+  "avg_gross_r": 0.065,
+  "t_stat": 0.21,
+  "max_dd_pct": 13.22,
+  "by_setup": {
+   "breakout_retest": {
+    "n": 105,
+    "avg_r": 0.1051
+   },
+   "orb_dst": {
+    "n": 18,
+    "avg_r": -0.1227
+   },
+   "trend_pullback": {
+    "n": 131,
+    "avg_r": -0.0403
+   }
+  },
+  "periods": {
+   "A": {
+    "n": 187,
+    "avg_r": 0.0208,
+    "sum_r": 3.89,
+    "pnl": 422.3
+   },
+   "B": {
+    "n": 54,
+    "avg_r": -0.0241,
+    "sum_r": -1.3,
+    "pnl": -319.08
+   },
+   "C": {
+    "n": 13,
+    "avg_r": 0.0737,
+    "sum_r": 0.96,
+    "pnl": -7.52
+   }
+  },
+  "trades_per_month": 3.69,
+  "days": 2092,
+  "name": "P1 + P3 + P6 | gate as written | half 1R + 2R, 96h",
+  "group": "majors",
+  "fees": "low",
+  "candidates": 9982
+ },
+ {
+  "trades": 238,
+  "skips": {
+   "weekend (M4)": 2193,
+   "bear regime: only reversion setups": 2167,
+   "already in this coin": 1867,
+   "majors: one position / 2 trades a day": 1716,
+   "trend setup without 1h+4h uptrend (M0)": 1423,
+   "gate QUIET": 218,
+   "engine: negative learned edge": 120,
+   "drawdown break (-10R)": 40
+  },
+  "end_equity": 9391.24,
+  "return_pct": -6.09,
+  "win_rate": 0.408,
+  "avg_r": 0.0058,
+  "sum_r": 1.38,
+  "pf": 1.01,
+  "avg_cost_r": 0.0528,
+  "avg_gross_r": 0.0584,
+  "t_stat": 0.07,
+  "max_dd_pct": 17.48,
+  "by_setup": {
+   "breakout_retest": {
+    "n": 103,
+    "avg_r": 0.1394
+   },
+   "orb_dst": {
+    "n": 11,
+    "avg_r": -0.6181
+   },
+   "trend_pullback": {
+    "n": 124,
+    "avg_r": -0.0498
+   }
+  },
+  "periods": {
+   "A": {
+    "n": 179,
+    "avg_r": 0.0409,
+    "sum_r": 7.32,
+    "pnl": 6.26
+   },
+   "B": {
+    "n": 47,
+    "avg_r": -0.0867,
+    "sum_r": -4.08,
+    "pnl": -477.48
+   },
+   "C": {
+    "n": 12,
+    "avg_r": -0.1546,
+    "sum_r": -1.86,
+    "pnl": -137.53
+   }
+  },
+  "trades_per_month": 3.46,
+  "days": 2092,
+  "name": "P1 + P3 + P6 | gate as written | one exit 2R, 96h",
+  "group": "majors",
+  "fees": "low",
+  "candidates": 9982
+ },
+ {
+  "trades": 110,
+  "skips": {
+   "gate not LOUD": 6592,
+   "weekend (M4)": 2534,
+   "gate QUIET": 264,
+   "already in this coin": 251,
+   "bear regime: only reversion setups": 117,
+   "majors: one position / 2 trades a day": 67,
+   "trend setup without 1h+4h uptrend (M0)": 42,
+   "engine: negative learned edge": 5
+  },
+  "end_equity": 10318.57,
+  "return_pct": 3.19,
+  "win_rate": 0.573,
+  "avg_r": 0.0486,
+  "sum_r": 5.35,
+  "pf": 1.313,
+  "avg_cost_r": 0.032,
+  "avg_gross_r": 0.0804,
+  "t_stat": 1.02,
+  "max_dd_pct": 2.79,
+  "by_setup": {
+   "breakout_retest": {
+    "n": 58,
+    "avg_r": 0.0826
+   },
+   "orb_dst": {
+    "n": 11,
+    "avg_r": 0.0116
+   },
+   "trend_pullback": {
+    "n": 41,
+    "avg_r": 0.0103
+   }
+  },
+  "periods": {
+   "A": {
+    "n": 85,
+    "avg_r": 0.0158,
+    "sum_r": 1.34,
+    "pnl": 62.47
+   },
+   "B": {
+    "n": 19,
+    "avg_r": 0.0672,
+    "sum_r": 1.28,
+    "pnl": 76.82
+   },
+   "C": {
+    "n": 6,
+    "avg_r": 0.4544,
+    "sum_r": 2.73,
+    "pnl": 179.28
+   }
+  },
+  "trades_per_month": 1.6,
+  "days": 2092,
+  "name": "P1 + P3 + P6 | LOUD only | half 1R + 2R, 8-bar stop",
+  "group": "majors",
+  "fees": "low",
+  "candidates": 9982
+ },
+ {
+  "trades": 68,
+  "skips": {
+   "gate not LOUD": 6347,
+   "weekend (M4)": 2412,
+   "already in this coin": 645,
+   "gate QUIET": 262,
+   "bear regime: only reversion setups": 112,
+   "majors: one position / 2 trades a day": 94,
+   "trend setup without 1h+4h uptrend (M0)": 42
+  },
+  "end_equity": 12209.5,
+  "return_pct": 22.1,
+  "win_rate": 0.706,
+  "avg_r": 0.3757,
+  "sum_r": 25.55,
+  "pf": 2.574,
+  "avg_cost_r": 0.0314,
+  "avg_gross_r": 0.4069,
+  "t_stat": 3.38,
+  "max_dd_pct": 2.79,
+  "by_setup": {
+   "breakout_retest": {
+    "n": 49,
+    "avg_r": 0.3925
+   },
+   "orb_dst": {
+    "n": 3,
+    "avg_r": 0.4087
+   },
+   "trend_pullback": {
+    "n": 16,
+    "avg_r": 0.3181
+   }
+  },
+  "periods": {
+   "A": {
+    "n": 51,
+    "avg_r": 0.4407,
+    "sum_r": 22.47,
+    "pnl": 1886.9
+   },
+   "B": {
+    "n": 12,
+    "avg_r": 0.1021,
+    "sum_r": 1.23,
+    "pnl": 124.29
+   },
+   "C": {
+    "n": 5,
+    "avg_r": 0.37,
+    "sum_r": 1.85,
+    "pnl": 198.32
+   }
+  },
+  "trades_per_month": 0.99,
+  "days": 2092,
+  "name": "P1 + P3 + P6 | LOUD only | half 1R + 2R, 96h",
+  "group": "majors",
+  "fees": "low",
+  "candidates": 9982
+ },
+ {
+  "trades": 63,
+  "skips": {
+   "gate not LOUD": 6340,
+   "weekend (M4)": 2401,
+   "already in this coin": 667,
+   "gate QUIET": 260,
+   "bear regime: only reversion setups": 112,
+   "majors: one position / 2 trades a day": 97,
+   "trend setup without 1h+4h uptrend (M0)": 42
+  },
+  "end_equity": 12924.45,
+  "return_pct": 29.24,
+  "win_rate": 0.651,
+  "avg_r": 0.5225,
+  "sum_r": 32.92,
+  "pf": 2.87,
+  "avg_cost_r": 0.0325,
+  "avg_gross_r": 0.5548,
+  "t_stat": 3.47,
+  "max_dd_pct": 3.07,
+  "by_setup": {
+   "breakout_retest": {
+    "n": 47,
+    "avg_r": 0.5572
+   },
+   "orb_dst": {
+    "n": 3,
+    "avg_r": 0.5149
+   },
+   "trend_pullback": {
+    "n": 13,
+    "avg_r": 0.3988
+   }
+  },
+  "periods": {
+   "A": {
+    "n": 46,
+    "avg_r": 0.5842,
+    "sum_r": 26.87,
+    "pnl": 2291.57
+   },
+   "B": {
+    "n": 12,
+    "avg_r": 0.1875,
+    "sum_r": 2.25,
+    "pnl": 219.95
+   },
+   "C": {
+    "n": 5,
+    "avg_r": 0.7592,
+    "sum_r": 3.8,
+    "pnl": 412.93
+   }
+  },
+  "trades_per_month": 0.92,
+  "days": 2092,
+  "name": "P1 + P3 + P6 | LOUD only | one exit 2R, 96h",
+  "group": "majors",
+  "fees": "low",
+  "candidates": 9982
+ },
+ {
+  "trades": 1101,
+  "skips": {
+   "weekend (M4)": 3986,
+   "already in this coin": 2555,
+   "majors: one position / 2 trades a day": 2442,
+   "bear regime: only reversion setups": 1989,
+   "engine: benched": 1979,
+   "trend setup without 1h+4h uptrend (M0)": 1408,
+   "gate QUIET": 319,
+   "engine: negative learned edge": 189,
+   "3 losses in a row": 7,
+   "drawdown break (-10R)": 4
+  },
+  "end_equity": 8294.58,
+  "return_pct": -17.05,
+  "win_rate": 0.477,
+  "avg_r": -0.0348,
+  "sum_r": -38.27,
+  "pf": 0.837,
+  "avg_cost_r": 0.0496,
+  "avg_gross_r": 0.0146,
+  "t_stat": -2.17,
+  "max_dd_pct": 21.15,
+  "by_setup": {
+   "breakout_retest": {
+    "n": 204,
+    "avg_r": -0.0236
+   },
+   "orb": {
+    "n": 76,
+    "avg_r": -0.001
+   },
+   "rsi2": {
+    "n": 486,
+    "avg_r": -0.0425
+   },
+   "sweep_reclaim": {
+    "n": 99,
+    "avg_r": -0.0596
+   },
+   "trend_pullback": {
+    "n": 236,
+    "avg_r": -0.029
+   }
+  },
+  "periods": {
+   "A": {
+    "n": 923,
+    "avg_r": -0.0323,
+    "sum_r": -29.85,
+    "pnl": -1104.55
+   },
+   "B": {
+    "n": 151,
+    "avg_r": -0.0714,
+    "sum_r": -10.78,
+    "pnl": -656.43
+   },
+   "C": {
+    "n": 27,
+    "avg_r": 0.0876,
+    "sum_r": 2.36,
+    "pnl": 55.55
+   }
+  },
+  "trades_per_month": 16.0,
+  "days": 2092,
+  "name": "jarvus_v6 (as written)",
+  "group": "majors",
+  "fees": "low",
+  "candidates": 15979
+ },
+ {
+  "trades": 87,
+  "skips": {
+   "weekend (M4)": 4184,
+   "engine: benched": 3699,
+   "cost > 0.33R": 3420,
+   "bear regime: only reversion setups": 2159,
+   "trend setup without 1h+4h uptrend (M0)": 1442,
+   "gate QUIET": 368,
+   "engine: negative learned edge": 268,
+   "already in this coin": 220,
+   "majors: one position / 2 trades a day": 99
+  },
+  "end_equity": 9615.72,
+  "return_pct": -3.84,
+  "win_rate": 0.333,
+  "avg_r": -0.1286,
+  "sum_r": -11.19,
+  "pf": 0.526,
+  "avg_cost_r": 0.1888,
+  "avg_gross_r": 0.06,
+  "t_stat": -2.24,
+  "max_dd_pct": 5.1,
+  "by_setup": {
+   "breakout_retest": {
+    "n": 23,
+    "avg_r": -0.0804
+   },
+   "orb_dst": {
+    "n": 19,
+    "avg_r": -0.083
+   },
+   "rsi2": {
+    "n": 29,
+    "avg_r": -0.138
+   },
+   "sweep_reclaim": {
+    "n": 8,
+    "avg_r": -0.2244
+   },
+   "trend_pullback": {
+    "n": 8,
+    "avg_r": -0.2458
+   }
+  },
+  "periods": {
+   "A": {
+    "n": 87,
+    "avg_r": -0.1286,
+    "sum_r": -11.19,
+    "pnl": -384.28
+   }
+  },
+  "trades_per_month": 1.26,
+  "days": 2092,
+  "name": "all (ORB fixed) | gate as written | half 1R + 2R, 8-bar stop",
+  "group": "majors",
+  "fees": "kraken",
+  "candidates": 15946
+ },
+ {
+  "trades": 229,
+  "skips": {
+   "weekend (M4)": 3671,
+   "cost > 0.33R": 3141,
+   "already in this coin": 2675,
+   "bear regime: only reversion setups": 1951,
+   "trend setup without 1h+4h uptrend (M0)": 1395,
+   "engine: benched": 1018,
+   "majors: one position / 2 trades a day": 781,
+   "engine: negative learned edge": 771,
+   "gate QUIET": 305,
+   "drawdown break (-10R)": 9
+  },
+  "end_equity": 8888.57,
+  "return_pct": -11.11,
+  "win_rate": 0.472,
+  "avg_r": -0.1712,
+  "sum_r": -39.21,
+  "pf": 0.695,
+  "avg_cost_r": 0.1941,
+  "avg_gross_r": 0.0227,
+  "t_stat": -2.53,
+  "max_dd_pct": 16.09,
+  "by_setup": {
+   "breakout_retest": {
+    "n": 107,
+    "avg_r": 0.0286
+   },
+   "orb_dst": {
+    "n": 12,
+    "avg_r": -0.1363
+   },
+   "rsi2": {
+    "n": 69,
+    "avg_r": -0.2901
+   },
+   "sweep_reclaim": {
+    "n": 12,
+    "avg_r": -0.2894
+   },
+   "trend_pullback": {
+    "n": 29,
+    "avg_r": -0.5912
+   }
+  },
+  "periods": {
+   "A": {
+    "n": 198,
+    "avg_r": -0.2098,
+    "sum_r": -41.55,
+    "pnl": -1122.5
+   },
+   "B": {
+    "n": 25,
+    "avg_r": 0.0979,
+    "sum_r": 2.45,
+    "pnl": 34.78
+   },
+   "C": {
+    "n": 6,
+    "avg_r": -0.0184,
+    "sum_r": -0.11,
+    "pnl": -23.71
+   }
+  },
+  "trades_per_month": 3.33,
+  "days": 2092,
+  "name": "all (ORB fixed) | gate as written | half 1R + 2R, 96h",
+  "group": "majors",
+  "fees": "kraken",
+  "candidates": 15946
+ },
+ {
+  "trades": 234,
+  "skips": {
+   "weekend (M4)": 3560,
+   "already in this coin": 3108,
+   "cost > 0.33R": 3093,
+   "bear regime: only reversion setups": 1955,
+   "trend setup without 1h+4h uptrend (M0)": 1389,
+   "majors: one position / 2 trades a day": 959,
+   "engine: benched": 794,
+   "engine: negative learned edge": 540,
+   "gate QUIET": 308,
+   "drawdown break (-10R)": 6
+  },
+  "end_equity": 8723.75,
+  "return_pct": -12.76,
+  "win_rate": 0.402,
+  "avg_r": -0.1561,
+  "sum_r": -36.54,
+  "pf": 0.757,
+  "avg_cost_r": 0.2077,
+  "avg_gross_r": 0.0513,
+  "t_stat": -1.94,
+  "max_dd_pct": 17.96,
+  "by_setup": {
+   "breakout_retest": {
+    "n": 78,
+    "avg_r": -0.0071
+   },
+   "orb_dst": {
+    "n": 22,
+    "avg_r": -0.0357
+   },
+   "rsi2": {
+    "n": 57,
+    "avg_r": -0.3157
+   },
+   "sweep_reclaim": {
+    "n": 12,
+    "avg_r": -0.2227
+   },
+   "trend_pullback": {
+    "n": 65,
+    "avg_r": -0.2235
+   }
+  },
+  "periods": {
+   "A": {
+    "n": 195,
+    "avg_r": -0.136,
+    "sum_r": -26.53,
+    "pnl": -842.72
+   },
+   "B": {
+    "n": 31,
+    "avg_r": -0.2761,
+    "sum_r": -8.56,
+    "pnl": -376.44
+   },
+   "C": {
+    "n": 8,
+    "avg_r": -0.1815,
+    "sum_r": -1.45,
+    "pnl": -57.1
+   }
+  },
+  "trades_per_month": 3.4,
+  "days": 2092,
+  "name": "all (ORB fixed) | gate as written | one exit 2R, 96h",
+  "group": "majors",
+  "fees": "kraken",
+  "candidates": 15946
+ },
+ {
+  "trades": 65,
+  "skips": {
+   "gate not LOUD": 10633,
+   "weekend (M4)": 4187,
+   "gate QUIET": 377,
+   "engine: negative learned edge": 212,
+   "already in this coin": 158,
+   "bear regime: only reversion setups": 112,
+   "cost > 0.33R": 91,
+   "engine: benched": 49,
+   "trend setup without 1h+4h uptrend (M0)": 42,
+   "majors: one position / 2 trades a day": 20
+  },
+  "end_equity": 9705.69,
+  "return_pct": -2.94,
+  "win_rate": 0.369,
+  "avg_r": -0.1454,
+  "sum_r": -9.45,
+  "pf": 0.442,
+  "avg_cost_r": 0.1631,
+  "avg_gross_r": 0.0175,
+  "t_stat": -2.27,
+  "max_dd_pct": 3.42,
+  "by_setup": {
+   "breakout_retest": {
+    "n": 20,
+    "avg_r": -0.2496
+   },
+   "orb_dst": {
+    "n": 15,
+    "avg_r": -0.0061
+   },
+   "rsi2": {
+    "n": 8,
+    "avg_r": -0.2243
+   },
+   "sweep_reclaim": {
+    "n": 8,
+    "avg_r": -0.105
+   },
+   "trend_pullback": {
+    "n": 14,
+    "avg_r": -0.1238
+   }
+  },
+  "periods": {
+   "A": {
+    "n": 56,
+    "avg_r": -0.1689,
+    "sum_r": -9.46,
+    "pnl": -296.85
+   },
+   "B": {
+    "n": 6,
+    "avg_r": -0.0944,
+    "sum_r": -0.57,
+    "pnl": -15.25
+   },
+   "C": {
+    "n": 3,
+    "avg_r": 0.1899,
+    "sum_r": 0.57,
+    "pnl": 17.79
+   }
+  },
+  "trades_per_month": 0.94,
+  "days": 2092,
+  "name": "all (ORB fixed) | LOUD only | half 1R + 2R, 8-bar stop",
+  "group": "majors",
+  "fees": "kraken",
+  "candidates": 15946
+ },
+ {
+  "trades": 101,
+  "skips": {
+   "gate not LOUD": 9961,
+   "weekend (M4)": 3855,
+   "already in this coin": 1323,
+   "gate QUIET": 373,
+   "majors: one position / 2 trades a day": 115,
+   "bear regime: only reversion setups": 89,
+   "cost > 0.33R": 87,
+   "trend setup without 1h+4h uptrend (M0)": 42
+  },
+  "end_equity": 10532.13,
+  "return_pct": 5.32,
+  "win_rate": 0.584,
+  "avg_r": 0.1037,
+  "sum_r": 10.48,
+  "pf": 1.293,
+  "avg_cost_r": 0.1632,
+  "avg_gross_r": 0.2668,
+  "t_stat": 1.14,
+  "max_dd_pct": 2.96,
+  "by_setup": {
+   "breakout_retest": {
+    "n": 39,
+    "avg_r": 0.1588
+   },
+   "orb_dst": {
+    "n": 4,
+    "avg_r": 0.7367
+   },
+   "rsi2": {
+    "n": 42,
+    "avg_r": 0.0816
+   },
+   "sweep_reclaim": {
+    "n": 5,
+    "avg_r": -0.8059
+   },
+   "trend_pullback": {
+    "n": 11,
+    "avg_r": 0.1763
+   }
+  },
+  "periods": {
+   "A": {
+    "n": 79,
+    "avg_r": 0.1299,
+    "sum_r": 10.26,
+    "pnl": 600.89
+   },
+   "B": {
+    "n": 15,
+    "avg_r": -0.0826,
+    "sum_r": -1.24,
+    "pnl": -122.41
+   },
+   "C": {
+    "n": 7,
+    "avg_r": 0.2074,
+    "sum_r": 1.45,
+    "pnl": 53.65
+   }
+  },
+  "trades_per_month": 1.47,
+  "days": 2092,
+  "name": "all (ORB fixed) | LOUD only | half 1R + 2R, 96h",
+  "group": "majors",
+  "fees": "kraken",
+  "candidates": 15946
+ },
+ {
+  "trades": 89,
+  "skips": {
+   "gate not LOUD": 9952,
+   "weekend (M4)": 3847,
+   "already in this coin": 1343,
+   "gate QUIET": 371,
+   "majors: one position / 2 trades a day": 126,
+   "bear regime: only reversion setups": 89,
+   "cost > 0.33R": 87,
+   "trend setup without 1h+4h uptrend (M0)": 42
+  },
+  "end_equity": 10927.52,
+  "return_pct": 9.28,
+  "win_rate": 0.528,
+  "avg_r": 0.2175,
+  "sum_r": 19.36,
+  "pf": 1.544,
+  "avg_cost_r": 0.1766,
+  "avg_gross_r": 0.3939,
+  "t_stat": 1.76,
+  "max_dd_pct": 2.5,
+  "by_setup": {
+   "breakout_retest": {
+    "n": 36,
+    "avg_r": 0.3668
+   },
+   "orb_dst": {
+    "n": 4,
+    "avg_r": 0.8788
+   },
+   "rsi2": {
+    "n": 35,
+    "avg_r": 0.1061
+   },
+   "sweep_reclaim": {
+    "n": 5,
+    "avg_r": -0.8059
+   },
+   "trend_pullback": {
+    "n": 9,
+    "avg_r": 0.3281
+   }
+  },
+  "periods": {
+   "A": {
+    "n": 68,
+    "avg_r": 0.2395,
+    "sum_r": 16.28,
+    "pnl": 856.3
+   },
+   "B": {
+    "n": 14,
+    "avg_r": 0.0485,
+    "sum_r": 0.68,
+    "pnl": -55.86
+   },
+   "C": {
+    "n": 7,
+    "avg_r": 0.3422,
+    "sum_r": 2.4,
+    "pnl": 127.08
+   }
+  },
+  "trades_per_month": 1.29,
+  "days": 2092,
+  "name": "all (ORB fixed) | LOUD only | one exit 2R, 96h",
+  "group": "majors",
+  "fees": "kraken",
+  "candidates": 15946
+ },
+ {
+  "trades": 39,
+  "skips": {
+   "trend setup without 1h+4h uptrend (M0)": 1246,
+   "bear regime: only reversion setups": 927,
+   "weekend (M4)": 873,
+   "engine: benched": 735,
+   "cost > 0.33R": 636,
+   "engine: negative learned edge": 107,
+   "already in this coin": 79,
+   "gate QUIET": 78,
+   "majors: one position / 2 trades a day": 35
+  },
+  "end_equity": 9923.01,
+  "return_pct": -0.77,
+  "win_rate": 0.308,
+  "avg_r": -0.0685,
+  "sum_r": -2.67,
+  "pf": 0.741,
+  "avg_cost_r": 0.1937,
+  "avg_gross_r": 0.125,
+  "t_stat": -0.72,
+  "max_dd_pct": 3.63,
+  "by_setup": {
+   "breakout_retest": {
+    "n": 21,
+    "avg_r": -0.0675
+   },
+   "orb_dst": {
+    "n": 18,
+    "avg_r": -0.0697
+   }
+  },
+  "periods": {
+   "A": {
+    "n": 39,
+    "avg_r": -0.0685,
+    "sum_r": -2.67,
+    "pnl": -76.99
+   }
+  },
+  "trades_per_month": 0.57,
+  "days": 2090,
+  "name": "P3 + P6 | gate as written | half 1R + 2R, 8-bar stop",
+  "group": "majors",
+  "fees": "kraken",
+  "candidates": 4755
+ },
+ {
+  "trades": 132,
+  "skips": {
+   "trend setup without 1h+4h uptrend (M0)": 1242,
+   "bear regime: only reversion setups": 925,
+   "weekend (M4)": 836,
+   "cost > 0.33R": 615,
+   "already in this coin": 518,
+   "majors: one position / 2 trades a day": 211,
+   "engine: negative learned edge": 205,
+   "gate QUIET": 71
+  },
+  "end_equity": 9608.35,
+  "return_pct": -3.92,
+  "win_rate": 0.515,
+  "avg_r": -0.0939,
+  "sum_r": -12.39,
+  "pf": 0.819,
+  "avg_cost_r": 0.1985,
+  "avg_gross_r": 0.1044,
+  "t_stat": -1.04,
+  "max_dd_pct": 8.54,
+  "by_setup": {
+   "breakout_retest": {
+    "n": 104,
+    "avg_r": -0.0892
+   },
+   "orb_dst": {
+    "n": 28,
+    "avg_r": -0.1111
+   }
+  },
+  "periods": {
+   "A": {
+    "n": 101,
+    "avg_r": -0.1458,
+    "sum_r": -14.73,
+    "pnl": -406.76
+   },
+   "B": {
+    "n": 25,
+    "avg_r": 0.0979,
+    "sum_r": 2.45,
+    "pnl": 40.85
+   },
+   "C": {
+    "n": 6,
+    "avg_r": -0.0184,
+    "sum_r": -0.11,
+    "pnl": -25.74
+   }
+  },
+  "trades_per_month": 1.92,
+  "days": 2090,
+  "name": "P3 + P6 | gate as written | half 1R + 2R, 96h",
+  "group": "majors",
+  "fees": "kraken",
+  "candidates": 4755
+ },
+ {
+  "trades": 121,
+  "skips": {
+   "trend setup without 1h+4h uptrend (M0)": 1239,
+   "bear regime: only reversion setups": 922,
+   "weekend (M4)": 838,
+   "cost > 0.33R": 608,
+   "already in this coin": 516,
+   "majors: one position / 2 trades a day": 237,
+   "engine: negative learned edge": 187,
+   "gate QUIET": 70,
+   "engine: benched": 17
+  },
+  "end_equity": 9646.14,
+  "return_pct": -3.54,
+  "win_rate": 0.388,
+  "avg_r": -0.1517,
+  "sum_r": -18.36,
+  "pf": 0.769,
+  "avg_cost_r": 0.2064,
+  "avg_gross_r": 0.0545,
+  "t_stat": -1.31,
+  "max_dd_pct": 9.91,
+  "by_setup": {
+   "breakout_retest": {
+    "n": 97,
+    "avg_r": -0.1416
+   },
+   "orb_dst": {
+    "n": 24,
+    "avg_r": -0.1925
+   }
+  },
+  "periods": {
+   "A": {
+    "n": 94,
+    "avg_r": -0.1513,
+    "sum_r": -14.22,
+    "pnl": -195.47
+   },
+   "B": {
+    "n": 21,
+    "avg_r": -0.2044,
+    "sum_r": -4.29,
+    "pnl": -115.15
+   },
+   "C": {
+    "n": 6,
+    "avg_r": 0.0254,
+    "sum_r": 0.15,
+    "pnl": -43.24
+   }
+  },
+  "trades_per_month": 1.76,
+  "days": 2090,
+  "name": "P3 + P6 | gate as written | one exit 2R, 96h",
+  "group": "majors",
+  "fees": "kraken",
+  "candidates": 4755
+ },
+ {
+  "trades": 27,
+  "skips": {
+   "gate not LOUD": 3461,
+   "weekend (M4)": 881,
+   "engine: negative learned edge": 109,
+   "gate QUIET": 81,
+   "bear regime: only reversion setups": 71,
+   "already in this coin": 49,
+   "cost > 0.33R": 36,
+   "trend setup without 1h+4h uptrend (M0)": 35,
+   "majors: one position / 2 trades a day": 5
+  },
+  "end_equity": 9828.43,
+  "return_pct": -1.72,
+  "win_rate": 0.37,
+  "avg_r": -0.1354,
+  "sum_r": -3.66,
+  "pf": 0.591,
+  "avg_cost_r": 0.1524,
+  "avg_gross_r": 0.0168,
+  "t_stat": -1.06,
+  "max_dd_pct": 2.75,
+  "by_setup": {
+   "breakout_retest": {
+    "n": 12,
+    "avg_r": -0.297
+   },
+   "orb_dst": {
+    "n": 15,
+    "avg_r": -0.0061
+   }
+  },
+  "periods": {
+   "A": {
+    "n": 24,
+    "avg_r": -0.1761,
+    "sum_r": -4.23,
+    "pnl": -189.58
+   },
+   "C": {
+    "n": 3,
+    "avg_r": 0.1899,
+    "sum_r": 0.57,
+    "pnl": 18.01
+   }
+  },
+  "trades_per_month": 0.39,
+  "days": 2090,
+  "name": "P3 + P6 | LOUD only | half 1R + 2R, 8-bar stop",
+  "group": "majors",
+  "fees": "kraken",
+  "candidates": 4755
+ },
+ {
+  "trades": 51,
+  "skips": {
+   "gate not LOUD": 3396,
+   "weekend (M4)": 847,
+   "already in this coin": 203,
+   "gate QUIET": 80,
+   "bear regime: only reversion setups": 70,
+   "majors: one position / 2 trades a day": 39,
+   "trend setup without 1h+4h uptrend (M0)": 35,
+   "cost > 0.33R": 34
+  },
+  "end_equity": 10387.04,
+  "return_pct": 3.87,
+  "win_rate": 0.627,
+  "avg_r": 0.1742,
+  "sum_r": 8.88,
+  "pf": 1.589,
+  "avg_cost_r": 0.167,
+  "avg_gross_r": 0.341,
+  "t_stat": 1.39,
+  "max_dd_pct": 1.93,
+  "by_setup": {
+   "breakout_retest": {
+    "n": 46,
+    "avg_r": 0.1186
+   },
+   "orb_dst": {
+    "n": 5,
+    "avg_r": 0.6854
+   }
+  },
+  "periods": {
+   "A": {
+    "n": 39,
+    "avg_r": 0.1861,
+    "sum_r": 7.26,
+    "pnl": 363.66
+   },
+   "B": {
+    "n": 9,
+    "avg_r": -0.0616,
+    "sum_r": -0.55,
+    "pnl": -53.19
+   },
+   "C": {
+    "n": 3,
+    "avg_r": 0.727,
+    "sum_r": 2.18,
+    "pnl": 76.57
+   }
+  },
+  "trades_per_month": 0.74,
+  "days": 2090,
+  "name": "P3 + P6 | LOUD only | half 1R + 2R, 96h",
+  "group": "majors",
+  "fees": "kraken",
+  "candidates": 4755
+ },
+ {
+  "trades": 48,
+  "skips": {
+   "gate not LOUD": 3384,
+   "weekend (M4)": 846,
+   "already in this coin": 219,
+   "gate QUIET": 80,
+   "bear regime: only reversion setups": 70,
+   "majors: one position / 2 trades a day": 39,
+   "trend setup without 1h+4h uptrend (M0)": 35,
+   "cost > 0.33R": 34
+  },
+  "end_equity": 10837.85,
+  "return_pct": 8.38,
+  "win_rate": 0.604,
+  "avg_r": 0.348,
+  "sum_r": 16.71,
+  "pf": 2.037,
+  "avg_cost_r": 0.1733,
+  "avg_gross_r": 0.5211,
+  "t_stat": 2.05,
+  "max_dd_pct": 1.8,
+  "by_setup": {
+   "breakout_retest": {
+    "n": 43,
+    "avg_r": 0.3015
+   },
+   "orb_dst": {
+    "n": 5,
+    "avg_r": 0.7482
+   }
+  },
+  "periods": {
+   "A": {
+    "n": 37,
+    "avg_r": 0.3519,
+    "sum_r": 13.02,
+    "pnl": 735.58
+   },
+   "B": {
+    "n": 8,
+    "avg_r": 0.1553,
+    "sum_r": 1.24,
+    "pnl": -5.12
+   },
+   "C": {
+    "n": 3,
+    "avg_r": 0.8144,
+    "sum_r": 2.44,
+    "pnl": 107.38
+   }
+  },
+  "trades_per_month": 0.7,
+  "days": 2090,
+  "name": "P3 + P6 | LOUD only | one exit 2R, 96h",
+  "group": "majors",
+  "fees": "kraken",
+  "candidates": 4755
+ },
+ {
+  "trades": 50,
+  "skips": {
+   "weekend (M4)": 2554,
+   "bear regime: only reversion setups": 2183,
+   "cost > 0.33R": 1596,
+   "engine: benched": 1564,
+   "trend setup without 1h+4h uptrend (M0)": 1445,
+   "gate QUIET": 258,
+   "engine: negative learned edge": 136,
+   "already in this coin": 124,
+   "majors: one position / 2 trades a day": 72
+  },
+  "end_equity": 9778.38,
+  "return_pct": -2.22,
+  "win_rate": 0.3,
+  "avg_r": -0.1078,
+  "sum_r": -5.39,
+  "pf": 0.598,
+  "avg_cost_r": 0.2009,
+  "avg_gross_r": 0.0929,
+  "t_stat": -1.39,
+  "max_dd_pct": 5.1,
+  "by_setup": {
+   "breakout_retest": {
+    "n": 23,
+    "avg_r": -0.0804
+   },
+   "orb_dst": {
+    "n": 19,
+    "avg_r": -0.083
+   },
+   "trend_pullback": {
+    "n": 8,
+    "avg_r": -0.2458
+   }
+  },
+  "periods": {
+   "A": {
+    "n": 50,
+    "avg_r": -0.1078,
+    "sum_r": -5.39,
+    "pnl": -221.62
+   }
+  },
+  "trades_per_month": 0.73,
+  "days": 2092,
+  "name": "P1 + P3 + P6 | gate as written | half 1R + 2R, 8-bar stop",
+  "group": "majors",
+  "fees": "kraken",
+  "candidates": 9982
+ },
+ {
+  "trades": 132,
+  "skips": {
+   "weekend (M4)": 2382,
+   "bear regime: only reversion setups": 2174,
+   "cost > 0.33R": 1499,
+   "trend setup without 1h+4h uptrend (M0)": 1442,
+   "already in this coin": 1035,
+   "engine: negative learned edge": 598,
+   "majors: one position / 2 trades a day": 333,
+   "gate QUIET": 238,
+   "engine: benched": 134,
+   "drawdown break (-10R)": 15
+  },
+  "end_equity": 9397.86,
+  "return_pct": -6.02,
+  "win_rate": 0.47,
+  "avg_r": -0.1952,
+  "sum_r": -25.77,
+  "pf": 0.669,
+  "avg_cost_r": 0.2061,
+  "avg_gross_r": 0.0107,
+  "t_stat": -2.12,
+  "max_dd_pct": 12.61,
+  "by_setup": {
+   "breakout_retest": {
+    "n": 91,
+    "avg_r": -0.0607
+   },
+   "orb_dst": {
+    "n": 8,
+    "avg_r": -0.4645
+   },
+   "trend_pullback": {
+    "n": 33,
+    "avg_r": -0.501
+   }
+  },
+  "periods": {
+   "A": {
+    "n": 101,
+    "avg_r": -0.2783,
+    "sum_r": -28.11,
+    "pnl": -616.83
+   },
+   "B": {
+    "n": 25,
+    "avg_r": 0.0979,
+    "sum_r": 2.45,
+    "pnl": 40.11
+   },
+   "C": {
+    "n": 6,
+    "avg_r": -0.0184,
+    "sum_r": -0.11,
+    "pnl": -25.42
+   }
+  },
+  "trades_per_month": 1.92,
+  "days": 2092,
+  "name": "P1 + P3 + P6 | gate as written | half 1R + 2R, 96h",
+  "group": "majors",
+  "fees": "kraken",
+  "candidates": 9982
+ },
+ {
+  "trades": 150,
+  "skips": {
+   "weekend (M4)": 2313,
+   "bear regime: only reversion setups": 2169,
+   "cost > 0.33R": 1482,
+   "trend setup without 1h+4h uptrend (M0)": 1436,
+   "already in this coin": 1302,
+   "majors: one position / 2 trades a day": 506,
+   "engine: negative learned edge": 302,
+   "gate QUIET": 231,
+   "engine: benched": 75,
+   "drawdown break (-10R)": 16
+  },
+  "end_equity": 9430.11,
+  "return_pct": -5.7,
+  "win_rate": 0.407,
+  "avg_r": -0.1517,
+  "sum_r": -22.76,
+  "pf": 0.766,
+  "avg_cost_r": 0.2133,
+  "avg_gross_r": 0.0614,
+  "t_stat": -1.48,
+  "max_dd_pct": 14.18,
+  "by_setup": {
+   "breakout_retest": {
+    "n": 79,
+    "avg_r": -0.0068
+   },
+   "orb_dst": {
+    "n": 8,
+    "avg_r": -0.6878
+   },
+   "trend_pullback": {
+    "n": 63,
+    "avg_r": -0.2653
+   }
+  },
+  "periods": {
+   "A": {
+    "n": 117,
+    "avg_r": -0.1695,
+    "sum_r": -19.83,
+    "pnl": -450.8
+   },
+   "B": {
+    "n": 27,
+    "avg_r": -0.114,
+    "sum_r": -3.08,
+    "pnl": -97.42
+   },
+   "C": {
+    "n": 6,
+    "avg_r": 0.0254,
+    "sum_r": 0.15,
+    "pnl": -21.68
+   }
+  },
+  "trades_per_month": 2.18,
+  "days": 2092,
+  "name": "P1 + P3 + P6 | gate as written | one exit 2R, 96h",
+  "group": "majors",
+  "fees": "kraken",
+  "candidates": 9982
+ },
+ {
+  "trades": 51,
+  "skips": {
+   "gate not LOUD": 6653,
+   "weekend (M4)": 2557,
+   "gate QUIET": 264,
+   "bear regime: only reversion setups": 117,
+   "engine: negative learned edge": 117,
+   "already in this coin": 101,
+   "cost > 0.33R": 47,
+   "trend setup without 1h+4h uptrend (M0)": 42,
+   "majors: one position / 2 trades a day": 19,
+   "engine: benched": 14
+  },
+  "end_equity": 9753.9,
+  "return_pct": -2.46,
+  "win_rate": 0.392,
+  "avg_r": -0.139,
+  "sum_r": -7.09,
+  "pf": 0.498,
+  "avg_cost_r": 0.1668,
+  "avg_gross_r": 0.0277,
+  "t_stat": -1.79,
+  "max_dd_pct": 3.49,
+  "by_setup": {
+   "breakout_retest": {
+    "n": 20,
+    "avg_r": -0.2496
+   },
+   "orb_dst": {
+    "n": 15,
+    "avg_r": -0.0061
+   },
+   "trend_pullback": {
+    "n": 16,
+    "avg_r": -0.1253
+   }
+  },
+  "periods": {
+   "A": {
+    "n": 42,
+    "avg_r": -0.1689,
+    "sum_r": -7.09,
+    "pnl": -248.65
+   },
+   "B": {
+    "n": 6,
+    "avg_r": -0.0944,
+    "sum_r": -0.57,
+    "pnl": -15.33
+   },
+   "C": {
+    "n": 3,
+    "avg_r": 0.1899,
+    "sum_r": 0.57,
+    "pnl": 17.88
+   }
+  },
+  "trades_per_month": 0.74,
+  "days": 2092,
+  "name": "P1 + P3 + P6 | LOUD only | half 1R + 2R, 8-bar stop",
+  "group": "majors",
+  "fees": "kraken",
+  "candidates": 9982
+ },
+ {
+  "trades": 60,
+  "skips": {
+   "gate not LOUD": 6401,
+   "weekend (M4)": 2435,
+   "already in this coin": 561,
+   "gate QUIET": 262,
+   "bear regime: only reversion setups": 112,
+   "majors: one position / 2 trades a day": 65,
+   "cost > 0.33R": 43,
+   "trend setup without 1h+4h uptrend (M0)": 42,
+   "engine: negative learned edge": 1
+  },
+  "end_equity": 10652.14,
+  "return_pct": 6.52,
+  "win_rate": 0.65,
+  "avg_r": 0.2385,
+  "sum_r": 14.31,
+  "pf": 1.897,
+  "avg_cost_r": 0.1584,
+  "avg_gross_r": 0.3968,
+  "t_stat": 2.09,
+  "max_dd_pct": 1.93,
+  "by_setup": {
+   "breakout_retest": {
+    "n": 41,
+    "avg_r": 0.2229
+   },
+   "orb_dst": {
+    "n": 4,
+    "avg_r": 0.7367
+   },
+   "trend_pullback": {
+    "n": 15,
+    "avg_r": 0.1484
+   }
+  },
+  "periods": {
+   "A": {
+    "n": 45,
+    "avg_r": 0.2686,
+    "sum_r": 12.09,
+    "pnl": 656.3
+   },
+   "B": {
+    "n": 11,
+    "avg_r": -0.0342,
+    "sum_r": -0.38,
+    "pnl": -110.04
+   },
+   "C": {
+    "n": 4,
+    "avg_r": 0.6502,
+    "sum_r": 2.6,
+    "pnl": 105.88
+   }
+  },
+  "trades_per_month": 0.87,
+  "days": 2092,
+  "name": "P1 + P3 + P6 | LOUD only | half 1R + 2R, 96h",
+  "group": "majors",
+  "fees": "kraken",
+  "candidates": 9982
+ },
+ {
+  "trades": 52,
+  "skips": {
+   "gate not LOUD": 6422,
+   "weekend (M4)": 2418,
+   "already in this coin": 559,
+   "gate QUIET": 260,
+   "bear regime: only reversion setups": 112,
+   "majors: one position / 2 trades a day": 65,
+   "cost > 0.33R": 43,
+   "trend setup without 1h+4h uptrend (M0)": 42,
+   "engine: negative learned edge": 9
+  },
+  "end_equity": 10584.76,
+  "return_pct": 5.85,
+  "win_rate": 0.577,
+  "avg_r": 0.2676,
+  "sum_r": 13.91,
+  "pf": 1.751,
+  "avg_cost_r": 0.1725,
+  "avg_gross_r": 0.4399,
+  "t_stat": 1.68,
+  "max_dd_pct": 2.2,
+  "by_setup": {
+   "breakout_retest": {
+    "n": 39,
+    "avg_r": 0.3388
+   },
+   "orb_dst": {
+    "n": 4,
+    "avg_r": 0.8788
+   },
+   "trend_pullback": {
+    "n": 9,
+    "avg_r": -0.3127
+   }
+  },
+  "periods": {
+   "A": {
+    "n": 40,
+    "avg_r": 0.2846,
+    "sum_r": 11.39,
+    "pnl": 554.6
+   },
+   "B": {
+    "n": 9,
+    "avg_r": 0.0095,
+    "sum_r": 0.09,
+    "pnl": -78.95
+   },
+   "C": {
+    "n": 3,
+    "avg_r": 0.8144,
+    "sum_r": 2.44,
+    "pnl": 109.11
+   }
+  },
+  "trades_per_month": 0.76,
+  "days": 2092,
+  "name": "P1 + P3 + P6 | LOUD only | one exit 2R, 96h",
+  "group": "majors",
+  "fees": "kraken",
+  "candidates": 9982
+ },
+ {
+  "trades": 86,
+  "skips": {
+   "weekend (M4)": 4179,
+   "engine: benched": 3732,
+   "cost > 0.33R": 3441,
+   "bear regime: only reversion setups": 2149,
+   "trend setup without 1h+4h uptrend (M0)": 1457,
+   "gate QUIET": 367,
+   "engine: negative learned edge": 254,
+   "already in this coin": 214,
+   "majors: one position / 2 trades a day": 100
+  },
+  "end_equity": 9622.83,
+  "return_pct": -3.77,
+  "win_rate": 0.337,
+  "avg_r": -0.1369,
+  "sum_r": -11.77,
+  "pf": 0.513,
+  "avg_cost_r": 0.1903,
+  "avg_gross_r": 0.0532,
+  "t_stat": -2.3,
+  "max_dd_pct": 5.03,
+  "by_setup": {
+   "breakout_retest": {
+    "n": 23,
+    "avg_r": -0.0804
+   },
+   "orb": {
+    "n": 18,
+    "avg_r": -0.12
+   },
+   "rsi2": {
+    "n": 29,
+    "avg_r": -0.138
+   },
+   "sweep_reclaim": {
+    "n": 8,
+    "avg_r": -0.2244
+   },
+   "trend_pullback": {
+    "n": 8,
+    "avg_r": -0.2458
+   }
+  },
+  "periods": {
+   "A": {
+    "n": 86,
+    "avg_r": -0.1369,
+    "sum_r": -11.77,
+    "pnl": -377.17
+   }
+  },
+  "trades_per_month": 1.25,
+  "days": 2092,
+  "name": "jarvus_v6 (as written)",
+  "group": "majors",
+  "fees": "kraken",
+  "candidates": 15979
+ },
+ {
+  "trades": 407,
+  "skips": {
+   "bear regime: memes off": 3712,
+   "engine: benched": 3038,
+   "trend setup without 1h+4h uptrend (M0)": 1931,
+   "gate QUIET": 1354,
+   "meme dead zone 7 PM-midnight MT": 1112,
+   "already in this coin": 1012,
+   "BTC 4h trend down (BTC first)": 853,
+   "engine: negative learned edge": 495,
+   "memes: 2 positions max": 240,
+   "cost > 0.33R": 5,
+   "3 losses in a row": 2,
+   "drawdown break (-10R)": 1
+  },
+  "end_equity": 9553.49,
+  "return_pct": -4.47,
+  "win_rate": 0.42,
+  "avg_r": -0.0288,
+  "sum_r": -11.72,
+  "pf": 0.877,
+  "avg_cost_r": 0.0587,
+  "avg_gross_r": 0.0289,
+  "t_stat": -0.99,
+  "max_dd_pct": 5.1,
+  "by_setup": {
+   "breakout_retest": {
+    "n": 236,
+    "avg_r": -0.0044
+   },
+   "orb_dst": {
+    "n": 108,
+    "avg_r": -0.0328
+   },
+   "rsi2": {
+    "n": 18,
+    "avg_r": -0.1938
+   },
+   "sweep_reclaim": {
+    "n": 8,
+    "avg_r": -0.0885
+   },
+   "trend_pullback": {
+    "n": 37,
+    "avg_r": -0.0793
+   }
+  },
+  "periods": {
+   "A": {
+    "n": 224,
+    "avg_r": -0.0148,
+    "sum_r": -3.32,
+    "pnl": -229.31
+   },
+   "B": {
+    "n": 140,
+    "avg_r": -0.0478,
+    "sum_r": -6.69,
+    "pnl": -154.51
+   },
+   "C": {
+    "n": 43,
+    "avg_r": -0.0399,
+    "sum_r": -1.72,
+    "pnl": -62.7
+   }
+  },
+  "trades_per_month": 6.44,
+  "days": 1922,
+  "name": "all (ORB fixed) | gate as written | half 1R + 2R, 8-bar stop",
+  "group": "memes",
+  "fees": "ndax",
+  "candidates": 14162
+ },
+ {
+  "trades": 330,
+  "skips": {
+   "bear regime: memes off": 3693,
+   "already in this coin": 3265,
+   "trend setup without 1h+4h uptrend (M0)": 1881,
+   "memes: 2 positions max": 1153,
+   "gate QUIET": 1130,
+   "engine: negative learned edge": 848,
+   "BTC 4h trend down (BTC first)": 751,
+   "meme dead zone 7 PM-midnight MT": 746,
+   "engine: benched": 360,
+   "cost > 0.33R": 5
+  },
+  "end_equity": 9600.67,
+  "return_pct": -3.99,
+  "win_rate": 0.524,
+  "avg_r": -0.014,
+  "sum_r": -4.64,
+  "pf": 0.97,
+  "avg_cost_r": 0.0633,
+  "avg_gross_r": 0.0483,
+  "t_stat": -0.25,
+  "max_dd_pct": 8.12,
+  "by_setup": {
+   "breakout_retest": {
+    "n": 161,
+    "avg_r": 0.1519
+   },
+   "orb_dst": {
+    "n": 10,
+    "avg_r": -0.5567
+   },
+   "rsi2": {
+    "n": 119,
+    "avg_r": -0.096
+   },
+   "sweep_reclaim": {
+    "n": 8,
+    "avg_r": -0.6003
+   },
+   "trend_pullback": {
+    "n": 32,
+    "avg_r": -0.2283
+   }
+  },
+  "periods": {
+   "A": {
+    "n": 206,
+    "avg_r": -0.0398,
+    "sum_r": -8.2,
+    "pnl": -449.08
+   },
+   "B": {
+    "n": 92,
+    "avg_r": -0.0138,
+    "sum_r": -1.27,
+    "pnl": -20.06
+   },
+   "C": {
+    "n": 32,
+    "avg_r": 0.1508,
+    "sum_r": 4.83,
+    "pnl": 69.81
+   }
+  },
+  "trades_per_month": 5.22,
+  "days": 1922,
+  "name": "all (ORB fixed) | gate as written | half 1R + 2R, 96h",
+  "group": "memes",
+  "fees": "ndax",
+  "candidates": 14162
+ },
+ {
+  "trades": 315,
+  "skips": {
+   "already in this coin": 3759,
+   "bear regime: memes off": 3687,
+   "trend setup without 1h+4h uptrend (M0)": 1892,
+   "gate QUIET": 1073,
+   "memes: 2 positions max": 839,
+   "engine: benched": 729,
+   "BTC 4h trend down (BTC first)": 710,
+   "meme dead zone 7 PM-midnight MT": 649,
+   "engine: negative learned edge": 501,
+   "cost > 0.33R": 5,
+   "drawdown break (-10R)": 3
+  },
+  "end_equity": 9422.37,
+  "return_pct": -5.78,
+  "win_rate": 0.4,
+  "avg_r": -0.0197,
+  "sum_r": -6.2,
+  "pf": 0.967,
+  "avg_cost_r": 0.0682,
+  "avg_gross_r": 0.0475,
+  "t_stat": -0.27,
+  "max_dd_pct": 10.33,
+  "by_setup": {
+   "breakout_retest": {
+    "n": 136,
+    "avg_r": 0.261
+   },
+   "orb_dst": {
+    "n": 8,
+    "avg_r": -0.36
+   },
+   "rsi2": {
+    "n": 43,
+    "avg_r": -0.1451
+   },
+   "sweep_reclaim": {
+    "n": 19,
+    "avg_r": -0.1654
+   },
+   "trend_pullback": {
+    "n": 109,
+    "avg_r": -0.27
+   }
+  },
+  "periods": {
+   "A": {
+    "n": 223,
+    "avg_r": -0.0153,
+    "sum_r": -3.41,
+    "pnl": -402.58
+   },
+   "B": {
+    "n": 67,
+    "avg_r": -0.1081,
+    "sum_r": -7.24,
+    "pnl": -211.35
+   },
+   "C": {
+    "n": 25,
+    "avg_r": 0.178,
+    "sum_r": 4.45,
+    "pnl": 36.31
+   }
+  },
+  "trades_per_month": 4.98,
+  "days": 1922,
+  "name": "all (ORB fixed) | gate as written | one exit 2R, 96h",
+  "group": "memes",
+  "fees": "ndax",
+  "candidates": 14162
+ },
+ {
+  "trades": 286,
+  "skips": {
+   "gate not LOUD": 10605,
+   "gate QUIET": 1394,
+   "already in this coin": 632,
+   "bear regime: memes off": 583,
+   "meme dead zone 7 PM-midnight MT": 167,
+   "memes: 2 positions max": 155,
+   "BTC 4h trend down (BTC first)": 132,
+   "engine: negative learned edge": 116,
+   "trend setup without 1h+4h uptrend (M0)": 91,
+   "3 losses in a row": 1
+  },
+  "end_equity": 9965.61,
+  "return_pct": -0.34,
+  "win_rate": 0.455,
+  "avg_r": -0.0006,
+  "sum_r": -0.18,
+  "pf": 0.997,
+  "avg_cost_r": 0.0455,
+  "avg_gross_r": 0.0439,
+  "t_stat": -0.02,
+  "max_dd_pct": 2.13,
+  "by_setup": {
+   "breakout_retest": {
+    "n": 84,
+    "avg_r": -0.028
+   },
+   "orb_dst": {
+    "n": 11,
+    "avg_r": -0.277
+   },
+   "rsi2": {
+    "n": 108,
+    "avg_r": 0.0102
+   },
+   "sweep_reclaim": {
+    "n": 6,
+    "avg_r": 0.4532
+   },
+   "trend_pullback": {
+    "n": 77,
+    "avg_r": 0.0182
+   }
+  },
+  "periods": {
+   "A": {
+    "n": 158,
+    "avg_r": 0.0083,
+    "sum_r": 1.32,
+    "pnl": 24.67
+   },
+   "B": {
+    "n": 89,
+    "avg_r": -0.03,
+    "sum_r": -2.67,
+    "pnl": -86.9
+   },
+   "C": {
+    "n": 39,
+    "avg_r": 0.0302,
+    "sum_r": 1.18,
+    "pnl": 27.84
+   }
+  },
+  "trades_per_month": 4.52,
+  "days": 1922,
+  "name": "all (ORB fixed) | LOUD only | half 1R + 2R, 8-bar stop",
+  "group": "memes",
+  "fees": "ndax",
+  "candidates": 14162
+ },
+ {
+  "trades": 163,
+  "skips": {
+   "gate not LOUD": 9601,
+   "already in this coin": 1876,
+   "gate QUIET": 1347,
+   "bear regime: memes off": 578,
+   "memes: 2 positions max": 243,
+   "BTC 4h trend down (BTC first)": 112,
+   "meme dead zone 7 PM-midnight MT": 109,
+   "trend setup without 1h+4h uptrend (M0)": 91,
+   "engine: negative learned edge": 42
+  },
+  "end_equity": 10496.63,
+  "return_pct": 4.97,
+  "win_rate": 0.564,
+  "avg_r": 0.1355,
+  "sum_r": 22.09,
+  "pf": 1.352,
+  "avg_cost_r": 0.0493,
+  "avg_gross_r": 0.1838,
+  "t_stat": 1.73,
+  "max_dd_pct": 2.81,
+  "by_setup": {
+   "breakout_retest": {
+    "n": 72,
+    "avg_r": 0.1999
+   },
+   "orb_dst": {
+    "n": 18,
+    "avg_r": 0.0336
+   },
+   "rsi2": {
+    "n": 49,
+    "avg_r": 0.1366
+   },
+   "sweep_reclaim": {
+    "n": 5,
+    "avg_r": 0.729
+   },
+   "trend_pullback": {
+    "n": 19,
+    "avg_r": -0.171
+   }
+  },
+  "periods": {
+   "A": {
+    "n": 103,
+    "avg_r": 0.0966,
+    "sum_r": 9.95,
+    "pnl": 260.19
+   },
+   "B": {
+    "n": 39,
+    "avg_r": 0.1093,
+    "sum_r": 4.26,
+    "pnl": 69.78
+   },
+   "C": {
+    "n": 21,
+    "avg_r": 0.375,
+    "sum_r": 7.87,
+    "pnl": 166.65
+   }
+  },
+  "trades_per_month": 2.58,
+  "days": 1922,
+  "name": "all (ORB fixed) | LOUD only | half 1R + 2R, 96h",
+  "group": "memes",
+  "fees": "ndax",
+  "candidates": 14162
+ },
+ {
+  "trades": 152,
+  "skips": {
+   "gate not LOUD": 9538,
+   "already in this coin": 1958,
+   "gate QUIET": 1342,
+   "bear regime: memes off": 578,
+   "memes: 2 positions max": 261,
+   "BTC 4h trend down (BTC first)": 112,
+   "meme dead zone 7 PM-midnight MT": 107,
+   "trend setup without 1h+4h uptrend (M0)": 91,
+   "engine: negative learned edge": 23
+  },
+  "end_equity": 10419.83,
+  "return_pct": 4.2,
+  "win_rate": 0.447,
+  "avg_r": 0.1859,
+  "sum_r": 28.26,
+  "pf": 1.403,
+  "avg_cost_r": 0.0507,
+  "avg_gross_r": 0.2357,
+  "t_stat": 1.8,
+  "max_dd_pct": 3.27,
+  "by_setup": {
+   "breakout_retest": {
+    "n": 67,
+    "avg_r": 0.1675
+   },
+   "orb_dst": {
+    "n": 20,
+    "avg_r": 0.3359
+   },
+   "rsi2": {
+    "n": 40,
+    "avg_r": 0.1605
+   },
+   "sweep_reclaim": {
+    "n": 4,
+    "avg_r": 0.6488
+   },
+   "trend_pullback": {
+    "n": 21,
+    "avg_r": 0.0624
+   }
+  },
+  "periods": {
+   "A": {
+    "n": 98,
+    "avg_r": 0.1344,
+    "sum_r": 13.17,
+    "pnl": 80.54
+   },
+   "B": {
+    "n": 37,
+    "avg_r": 0.102,
+    "sum_r": 3.77,
+    "pnl": 70.62
+   },
+   "C": {
+    "n": 17,
+    "avg_r": 0.666,
+    "sum_r": 11.32,
+    "pnl": 268.67
+   }
+  },
+  "trades_per_month": 2.4,
+  "days": 1922,
+  "name": "all (ORB fixed) | LOUD only | one exit 2R, 96h",
+  "group": "memes",
+  "fees": "ndax",
+  "candidates": 14162
+ },
+ {
+  "trades": 369,
+  "skips": {
+   "trend setup without 1h+4h uptrend (M0)": 1637,
+   "bear regime: memes off": 780,
+   "already in this coin": 490,
+   "memes: 2 positions max": 238,
+   "meme dead zone 7 PM-midnight MT": 209,
+   "gate QUIET": 162,
+   "BTC 4h trend down (BTC first)": 134,
+   "engine: negative learned edge": 129,
+   "engine: benched": 8
+  },
+  "end_equity": 9627.97,
+  "return_pct": -3.72,
+  "win_rate": 0.42,
+  "avg_r": -0.0218,
+  "sum_r": -8.06,
+  "pf": 0.907,
+  "avg_cost_r": 0.0609,
+  "avg_gross_r": 0.0381,
+  "t_stat": -0.7,
+  "max_dd_pct": 3.86,
+  "by_setup": {
+   "breakout_retest": {
+    "n": 269,
+    "avg_r": -0.0132
+   },
+   "orb_dst": {
+    "n": 100,
+    "avg_r": -0.0452
+   }
+  },
+  "periods": {
+   "A": {
+    "n": 185,
+    "avg_r": 0.0028,
+    "sum_r": 0.52,
+    "pnl": -149.07
+   },
+   "B": {
+    "n": 140,
+    "avg_r": -0.0478,
+    "sum_r": -6.69,
+    "pnl": -156.32
+   },
+   "C": {
+    "n": 44,
+    "avg_r": -0.0431,
+    "sum_r": -1.9,
+    "pnl": -66.64
+   }
+  },
+  "trades_per_month": 5.84,
+  "days": 1922,
+  "name": "P3 + P6 | gate as written | half 1R + 2R, 8-bar stop",
+  "group": "memes",
+  "fees": "ndax",
+  "candidates": 4156
+ },
+ {
+  "trades": 219,
+  "skips": {
+   "trend setup without 1h+4h uptrend (M0)": 1628,
+   "bear regime: memes off": 780,
+   "already in this coin": 647,
+   "memes: 2 positions max": 226,
+   "engine: negative learned edge": 197,
+   "meme dead zone 7 PM-midnight MT": 172,
+   "gate QUIET": 157,
+   "BTC 4h trend down (BTC first)": 130
+  },
+  "end_equity": 9744.07,
+  "return_pct": -2.56,
+  "win_rate": 0.525,
+  "avg_r": 0.0221,
+  "sum_r": 4.84,
+  "pf": 1.047,
+  "avg_cost_r": 0.0648,
+  "avg_gross_r": 0.0859,
+  "t_stat": 0.31,
+  "max_dd_pct": 4.41,
+  "by_setup": {
+   "breakout_retest": {
+    "n": 211,
+    "avg_r": 0.0328
+   },
+   "orb_dst": {
+    "n": 8,
+    "avg_r": -0.2608
+   }
+  },
+  "periods": {
+   "A": {
+    "n": 133,
+    "avg_r": 0.0231,
+    "sum_r": 3.07,
+    "pnl": -175.89
+   },
+   "B": {
+    "n": 62,
+    "avg_r": 0.0121,
+    "sum_r": 0.75,
+    "pnl": -26.37
+   },
+   "C": {
+    "n": 24,
+    "avg_r": 0.0424,
+    "sum_r": 1.02,
+    "pnl": -53.68
+   }
+  },
+  "trades_per_month": 3.46,
+  "days": 1922,
+  "name": "P3 + P6 | gate as written | half 1R + 2R, 96h",
+  "group": "memes",
+  "fees": "ndax",
+  "candidates": 4156
+ },
+ {
+  "trades": 211,
+  "skips": {
+   "trend setup without 1h+4h uptrend (M0)": 1623,
+   "bear regime: memes off": 780,
+   "already in this coin": 666,
+   "memes: 2 positions max": 218,
+   "meme dead zone 7 PM-midnight MT": 179,
+   "engine: negative learned edge": 168,
+   "gate QUIET": 150,
+   "BTC 4h trend down (BTC first)": 124,
+   "drawdown break (-10R)": 30,
+   "engine: benched": 7
+  },
+  "end_equity": 9857.5,
+  "return_pct": -1.42,
+  "win_rate": 0.408,
+  "avg_r": 0.0749,
+  "sum_r": 15.8,
+  "pf": 1.129,
+  "avg_cost_r": 0.067,
+  "avg_gross_r": 0.1409,
+  "t_stat": 0.8,
+  "max_dd_pct": 5.21,
+  "by_setup": {
+   "breakout_retest": {
+    "n": 199,
+    "avg_r": 0.0876
+   },
+   "orb_dst": {
+    "n": 12,
+    "avg_r": -0.1362
+   }
+  },
+  "periods": {
+   "A": {
+    "n": 134,
+    "avg_r": 0.0695,
+    "sum_r": 9.32,
+    "pnl": -73.43
+   },
+   "B": {
+    "n": 60,
+    "avg_r": 0.047,
+    "sum_r": 2.82,
+    "pnl": -69.76
+   },
+   "C": {
+    "n": 17,
+    "avg_r": 0.2154,
+    "sum_r": 3.66,
+    "pnl": 0.69
+   }
+  },
+  "trades_per_month": 3.34,
+  "days": 1922,
+  "name": "P3 + P6 | gate as written | one exit 2R, 96h",
+  "group": "memes",
+  "fees": "ndax",
+  "candidates": 4156
+ },
+ {
+  "trades": 134,
+  "skips": {
+   "gate not LOUD": 3120,
+   "bear regime: memes off": 224,
+   "already in this coin": 215,
+   "gate QUIET": 172,
+   "trend setup without 1h+4h uptrend (M0)": 87,
+   "meme dead zone 7 PM-midnight MT": 60,
+   "memes: 2 positions max": 55,
+   "engine: negative learned edge": 48,
+   "BTC 4h trend down (BTC first)": 41
+  },
+  "end_equity": 9866.02,
+  "return_pct": -1.34,
+  "win_rate": 0.44,
+  "avg_r": -0.0159,
+  "sum_r": -2.13,
+  "pf": 0.936,
+  "avg_cost_r": 0.0471,
+  "avg_gross_r": 0.0303,
+  "t_stat": -0.29,
+  "max_dd_pct": 2.89,
+  "by_setup": {
+   "breakout_retest": {
+    "n": 125,
+    "avg_r": 0.0163
+   },
+   "orb_dst": {
+    "n": 9,
+    "avg_r": -0.4624
+   }
+  },
+  "periods": {
+   "A": {
+    "n": 72,
+    "avg_r": -0.0364,
+    "sum_r": -2.62,
+    "pnl": -138.19
+   },
+   "B": {
+    "n": 41,
+    "avg_r": -0.0375,
+    "sum_r": -1.54,
+    "pnl": -24.38
+   },
+   "C": {
+    "n": 21,
+    "avg_r": 0.097,
+    "sum_r": 2.04,
+    "pnl": 28.59
+   }
+  },
+  "trades_per_month": 2.12,
+  "days": 1922,
+  "name": "P3 + P6 | LOUD only | half 1R + 2R, 8-bar stop",
+  "group": "memes",
+  "fees": "ndax",
+  "candidates": 4156
+ },
+ {
+  "trades": 107,
+  "skips": {
+   "gate not LOUD": 3054,
+   "already in this coin": 306,
+   "bear regime: memes off": 224,
+   "gate QUIET": 172,
+   "trend setup without 1h+4h uptrend (M0)": 87,
+   "memes: 2 positions max": 85,
+   "meme dead zone 7 PM-midnight MT": 54,
+   "BTC 4h trend down (BTC first)": 39,
+   "engine: negative learned edge": 28
+  },
+  "end_equity": 10180.34,
+  "return_pct": 1.8,
+  "win_rate": 0.551,
+  "avg_r": 0.1294,
+  "sum_r": 13.85,
+  "pf": 1.308,
+  "avg_cost_r": 0.0479,
+  "avg_gross_r": 0.1763,
+  "t_stat": 1.27,
+  "max_dd_pct": 3.39,
+  "by_setup": {
+   "breakout_retest": {
+    "n": 97,
+    "avg_r": 0.2009
+   },
+   "orb_dst": {
+    "n": 10,
+    "avg_r": -0.5638
+   }
+  },
+  "periods": {
+   "A": {
+    "n": 62,
+    "avg_r": 0.0247,
+    "sum_r": 1.53,
+    "pnl": -43.8
+   },
+   "B": {
+    "n": 28,
+    "avg_r": 0.194,
+    "sum_r": 5.43,
+    "pnl": 91.74
+   },
+   "C": {
+    "n": 17,
+    "avg_r": 0.405,
+    "sum_r": 6.89,
+    "pnl": 132.4
+   }
+  },
+  "trades_per_month": 1.69,
+  "days": 1922,
+  "name": "P3 + P6 | LOUD only | half 1R + 2R, 96h",
+  "group": "memes",
+  "fees": "ndax",
+  "candidates": 4156
+ },
+ {
+  "trades": 104,
+  "skips": {
+   "gate not LOUD": 3048,
+   "already in this coin": 316,
+   "bear regime: memes off": 224,
+   "gate QUIET": 172,
+   "memes: 2 positions max": 97,
+   "trend setup without 1h+4h uptrend (M0)": 87,
+   "meme dead zone 7 PM-midnight MT": 55,
+   "BTC 4h trend down (BTC first)": 35,
+   "engine: negative learned edge": 18
+  },
+  "end_equity": 10328.6,
+  "return_pct": 3.29,
+  "win_rate": 0.452,
+  "avg_r": 0.2097,
+  "sum_r": 21.81,
+  "pf": 1.427,
+  "avg_cost_r": 0.0498,
+  "avg_gross_r": 0.2584,
+  "t_stat": 1.6,
+  "max_dd_pct": 3.7,
+  "by_setup": {
+   "breakout_retest": {
+    "n": 86,
+    "avg_r": 0.2481
+   },
+   "orb_dst": {
+    "n": 18,
+    "avg_r": 0.0261
+   }
+  },
+  "periods": {
+   "A": {
+    "n": 60,
+    "avg_r": 0.0888,
+    "sum_r": 5.33,
+    "pnl": 40.97
+   },
+   "B": {
+    "n": 28,
+    "avg_r": 0.2387,
+    "sum_r": 6.68,
+    "pnl": 111.28
+   },
+   "C": {
+    "n": 16,
+    "avg_r": 0.6123,
+    "sum_r": 9.8,
+    "pnl": 176.35
+   }
+  },
+  "trades_per_month": 1.65,
+  "days": 1922,
+  "name": "P3 + P6 | LOUD only | one exit 2R, 96h",
+  "group": "memes",
+  "fees": "ndax",
+  "candidates": 4156
+ },
+ {
+  "trades": 384,
+  "skips": {
+   "trend setup without 1h+4h uptrend (M0)": 1931,
+   "bear regime: memes off": 1922,
+   "engine: benched": 1286,
+   "gate QUIET": 771,
+   "already in this coin": 735,
+   "meme dead zone 7 PM-midnight MT": 661,
+   "BTC 4h trend down (BTC first)": 373,
+   "engine: negative learned edge": 277,
+   "memes: 2 positions max": 240,
+   "cost > 0.33R": 4
+  },
+  "end_equity": 9619.14,
+  "return_pct": -3.81,
+  "win_rate": 0.414,
+  "avg_r": -0.0207,
+  "sum_r": -7.94,
+  "pf": 0.911,
+  "avg_cost_r": 0.0586,
+  "avg_gross_r": 0.0369,
+  "t_stat": -0.69,
+  "max_dd_pct": 4.23,
+  "by_setup": {
+   "breakout_retest": {
+    "n": 236,
+    "avg_r": -0.0044
+   },
+   "orb_dst": {
+    "n": 109,
+    "avg_r": -0.0342
+   },
+   "trend_pullback": {
+    "n": 39,
+    "avg_r": -0.0812
+   }
+  },
+  "periods": {
+   "A": {
+    "n": 200,
+    "avg_r": 0.0032,
+    "sum_r": 0.64,
+    "pnl": -157.9
+   },
+   "B": {
+    "n": 140,
+    "avg_r": -0.0478,
+    "sum_r": -6.69,
+    "pnl": -155.64
+   },
+   "C": {
+    "n": 44,
+    "avg_r": -0.0431,
+    "sum_r": -1.9,
+    "pnl": -67.32
+   }
+  },
+  "trades_per_month": 6.07,
+  "days": 1922,
+  "name": "P1 + P3 + P6 | gate as written | half 1R + 2R, 8-bar stop",
+  "group": "memes",
+  "fees": "ndax",
+  "candidates": 8584
+ },
+ {
+  "trades": 234,
+  "skips": {
+   "trend setup without 1h+4h uptrend (M0)": 1922,
+   "bear regime: memes off": 1921,
+   "already in this coin": 1615,
+   "gate QUIET": 656,
+   "engine: negative learned edge": 614,
+   "meme dead zone 7 PM-midnight MT": 486,
+   "engine: benched": 415,
+   "memes: 2 positions max": 369,
+   "BTC 4h trend down (BTC first)": 347,
+   "cost > 0.33R": 4,
+   "drawdown break (-10R)": 1
+  },
+  "end_equity": 9570.44,
+  "return_pct": -4.3,
+  "win_rate": 0.509,
+  "avg_r": 0.0002,
+  "sum_r": 0.05,
+  "pf": 1.0,
+  "avg_cost_r": 0.0635,
+  "avg_gross_r": 0.0627,
+  "t_stat": 0.0,
+  "max_dd_pct": 7.16,
+  "by_setup": {
+   "breakout_retest": {
+    "n": 186,
+    "avg_r": 0.0704
+   },
+   "orb_dst": {
+    "n": 9,
+    "avg_r": -0.2158
+   },
+   "trend_pullback": {
+    "n": 39,
+    "avg_r": -0.2845
+   }
+  },
+  "periods": {
+   "A": {
+    "n": 142,
+    "avg_r": -0.0032,
+    "sum_r": -0.45,
+    "pnl": -149.42
+   },
+   "B": {
+    "n": 67,
+    "avg_r": 0.0093,
+    "sum_r": 0.62,
+    "pnl": -142.82
+   },
+   "C": {
+    "n": 25,
+    "avg_r": -0.0047,
+    "sum_r": -0.12,
+    "pnl": -137.32
+   }
+  },
+  "trades_per_month": 3.7,
+  "days": 1922,
+  "name": "P1 + P3 + P6 | gate as written | half 1R + 2R, 96h",
+  "group": "memes",
+  "fees": "ndax",
+  "candidates": 8584
+ },
+ {
+  "trades": 256,
+  "skips": {
+   "bear regime: memes off": 1915,
+   "already in this coin": 1913,
+   "trend setup without 1h+4h uptrend (M0)": 1911,
+   "memes: 2 positions max": 700,
+   "gate QUIET": 614,
+   "engine: negative learned edge": 440,
+   "meme dead zone 7 PM-midnight MT": 439,
+   "BTC 4h trend down (BTC first)": 312,
+   "engine: benched": 74,
+   "drawdown break (-10R)": 6,
+   "cost > 0.33R": 4
+  },
+  "end_equity": 9668.63,
+  "return_pct": -3.31,
+  "win_rate": 0.391,
+  "avg_r": 0.0056,
+  "sum_r": 1.44,
+  "pf": 1.01,
+  "avg_cost_r": 0.0651,
+  "avg_gross_r": 0.0697,
+  "t_stat": 0.07,
+  "max_dd_pct": 8.63,
+  "by_setup": {
+   "breakout_retest": {
+    "n": 163,
+    "avg_r": 0.1458
+   },
+   "orb_dst": {
+    "n": 8,
+    "avg_r": -0.36
+   },
+   "trend_pullback": {
+    "n": 85,
+    "avg_r": -0.2287
+   }
+  },
+  "periods": {
+   "A": {
+    "n": 163,
+    "avg_r": 0.0147,
+    "sum_r": 2.4,
+    "pnl": -177.7
+   },
+   "B": {
+    "n": 68,
+    "avg_r": -0.0795,
+    "sum_r": -5.41,
+    "pnl": -188.19
+   },
+   "C": {
+    "n": 25,
+    "avg_r": 0.178,
+    "sum_r": 4.45,
+    "pnl": 34.52
+   }
+  },
+  "trades_per_month": 4.05,
+  "days": 1922,
+  "name": "P1 + P3 + P6 | gate as written | one exit 2R, 96h",
+  "group": "memes",
+  "fees": "ndax",
+  "candidates": 8584
+ },
+ {
+  "trades": 204,
+  "skips": {
+   "gate not LOUD": 6453,
+   "gate QUIET": 790,
+   "bear regime: memes off": 354,
+   "already in this coin": 310,
+   "meme dead zone 7 PM-midnight MT": 110,
+   "engine: negative learned edge": 107,
+   "trend setup without 1h+4h uptrend (M0)": 91,
+   "memes: 2 positions max": 87,
+   "BTC 4h trend down (BTC first)": 78
+  },
+  "end_equity": 9843.52,
+  "return_pct": -1.56,
+  "win_rate": 0.431,
+  "avg_r": -0.0277,
+  "sum_r": -5.65,
+  "pf": 0.865,
+  "avg_cost_r": 0.044,
+  "avg_gross_r": 0.0154,
+  "t_stat": -0.76,
+  "max_dd_pct": 2.83,
+  "by_setup": {
+   "breakout_retest": {
+    "n": 89,
+    "avg_r": -0.0362
+   },
+   "orb_dst": {
+    "n": 11,
+    "avg_r": -0.277
+   },
+   "trend_pullback": {
+    "n": 104,
+    "avg_r": 0.006
+   }
+  },
+  "periods": {
+   "A": {
+    "n": 103,
+    "avg_r": -0.0124,
+    "sum_r": -1.28,
+    "pnl": -85.64
+   },
+   "B": {
+    "n": 68,
+    "avg_r": -0.065,
+    "sum_r": -4.42,
+    "pnl": -68.96
+   },
+   "C": {
+    "n": 33,
+    "avg_r": 0.0017,
+    "sum_r": 0.06,
+    "pnl": -1.88
+   }
+  },
+  "trades_per_month": 3.23,
+  "days": 1922,
+  "name": "P1 + P3 + P6 | LOUD only | half 1R + 2R, 8-bar stop",
+  "group": "memes",
+  "fees": "ndax",
+  "candidates": 8584
+ },
+ {
+  "trades": 132,
+  "skips": {
+   "gate not LOUD": 5999,
+   "already in this coin": 894,
+   "gate QUIET": 766,
+   "bear regime: memes off": 354,
+   "memes: 2 positions max": 151,
+   "trend setup without 1h+4h uptrend (M0)": 91,
+   "meme dead zone 7 PM-midnight MT": 82,
+   "BTC 4h trend down (BTC first)": 70,
+   "engine: negative learned edge": 45
+  },
+  "end_equity": 10311.55,
+  "return_pct": 3.12,
+  "win_rate": 0.553,
+  "avg_r": 0.1343,
+  "sum_r": 17.73,
+  "pf": 1.33,
+  "avg_cost_r": 0.0482,
+  "avg_gross_r": 0.1815,
+  "t_stat": 1.49,
+  "max_dd_pct": 3.38,
+  "by_setup": {
+   "breakout_retest": {
+    "n": 78,
+    "avg_r": 0.1865
+   },
+   "orb_dst": {
+    "n": 14,
+    "avg_r": -0.1616
+   },
+   "trend_pullback": {
+    "n": 40,
+    "avg_r": 0.1361
+   }
+  },
+  "periods": {
+   "A": {
+    "n": 78,
+    "avg_r": 0.0429,
+    "sum_r": 3.35,
+    "pnl": 25.63
+   },
+   "B": {
+    "n": 35,
+    "avg_r": 0.213,
+    "sum_r": 7.45,
+    "pnl": 125.81
+   },
+   "C": {
+    "n": 19,
+    "avg_r": 0.3644,
+    "sum_r": 6.92,
+    "pnl": 160.11
+   }
+  },
+  "trades_per_month": 2.09,
+  "days": 1922,
+  "name": "P1 + P3 + P6 | LOUD only | half 1R + 2R, 96h",
+  "group": "memes",
+  "fees": "ndax",
+  "candidates": 8584
+ },
+ {
+  "trades": 129,
+  "skips": {
+   "gate not LOUD": 5945,
+   "already in this coin": 976,
+   "gate QUIET": 761,
+   "bear regime: memes off": 352,
+   "memes: 2 positions max": 157,
+   "trend setup without 1h+4h uptrend (M0)": 91,
+   "meme dead zone 7 PM-midnight MT": 75,
+   "BTC 4h trend down (BTC first)": 68,
+   "engine: negative learned edge": 30
+  },
+  "end_equity": 10324.6,
+  "return_pct": 3.25,
+  "win_rate": 0.419,
+  "avg_r": 0.1568,
+  "sum_r": 20.23,
+  "pf": 1.309,
+  "avg_cost_r": 0.0491,
+  "avg_gross_r": 0.205,
+  "t_stat": 1.35,
+  "max_dd_pct": 3.59,
+  "by_setup": {
+   "breakout_retest": {
+    "n": 70,
+    "avg_r": 0.1449
+   },
+   "orb_dst": {
+    "n": 23,
+    "avg_r": 0.2966
+   },
+   "trend_pullback": {
+    "n": 36,
+    "avg_r": 0.0907
+   }
+  },
+  "periods": {
+   "A": {
+    "n": 81,
+    "avg_r": 0.0713,
+    "sum_r": 5.77,
+    "pnl": 53.33
+   },
+   "B": {
+    "n": 31,
+    "avg_r": 0.1639,
+    "sum_r": 5.08,
+    "pnl": 89.62
+   },
+   "C": {
+    "n": 17,
+    "avg_r": 0.5517,
+    "sum_r": 9.38,
+    "pnl": 181.64
+   }
+  },
+  "trades_per_month": 2.04,
+  "days": 1922,
+  "name": "P1 + P3 + P6 | LOUD only | one exit 2R, 96h",
+  "group": "memes",
+  "fees": "ndax",
+  "candidates": 8584
+ },
+ {
+  "trades": 394,
+  "skips": {
+   "bear regime: memes off": 3703,
+   "engine: benched": 3126,
+   "trend setup without 1h+4h uptrend (M0)": 1939,
+   "gate QUIET": 1361,
+   "meme dead zone 7 PM-midnight MT": 1116,
+   "already in this coin": 976,
+   "BTC 4h trend down (BTC first)": 853,
+   "engine: negative learned edge": 474,
+   "memes: 2 positions max": 202,
+   "cost > 0.33R": 5,
+   "3 losses in a row": 2,
+   "drawdown break (-10R)": 1
+  },
+  "end_equity": 9551.47,
+  "return_pct": -4.49,
+  "win_rate": 0.426,
+  "avg_r": -0.034,
+  "sum_r": -13.4,
+  "pf": 0.857,
+  "avg_cost_r": 0.059,
+  "avg_gross_r": 0.024,
+  "t_stat": -1.15,
+  "max_dd_pct": 5.12,
+  "by_setup": {
+   "breakout_retest": {
+    "n": 268,
+    "avg_r": -0.0103
+   },
+   "orb": {
+    "n": 60,
+    "avg_r": -0.0907
+   },
+   "rsi2": {
+    "n": 8,
+    "avg_r": -0.213
+   },
+   "sweep_reclaim": {
+    "n": 8,
+    "avg_r": -0.0885
+   },
+   "trend_pullback": {
+    "n": 50,
+    "avg_r": -0.0559
+   }
+  },
+  "periods": {
+   "A": {
+    "n": 230,
+    "avg_r": -0.0272,
+    "sum_r": -6.26,
+    "pnl": -269.39
+   },
+   "B": {
+    "n": 123,
+    "avg_r": -0.0431,
+    "sum_r": -5.3,
+    "pnl": -115.65
+   },
+   "C": {
+    "n": 41,
+    "avg_r": -0.045,
+    "sum_r": -1.84,
+    "pnl": -63.49
+   }
+  },
+  "trades_per_month": 6.23,
+  "days": 1922,
+  "name": "jarvus_v6 (as written)",
+  "group": "memes",
+  "fees": "ndax",
+  "candidates": 14152
+ },
+ {
+  "trades": 1157,
+  "skips": {
+   "bear regime: memes off": 3712,
+   "already in this coin": 2512,
+   "trend setup without 1h+4h uptrend (M0)": 1901,
+   "memes: 2 positions max": 1400,
+   "gate QUIET": 1293,
+   "meme dead zone 7 PM-midnight MT": 945,
+   "BTC 4h trend down (BTC first)": 794,
+   "engine: negative learned edge": 301,
+   "engine: benched": 79,
+   "3 losses in a row": 58,
+   "drawdown break (-10R)": 10
+  },
+  "end_equity": 9258.11,
+  "return_pct": -7.42,
+  "win_rate": 0.454,
+  "avg_r": -0.0132,
+  "sum_r": -15.32,
+  "pf": 0.931,
+  "avg_cost_r": 0.029,
+  "avg_gross_r": 0.0148,
+  "t_stat": -0.88,
+  "max_dd_pct": 8.18,
+  "by_setup": {
+   "breakout_retest": {
+    "n": 224,
+    "avg_r": 0.0465
+   },
+   "orb_dst": {
+    "n": 62,
+    "avg_r": -0.0027
+   },
+   "rsi2": {
+    "n": 467,
+    "avg_r": -0.0304
+   },
+   "sweep_reclaim": {
+    "n": 52,
+    "avg_r": -0.0977
+   },
+   "trend_pullback": {
+    "n": 352,
+    "avg_r": -0.0179
+   }
+  },
+  "periods": {
+   "A": {
+    "n": 721,
+    "avg_r": -0.013,
+    "sum_r": -9.38,
+    "pnl": -451.79
+   },
+   "B": {
+    "n": 333,
+    "avg_r": -0.0072,
+    "sum_r": -2.39,
+    "pnl": -152.48
+   },
+   "C": {
+    "n": 103,
+    "avg_r": -0.0345,
+    "sum_r": -3.55,
+    "pnl": -137.62
+   }
+  },
+  "trades_per_month": 18.3,
+  "days": 1922,
+  "name": "all (ORB fixed) | gate as written | half 1R + 2R, 8-bar stop",
+  "group": "memes",
+  "fees": "low",
+  "candidates": 14162
+ },
+ {
+  "trades": 350,
+  "skips": {
+   "bear regime: memes off": 3704,
+   "already in this coin": 3342,
+   "trend setup without 1h+4h uptrend (M0)": 1865,
+   "memes: 2 positions max": 1586,
+   "gate QUIET": 1116,
+   "BTC 4h trend down (BTC first)": 757,
+   "meme dead zone 7 PM-midnight MT": 729,
+   "engine: negative learned edge": 416,
+   "engine: benched": 292,
+   "drawdown break (-10R)": 5
+  },
+  "end_equity": 9784.97,
+  "return_pct": -2.15,
+  "win_rate": 0.5,
+  "avg_r": -0.0102,
+  "sum_r": -3.57,
+  "pf": 0.978,
+  "avg_cost_r": 0.0283,
+  "avg_gross_r": 0.0171,
+  "t_stat": -0.19,
+  "max_dd_pct": 8.62,
+  "by_setup": {
+   "breakout_retest": {
+    "n": 148,
+    "avg_r": 0.1716
+   },
+   "orb_dst": {
+    "n": 9,
+    "avg_r": -0.4688
+   },
+   "rsi2": {
+    "n": 114,
+    "avg_r": -0.1057
+   },
+   "sweep_reclaim": {
+    "n": 28,
+    "avg_r": -0.2932
+   },
+   "trend_pullback": {
+    "n": 51,
+    "avg_r": -0.0881
+   }
+  },
+  "periods": {
+   "A": {
+    "n": 224,
+    "avg_r": -0.0363,
+    "sum_r": -8.14,
+    "pnl": -254.87
+   },
+   "B": {
+    "n": 95,
+    "avg_r": -0.0109,
+    "sum_r": -1.03,
+    "pnl": -46.86
+   },
+   "C": {
+    "n": 31,
+    "avg_r": 0.1805,
+    "sum_r": 5.6,
+    "pnl": 86.7
+   }
+  },
+  "trades_per_month": 5.54,
+  "days": 1922,
+  "name": "all (ORB fixed) | gate as written | half 1R + 2R, 96h",
+  "group": "memes",
+  "fees": "low",
+  "candidates": 14162
+ },
+ {
+  "trades": 345,
+  "skips": {
+   "already in this coin": 3944,
+   "bear regime: memes off": 3694,
+   "trend setup without 1h+4h uptrend (M0)": 1871,
+   "memes: 2 positions max": 1599,
+   "gate QUIET": 1068,
+   "BTC 4h trend down (BTC first)": 666,
+   "meme dead zone 7 PM-midnight MT": 620,
+   "engine: negative learned edge": 265,
+   "engine: benched": 90
+  },
+  "end_equity": 10009.21,
+  "return_pct": 0.09,
+  "win_rate": 0.406,
+  "avg_r": 0.0476,
+  "sum_r": 16.42,
+  "pf": 1.085,
+  "avg_cost_r": 0.0305,
+  "avg_gross_r": 0.0771,
+  "t_stat": 0.68,
+  "max_dd_pct": 7.6,
+  "by_setup": {
+   "breakout_retest": {
+    "n": 122,
+    "avg_r": 0.2953
+   },
+   "orb_dst": {
+    "n": 10,
+    "avg_r": -0.1754
+   },
+   "rsi2": {
+    "n": 103,
+    "avg_r": -0.029
+   },
+   "sweep_reclaim": {
+    "n": 12,
+    "avg_r": -0.2052
+   },
+   "trend_pullback": {
+    "n": 98,
+    "avg_r": -0.1266
+   }
+  },
+  "periods": {
+   "A": {
+    "n": 237,
+    "avg_r": 0.027,
+    "sum_r": 6.4,
+    "pnl": -120.35
+   },
+   "B": {
+    "n": 80,
+    "avg_r": 0.0091,
+    "sum_r": 0.73,
+    "pnl": -61.13
+   },
+   "C": {
+    "n": 28,
+    "avg_r": 0.332,
+    "sum_r": 9.3,
+    "pnl": 190.69
+   }
+  },
+  "trades_per_month": 5.46,
+  "days": 1922,
+  "name": "all (ORB fixed) | gate as written | one exit 2R, 96h",
+  "group": "memes",
+  "fees": "low",
+  "candidates": 14162
+ },
+ {
+  "trades": 291,
+  "skips": {
+   "gate not LOUD": 10602,
+   "gate QUIET": 1394,
+   "already in this coin": 643,
+   "bear regime: memes off": 583,
+   "meme dead zone 7 PM-midnight MT": 167,
+   "memes: 2 positions max": 156,
+   "BTC 4h trend down (BTC first)": 132,
+   "engine: negative learned edge": 102,
+   "trend setup without 1h+4h uptrend (M0)": 91,
+   "3 losses in a row": 1
+  },
+  "end_equity": 10099.65,
+  "return_pct": 1.0,
+  "win_rate": 0.464,
+  "avg_r": 0.0131,
+  "sum_r": 3.81,
+  "pf": 1.074,
+  "avg_cost_r": 0.0208,
+  "avg_gross_r": 0.0329,
+  "t_stat": 0.45,
+  "max_dd_pct": 1.92,
+  "by_setup": {
+   "breakout_retest": {
+    "n": 88,
+    "avg_r": -0.0184
+   },
+   "orb_dst": {
+    "n": 13,
+    "avg_r": -0.2779
+   },
+   "rsi2": {
+    "n": 107,
+    "avg_r": 0.0304
+   },
+   "sweep_reclaim": {
+    "n": 6,
+    "avg_r": 0.4768
+   },
+   "trend_pullback": {
+    "n": 77,
+    "avg_r": 0.0379
+   }
+  },
+  "periods": {
+   "A": {
+    "n": 163,
+    "avg_r": 0.0124,
+    "sum_r": 2.02,
+    "pnl": 57.83
+   },
+   "B": {
+    "n": 89,
+    "avg_r": -0.0043,
+    "sum_r": -0.38,
+    "pnl": -18.41
+   },
+   "C": {
+    "n": 39,
+    "avg_r": 0.0558,
+    "sum_r": 2.18,
+    "pnl": 60.23
+   }
+  },
+  "trades_per_month": 4.6,
+  "days": 1922,
+  "name": "all (ORB fixed) | LOUD only | half 1R + 2R, 8-bar stop",
+  "group": "memes",
+  "fees": "low",
+  "candidates": 14162
+ },
+ {
+  "trades": 162,
+  "skips": {
+   "gate not LOUD": 9599,
+   "already in this coin": 1878,
+   "gate QUIET": 1348,
+   "bear regime: memes off": 578,
+   "memes: 2 positions max": 247,
+   "BTC 4h trend down (BTC first)": 112,
+   "meme dead zone 7 PM-midnight MT": 108,
+   "trend setup without 1h+4h uptrend (M0)": 91,
+   "engine: negative learned edge": 39
+  },
+  "end_equity": 10695.45,
+  "return_pct": 6.95,
+  "win_rate": 0.568,
+  "avg_r": 0.1633,
+  "sum_r": 26.45,
+  "pf": 1.437,
+  "avg_cost_r": 0.0217,
+  "avg_gross_r": 0.184,
+  "t_stat": 2.07,
+  "max_dd_pct": 2.66,
+  "by_setup": {
+   "breakout_retest": {
+    "n": 71,
+    "avg_r": 0.2407
+   },
+   "orb_dst": {
+    "n": 18,
+    "avg_r": 0.0607
+   },
+   "rsi2": {
+    "n": 49,
+    "avg_r": 0.1485
+   },
+   "sweep_reclaim": {
+    "n": 5,
+    "avg_r": 0.7535
+   },
+   "trend_pullback": {
+    "n": 19,
+    "avg_r": -0.1461
+   }
+  },
+  "periods": {
+   "A": {
+    "n": 103,
+    "avg_r": 0.1202,
+    "sum_r": 12.38,
+    "pnl": 364.43
+   },
+   "B": {
+    "n": 39,
+    "avg_r": 0.1364,
+    "sum_r": 5.32,
+    "pnl": 89.34
+   },
+   "C": {
+    "n": 20,
+    "avg_r": 0.4374,
+    "sum_r": 8.75,
+    "pnl": 241.68
+   }
+  },
+  "trades_per_month": 2.56,
+  "days": 1922,
+  "name": "all (ORB fixed) | LOUD only | half 1R + 2R, 96h",
+  "group": "memes",
+  "fees": "low",
+  "candidates": 14162
+ },
+ {
+  "trades": 152,
+  "skips": {
+   "gate not LOUD": 9538,
+   "already in this coin": 1965,
+   "gate QUIET": 1342,
+   "bear regime: memes off": 578,
+   "memes: 2 positions max": 258,
+   "BTC 4h trend down (BTC first)": 112,
+   "meme dead zone 7 PM-midnight MT": 106,
+   "trend setup without 1h+4h uptrend (M0)": 91,
+   "engine: negative learned edge": 20
+  },
+  "end_equity": 10777.53,
+  "return_pct": 7.78,
+  "win_rate": 0.447,
+  "avg_r": 0.2141,
+  "sum_r": 32.55,
+  "pf": 1.479,
+  "avg_cost_r": 0.0226,
+  "avg_gross_r": 0.2357,
+  "t_stat": 2.08,
+  "max_dd_pct": 3.39,
+  "by_setup": {
+   "breakout_retest": {
+    "n": 69,
+    "avg_r": 0.2458
+   },
+   "orb_dst": {
+    "n": 20,
+    "avg_r": 0.3666
+   },
+   "rsi2": {
+    "n": 40,
+    "avg_r": 0.1903
+   },
+   "sweep_reclaim": {
+    "n": 4,
+    "avg_r": 0.6755
+   },
+   "trend_pullback": {
+    "n": 19,
+    "avg_r": -0.1085
+   }
+  },
+  "periods": {
+   "A": {
+    "n": 98,
+    "avg_r": 0.161,
+    "sum_r": 15.78,
+    "pnl": 387.68
+   },
+   "B": {
+    "n": 37,
+    "avg_r": 0.1328,
+    "sum_r": 4.91,
+    "pnl": 98.83
+   },
+   "C": {
+    "n": 17,
+    "avg_r": 0.6971,
+    "sum_r": 11.85,
+    "pnl": 291.02
+   }
+  },
+  "trades_per_month": 2.4,
+  "days": 1922,
+  "name": "all (ORB fixed) | LOUD only | one exit 2R, 96h",
+  "group": "memes",
+  "fees": "low",
+  "candidates": 14162
+ },
+ {
+  "trades": 406,
+  "skips": {
+   "trend setup without 1h+4h uptrend (M0)": 1637,
+   "bear regime: memes off": 780,
+   "already in this coin": 529,
+   "memes: 2 positions max": 247,
+   "meme dead zone 7 PM-midnight MT": 200,
+   "gate QUIET": 159,
+   "BTC 4h trend down (BTC first)": 134,
+   "engine: negative learned edge": 64
+  },
+  "end_equity": 10387.82,
+  "return_pct": 3.88,
+  "win_rate": 0.441,
+  "avg_r": 0.0203,
+  "sum_r": 8.25,
+  "pf": 1.096,
+  "avg_cost_r": 0.0283,
+  "avg_gross_r": 0.0476,
+  "t_stat": 0.68,
+  "max_dd_pct": 3.33,
+  "by_setup": {
+   "breakout_retest": {
+    "n": 285,
+    "avg_r": 0.0288
+   },
+   "orb_dst": {
+    "n": 121,
+    "avg_r": 0.0005
+   }
+  },
+  "periods": {
+   "A": {
+    "n": 222,
+    "avg_r": 0.0484,
+    "sum_r": 10.75,
+    "pnl": 469.3
+   },
+   "B": {
+    "n": 140,
+    "avg_r": -0.0142,
+    "sum_r": -1.99,
+    "pnl": -37.23
+   },
+   "C": {
+    "n": 44,
+    "avg_r": -0.0115,
+    "sum_r": -0.51,
+    "pnl": -44.25
+   }
+  },
+  "trades_per_month": 6.42,
+  "days": 1922,
+  "name": "P3 + P6 | gate as written | half 1R + 2R, 8-bar stop",
+  "group": "memes",
+  "fees": "low",
+  "candidates": 4156
+ },
+ {
+  "trades": 227,
+  "skips": {
+   "trend setup without 1h+4h uptrend (M0)": 1628,
+   "bear regime: memes off": 780,
+   "already in this coin": 660,
+   "memes: 2 positions max": 227,
+   "engine: negative learned edge": 179,
+   "meme dead zone 7 PM-midnight MT": 169,
+   "gate QUIET": 156,
+   "BTC 4h trend down (BTC first)": 130
+  },
+  "end_equity": 9898.88,
+  "return_pct": -1.01,
+  "win_rate": 0.52,
+  "avg_r": 0.0482,
+  "sum_r": 10.94,
+  "pf": 1.105,
+  "avg_cost_r": 0.0288,
+  "avg_gross_r": 0.076,
+  "t_stat": 0.69,
+  "max_dd_pct": 4.93,
+  "by_setup": {
+   "breakout_retest": {
+    "n": 217,
+    "avg_r": 0.0685
+   },
+   "orb_dst": {
+    "n": 10,
+    "avg_r": -0.3922
+   }
+  },
+  "periods": {
+   "A": {
+    "n": 139,
+    "avg_r": 0.0604,
+    "sum_r": 8.4,
+    "pnl": -11.98
+   },
+   "B": {
+    "n": 64,
+    "avg_r": 0.0118,
+    "sum_r": 0.76,
+    "pnl": -50.01
+   },
+   "C": {
+    "n": 24,
+    "avg_r": 0.0744,
+    "sum_r": 1.79,
+    "pnl": -39.13
+   }
+  },
+  "trades_per_month": 3.59,
+  "days": 1922,
+  "name": "P3 + P6 | gate as written | half 1R + 2R, 96h",
+  "group": "memes",
+  "fees": "low",
+  "candidates": 4156
+ },
+ {
+  "trades": 217,
+  "skips": {
+   "trend setup without 1h+4h uptrend (M0)": 1623,
+   "bear regime: memes off": 780,
+   "already in this coin": 679,
+   "memes: 2 positions max": 230,
+   "meme dead zone 7 PM-midnight MT": 179,
+   "engine: negative learned edge": 174,
+   "gate QUIET": 150,
+   "BTC 4h trend down (BTC first)": 124
+  },
+  "end_equity": 10259.85,
+  "return_pct": 2.6,
+  "win_rate": 0.41,
+  "avg_r": 0.1082,
+  "sum_r": 23.48,
+  "pf": 1.192,
+  "avg_cost_r": 0.0293,
+  "avg_gross_r": 0.1365,
+  "t_stat": 1.17,
+  "max_dd_pct": 4.64,
+  "by_setup": {
+   "breakout_retest": {
+    "n": 205,
+    "avg_r": 0.1206
+   },
+   "orb_dst": {
+    "n": 12,
+    "avg_r": -0.1044
+   }
+  },
+  "periods": {
+   "A": {
+    "n": 134,
+    "avg_r": 0.1075,
+    "sum_r": 14.41,
+    "pnl": 111.02
+   },
+   "B": {
+    "n": 60,
+    "avg_r": 0.084,
+    "sum_r": 5.04,
+    "pnl": 156.87
+   },
+   "C": {
+    "n": 23,
+    "avg_r": 0.1755,
+    "sum_r": 4.04,
+    "pnl": -8.05
+   }
+  },
+  "trades_per_month": 3.43,
+  "days": 1922,
+  "name": "P3 + P6 | gate as written | one exit 2R, 96h",
+  "group": "memes",
+  "fees": "low",
+  "candidates": 4156
+ },
+ {
+  "trades": 134,
+  "skips": {
+   "gate not LOUD": 3120,
+   "bear regime: memes off": 224,
+   "already in this coin": 215,
+   "gate QUIET": 172,
+   "trend setup without 1h+4h uptrend (M0)": 87,
+   "meme dead zone 7 PM-midnight MT": 60,
+   "memes: 2 positions max": 55,
+   "engine: negative learned edge": 48,
+   "BTC 4h trend down (BTC first)": 41
+  },
+  "end_equity": 9942.54,
+  "return_pct": -0.57,
+  "win_rate": 0.463,
+  "avg_r": 0.009,
+  "sum_r": 1.21,
+  "pf": 1.038,
+  "avg_cost_r": 0.0214,
+  "avg_gross_r": 0.0294,
+  "t_stat": 0.16,
+  "max_dd_pct": 2.48,
+  "by_setup": {
+   "breakout_retest": {
+    "n": 125,
+    "avg_r": 0.0408
+   },
+   "orb_dst": {
+    "n": 9,
+    "avg_r": -0.4326
+   }
+  },
+  "periods": {
+   "A": {
+    "n": 72,
+    "avg_r": -0.0135,
+    "sum_r": -0.97,
+    "pnl": -88.58
+   },
+   "B": {
+    "n": 41,
+    "avg_r": -0.0105,
+    "sum_r": -0.43,
+    "pnl": -7.89
+   },
+   "C": {
+    "n": 21,
+    "avg_r": 0.1244,
+    "sum_r": 2.61,
+    "pnl": 39.01
+   }
+  },
+  "trades_per_month": 2.12,
+  "days": 1922,
+  "name": "P3 + P6 | LOUD only | half 1R + 2R, 8-bar stop",
+  "group": "memes",
+  "fees": "low",
+  "candidates": 4156
+ },
+ {
+  "trades": 108,
+  "skips": {
+   "gate not LOUD": 3054,
+   "already in this coin": 306,
+   "bear regime: memes off": 224,
+   "gate QUIET": 172,
+   "trend setup without 1h+4h uptrend (M0)": 87,
+   "memes: 2 positions max": 85,
+   "meme dead zone 7 PM-midnight MT": 54,
+   "BTC 4h trend down (BTC first)": 39,
+   "engine: negative learned edge": 27
+  },
+  "end_equity": 10277.03,
+  "return_pct": 2.77,
+  "win_rate": 0.556,
+  "avg_r": 0.1571,
+  "sum_r": 16.96,
+  "pf": 1.388,
+  "avg_cost_r": 0.0212,
+  "avg_gross_r": 0.1772,
+  "t_stat": 1.55,
+  "max_dd_pct": 3.11,
+  "by_setup": {
+   "breakout_retest": {
+    "n": 97,
+    "avg_r": 0.2249
+   },
+   "orb_dst": {
+    "n": 11,
+    "avg_r": -0.4408
+   }
+  },
+  "periods": {
+   "A": {
+    "n": 62,
+    "avg_r": 0.0476,
+    "sum_r": 2.95,
+    "pnl": 5.55
+   },
+   "B": {
+    "n": 28,
+    "avg_r": 0.221,
+    "sum_r": 6.19,
+    "pnl": 109.2
+   },
+   "C": {
+    "n": 18,
+    "avg_r": 0.4346,
+    "sum_r": 7.82,
+    "pnl": 162.29
+   }
+  },
+  "trades_per_month": 1.71,
+  "days": 1922,
+  "name": "P3 + P6 | LOUD only | half 1R + 2R, 96h",
+  "group": "memes",
+  "fees": "low",
+  "candidates": 4156
+ },
+ {
+  "trades": 104,
+  "skips": {
+   "gate not LOUD": 3048,
+   "already in this coin": 316,
+   "bear regime: memes off": 224,
+   "gate QUIET": 172,
+   "memes: 2 positions max": 97,
+   "trend setup without 1h+4h uptrend (M0)": 87,
+   "meme dead zone 7 PM-midnight MT": 55,
+   "BTC 4h trend down (BTC first)": 35,
+   "engine: negative learned edge": 18
+  },
+  "end_equity": 10640.34,
+  "return_pct": 6.4,
+  "win_rate": 0.452,
+  "avg_r": 0.2374,
+  "sum_r": 24.69,
+  "pf": 1.498,
+  "avg_cost_r": 0.022,
+  "avg_gross_r": 0.2584,
+  "t_stat": 1.81,
+  "max_dd_pct": 3.1,
+  "by_setup": {
+   "breakout_retest": {
+    "n": 86,
+    "avg_r": 0.2751
+   },
+   "orb_dst": {
+    "n": 18,
+    "avg_r": 0.0574
+   }
+  },
+  "periods": {
+   "A": {
+    "n": 60,
+    "avg_r": 0.1142,
+    "sum_r": 6.85,
+    "pnl": 128.39
+   },
+   "B": {
+    "n": 28,
+    "avg_r": 0.2694,
+    "sum_r": 7.54,
+    "pnl": 100.0
+   },
+   "C": {
+    "n": 16,
+    "avg_r": 0.6434,
+    "sum_r": 10.3,
+    "pnl": 411.95
+   }
+  },
+  "trades_per_month": 1.65,
+  "days": 1922,
+  "name": "P3 + P6 | LOUD only | one exit 2R, 96h",
+  "group": "memes",
+  "fees": "low",
+  "candidates": 4156
+ },
+ {
+  "trades": 614,
+  "skips": {
+   "trend setup without 1h+4h uptrend (M0)": 1928,
+   "bear regime: memes off": 1922,
+   "already in this coin": 1083,
+   "gate QUIET": 751,
+   "meme dead zone 7 PM-midnight MT": 608,
+   "engine: benched": 570,
+   "memes: 2 positions max": 533,
+   "BTC 4h trend down (BTC first)": 371,
+   "engine: negative learned edge": 199,
+   "3 losses in a row": 5
+  },
+  "end_equity": 9695.51,
+  "return_pct": -3.04,
+  "win_rate": 0.456,
+  "avg_r": 0.0039,
+  "sum_r": 2.41,
+  "pf": 1.019,
+  "avg_cost_r": 0.0282,
+  "avg_gross_r": 0.0311,
+  "t_stat": 0.17,
+  "max_dd_pct": 4.24,
+  "by_setup": {
+   "breakout_retest": {
+    "n": 235,
+    "avg_r": 0.0244
+   },
+   "orb_dst": {
+    "n": 114,
+    "avg_r": 0.077
+   },
+   "trend_pullback": {
+    "n": 265,
+    "avg_r": -0.0457
+   }
+  },
+  "periods": {
+   "A": {
+    "n": 300,
+    "avg_r": -0.0009,
+    "sum_r": -0.28,
+    "pnl": -120.44
+   },
+   "B": {
+    "n": 233,
+    "avg_r": 0.0181,
+    "sum_r": 4.21,
+    "pnl": -95.4
+   },
+   "C": {
+    "n": 81,
+    "avg_r": -0.0187,
+    "sum_r": -1.51,
+    "pnl": -88.65
+   }
+  },
+  "trades_per_month": 9.71,
+  "days": 1922,
+  "name": "P1 + P3 + P6 | gate as written | half 1R + 2R, 8-bar stop",
+  "group": "memes",
+  "fees": "low",
+  "candidates": 8584
+ },
+ {
+  "trades": 257,
+  "skips": {
+   "trend setup without 1h+4h uptrend (M0)": 1922,
+   "bear regime: memes off": 1920,
+   "already in this coin": 1743,
+   "memes: 2 positions max": 674,
+   "gate QUIET": 650,
+   "meme dead zone 7 PM-midnight MT": 464,
+   "engine: negative learned edge": 385,
+   "BTC 4h trend down (BTC first)": 330,
+   "engine: benched": 239
+  },
+  "end_equity": 9663.27,
+  "return_pct": -3.37,
+  "win_rate": 0.498,
+  "avg_r": -0.0096,
+  "sum_r": -2.46,
+  "pf": 0.98,
+  "avg_cost_r": 0.0271,
+  "avg_gross_r": 0.0166,
+  "t_stat": -0.15,
+  "max_dd_pct": 7.15,
+  "by_setup": {
+   "breakout_retest": {
+    "n": 164,
+    "avg_r": 0.1287
+   },
+   "orb_dst": {
+    "n": 16,
+    "avg_r": -0.3706
+   },
+   "trend_pullback": {
+    "n": 77,
+    "avg_r": -0.2291
+   }
+  },
+  "periods": {
+   "A": {
+    "n": 154,
+    "avg_r": -0.0164,
+    "sum_r": -2.53,
+    "pnl": -281.8
+   },
+   "B": {
+    "n": 77,
+    "avg_r": -0.0628,
+    "sum_r": -4.83,
+    "pnl": -117.14
+   },
+   "C": {
+    "n": 26,
+    "avg_r": 0.1886,
+    "sum_r": 4.9,
+    "pnl": 62.22
+   }
+  },
+  "trades_per_month": 4.07,
+  "days": 1922,
+  "name": "P1 + P3 + P6 | gate as written | half 1R + 2R, 96h",
+  "group": "memes",
+  "fees": "low",
+  "candidates": 8584
+ },
+ {
+  "trades": 301,
+  "skips": {
+   "already in this coin": 2219,
+   "bear regime: memes off": 1910,
+   "trend setup without 1h+4h uptrend (M0)": 1908,
+   "memes: 2 positions max": 854,
+   "gate QUIET": 580,
+   "meme dead zone 7 PM-midnight MT": 375,
+   "BTC 4h trend down (BTC first)": 308,
+   "engine: negative learned edge": 129
+  },
+  "end_equity": 9887.46,
+  "return_pct": -1.13,
+  "win_rate": 0.395,
+  "avg_r": 0.063,
+  "sum_r": 18.95,
+  "pf": 1.113,
+  "avg_cost_r": 0.0309,
+  "avg_gross_r": 0.0928,
+  "t_stat": 0.83,
+  "max_dd_pct": 7.82,
+  "by_setup": {
+   "breakout_retest": {
+    "n": 135,
+    "avg_r": 0.2395
+   },
+   "orb_dst": {
+    "n": 11,
+    "avg_r": -0.5069
+   },
+   "trend_pullback": {
+    "n": 155,
+    "avg_r": -0.0503
+   }
+  },
+  "periods": {
+   "A": {
+    "n": 208,
+    "avg_r": 0.0794,
+    "sum_r": 16.52,
+    "pnl": -83.06
+   },
+   "B": {
+    "n": 69,
+    "avg_r": -0.0576,
+    "sum_r": -3.97,
+    "pnl": -140.65
+   },
+   "C": {
+    "n": 24,
+    "avg_r": 0.2668,
+    "sum_r": 6.4,
+    "pnl": 111.17
+   }
+  },
+  "trades_per_month": 4.76,
+  "days": 1922,
+  "name": "P1 + P3 + P6 | gate as written | one exit 2R, 96h",
+  "group": "memes",
+  "fees": "low",
+  "candidates": 8584
+ },
+ {
+  "trades": 208,
+  "skips": {
+   "gate not LOUD": 6450,
+   "gate QUIET": 790,
+   "bear regime: memes off": 354,
+   "already in this coin": 322,
+   "meme dead zone 7 PM-midnight MT": 110,
+   "trend setup without 1h+4h uptrend (M0)": 91,
+   "memes: 2 positions max": 91,
+   "engine: negative learned edge": 90,
+   "BTC 4h trend down (BTC first)": 78
+  },
+  "end_equity": 9886.3,
+  "return_pct": -1.14,
+  "win_rate": 0.447,
+  "avg_r": -0.0147,
+  "sum_r": -3.05,
+  "pf": 0.926,
+  "avg_cost_r": 0.0202,
+  "avg_gross_r": 0.0045,
+  "t_stat": -0.41,
+  "max_dd_pct": 2.58,
+  "by_setup": {
+   "breakout_retest": {
+    "n": 91,
+    "avg_r": -0.0272
+   },
+   "orb_dst": {
+    "n": 14,
+    "avg_r": -0.2715
+   },
+   "trend_pullback": {
+    "n": 103,
+    "avg_r": 0.0313
+   }
+  },
+  "periods": {
+   "A": {
+    "n": 107,
+    "avg_r": -0.0069,
+    "sum_r": -0.73,
+    "pnl": -73.87
+   },
+   "B": {
+    "n": 68,
+    "avg_r": -0.0477,
+    "sum_r": -3.24,
+    "pnl": -50.96
+   },
+   "C": {
+    "n": 33,
+    "avg_r": 0.028,
+    "sum_r": 0.92,
+    "pnl": 11.12
+   }
+  },
+  "trades_per_month": 3.29,
+  "days": 1922,
+  "name": "P1 + P3 + P6 | LOUD only | half 1R + 2R, 8-bar stop",
+  "group": "memes",
+  "fees": "low",
+  "candidates": 8584
+ },
+ {
+  "trades": 133,
+  "skips": {
+   "gate not LOUD": 5995,
+   "already in this coin": 913,
+   "gate QUIET": 766,
+   "bear regime: memes off": 352,
+   "memes: 2 positions max": 152,
+   "trend setup without 1h+4h uptrend (M0)": 91,
+   "meme dead zone 7 PM-midnight MT": 78,
+   "BTC 4h trend down (BTC first)": 68,
+   "engine: negative learned edge": 36
+  },
+  "end_equity": 10518.16,
+  "return_pct": 5.18,
+  "win_rate": 0.549,
+  "avg_r": 0.1545,
+  "sum_r": 20.55,
+  "pf": 1.389,
+  "avg_cost_r": 0.0212,
+  "avg_gross_r": 0.1747,
+  "t_stat": 1.72,
+  "max_dd_pct": 3.07,
+  "by_setup": {
+   "breakout_retest": {
+    "n": 79,
+    "avg_r": 0.2456
+   },
+   "orb_dst": {
+    "n": 15,
+    "avg_r": -0.1919
+   },
+   "trend_pullback": {
+    "n": 39,
+    "avg_r": 0.1032
+   }
+  },
+  "periods": {
+   "A": {
+    "n": 79,
+    "avg_r": 0.0602,
+    "sum_r": 4.76,
+    "pnl": 62.97
+   },
+   "B": {
+    "n": 35,
+    "avg_r": 0.239,
+    "sum_r": 8.37,
+    "pnl": 146.99
+   },
+   "C": {
+    "n": 19,
+    "avg_r": 0.3907,
+    "sum_r": 7.42,
+    "pnl": 308.2
+   }
+  },
+  "trades_per_month": 2.1,
+  "days": 1922,
+  "name": "P1 + P3 + P6 | LOUD only | half 1R + 2R, 96h",
+  "group": "memes",
+  "fees": "low",
+  "candidates": 8584
+ },
+ {
+  "trades": 129,
+  "skips": {
+   "gate not LOUD": 5945,
+   "already in this coin": 976,
+   "gate QUIET": 761,
+   "bear regime: memes off": 352,
+   "memes: 2 positions max": 158,
+   "trend setup without 1h+4h uptrend (M0)": 91,
+   "meme dead zone 7 PM-midnight MT": 75,
+   "BTC 4h trend down (BTC first)": 68,
+   "engine: negative learned edge": 29
+  },
+  "end_equity": 10235.15,
+  "return_pct": 2.35,
+  "win_rate": 0.419,
+  "avg_r": 0.1842,
+  "sum_r": 23.76,
+  "pf": 1.375,
+  "avg_cost_r": 0.0218,
+  "avg_gross_r": 0.205,
+  "t_stat": 1.59,
+  "max_dd_pct": 4.1,
+  "by_setup": {
+   "breakout_retest": {
+    "n": 70,
+    "avg_r": 0.1717
+   },
+   "orb_dst": {
+    "n": 23,
+    "avg_r": 0.3269
+   },
+   "trend_pullback": {
+    "n": 36,
+    "avg_r": 0.1173
+   }
+  },
+  "periods": {
+   "A": {
+    "n": 81,
+    "avg_r": 0.0971,
+    "sum_r": 7.87,
+    "pnl": -33.61
+   },
+   "B": {
+    "n": 31,
+    "avg_r": 0.1935,
+    "sum_r": 6.0,
+    "pnl": 113.85
+   },
+   "C": {
+    "n": 17,
+    "avg_r": 0.582,
+    "sum_r": 9.89,
+    "pnl": 154.92
+   }
+  },
+  "trades_per_month": 2.04,
+  "days": 1922,
+  "name": "P1 + P3 + P6 | LOUD only | one exit 2R, 96h",
+  "group": "memes",
+  "fees": "low",
+  "candidates": 8584
+ },
+ {
+  "trades": 1152,
+  "skips": {
+   "bear regime: memes off": 3703,
+   "already in this coin": 2494,
+   "trend setup without 1h+4h uptrend (M0)": 1909,
+   "memes: 2 positions max": 1383,
+   "gate QUIET": 1293,
+   "meme dead zone 7 PM-midnight MT": 947,
+   "BTC 4h trend down (BTC first)": 792,
+   "engine: negative learned edge": 309,
+   "engine: benched": 88,
+   "3 losses in a row": 55,
+   "drawdown break (-10R)": 27
+  },
+  "end_equity": 9225.27,
+  "return_pct": -7.75,
+  "win_rate": 0.452,
+  "avg_r": -0.0137,
+  "sum_r": -15.78,
+  "pf": 0.93,
+  "avg_cost_r": 0.0291,
+  "avg_gross_r": 0.0144,
+  "t_stat": -0.89,
+  "max_dd_pct": 8.46,
+  "by_setup": {
+   "breakout_retest": {
+    "n": 229,
+    "avg_r": 0.0496
+   },
+   "orb": {
+    "n": 52,
+    "avg_r": -0.0227
+   },
+   "rsi2": {
+    "n": 456,
+    "avg_r": -0.0288
+   },
+   "sweep_reclaim": {
+    "n": 52,
+    "avg_r": -0.0977
+   },
+   "trend_pullback": {
+    "n": 363,
+    "avg_r": -0.0214
+   }
+  },
+  "periods": {
+   "A": {
+    "n": 720,
+    "avg_r": -0.0143,
+    "sum_r": -10.31,
+    "pnl": -493.46
+   },
+   "B": {
+    "n": 333,
+    "avg_r": -0.0056,
+    "sum_r": -1.85,
+    "pnl": -143.89
+   },
+   "C": {
+    "n": 99,
+    "avg_r": -0.0365,
+    "sum_r": -3.62,
+    "pnl": -137.38
+   }
+  },
+  "trades_per_month": 18.22,
+  "days": 1922,
+  "name": "jarvus_v6 (as written)",
+  "group": "memes",
+  "fees": "low",
+  "candidates": 14152
+ },
+ {
+  "trades": 61,
+  "skips": {
+   "engine: benched": 3881,
+   "bear regime: memes off": 3712,
+   "trend setup without 1h+4h uptrend (M0)": 1931,
+   "gate QUIET": 1388,
+   "meme dead zone 7 PM-midnight MT": 1214,
+   "BTC 4h trend down (BTC first)": 865,
+   "cost > 0.33R": 629,
+   "engine: negative learned edge": 337,
+   "already in this coin": 144
+  },
+  "end_equity": 9730.77,
+  "return_pct": -2.69,
+  "win_rate": 0.344,
+  "avg_r": -0.1587,
+  "sum_r": -9.68,
+  "pf": 0.405,
+  "avg_cost_r": 0.1411,
+  "avg_gross_r": -0.0187,
+  "t_stat": -2.54,
+  "max_dd_pct": 3.01,
+  "by_setup": {
+   "breakout_retest": {
+    "n": 16,
+    "avg_r": -0.0613
+   },
+   "orb_dst": {
+    "n": 8,
+    "avg_r": -0.273
+   },
+   "rsi2": {
+    "n": 8,
+    "avg_r": -0.3228
+   },
+   "sweep_reclaim": {
+    "n": 8,
+    "avg_r": -0.1583
+   },
+   "trend_pullback": {
+    "n": 21,
+    "avg_r": -0.1271
+   }
+  },
+  "periods": {
+   "A": {
+    "n": 61,
+    "avg_r": -0.1587,
+    "sum_r": -9.68,
+    "pnl": -269.23
+   }
+  },
+  "trades_per_month": 0.96,
+  "days": 1922,
+  "name": "all (ORB fixed) | gate as written | half 1R + 2R, 8-bar stop",
+  "group": "memes",
+  "fees": "kraken",
+  "candidates": 14162
+ },
+ {
+  "trades": 229,
+  "skips": {
+   "bear regime: memes off": 3681,
+   "already in this coin": 2473,
+   "trend setup without 1h+4h uptrend (M0)": 1920,
+   "engine: benched": 1291,
+   "gate QUIET": 1187,
+   "meme dead zone 7 PM-midnight MT": 846,
+   "BTC 4h trend down (BTC first)": 801,
+   "engine: negative learned edge": 754,
+   "cost > 0.33R": 559,
+   "memes: 2 positions max": 418,
+   "drawdown break (-10R)": 3
+  },
+  "end_equity": 9096.17,
+  "return_pct": -9.04,
+  "win_rate": 0.467,
+  "avg_r": -0.1664,
+  "sum_r": -38.1,
+  "pf": 0.702,
+  "avg_cost_r": 0.1415,
+  "avg_gross_r": -0.0259,
+  "t_stat": -2.45,
+  "max_dd_pct": 10.59,
+  "by_setup": {
+   "breakout_retest": {
+    "n": 144,
+    "avg_r": -0.0054
+   },
+   "orb_dst": {
+    "n": 8,
+    "avg_r": -0.5117
+   },
+   "rsi2": {
+    "n": 9,
+    "avg_r": -0.1506
+   },
+   "sweep_reclaim": {
+    "n": 8,
+    "avg_r": -0.6951
+   },
+   "trend_pullback": {
+    "n": 60,
+    "avg_r": -0.4386
+   }
+  },
+  "periods": {
+   "A": {
+    "n": 136,
+    "avg_r": -0.1659,
+    "sum_r": -22.56,
+    "pnl": -682.83
+   },
+   "B": {
+    "n": 71,
+    "avg_r": -0.241,
+    "sum_r": -17.11,
+    "pnl": -216.68
+   },
+   "C": {
+    "n": 22,
+    "avg_r": 0.0714,
+    "sum_r": 1.57,
+    "pnl": -4.31
+   }
+  },
+  "trades_per_month": 3.62,
+  "days": 1922,
+  "name": "all (ORB fixed) | gate as written | half 1R + 2R, 96h",
+  "group": "memes",
+  "fees": "kraken",
+  "candidates": 14162
+ },
+ {
+  "trades": 281,
+  "skips": {
+   "bear regime: memes off": 3684,
+   "already in this coin": 3354,
+   "trend setup without 1h+4h uptrend (M0)": 1885,
+   "memes: 2 positions max": 1314,
+   "gate QUIET": 1132,
+   "meme dead zone 7 PM-midnight MT": 709,
+   "BTC 4h trend down (BTC first)": 684,
+   "cost > 0.33R": 488,
+   "engine: negative learned edge": 438,
+   "engine: benched": 193
+  },
+  "end_equity": 9270.44,
+  "return_pct": -7.3,
+  "win_rate": 0.374,
+  "avg_r": -0.1106,
+  "sum_r": -31.07,
+  "pf": 0.823,
+  "avg_cost_r": 0.1529,
+  "avg_gross_r": 0.0413,
+  "t_stat": -1.46,
+  "max_dd_pct": 10.55,
+  "by_setup": {
+   "breakout_retest": {
+    "n": 96,
+    "avg_r": 0.1184
+   },
+   "orb_dst": {
+    "n": 8,
+    "avg_r": -0.4494
+   },
+   "rsi2": {
+    "n": 73,
+    "avg_r": -0.2844
+   },
+   "sweep_reclaim": {
+    "n": 8,
+    "avg_r": -0.3506
+   },
+   "trend_pullback": {
+    "n": 96,
+    "avg_r": -0.1591
+   }
+  },
+  "periods": {
+   "A": {
+    "n": 180,
+    "avg_r": -0.1672,
+    "sum_r": -30.09,
+    "pnl": -616.37
+   },
+   "B": {
+    "n": 74,
+    "avg_r": -0.1193,
+    "sum_r": -8.83,
+    "pnl": -160.53
+   },
+   "C": {
+    "n": 27,
+    "avg_r": 0.2909,
+    "sum_r": 7.85,
+    "pnl": 47.34
+   }
+  },
+  "trades_per_month": 4.44,
+  "days": 1922,
+  "name": "all (ORB fixed) | gate as written | one exit 2R, 96h",
+  "group": "memes",
+  "fees": "kraken",
+  "candidates": 14162
+ },
+ {
+  "trades": 153,
+  "skips": {
+   "gate not LOUD": 10693,
+   "gate QUIET": 1394,
+   "bear regime: memes off": 583,
+   "engine: benched": 387,
+   "already in this coin": 312,
+   "engine: negative learned edge": 198,
+   "meme dead zone 7 PM-midnight MT": 189,
+   "BTC 4h trend down (BTC first)": 134,
+   "trend setup without 1h+4h uptrend (M0)": 91,
+   "memes: 2 positions max": 21,
+   "cost > 0.33R": 7
+  },
+  "end_equity": 9811.88,
+  "return_pct": -1.88,
+  "win_rate": 0.373,
+  "avg_r": -0.0754,
+  "sum_r": -11.54,
+  "pf": 0.66,
+  "avg_cost_r": 0.1201,
+  "avg_gross_r": 0.0437,
+  "t_stat": -1.94,
+  "max_dd_pct": 3.22,
+  "by_setup": {
+   "breakout_retest": {
+    "n": 9,
+    "avg_r": -0.1423
+   },
+   "orb_dst": {
+    "n": 8,
+    "avg_r": -0.3247
+   },
+   "rsi2": {
+    "n": 57,
+    "avg_r": -0.0925
+   },
+   "sweep_reclaim": {
+    "n": 18,
+    "avg_r": 0.1544
+   },
+   "trend_pullback": {
+    "n": 61,
+    "avg_r": -0.0848
+   }
+  },
+  "periods": {
+   "A": {
+    "n": 126,
+    "avg_r": -0.0833,
+    "sum_r": -10.49,
+    "pnl": -177.17
+   },
+   "B": {
+    "n": 24,
+    "avg_r": -0.073,
+    "sum_r": -1.75,
+    "pnl": -23.21
+   },
+   "C": {
+    "n": 3,
+    "avg_r": 0.2343,
+    "sum_r": 0.7,
+    "pnl": 12.25
+   }
+  },
+  "trades_per_month": 2.42,
+  "days": 1922,
+  "name": "all (ORB fixed) | LOUD only | half 1R + 2R, 8-bar stop",
+  "group": "memes",
+  "fees": "kraken",
+  "candidates": 14162
+ },
+ {
+  "trades": 155,
+  "skips": {
+   "gate not LOUD": 9646,
+   "already in this coin": 1807,
+   "gate QUIET": 1340,
+   "bear regime: memes off": 578,
+   "memes: 2 positions max": 244,
+   "BTC 4h trend down (BTC first)": 112,
+   "meme dead zone 7 PM-midnight MT": 111,
+   "trend setup without 1h+4h uptrend (M0)": 91,
+   "engine: negative learned edge": 71,
+   "cost > 0.33R": 7
+  },
+  "end_equity": 10105.77,
+  "return_pct": 1.06,
+  "win_rate": 0.535,
+  "avg_r": 0.0357,
+  "sum_r": 5.53,
+  "pf": 1.081,
+  "avg_cost_r": 0.1229,
+  "avg_gross_r": 0.1575,
+  "t_stat": 0.43,
+  "max_dd_pct": 2.67,
+  "by_setup": {
+   "breakout_retest": {
+    "n": 70,
+    "avg_r": 0.1493
+   },
+   "orb_dst": {
+    "n": 10,
+    "avg_r": -0.4876
+   },
+   "rsi2": {
+    "n": 51,
+    "avg_r": 0.0229
+   },
+   "sweep_reclaim": {
+    "n": 7,
+    "avg_r": 0.149
+   },
+   "trend_pullback": {
+    "n": 17,
+    "avg_r": -0.1329
+   }
+  },
+  "periods": {
+   "A": {
+    "n": 96,
+    "avg_r": -0.0074,
+    "sum_r": -0.71,
+    "pnl": 5.67
+   },
+   "B": {
+    "n": 40,
+    "avg_r": -0.0013,
+    "sum_r": -0.05,
+    "pnl": 6.85
+   },
+   "C": {
+    "n": 19,
+    "avg_r": 0.3312,
+    "sum_r": 6.29,
+    "pnl": 93.25
+   }
+  },
+  "trades_per_month": 2.45,
+  "days": 1922,
+  "name": "all (ORB fixed) | LOUD only | half 1R + 2R, 96h",
+  "group": "memes",
+  "fees": "kraken",
+  "candidates": 14162
+ },
+ {
+  "trades": 144,
+  "skips": {
+   "gate not LOUD": 9563,
+   "already in this coin": 1921,
+   "gate QUIET": 1344,
+   "bear regime: memes off": 578,
+   "memes: 2 positions max": 244,
+   "meme dead zone 7 PM-midnight MT": 113,
+   "BTC 4h trend down (BTC first)": 113,
+   "trend setup without 1h+4h uptrend (M0)": 91,
+   "engine: negative learned edge": 44,
+   "cost > 0.33R": 7
+  },
+  "end_equity": 10187.76,
+  "return_pct": 1.88,
+  "win_rate": 0.417,
+  "avg_r": 0.0661,
+  "sum_r": 9.52,
+  "pf": 1.126,
+  "avg_cost_r": 0.1324,
+  "avg_gross_r": 0.1975,
+  "t_stat": 0.62,
+  "max_dd_pct": 2.94,
+  "by_setup": {
+   "breakout_retest": {
+    "n": 62,
+    "avg_r": 0.0821
+   },
+   "orb_dst": {
+    "n": 20,
+    "avg_r": 0.2494
+   },
+   "rsi2": {
+    "n": 40,
+    "avg_r": 0.0561
+   },
+   "sweep_reclaim": {
+    "n": 5,
+    "avg_r": 0.8442
+   },
+   "trend_pullback": {
+    "n": 17,
+    "avg_r": -0.4132
+   }
+  },
+  "periods": {
+   "A": {
+    "n": 90,
+    "avg_r": -0.0097,
+    "sum_r": -0.87,
+    "pnl": 11.45
+   },
+   "B": {
+    "n": 37,
+    "avg_r": 0.0098,
+    "sum_r": 0.36,
+    "pnl": 56.26
+   },
+   "C": {
+    "n": 17,
+    "avg_r": 0.5897,
+    "sum_r": 10.02,
+    "pnl": 120.05
+   }
+  },
+  "trades_per_month": 2.28,
+  "days": 1922,
+  "name": "all (ORB fixed) | LOUD only | one exit 2R, 96h",
+  "group": "memes",
+  "fees": "kraken",
+  "candidates": 14162
+ },
+ {
+  "trades": 27,
+  "skips": {
+   "trend setup without 1h+4h uptrend (M0)": 1637,
+   "bear regime: memes off": 780,
+   "engine: benched": 776,
+   "meme dead zone 7 PM-midnight MT": 268,
+   "engine: negative learned edge": 198,
+   "gate QUIET": 171,
+   "BTC 4h trend down (BTC first)": 134,
+   "cost > 0.33R": 129,
+   "already in this coin": 36
+  },
+  "end_equity": 9860.15,
+  "return_pct": -1.4,
+  "win_rate": 0.333,
+  "avg_r": -0.1382,
+  "sum_r": -3.73,
+  "pf": 0.557,
+  "avg_cost_r": 0.1444,
+  "avg_gross_r": 0.0052,
+  "t_stat": -1.12,
+  "max_dd_pct": 1.5,
+  "by_setup": {
+   "breakout_retest": {
+    "n": 18,
+    "avg_r": -0.0717
+   },
+   "orb_dst": {
+    "n": 9,
+    "avg_r": -0.2711
+   }
+  },
+  "periods": {
+   "A": {
+    "n": 27,
+    "avg_r": -0.1382,
+    "sum_r": -3.73,
+    "pnl": -139.85
+   }
+  },
+  "trades_per_month": 0.43,
+  "days": 1922,
+  "name": "P3 + P6 | gate as written | half 1R + 2R, 8-bar stop",
+  "group": "memes",
+  "fees": "kraken",
+  "candidates": 4156
+ },
+ {
+  "trades": 174,
+  "skips": {
+   "trend setup without 1h+4h uptrend (M0)": 1628,
+   "bear regime: memes off": 780,
+   "already in this coin": 523,
+   "engine: negative learned edge": 218,
+   "memes: 2 positions max": 205,
+   "meme dead zone 7 PM-midnight MT": 188,
+   "gate QUIET": 161,
+   "BTC 4h trend down (BTC first)": 130,
+   "cost > 0.33R": 124,
+   "engine: benched": 25
+  },
+  "end_equity": 9583.99,
+  "return_pct": -4.16,
+  "win_rate": 0.517,
+  "avg_r": -0.0807,
+  "sum_r": -14.03,
+  "pf": 0.841,
+  "avg_cost_r": 0.142,
+  "avg_gross_r": 0.0604,
+  "t_stat": -1.04,
+  "max_dd_pct": 5.59,
+  "by_setup": {
+   "breakout_retest": {
+    "n": 166,
+    "avg_r": -0.0677
+   },
+   "orb_dst": {
+    "n": 8,
+    "avg_r": -0.3503
+   }
+  },
+  "periods": {
+   "A": {
+    "n": 95,
+    "avg_r": -0.1135,
+    "sum_r": -10.78,
+    "pnl": -292.16
+   },
+   "B": {
+    "n": 57,
+    "avg_r": -0.0872,
+    "sum_r": -4.97,
+    "pnl": -59.27
+   },
+   "C": {
+    "n": 22,
+    "avg_r": 0.0779,
+    "sum_r": 1.71,
+    "pnl": -64.58
+   }
+  },
+  "trades_per_month": 2.75,
+  "days": 1922,
+  "name": "P3 + P6 | gate as written | half 1R + 2R, 96h",
+  "group": "memes",
+  "fees": "kraken",
+  "candidates": 4156
+ },
+ {
+  "trades": 172,
+  "skips": {
+   "trend setup without 1h+4h uptrend (M0)": 1624,
+   "bear regime: memes off": 780,
+   "already in this coin": 545,
+   "engine: negative learned edge": 221,
+   "memes: 2 positions max": 217,
+   "meme dead zone 7 PM-midnight MT": 196,
+   "gate QUIET": 155,
+   "BTC 4h trend down (BTC first)": 124,
+   "cost > 0.33R": 122
+  },
+  "end_equity": 9703.39,
+  "return_pct": -2.97,
+  "win_rate": 0.378,
+  "avg_r": -0.0554,
+  "sum_r": -9.53,
+  "pf": 0.915,
+  "avg_cost_r": 0.1474,
+  "avg_gross_r": 0.091,
+  "t_stat": -0.53,
+  "max_dd_pct": 4.89,
+  "by_setup": {
+   "breakout_retest": {
+    "n": 160,
+    "avg_r": -0.0425
+   },
+   "orb_dst": {
+    "n": 12,
+    "avg_r": -0.2277
+   }
+  },
+  "periods": {
+   "A": {
+    "n": 96,
+    "avg_r": -0.1107,
+    "sum_r": -10.63,
+    "pnl": -227.7
+   },
+   "B": {
+    "n": 55,
+    "avg_r": -0.0486,
+    "sum_r": -2.67,
+    "pnl": -55.05
+   },
+   "C": {
+    "n": 21,
+    "avg_r": 0.1796,
+    "sum_r": 3.77,
+    "pnl": -13.86
+   }
+  },
+  "trades_per_month": 2.72,
+  "days": 1922,
+  "name": "P3 + P6 | gate as written | one exit 2R, 96h",
+  "group": "memes",
+  "fees": "kraken",
+  "candidates": 4156
+ },
+ {
+  "trades": 36,
+  "skips": {
+   "gate not LOUD": 3143,
+   "bear regime: memes off": 224,
+   "engine: negative learned edge": 204,
+   "gate QUIET": 172,
+   "engine: benched": 112,
+   "trend setup without 1h+4h uptrend (M0)": 87,
+   "meme dead zone 7 PM-midnight MT": 78,
+   "already in this coin": 48,
+   "BTC 4h trend down (BTC first)": 41,
+   "memes: 2 positions max": 9,
+   "cost > 0.33R": 2
+  },
+  "end_equity": 9809.87,
+  "return_pct": -1.9,
+  "win_rate": 0.194,
+  "avg_r": -0.2969,
+  "sum_r": -10.69,
+  "pf": 0.345,
+  "avg_cost_r": 0.1244,
+  "avg_gross_r": -0.1735,
+  "t_stat": -2.57,
+  "max_dd_pct": 3.05,
+  "by_setup": {
+   "breakout_retest": {
+    "n": 27,
+    "avg_r": -0.2059
+   },
+   "orb_dst": {
+    "n": 9,
+    "avg_r": -0.5698
+   }
+  },
+  "periods": {
+   "A": {
+    "n": 24,
+    "avg_r": -0.2747,
+    "sum_r": -6.59,
+    "pnl": -119.03
+   },
+   "C": {
+    "n": 12,
+    "avg_r": -0.3411,
+    "sum_r": -4.09,
+    "pnl": -71.1
+   }
+  },
+  "trades_per_month": 0.57,
+  "days": 1922,
+  "name": "P3 + P6 | LOUD only | half 1R + 2R, 8-bar stop",
+  "group": "memes",
+  "fees": "kraken",
+  "candidates": 4156
+ },
+ {
+  "trades": 97,
+  "skips": {
+   "gate not LOUD": 3056,
+   "already in this coin": 281,
+   "bear regime: memes off": 224,
+   "gate QUIET": 172,
+   "trend setup without 1h+4h uptrend (M0)": 87,
+   "memes: 2 positions max": 75,
+   "engine: negative learned edge": 65,
+   "meme dead zone 7 PM-midnight MT": 58,
+   "BTC 4h trend down (BTC first)": 39,
+   "cost > 0.33R": 2
+  },
+  "end_equity": 10047.0,
+  "return_pct": 0.47,
+  "win_rate": 0.536,
+  "avg_r": 0.0324,
+  "sum_r": 3.15,
+  "pf": 1.067,
+  "avg_cost_r": 0.1197,
+  "avg_gross_r": 0.1511,
+  "t_stat": 0.29,
+  "max_dd_pct": 3.0,
+  "by_setup": {
+   "breakout_retest": {
+    "n": 87,
+    "avg_r": 0.1131
+   },
+   "orb_dst": {
+    "n": 10,
+    "avg_r": -0.6696
+   }
+  },
+  "periods": {
+   "A": {
+    "n": 52,
+    "avg_r": -0.0993,
+    "sum_r": -5.17,
+    "pnl": -65.42
+   },
+   "B": {
+    "n": 28,
+    "avg_r": 0.0889,
+    "sum_r": 2.49,
+    "pnl": 35.32
+   },
+   "C": {
+    "n": 17,
+    "avg_r": 0.3425,
+    "sum_r": 5.82,
+    "pnl": 77.11
+   }
+  },
+  "trades_per_month": 1.53,
+  "days": 1922,
+  "name": "P3 + P6 | LOUD only | half 1R + 2R, 96h",
+  "group": "memes",
+  "fees": "kraken",
+  "candidates": 4156
+ },
+ {
+  "trades": 100,
+  "skips": {
+   "gate not LOUD": 3050,
+   "already in this coin": 313,
+   "bear regime: memes off": 224,
+   "gate QUIET": 172,
+   "memes: 2 positions max": 92,
+   "trend setup without 1h+4h uptrend (M0)": 87,
+   "meme dead zone 7 PM-midnight MT": 55,
+   "BTC 4h trend down (BTC first)": 35,
+   "engine: negative learned edge": 26,
+   "cost > 0.33R": 2
+  },
+  "end_equity": 10226.52,
+  "return_pct": 2.27,
+  "win_rate": 0.44,
+  "avg_r": 0.1231,
+  "sum_r": 12.31,
+  "pf": 1.222,
+  "avg_cost_r": 0.1275,
+  "avg_gross_r": 0.2496,
+  "t_stat": 0.9,
+  "max_dd_pct": 3.44,
+  "by_setup": {
+   "breakout_retest": {
+    "n": 90,
+    "avg_r": 0.2056
+   },
+   "orb_dst": {
+    "n": 10,
+    "avg_r": -0.6198
+   }
+  },
+  "periods": {
+   "A": {
+    "n": 58,
+    "avg_r": -0.0151,
+    "sum_r": -0.88,
+    "pnl": 43.63
+   },
+   "B": {
+    "n": 26,
+    "avg_r": 0.1735,
+    "sum_r": 4.51,
+    "pnl": 91.88
+   },
+   "C": {
+    "n": 16,
+    "avg_r": 0.5424,
+    "sum_r": 8.68,
+    "pnl": 91.01
+   }
+  },
+  "trades_per_month": 1.58,
+  "days": 1922,
+  "name": "P3 + P6 | LOUD only | one exit 2R, 96h",
+  "group": "memes",
+  "fees": "kraken",
+  "candidates": 4156
+ },
+ {
+  "trades": 45,
+  "skips": {
+   "engine: benched": 2100,
+   "trend setup without 1h+4h uptrend (M0)": 1931,
+   "bear regime: memes off": 1922,
+   "gate QUIET": 786,
+   "meme dead zone 7 PM-midnight MT": 740,
+   "cost > 0.33R": 382,
+   "BTC 4h trend down (BTC first)": 373,
+   "engine: negative learned edge": 220,
+   "already in this coin": 85
+  },
+  "end_equity": 9787.73,
+  "return_pct": -2.12,
+  "win_rate": 0.333,
+  "avg_r": -0.1339,
+  "sum_r": -6.03,
+  "pf": 0.461,
+  "avg_cost_r": 0.1388,
+  "avg_gross_r": 0.0038,
+  "t_stat": -1.89,
+  "max_dd_pct": 2.18,
+  "by_setup": {
+   "breakout_retest": {
+    "n": 17,
+    "avg_r": -0.0977
+   },
+   "orb_dst": {
+    "n": 8,
+    "avg_r": -0.2204
+   },
+   "trend_pullback": {
+    "n": 20,
+    "avg_r": -0.1302
+   }
+  },
+  "periods": {
+   "A": {
+    "n": 45,
+    "avg_r": -0.1339,
+    "sum_r": -6.03,
+    "pnl": -212.27
+   }
+  },
+  "trades_per_month": 0.71,
+  "days": 1922,
+  "name": "P1 + P3 + P6 | gate as written | half 1R + 2R, 8-bar stop",
+  "group": "memes",
+  "fees": "kraken",
+  "candidates": 8584
+ },
+ {
+  "trades": 197,
+  "skips": {
+   "trend setup without 1h+4h uptrend (M0)": 1921,
+   "bear regime: memes off": 1916,
+   "already in this coin": 1306,
+   "gate QUIET": 677,
+   "meme dead zone 7 PM-midnight MT": 543,
+   "engine: negative learned edge": 469,
+   "memes: 2 positions max": 440,
+   "engine: benched": 382,
+   "cost > 0.33R": 361,
+   "BTC 4h trend down (BTC first)": 333,
+   "drawdown break (-10R)": 39
+  },
+  "end_equity": 9194.78,
+  "return_pct": -8.05,
+  "win_rate": 0.452,
+  "avg_r": -0.1777,
+  "sum_r": -35.0,
+  "pf": 0.685,
+  "avg_cost_r": 0.14,
+  "avg_gross_r": -0.0387,
+  "t_stat": -2.42,
+  "max_dd_pct": 10.31,
+  "by_setup": {
+   "breakout_retest": {
+    "n": 122,
+    "avg_r": -0.0395
+   },
+   "orb_dst": {
+    "n": 10,
+    "avg_r": -0.3865
+   },
+   "trend_pullback": {
+    "n": 65,
+    "avg_r": -0.4048
+   }
+  },
+  "periods": {
+   "A": {
+    "n": 105,
+    "avg_r": -0.1774,
+    "sum_r": -18.63,
+    "pnl": -565.92
+   },
+   "B": {
+    "n": 66,
+    "avg_r": -0.2558,
+    "sum_r": -16.88,
+    "pnl": -217.82
+   },
+   "C": {
+    "n": 26,
+    "avg_r": 0.0198,
+    "sum_r": 0.52,
+    "pnl": -21.48
+   }
+  },
+  "trades_per_month": 3.12,
+  "days": 1922,
+  "name": "P1 + P3 + P6 | gate as written | half 1R + 2R, 96h",
+  "group": "memes",
+  "fees": "kraken",
+  "candidates": 8584
+ },
+ {
+  "trades": 222,
+  "skips": {
+   "trend setup without 1h+4h uptrend (M0)": 1911,
+   "bear regime: memes off": 1906,
+   "already in this coin": 1700,
+   "memes: 2 positions max": 647,
+   "gate QUIET": 642,
+   "meme dead zone 7 PM-midnight MT": 468,
+   "engine: negative learned edge": 376,
+   "cost > 0.33R": 359,
+   "BTC 4h trend down (BTC first)": 320,
+   "engine: benched": 32,
+   "drawdown break (-10R)": 1
+  },
+  "end_equity": 9351.69,
+  "return_pct": -6.48,
+  "win_rate": 0.365,
+  "avg_r": -0.0898,
+  "sum_r": -19.95,
+  "pf": 0.861,
+  "avg_cost_r": 0.1471,
+  "avg_gross_r": 0.0563,
+  "t_stat": -1.02,
+  "max_dd_pct": 9.53,
+  "by_setup": {
+   "breakout_retest": {
+    "n": 114,
+    "avg_r": -0.01
+   },
+   "orb_dst": {
+    "n": 8,
+    "avg_r": -0.4494
+   },
+   "trend_pullback": {
+    "n": 100,
+    "avg_r": -0.1521
+   }
+  },
+  "periods": {
+   "A": {
+    "n": 135,
+    "avg_r": -0.0964,
+    "sum_r": -13.01,
+    "pnl": -432.72
+   },
+   "B": {
+    "n": 66,
+    "avg_r": -0.1601,
+    "sum_r": -10.57,
+    "pnl": -170.27
+   },
+   "C": {
+    "n": 21,
+    "avg_r": 0.1728,
+    "sum_r": 3.63,
+    "pnl": -45.33
+   }
+  },
+  "trades_per_month": 3.51,
+  "days": 1922,
+  "name": "P1 + P3 + P6 | gate as written | one exit 2R, 96h",
+  "group": "memes",
+  "fees": "kraken",
+  "candidates": 8584
+ },
+ {
+  "trades": 92,
+  "skips": {
+   "gate not LOUD": 6493,
+   "gate QUIET": 790,
+   "bear regime: memes off": 354,
+   "engine: benched": 231,
+   "engine: negative learned edge": 196,
+   "meme dead zone 7 PM-midnight MT": 130,
+   "already in this coin": 117,
+   "trend setup without 1h+4h uptrend (M0)": 91,
+   "BTC 4h trend down (BTC first)": 78,
+   "memes: 2 positions max": 8,
+   "cost > 0.33R": 4
+  },
+  "end_equity": 9809.5,
+  "return_pct": -1.9,
+  "win_rate": 0.326,
+  "avg_r": -0.109,
+  "sum_r": -10.02,
+  "pf": 0.58,
+  "avg_cost_r": 0.1059,
+  "avg_gross_r": -0.004,
+  "t_stat": -1.98,
+  "max_dd_pct": 3.0,
+  "by_setup": {
+   "breakout_retest": {
+    "n": 9,
+    "avg_r": -0.1423
+   },
+   "orb_dst": {
+    "n": 8,
+    "avg_r": -0.3247
+   },
+   "trend_pullback": {
+    "n": 75,
+    "avg_r": -0.0819
+   }
+  },
+  "periods": {
+   "A": {
+    "n": 69,
+    "avg_r": -0.0753,
+    "sum_r": -5.2,
+    "pnl": -120.3
+   },
+   "B": {
+    "n": 23,
+    "avg_r": -0.2098,
+    "sum_r": -4.82,
+    "pnl": -70.2
+   }
+  },
+  "trades_per_month": 1.46,
+  "days": 1922,
+  "name": "P1 + P3 + P6 | LOUD only | half 1R + 2R, 8-bar stop",
+  "group": "memes",
+  "fees": "kraken",
+  "candidates": 8584
+ },
+ {
+  "trades": 120,
+  "skips": {
+   "gate not LOUD": 6038,
+   "already in this coin": 809,
+   "gate QUIET": 767,
+   "bear regime: memes off": 354,
+   "memes: 2 positions max": 144,
+   "engine: negative learned edge": 95,
+   "meme dead zone 7 PM-midnight MT": 92,
+   "trend setup without 1h+4h uptrend (M0)": 91,
+   "BTC 4h trend down (BTC first)": 70,
+   "cost > 0.33R": 4
+  },
+  "end_equity": 10253.36,
+  "return_pct": 2.53,
+  "win_rate": 0.558,
+  "avg_r": 0.0855,
+  "sum_r": 10.27,
+  "pf": 1.195,
+  "avg_cost_r": 0.1155,
+  "avg_gross_r": 0.2,
+  "t_stat": 0.89,
+  "max_dd_pct": 2.62,
+  "by_setup": {
+   "breakout_retest": {
+    "n": 70,
+    "avg_r": 0.1097
+   },
+   "orb_dst": {
+    "n": 10,
+    "avg_r": -0.4841
+   },
+   "trend_pullback": {
+    "n": 40,
+    "avg_r": 0.1858
+   }
+  },
+  "periods": {
+   "A": {
+    "n": 66,
+    "avg_r": -0.0224,
+    "sum_r": -1.48,
+    "pnl": 103.19
+   },
+   "B": {
+    "n": 36,
+    "avg_r": 0.178,
+    "sum_r": 6.41,
+    "pnl": 97.91
+   },
+   "C": {
+    "n": 18,
+    "avg_r": 0.2966,
+    "sum_r": 5.34,
+    "pnl": 52.25
+   }
+  },
+  "trades_per_month": 1.9,
+  "days": 1922,
+  "name": "P1 + P3 + P6 | LOUD only | half 1R + 2R, 96h",
+  "group": "memes",
+  "fees": "kraken",
+  "candidates": 8584
+ },
+ {
+  "trades": 123,
+  "skips": {
+   "gate not LOUD": 5953,
+   "already in this coin": 946,
+   "gate QUIET": 766,
+   "bear regime: memes off": 352,
+   "memes: 2 positions max": 157,
+   "trend setup without 1h+4h uptrend (M0)": 91,
+   "meme dead zone 7 PM-midnight MT": 84,
+   "BTC 4h trend down (BTC first)": 68,
+   "engine: negative learned edge": 40,
+   "cost > 0.33R": 4
+  },
+  "end_equity": 10192.85,
+  "return_pct": 1.93,
+  "win_rate": 0.407,
+  "avg_r": 0.0521,
+  "sum_r": 6.41,
+  "pf": 1.093,
+  "avg_cost_r": 0.1262,
+  "avg_gross_r": 0.1773,
+  "t_stat": 0.44,
+  "max_dd_pct": 3.04,
+  "by_setup": {
+   "breakout_retest": {
+    "n": 65,
+    "avg_r": 0.0951
+   },
+   "orb_dst": {
+    "n": 23,
+    "avg_r": 0.2085
+   },
+   "trend_pullback": {
+    "n": 35,
+    "avg_r": -0.1304
+   }
+  },
+  "periods": {
+   "A": {
+    "n": 75,
+    "avg_r": -0.0547,
+    "sum_r": -4.1,
+    "pnl": 48.2
+   },
+   "B": {
+    "n": 31,
+    "avg_r": 0.0765,
+    "sum_r": 2.37,
+    "pnl": 55.39
+   },
+   "C": {
+    "n": 17,
+    "avg_r": 0.4788,
+    "sum_r": 8.14,
+    "pnl": 89.26
+   }
+  },
+  "trades_per_month": 1.95,
+  "days": 1922,
+  "name": "P1 + P3 + P6 | LOUD only | one exit 2R, 96h",
+  "group": "memes",
+  "fees": "kraken",
+  "candidates": 8584
+ },
+ {
+  "trades": 61,
+  "skips": {
+   "engine: benched": 3927,
+   "bear regime: memes off": 3703,
+   "trend setup without 1h+4h uptrend (M0)": 1939,
+   "gate QUIET": 1388,
+   "meme dead zone 7 PM-midnight MT": 1216,
+   "BTC 4h trend down (BTC first)": 865,
+   "cost > 0.33R": 626,
+   "engine: negative learned edge": 284,
+   "already in this coin": 143
+  },
+  "end_equity": 9752.6,
+  "return_pct": -2.47,
+  "win_rate": 0.361,
+  "avg_r": -0.143,
+  "sum_r": -8.72,
+  "pf": 0.451,
+  "avg_cost_r": 0.1413,
+  "avg_gross_r": -0.0027,
+  "t_stat": -2.26,
+  "max_dd_pct": 2.85,
+  "by_setup": {
+   "breakout_retest": {
+    "n": 15,
+    "avg_r": -0.0907
+   },
+   "orb": {
+    "n": 9,
+    "avg_r": -0.0937
+   },
+   "rsi2": {
+    "n": 8,
+    "avg_r": -0.3228
+   },
+   "sweep_reclaim": {
+    "n": 8,
+    "avg_r": -0.1583
+   },
+   "trend_pullback": {
+    "n": 21,
+    "avg_r": -0.1271
+   }
+  },
+  "periods": {
+   "A": {
+    "n": 61,
+    "avg_r": -0.143,
+    "sum_r": -8.72,
+    "pnl": -247.4
+   }
+  },
+  "trades_per_month": 0.96,
+  "days": 1922,
+  "name": "jarvus_v6 (as written)",
+  "group": "memes",
+  "fees": "kraken",
+  "candidates": 14152
+ }
+]

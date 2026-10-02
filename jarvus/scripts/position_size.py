@@ -16,6 +16,9 @@ import json
 import sys
 
 
+VENUE_FEES = {"ndax": 0.20, "kraken": 0.80, "kraken10k": 0.38, "coinbase": 1.20, "low": 0.10, "stock": 0.0}
+
+
 def compute(account: float, risk_pct: float, entry: float, stop: float, targets, fee_pct: float,
             slippage_pct: float, margin=None, leverage=None, maint_margin_pct: float = 0.5,
             min_notional: float = 0.0) -> dict:
@@ -131,7 +134,10 @@ def main() -> None:
     ap.add_argument("--entry", type=float, required=True)
     ap.add_argument("--stop", type=float, required=True)
     ap.add_argument("--target", type=float, action="append", help="repeatable")
-    ap.add_argument("--fee-pct", type=float, default=0.05, help="per side")
+    ap.add_argument("--venue", choices=sorted(VENUE_FEES), default="ndax",
+                    help="fee level per side (taker): ndax 0.20, kraken 0.80 (Pro $0+ tier), kraken10k 0.38, coinbase 1.20, "
+                         "low 0.10, stock 0; verified Sept 2026")
+    ap.add_argument("--fee-pct", type=float, help="per side; overrides --venue")
     ap.add_argument("--slippage-pct", type=float, default=0.02, help="per side")
     ap.add_argument("--margin", type=float, help="margin you intend to post (derives leverage)")
     ap.add_argument("--leverage", type=float, help="leverage you intend to use (derives margin)")
@@ -140,7 +146,8 @@ def main() -> None:
     ap.add_argument("--json", action="store_true")
     a = ap.parse_args()
     try:
-        res = compute(a.account, a.risk_pct, a.entry, a.stop, a.target, a.fee_pct, a.slippage_pct,
+        fee = a.fee_pct if a.fee_pct is not None else VENUE_FEES[a.venue]
+        res = compute(a.account, a.risk_pct, a.entry, a.stop, a.target, fee, a.slippage_pct,
                       a.margin, a.leverage, a.maint_margin_pct, a.min_notional)
     except ValueError as exc:
         sys.exit(f"error: {exc}")

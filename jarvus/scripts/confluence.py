@@ -8,11 +8,14 @@
   python3 confluence.py --snapshot /tmp/snap.json --derivs /tmp/derivs.json --direction long
   python3 confluence.py --snapshot /tmp/snap.json --direction short --entry 76050 --stop 76480 --target 75200
 
-Scores the ten factors from the strategy encyclopedia (Part 1). Seven are computed
-mechanically; the location, trigger, and reward factors need the entry/stop/target
-(pass them) or a human reading of the chart (then they are reported as "manual").
-The score is a filter, not a signal: 9-10 A+, 8 A, 7 B (half risk), 6 or less skip.
-Alts and memes need one point more at every grade (--alt).
+Scores the eleven factors of SKILL.md (factor 0 = the volatility gate, then the ten of the strategy
+encyclopedia Part 1). Most are computed mechanically; location and trigger need a chart read, reward and
+stop quality need --entry/--stop/--target (otherwise they are reported as "manual" and score 0).
+The score is a filter, not a signal: 10-11 A+, 9 A, 8 B (half risk), 7 or less skip; alts and memes need
+one point more at every grade (--alt). A QUIET gate or a cost above 0.33R makes the verdict skip whatever
+the score. Stop quality and reward are judged on the real cost in R at --fees (NDAX by default):
+cost <= 0.20R earns the stop point (v5/v6: in practice 3-4x ATR at spot fees), 0.20-0.33R does not,
+above 0.33R is a NO.
 """
 
 from __future__ import annotations
@@ -45,12 +48,39 @@ def pick_timeframes(snap: dict):
     return htf, ltf
 
 
-def score(htf: dict, ltf: dict, derivs: dict, direction: str, now: datetime, entry=None, stop=None, target=None, alt=False):
+FEE_LEVELS = {"ndax": (0.20, 0.20), "kraken": (0.40, 0.80), "kraken10k": (0.22, 0.38), "coinbase": (0.60, 1.20),
+              "low": (0.08, 0.10)}                   # per side, % (maker, taker), base tiers verified Sept 2026
+
+
+def round_trip_pct(fees="ndax", maker_entry=False, slip_pct=0.02) -> float:
+    if fees in FEE_LEVELS:
+        mk, tk = FEE_LEVELS[fees]
+    else:
+        mk = tk = float(fees)
+    return (mk if maker_entry else tk) + tk + 2 * slip_pct
+
+
+def score(htf: dict, ltf: dict, derivs: dict, direction: str, now: datetime, entry=None, stop=None, target=None, alt=False,
+          gate=None, fees="ndax", maker_entry=False):
     long = direction == "long"
     rows = []
+    cost_r = None
+    if entry and stop and abs(entry - stop) > 0:
+        cost_r = round_trip_pct(fees, maker_entry) / (abs(entry - stop) / entry * 100)
 
     def add(n, name, pts, why, manual=False):
         rows.append({"factor": n, "name": name, "points": pts, "why": why, "manual": manual})
+
+    # 0 Volatility gate (run scripts/volgate.py, or read it manually)
+    g = (gate or "").upper()
+    if g == "LOUD":
+        add(0, "Vol gate", 1, "gate LOUD: enter, 0.6x size, 4x ATR stop, 2R target, 96h limit")
+    elif g == "NORMAL":
+        add(0, "Vol gate", 0, "gate NORMAL: wait for LOUD (v6.1 backtest: NORMAL-hour entries lost after costs)")
+    elif g == "QUIET":
+        add(0, "Vol gate", 0, "gate QUIET: no new trades")
+    else:
+        add(0, "Vol gate", 0, "pass --gate LOUD|NORMAL|QUIET (scripts/volgate.py)", manual=True)
 
     # 1 HTF bias
     t = htf.get("trend")
@@ -127,26 +157,44 @@ def score(htf: dict, ltf: dict, derivs: dict, direction: str, now: datetime, ent
     if entry and stop and target:
         risk = abs(entry - stop)
         reward = (target - entry) if long else (entry - target)
-        rr_net = reward / risk - 0.14 if risk else 0
-        add(9, "Reward", 1 if rr_net >= 2 else 0, f"net R:R to target {rr_net:.2f}")
+        rr_net = reward / risk - (cost_r or 0) if risk else 0
+        add(9, "Reward", 1 if rr_net >= 2 else 0, f"net R:R to target {rr_net:.2f} after {cost_r:.2f}R of costs ({fees})")
     else:
         add(9, "Reward", 0, "pass --entry/--stop/--target to score reward", manual=True)
 
     # 10 Stop quality
     if entry and stop and atr:
         dist = abs(entry - stop)
-        pts = 1 if 0.5 * atr <= dist <= 2.5 * atr else 0
-        add(10, "Stop quality", pts, f"stop distance {dist:.6g} = {dist / atr:.2f} ATR ({ltf['timeframe']})")
+        beyond_noise = dist >= 1.0 * atr
+        pts = 1 if (beyond_noise and cost_r <= 0.20) else 0
+        why = f"stop {dist / atr:.2f} ATR ({ltf['timeframe']}), costs {cost_r:.2f}R at {fees}"
+        if not beyond_noise:
+            why += ": inside the noise (under 1 ATR)"
+        elif cost_r > 0.33:
+            why += ": above 0.33R, NO (cost gate)"
+        elif cost_r > 0.20:
+            why += ": 0.20-0.33R, half size"
+        add(10, "Stop quality", pts, why)
     else:
         add(10, "Stop quality", 0, "pass --entry/--stop to score the stop", manual=True)
 
     total = sum(r["points"] for r in rows)
     manual = [r["factor"] for r in rows if r["manual"]]
-    need = {"A+": 9, "A": 8, "B": 7}
+    need = {"A+": 10, "A": 9, "B": 8}
     if alt:
         need = {k: v + 1 for k, v in need.items()}
     grade = "A+" if total >= need["A+"] else "A" if total >= need["A"] else "B" if total >= need["B"] else "skip"
-    return {"direction": direction, "score": total, "max": 10, "grade": grade, "alt_thresholds": alt,
+    blocked = None
+    if g == "QUIET":
+        blocked = "volatility gate QUIET"
+    elif g == "NORMAL":
+        blocked = "volatility gate NORMAL: wait for LOUD"
+    elif cost_r is not None and cost_r > 0.33:
+        blocked = f"costs {cost_r:.2f}R > 0.33R"
+    if blocked:
+        grade = "skip"
+    return {"direction": direction, "score": total, "max": 11, "grade": grade, "alt_thresholds": alt, "blocked": blocked,
+            "cost_r": None if cost_r is None else round(cost_r, 3), "fees": fees,
             "manual_factors_unscored": manual, "rows": rows,
             "note": "factors marked manual were scored 0 because they need a chart read or entry/stop/target; re-score with them" if manual else None}
 
@@ -158,6 +206,9 @@ def main() -> None:
     ap.add_argument("--direction", choices=["long", "short"], required=True)
     ap.add_argument("--entry", type=float); ap.add_argument("--stop", type=float); ap.add_argument("--target", type=float)
     ap.add_argument("--alt", action="store_true", help="apply the stricter alt/meme thresholds")
+    ap.add_argument("--gate", help="LOUD | NORMAL | QUIET (from scripts/volgate.py)")
+    ap.add_argument("--fees", default="ndax", help="ndax | kraken | kraken10k | coinbase | low | <taker %% per side>")
+    ap.add_argument("--maker", action="store_true", help="entry is a limit (maker) order")
     ap.add_argument("--now", help="ISO UTC override")
     ap.add_argument("--json", action="store_true")
     a = ap.parse_args()
@@ -165,11 +216,11 @@ def main() -> None:
     derivs = load(a.derivs) if a.derivs else {}
     now = datetime.strptime(a.now, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc) if a.now else datetime.now(timezone.utc)
     htf, ltf = pick_timeframes(snap)
-    res = score(htf, ltf, derivs, a.direction, now, a.entry, a.stop, a.target, a.alt)
+    res = score(htf, ltf, derivs, a.direction, now, a.entry, a.stop, a.target, a.alt, a.gate, a.fees, a.maker)
     res["bias_timeframe"] = htf["timeframe"]; res["setup_timeframe"] = ltf["timeframe"]; res["price"] = ltf["price"]
     if a.json:
         print(json.dumps(res, indent=2)); return
-    print(f"CONFLUENCE {a.direction.upper()} @ {ltf['price']}  bias {htf['timeframe']} / setup {ltf['timeframe']}  ->  {res['score']}/10  grade {res['grade']}")
+    print(f"CONFLUENCE {a.direction.upper()} @ {ltf['price']}  bias {htf['timeframe']} / setup {ltf['timeframe']}  ->  {res['score']}/11  grade {res['grade']}" + (f"  BLOCKED: {res['blocked']}" if res.get("blocked") else ""))
     for r in res["rows"]:
         print(f"  [{r['points']}] {r['factor']:>2}. {r['name']:<12} {r['why']}" + ("  (manual)" if r["manual"] else ""))
     if res["note"]:

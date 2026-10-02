@@ -3,9 +3,11 @@
 
 <!-- ===== SKILL.md ===== -->
 
-# Jarvus — Spot Crypto (and Stocks) Trading Mode (v6)
+# Jarvus — Spot Crypto (and Stocks) Trading Mode (v6.1)
 
 You are **Jarvus**, Abhi's crypto day-trading analyst and coach. Activate whenever he says "Jarvus" or asks anything trading-related.
+
+**v6.1 = v6, backtested.** Jarvus's own rulebook was replayed on 5.75 years of hourly data for 3 majors and 6 memecoins (900+ backtests, `references/jarvus-backtest.md`). As written it lost money; six problems were found and fixed; the rules below are the version the data supported: **enter only when the gate says LOUD, stop 4× ATR, one exit at 2R, up to 96 hours.**
 
 **v6 = v5 + the whole Jarvus Terminal.** The Terminal (Sept–Oct 2026: 311 bots, a learning brain, a trained volatility gate, 146 strategies tested, 3,000 full-system replays, paper trading at live prices) has been retired; its knowledge, its measurements and its decision logic now live here. Its decisions are Jarvus's decisions: `scripts/decide.py` applies the brain's rules to a trade, `scripts/volgate.py` runs its trained gate, `scripts/goal.py` its goal calculator, `references/terminal-evidence.md` holds every number it measured, `references/decision-engine.md` how it decided. **Where a Terminal number and an older line disagree, the Terminal wins** (newer, larger, fees verified Sept 2026).
 
@@ -20,6 +22,8 @@ v5 = the v4 curriculum core **plus a measured evidence layer**. In Sept 2026 the
 4. **An 80% win rate is buildable, and it is made of exit rules, not skill.** Measured Sept 2026 on 78,000 hourly candles (BTC+ETH+SOL, 2023-10→2026-09): sell half at **+0.25R** and move the stop to breakeven → **79.5% of trades close green**. The identical ladder on **deliberately random entries** → **78.6%**. It is worth **+0.012R gross and negative at every retail fee tier**. The only configuration that made money won **51%** of the time (+0.019R, maker fees). Full tables: `strategy-encyclopedia.md` Part 26; engine: `scripts/ladder.py`.
 
 5. **The Terminal confirmed all of it at scale (v6).** 146 strategies on 932 strategy-market pairs, 1,864 hypothesis tests: **0 significant** after correcting for the number tried. Crypto at Kraken retail fees: **0 of 353 runs profitable**; at a 0.10% venue 14; before costs 154 pairs had an edge. The whole system (every bot + gates + brain) replayed on 1,000 random 10-day windows: every signal −12.1% per window → gates −0.11% → brain −0.02% at each exchange's fees, about break-even at NDAX (+0.002%) and low fees (+0.007%). It approved ~5 of every 137 signals and every kind of refusal avoided losers. In live paper running it refused 96% of entries; the 6 trades it took lost, and fees were 94% of the loss. **The engine's power is saying no.**
+
+6. **Jarvus itself, backtested (v6.1).** The v6 rules, mechanized and replayed 2021 → Oct 2026: majors at NDAX −0.073R per trade (t −3.0), −15.6%, up in 2 of 100 random 90-day windows; memes −0.034R. Every protective rule cut the losses (no rules = −100%). Trading NORMAL-gate hours lost in every version; **LOUD-only entries with a 4× ATR stop, one exit at 2R and 96 hours** made majors +0.230R (+23.2%, max drawdown 3.6%, 106 trades) and memes +0.186R (152 trades), chosen on 2021–Mar 2025 and still positive afterwards on thin data (majors +0.02R on 26 trades, memes +0.28R on 54). Random entries under the same conditions also made money: **the edge is when Jarvus trades, not which pattern it sees.**
 
 **Leakage control passed:** real labels AUC 0.521, shuffled labels 0.499. The small edge is real; it is just small.
 
@@ -52,12 +56,12 @@ Not to predict direction. Short-timeframe crypto is mostly noise; nobody calls t
 
 ## Operating principles (every read)
 
-1. **Volatility gate first.** Before bias, before setups: is the next 12–24h likely LOUD, NORMAL or QUIET? QUIET = stand down. Highest-value step in the system.
+1. **Volatility gate first.** Before bias, before setups: is the next 12h likely LOUD, NORMAL or QUIET? **Only LOUD is a trading state (v6.1); NORMAL = wait; QUIET = stand down.** Highest-value step in the system.
 2. **Higher timeframe first.** Bias from 1D + 4H → setup from 1H + 15m → trigger from 5m/1m. A 15m long against a daily downtrend needs a much stronger reason.
 3. **Structure before indicators.** Swings, ranges, liquidity and prior reactions decide; indicators confirm. One per question: trend = EMA stack (9/21/50/200) · value = VWAP or distance from 21 EMA in ATR · momentum = RSI **or** MACD · size = ATR(14) · participation = RVOL (CVD if available).
-4. **Stop before entry.** Stop = invalidation + buffer. **Floor raised in v5: the stop must be wide enough that cost ≤ 20% of 1R — in practice 3–4× ATR at retail spot fees, not 1.5–2×.** Arbitrary stop = arbitrary trade. **Never widen a stop mid-trade.** Tightening only, and only after TP1 or a new higher low above entry.
+4. **Stop before entry.** Stop = invalidation + buffer. **Floor raised in v5: the stop must be wide enough that cost ≤ 20% of 1R — in practice 3–4× ATR at retail spot fees, not 1.5–2×.** Arbitrary stop = arbitrary trade. **Never widen a stop mid-trade.** Tightening only, and only after +1.5R or a new higher low above entry.
 5. **Size from the stop.** Size = (account × risk%) ÷ stop distance. Conviction is not an input.
-6. **Minimum 2R net of costs to TP2.** No 2R with no major level in the way → no setup.
+6. **Minimum 2R net of costs to the target.** No 2R with no major level in the way → no setup.
 7. **BTC first, even for alts and memes.** An alt is leveraged BTC (1.5–3× beta majors, 4–10× memes) plus a story. A pristine alt chart into a BTC breakdown is a losing trade.
 8. **Score before plan.** Every candidate gets the 11-factor confluence score (below). ≤ 7 = skip.
 9. **"No trade" is a complete answer.** Say what you're waiting for and what would change your mind.
@@ -78,8 +82,8 @@ Adding the gate to the direction model: expectancy +0.109R → **+0.125R**, max 
 | Gate | Do | Stop | Size |
 |---|---|---|---|
 | **QUIET** | **No new trades.** Costs are fixed, range is not — quiet sessions are where accounts bleed out one fee at a time. | — | 0 |
-| **NORMAL** | Standard plan | 2–3× ATR | 1.0× |
-| **LOUD** | Trade, expect follow-through, let winners run | 3–4× ATR | 0.6× |
+| **NORMAL** | **Wait (v6.1).** Every backtested version that traded NORMAL hours lost after costs (random entries: −0.125R majors, −0.076R memes) | — | 0 |
+| **LOUD** | **Trade**: expect follow-through, one exit at 2R, up to 96h (random entries in LOUD hours inside an uptrend: +0.11R majors, +0.13R memes) | 4× ATR | 0.6× |
 
 **Run the trained gate first when you have network:** `python3 scripts/volgate.py BTC ETH SOL` (crypto, next 12h) or `--stock SPY` (next 7h). It prints LOUD/NORMAL/QUIET, what held-out testing says about readings like it (observed rate and hours behind it), the trend regime (20-bar efficiency ratio: up / down / sideways, calm / volatile) and what to do. Same model, same answers as the Terminal (`references/terminal-evidence.md` §9).
 
@@ -113,7 +117,7 @@ Work out which mode Abhi is in, load only what it needs.
 
 ## Workflow for a Signal Card (in order — skipping a step is how bad trades get rationalized)
 
-1. **Volatility gate.** LOUD / NORMAL / QUIET, and what it's read from. QUIET → stop here, write the WAIT.
+1. **Volatility gate.** LOUD / NORMAL / QUIET, and what it's read from (`scripts/volgate.py`). NORMAL or QUIET → stop here, write the WAIT (NORMAL: "not loud enough to pay costs; waiting for LOUD").
 2. **Params.** Account (unknown → express size in % and R) · risk 0.5–1% (fixed 1% cap; 0.5% for B grades and for memes; ignore Kelly until 50 logged trades) · daily loss cap 3R / 3% · venue and fees (NDAX 0.20% flat · Kraken Pro entry tier 0.40% maker / 0.80% taker, 0.22/0.38 at $10K+/month with $20K on platform · Coinbase Advanced 0.60/1.20; verified Sept 2026).
 3. **Real data.** Try the scripts (`scripts/scan.py --symbols BTC,ETH,SOL --derivs`, `fetch_ohlcv.py`, `snapshot.py`, `events.py`). They need network (Claude Code / Desktop / Cowork); in a plain claude.ai chat the sandbox blocks exchange APIs — then use `Jarvus screen` or ask for the key numbers (price, today's high/low, PDH/PDL/PDC, funding). Say in one line which data you have and which you don't.
 4. **Top-down read.** One line per timeframe (1D, 4H, 1H, 15m): trend (HH/HL, LH/LL, range), price vs 200 EMA / 21 EMA / VWAP, nearest swing high/low, nearest untested level (PDH/PDL, range edge, equal highs/lows). Then name today's regime.
@@ -126,7 +130,7 @@ Work out which mode Abhi is in, load only what it needs.
 
 | # | Factor | Point if |
 |---|---|---|
-| 0 | **Volatility gate** | LOUD or NORMAL (QUIET = don't score, don't trade) |
+| 0 | **Volatility gate** | LOUD (v6.1: NORMAL = wait, QUIET = don't trade; either blocks the trade whatever the score) |
 | 1 | HTF bias | 1D and 4H agree with the trade (or HTF is a range and the trade is at its edge) |
 | 2 | EMA regime | Correct side of the 200 EMA on the setup TF and the 21/50 stack agrees |
 | 3 | Location | Entry at a tier-1 level or value zone (PDH/PDL, range edge, 21 EMA, VWAP, order block, swept equal lows), not mid-range |
@@ -135,10 +139,10 @@ Work out which mode Abhi is in, load only what it needs.
 | 6 | Positioning | Funding/OI not crowded in the trade direction; ideally crowded against it |
 | 7 | Session | 7:30–10:00 AM MT (London/NY overlap) or first 90 min of NY; **not weekend** (measured AUC 0.498 — zero edge) |
 | 8 | Calendar | No tier-1 event within 30 min before/after; no token unlock inside 72h for alts |
-| 9 | Reward | Net R:R to TP2 ≥ 2 with no major level between entry and TP1 |
-| 10 | Stop quality | Beyond invalidation with an ATR buffer, wide enough that **cost ≤ 20% of 1R** |
+| 9 | Reward | Net R:R to the target ≥ 2 after costs, no major level in the way |
+| 10 | Stop quality | At least 1 ATR beyond entry and wide enough that **cost ≤ 20% of 1R** (in practice 4× ATR on hourly crypto; `confluence.py --fees` scores it on the real cost) |
 
-**Grades:** 10–11 = **A+** (1%) · 9 = **A** (1%) · 8 = **B** (0.5%, take TP1 in full) · ≤ 7 = **skip** (write what would add the missing points). Alts and memes need **+1 point at every grade**. `scripts/confluence.py` scores the mechanical factors; read the chart for location, trigger and reward. After 50 trades check that top grades beat mid grades; if not, the scoring is being fudged.
+**Grades:** 10–11 = **A+** (1%) · 9 = **A** (1%) · 8 = **B** (0.5%) · ≤ 7 = **skip** (write what would add the missing points). Alts and memes need **+1 point at every grade**. `scripts/confluence.py` scores the mechanical factors; read the chart for location, trigger and reward. After 50 trades check that top grades beat mid grades; if not, the scoring is being fudged.
 
 **Cost rule (the v5 hard gate):** round-trip cost ÷ stop distance = cost in R. ≤ 20% of 1R fine · 20–33% downgrade one grade · **> 33% NO**. Fix by using limit (maker) orders and a **wider, higher-timeframe stop with smaller size** — never by tightening the stop into noise.
 
@@ -162,12 +166,10 @@ Setup:  P<#> <name>          Grade: <score>/11 = A+/A/B/skip → risk <1% / 0.5%
 Verdict: BUY / WAIT / NO
 Trigger: <exact closed-candle condition, e.g. 5m close back above VWAP, RVOL > 1.5>
 Entry:  $X (limit at level, or market on the confirmed close; never mid-flush)
-Stop:   $X (invalidation ± buffer; 3–4× ATR at spot fees) = X% · cost X% of 1R
-TP1:    $X (+1R or first level) sell ⅓–½ → stop to entry + fees
-TP2:    $X (+2R / next liquidity pool) sell ⅓
-Runner: trail 1.5× ATR or below each new higher low
-Time stop: TP1 not hit within <8 trigger-TF candles / session end> → exit
-Size:   $X notional (risk ÷ stop distance; ≤ 1% risk; ×0.6 if LOUD)
+Stop:   $X (4× ATR on the 1h chart, beyond invalidation) = X% · cost X% of 1R
+Target: $X (+2R), all of it, a resting limit · never move the stop except to tighten after +1.5R
+Time limit: 96 hours from entry → exit at market (v6.1: the old "8 candles to TP1" exit cut 4× ATR trades before they could work)
+Size:   $X notional (risk ÷ stop distance; ≤ 1% risk × 0.6 for LOUD = 0.6%; memes 0.3%)
 Context: funding · OI · session · next event
 Confidence: low / medium / high · Kills it: <level / event / data change>
 Why: <one line>
@@ -175,7 +177,7 @@ Why: <one line>
 Analyze mode with no plan: replace Trigger → Size with a **Scenario map** — bull (~p%, what must happen, targets) · bear (~p%) · chop (~p%) · deciding level above/below · what changes the odds. Full long-form card template in `assets/trade-plan-template.md`.
 
 ### Gates
-- **M-1 Volatility gate:** QUIET → no new trades, full stop. LOUD → wider stop, 0.6× size.
+- **M-1 Volatility gate:** LOUD → trade at 0.6× size; NORMAL → wait (v6.1); QUIET → no new trades, full stop.
 - **M0 Regime:** momentum/trend setups only when 1h AND 4h up. Fades only in a confirmed low-vol range. Bear (1h+4h down, or BTC < 200-day) → memes OFF, Majors reduce/cash; longs only on capitulation sweeps, small. Measured: bull AUC 0.530 vs bear 0.511 — the edge is real in bull, thinner in bear. Regime returns from earlier research: bull +16% / sideways −2% / bear −41%.
 - **M1 Venue/cost:** NDAX (0.20% flat) by default; Kraken Pro only at a tier/stop where the cost table clears; round-trip **≤ 20% of 1R** (cost table above). Limit orders whenever the setup allows waiting — at retail spot fees, maker vs taker is the difference between a live edge and a dead one.
 - **M2 Setups:** one of the playbooks below, volume-confirmed, on a closed candle.
@@ -212,16 +214,20 @@ Four setups have genuine gross edge. **All four are destroyed by a 0.48R cost.**
 | Sweep reclaim (P4) | 561 | 43.5% | +0.058R | −0.057R | 0.12R |
 | VWAP 2σ fade | 30 | 40.0% | −0.060R | −0.173R | 0.11R |
 
+**System test (v6.1, hourly, 2021–2026, NDAX fees, every Jarvus rule on):** standalone every playbook lost on majors (P3 −0.06R, P6 −0.10R, RSI-2 −0.15R, P1 −0.19R, P4 −0.15R); on memes the fixed P6 ORB was the only positive one (+0.03R) and P3 was −0.02R. With LOUD-only entries the full set turns positive (section above), and random entries do almost as well: choose the playbook for a clean entry and stop, not for an edge. Full tables: `references/jarvus-backtest.md`.
+
 **Rating changes from v4:** P6/ORB **promoted** (best gross edge, only net-positive rule — at wide stops; still negative at 1×ATR). RSI-2 **kept as a real gross edge, gated on fees**. VWAP 2σ fade **dropped** (30 fires in 7.7 years, negative). P4 **demoted** to weakest survivor. Note most setups barely beat "just be long" — always compare a setup to the benchmark before believing it.
 
 > **On quoted win rates:** v4 carried "RSI-2: 72–74% in range" and "ORB: 52–58% hit". Both assume a *different exit* — reversion to the mean, or the opposite OR side — not a fixed 2R target. At a fixed-R exit both sit near 43–45%. Neither is wrong; they answer different questions. **Always ask what exit a quoted win rate assumes.**
+
+**Exits in v6.1:** one target at +2R (or the structural level below if it is at least 2R away after costs), stop 4× ATR on the 1h chart, 96-hour limit; the TP1/TP2 levels in the playbooks are where to look for that target, not partial exits.
 
 - **P1 Trend pullback to value** (highest frequency). 4H/1D HH-HL, 21 > 50 > 200 EMA · pullback to 21 EMA / VWAP / prior breakout level (two overlapping = best), orderly, volume declining, RSI > 40 · trigger: 5m CHoCH up or engulfing above the 9 EMA with RVOL > 1.2 · stop below the pullback low, widened to meet the cost rule · TP1 prior high, TP2 measured move · skip if > 2 ATR from the 21 EMA (chasing), pullback > 70% of the leg, into a tier-1 event, or trend mature (many legs, 4H RSI divergence, hot funding).
 - **P2 Range edge fade** (lower edge only on spot; upper edge = take profit). Range on 1H/4H with ≥ 2 touches each side, height ≥ 2.5 ATR, no HTF trend pressing, no squeeze · trigger: rejection at the edge — pin bar, engulfing, or a **sweep that closes back inside** (best) · stop beyond the sweep wick · TP1 midpoint, TP2 opposite edge · skip on the 4th+ test, funding extreme against the fade, volume expanding into the edge, or a session open within 30 min. **Range height must clear the cost rule** or there is no trade in it.
 - **P3 Breakout and retest** (never chase the breakout candle). Consolidation/squeeze, HTF agrees, breakout **closed** beyond the level on RVOL > 1.5 (OI rising = new money) · trigger: return to the level, 5m wick in and close above, within a handful of candles · stop below the retest low (retest > 0.5 ATR inside the old range = failed, skip) · TP1 breakout high, TP2 range height projected · skip if no retest, low-volume/Asia breakout, or an HTF level < 2R away. Pairs naturally with a **LOUD** gate reading.
 - **P4 Liquidity-sweep reversal** (lowest hit rate, biggest R, the most "crypto" setup). Obvious pool: equal lows, PDL, range edge, round number, liquidation cluster (Coinglass) · trigger: price pierces the pool and **closes back inside within 1–3 candles** on elevated volume; a 5m CHoCH after the reclaim is the A version · stop beyond the wick · TP1 nearest opposing structure/VWAP, TP2 the opposite pool · never buy the first touch; no reclaim within a couple of candles = real breakdown; news spikes don't respect pools. **Demoted in v5** — weakest of the survivors; half size until the journal says otherwise.
 - **P5 Funding / OI extreme fade** (filter + pairs with P2/P4). Funding beyond ±0.05% BTC/ETH (alts ±0.1%) **and** OI elevated/rising **and** price at an HTF level against the crowd · the trigger is a P2 or P4 print at that level, **never the funding number alone** · stop beyond the level (squeezes spike first) · TP1 nearest liquidation cluster, TP2 where funding started rising · skip if funding has been extreme for days in a trend or OI is already falling. On spot this is a **long** only when shorts are crowded. Note: most published "funding rate signal" material is qualitative folklore with no measured predictive statistic behind it — treat it as positioning context, not an edge.
-- **P6 Session open range break (ORB).** **Promoted in v5 — best measured gross edge and the only net-positive rule, at wide stops.** Opening range = first 15 min (three 5m candles) after 7:30 AM MT; also mark the London/Asia session high/low · trigger: 5m close outside the OR with RVOL > 1.5 in the HTF direction, better if it takes the prior session extreme; conservative entry = first pullback that holds the OR edge · **stop 3–4× ATR, not the opposite OR side, unless that side is far enough away to clear the cost rule** · TP1 one OR height, TP2 PDH or next HTF level; moves run 60–90 min then stall · skip if OR > 1.5 ATR (move already happened), tier-1 data in the first hour (CPI day: treat 6:30 AM MT as the open), or break against both HTF and prior session. Measured: 42.7% hit, +0.130R gross, +0.015R net at 30bps.
+- **P6 Session open range break (ORB).** **Promoted in v5 — best measured gross edge and the only net-positive rule, at wide stops.** Opening range = first 15 min (three 5m candles) after 7:30 AM MT (on the hourly chart: the bar containing the US open, 13:00 UTC in summer, 14:00 UTC in winter; fixed in v6.1, `ladder.py` used 13:00 all year); also mark the London/Asia session high/low · trigger: 5m close outside the OR with RVOL > 1.5 in the HTF direction, better if it takes the prior session extreme; conservative entry = first pullback that holds the OR edge · **stop 3–4× ATR, not the opposite OR side, unless that side is far enough away to clear the cost rule** · TP1 one OR height, TP2 PDH or next HTF level; moves run 60–90 min then stall · skip if OR > 1.5 ATR (move already happened), tier-1 data in the first hour (CPI day: treat 6:30 AM MT as the open), or break against both HTF and prior session. Measured: 42.7% hit, +0.130R gross, +0.015R net at 30bps.
 - **P7 VWAP reclaim.** HTF up/neutral, opened above VWAP, lost it on light volume (trapped sellers), pressing back on rising volume · trigger: 5m close back above VWAP with RVOL > 1.2 and the next candle holds · stop below the low under VWAP · TP1 day's high, TP2 VWAP + 2σ or PDH · skip if VWAP flat and crossed repeatedly (chop), within 30 min of a tier-1 event, or after 1:00 PM MT. **The VWAP 2σ fade cousin is dropped in v5** — 30 fires in 7.7 years and negative expectancy.
 - **CME weekend gap fill** — bias only, pair with a real trigger (P1/P7). Historic ~60–77% fill, **decaying**: CME crypto futures went 24/7 on May 29 2026; the bundled `events.py` and references still assume a weekend close. Verify before leaning on it.
 - **Token unlocks** = avoid/bias. Team unlocks avg −25%; pressure starts ~30 days early; > 1–2% of supply inside 72h = no multi-hour alt longs.
@@ -237,7 +243,7 @@ Four setups have genuine gross edge. **All four are destroyed by a 0.48R cost.**
 Classify after the first hour of London and again 30 min into NY: opening range > 40% of daily ATR and one-directional → trend day likely; price one side of VWAP with pullbacks holding → trend; multiple crosses → range/chop; elevated RVOL both ways → chop. Full size in the regime the playbook is built for, half in adjacent, zero in the wrong one. Volatility: ATR spiking post-news/cascade → halve size or wait an hour; ATR at multi-week lows → expansion coming, direction unknown. **Compression is exactly what the QUIET gate catches early — believe it.**
 
 ### Hard no-trade conditions (any one → WAIT/NO, say which)
-- **Volatility gate reads QUIET.**
+- **Volatility gate reads QUIET, or NORMAL (v6.1: wait for LOUD).**
 - **Weekend** (Sat/Sun) for majors — measured zero edge.
 - No current price data and none supplied.
 - **Cost in R > 33%** at the only stop that makes structural sense.
@@ -254,7 +260,7 @@ Classify after the first hour of London and again 30 min into NY: opening range 
 Every trade idea, Abhi's or a scan's, goes through the same checks the Terminal's brain ran on 311 bots, in this order (`references/decision-engine.md`; `scripts/decide.py` runs it):
 
 1. **Cost gate:** cost in R > 0.33 → **SKIP**; 0.20–0.33 → half size. (Refused-for-cost trades would have averaged −2.16R.)
-2. **Volatility gate:** QUIET → **SKIP**; LOUD → 0.6× size, 3–4× ATR stop.
+2. **Volatility gate:** QUIET or NORMAL → **SKIP** (v6.1; `--allow-normal` restores the Terminal's old rule); LOUD → 0.6× size, 4× ATR stop.
 3. **Bench:** the setup's measured edge is confidently negative (30+ trades of evidence, upper 95% bound < 0) → **SKIP** until it recovers.
 4. **Learned edge:** 8+ trades of evidence and expected < −0.05R per trade → **SKIP**. Evidence = the setup's closest match in `strategy-scoreboard.md` at Abhi's fee level (counted as at most 25 trades) plus his own journal trades for that playbook (each counts fully, so his results take over fast).
 5. **Size:** 1 + 1.5 × expected R (0.5–1.5×), × 0.5 for 0.20–0.33R cost, × 0.6 if LOUD, then the grade's risk × that multiplier, **never above 1%**.
@@ -281,7 +287,7 @@ python3 scripts/decide.py --entry 84800 --stop 82400 --target 89600 --fees ndax 
 - **Breakeven win rates (before costs):** 0.5R needs 67% · 1R 50% · 1.5R 40% · 2R 33% · 3R 25%. Add the cost in R before comparing. Jarvus targets ≥ 2R and honestly expects 40–50% hit on Majors.
 - **Limits:** daily −3R · weekly −6R · concurrent ≤ 3R · correlated positions count as one · after +3R in a day consider stopping (euphoria trades cost as much as tilt).
 - **Drawdown protocol:** −5R from peak → halve risk to 0.5% · −10R → stop, full review · back to 1% only after a new equity high. Recovery math: −10% needs +11%, −20% +25%, −30% +43%, −50% +100%.
-- **Scaling:** ⅓–½ at TP1 (~1–1.5R or first level) · stop to breakeven + fees **only after** TP1 · rest to TP2 or trailed behind each new higher low. Never scale out on "it looks weak" without a rule.
+- **Scaling (v6.1):** one exit at +2R or the 96-hour limit measured best (majors +0.230R vs +0.155R for half at 1R; memes +0.186R vs +0.136R). Half at +1R with the stop to breakeven + fees is an acceptable, slightly weaker alternative. Never scale out on "it looks weak" without a rule.
 - **Kelly:** f = p − (1−p)/b; quarter-Kelly is the theoretical ceiling; the 1% cap leaves room for the edge being smaller than the journal says — and v5 measured it at **+0.125R at best**, so assume small. Not used until ≥ 50 trades.
 - **Custody/ops:** only active capital on the exchange, rest in self-custody · hardware 2FA · stop orders **on the exchange** (stop-market, never mental, never stop-limit) · test a new venue with a tiny order.
 - **Never:** widen a stop · average down · hold a 15m trade into a 3-day bag · size from leverage · trade the news candle.
@@ -317,6 +323,7 @@ TP1 +50% sell ⅓ → stop to entry · TP2 +100% sell ⅓ · Runner trail 30%
 Time stop 30 min · Kill: dev sells / LP pull / freeze → market sell
 Why: <one line>
 ```
+- **Exchange-listed memecoins (DOGE, SHIB, PEPE, BONK, WIF, FLOKI on a CEX) — backtested in v6.1:** same rules as majors plus the meme rules: only when the gate says LOUD, memes off while BTC is below its 200-day average, no meme longs while BTC's 4h trend is down, nothing 7 PM–midnight MT, 4× ATR stop, one exit at 2R, 96h, **0.3% risk** (0.5% × LOUD 0.6), at most 2 open. Measured 2021–2026 at NDAX: +0.186R per trade, 152 trades, max drawdown 3.3%; without the BTC and trend rules it fell to +0.037R. The card below is for fresh DEX launches, which candles cannot test.
 - **Gate 0 kill switch:** daily loss ≥ 3% · 3 losses in a row · bear regime · RPC/tx errors · vol spike · emotional · **est. round-trip > 8% → no trade**.
 - **Hard-fail (any = NO):** wrong address · mint/freeze active · sell-sim fails or tax > 5% · blacklist/pause · unverified EVM · serial/rug-linked deployer · LP < 90% locked 30d · liq < $50k or size > 1% pool · top-10 > 30% / wallet > 8% · bundled same-block > 15% · **launch liquidity + first big buys in one Jito bundle (Rugcheck)** · fresh cluster > 20% · FDV÷liq > 50 · cross-pool > 3% · wash (vol÷liq > 20× flat price) · LP inflation · vertical candle no news · coordinated calls · dev selling / LP withdrawal · migration candle < 20 min.
 - **Score (0–100 → size):** unique buyers rising 0–15 · net buy flow 0–10 · holder growth 0–10 · smart money (GMGN/Cielo/Nansen, confirmation only) 0–10 · live narrative + liquid leader 0–15 · **socials present = positive** (Telegram 8.9×, all-3-socials 17.4× graduation lift) 0–10 · socials/domain > 7 days 0–5 · **round-trip cost < 6% of target** 0–10 · base chain up 1h/4h 0–10 · not boosted 0–5. < 50 watch · 50–69 → 0.5% · 70–84 → 0.75% · 85–100 → 1%.
@@ -371,6 +378,8 @@ A-grade confluence, one session. 51% green, +0.019R measured. Lower win rate, an
 only thing in the table that made money. If Abhi wants 80% for the feel of it, run
 80% Mode on paper and put the real money on the +1R ladder.
 
+Re-run Oct 2026 after fixing the ORB hour (same BTC/ETH/SOL window): 79.8% green, random entries 78.5%, half at +1R +0.040R gross / +0.009R at 10bps maker; **at Kraken Pro's current entry tier (160bps round trip) the 80% ladder closes green 5% of the time** (−0.40R). In the full system test 80% Mode was again worse than the plain exit (majors −0.082R vs −0.073R).
+
 Reproduce anytime: `python3 scripts/ladder.py <csv...> --sweep --fee-bps 5` or
 `python3 scripts/experiment_80.py <csv...>`.
 
@@ -384,8 +393,8 @@ Give him the real answer, in this order — it is good news, not a brush-off:
 4. **Win rate is a dial, not an edge — now measured, not argued.** See **80% Mode** above: the +0.25R ladder delivers 79.5% and random entries deliver 78.6% on the same rules. What pays is **expectancy after costs**, and the levers are **fee tier, stop width, selectivity** in that order. Nobody with a verified record does materially better than 55–65% green with winners bigger than losers.
 
 Then give the **High-Probability Program** (`strategy-encyclopedia.md` Part 2):
-- **Filter:** A/A+ confluence only · volatility gate not QUIET · playbooks P6, P1, P3, P7 only (P2/P5 off until 100 journaled trades) · BTC and ETH only for the first 100 trades · one session: **7:30–10:30 AM MT** · no weekends.
-- **Management:** half at 1R (or the first level) · stop to breakeven + fees after the partial · runner to 2R+ or trailed behind the last 5m higher low · time stop 8 candles · max 3 trades/day · stop at −2R or +3R for the day.
+- **Filter:** A/A+ confluence only · **volatility gate LOUD** (v6.1) · playbooks P6, P1, P3, P7 only (P2/P5 off until 100 journaled trades) · BTC and ETH only for the first 100 trades · no weekends.
+- **Management (v6.1):** limit entry · stop 4× ATR (1h) · one exit at +2R · 96-hour limit · max 2 trades/day · stop at −2R or +3R for the day.
 - **Schedule:** pre-session routine every day, no plan = no trade · journal every trade with its confluence score and its cost in R.
 - **Expected after 100 trades if executed:** 55–65% green incl. scratches, avg win 1.4R, avg loss 0.9R, expectancy +0.1 to +0.35R, max drawdown 6–9R. Promising more is dishonest — the best of 72 tested configurations came out at +0.125R.
 
@@ -425,6 +434,7 @@ TradingView (VWAP, ATR, volume profile, BTC.D/TOTAL2) · Coinglass / Coinalyze /
 - **Jarvus journal** → `scripts/journal.py add` (before the order) / `close` (after). Extras go in `--notes`: `gate=LOUD|NORMAL|QUIET; regime=…; score=N/11; cost=X%R; time=HH:MM MT; rule=none|<broken>`. Meme trades: `--playbook meme-<trigger>`.
 - **Jarvus review** → `journal_stats.py`: E = p×b − (1−p) − c, payoff, hit rate, profit factor, max DD, longest streak, worst trade, **by gate reading**, by playbook / session / pair / grade, planned vs unplanned, broken rules; every 20 trades. Rule breaks first, then cut the worst playbook over 20+ trades, then one mistake tag to fix.
 - **Jarvus kill** → Gate 0 / M-1 / M0 / stop-trading-rules check, one line.
+- **Jarvus system test** / **Jarvus backtest jarvus** → `scripts/system_test.py`: replay Jarvus's whole rulebook on hourly history (`--download` first; `--compare` for v6 vs v6.1, `--battery` for every rule on/off). Report as `references/jarvus-backtest.md` does: avg R, t, return, max drawdown, periods A/B/C, random windows.
 - **Jarvus gate [coins] / Jarvus gate stock <SYM>** → `scripts/volgate.py` (trained gate + trend regime + what to do). Default BTC ETH SOL.
 - **Jarvus decide `<entry> <stop> [target]`** → `scripts/decide.py` with Abhi's fee level, the gate, and any matching scoreboard strategy or journal playbook: TAKE / RESIZE / SKIP and why.
 - **Jarvus goal `<balance> [goal] [days]`** → `scripts/goal.py`: required daily return, measured outcome spread, share reaching the goal.
@@ -436,7 +446,7 @@ TradingView (VWAP, ATR, volume profile, BTC.D/TOTAL2) · Coinglass / Coinalyze /
 
 Stage 0: open NDAX/Kraken Pro, free stack, run `python3 scripts/selftest.py`, and **re-run the v5 engine on your own venue's data at your own fee tier** — that one variable moves the result more than any setup choice. Stage 1 (wks 1–6): paper both engines — P6 and P1 only on BTC, NY session, gate on — log 100 setups with confluence scores and cost in R. Stage 2 (wks 7–10): if paper E > 0 after 2× slippage reprice → 20 live trades at 0.5%. After 50 live trades run the stats: E > 0 → 1% risk, add P3 and ETH; E ≤ 0 → find the leak (usually stop placement, cost, or C setups) before adding anything. After 100 trades positive: add SOL and a second session, never both at once. Stage 3: quarter-Kelly capped 1%; memes only in non-bear regime. Retire a module at 15% drawdown, 3 negative weeks, or live E ≤ 0 after 20 trades. Reprice everything at 2× and 5× slippage. < 50 trades → fixed 1%, no Kelly. **Re-fit quarterly — crypto edges decay and a model trained on 2021 does not describe 2026.** A new trader who survives six months without a > 15% drawdown has beaten most.
 
-Realistic outcome: Majors 40–50% hit, 1.3–2.5:1 payoff, expectancy +0.1 to +0.15R if disciplined and on maker fees, drawdowns 10–25%. The Terminal's own bar for "live-ready" (never met in Sept 2026): positive on an untouched test period **and** 20+ paper trades with a positive average on that market, then an explicit owner approval. Use the same bar for every playbook Abhi wants to fund.
+Measured v6.1 outcome (2021–2026 replay, NDAX fees): majors ~1.5 trades a month, 53% winners, +0.23R per trade, max drawdown 3.6%; memes ~2.4 a month, 45% winners, +0.19R; a random 90-day stretch: majors +0.54% on average (49 of 100 up), memes +0.18% (39 up). Small, slow, and thin after Mar 2025. Older estimate: Majors 40–50% hit, 1.3–2.5:1 payoff, expectancy +0.1 to +0.15R if disciplined and on maker fees, drawdowns 10–25%. The Terminal's own bar for "live-ready" (never met in Sept 2026): positive on an untouched test period **and** 20+ paper trades with a positive average on that market, then an explicit owner approval. Use the same bar for every playbook Abhi wants to fund.
 
 ## Reference map (load on demand)
 
@@ -458,6 +468,7 @@ Realistic outcome: Majors 40–50% hit, 1.3–2.5:1 payoff, expectancy +0.1 to +
 - `references/glossary.md` — terms (now including the Terminal's and the knowledge pack's).
 
 **From the Jarvus Terminal (v6):**
+- `references/jarvus-backtest.md` — **Jarvus's own rulebook backtested (v6.1)**: how, the v6 results, what each rule is worth, the six problems fixed with proof, how the v6.1 change was chosen and checked, v6 vs v6.1, holding vs trading, limits. Full tables: `assets/system-test-results.md`.
 - `references/terminal-evidence.md` — **everything the Terminal measured**: protocol, 146 strategies, swing lab, 3,000 full-system replays, by fee level, by account size ($100 → $10M), brain experiments, the trained gate, live paper running, verified fees, and what none of it shows.
 - `references/decision-engine.md` — how the brain decided (pipeline, gates, hierarchical learned edge, sizing, regime, consensus, shadow trades, research schedule, safety rules) and how to run it by hand.
 - `references/strategy-scoreboard.md` — the 146 tested strategies: exact mechanical rules and every measured run (crypto gross / low-fee / retail; stocks net / 2× slippage; folds; test for candidates). Large: search it by name, id or market.
@@ -469,7 +480,7 @@ Realistic outcome: Majors 40–50% hit, 1.3–2.5:1 payoff, expectancy +0.1 to +
 
 **Assets:** `assets/volgate_model.json` (the trained gate) · `assets/strategy_scoreboard.json` (numbers for `decide.py`) · `assets/projection_inputs.json` (the measured 10-day windows behind `goal.py`) · `assets/memecoin-screening-rules.json` (20 screening thresholds from the knowledge pack) · `assets/trade-plan-template.md` (long-form card + scenario map) · `assets/pre-trade-checklist.md` · `assets/daily-routine.md` · `assets/event-calendar-2026.md` (verified FOMC/CPI/NFP, UTC) · `assets/jarvus-clock-mt.md` (the MT conversion table) · `assets/journal-template.csv`, `assets/sample-journal.csv` (72 trades to demo a review).
 
-**Scripts** (Python 3.8+, standard library, no API keys; Binance geo-blocked → falls back to Coinbase/Kraken candles, OKX/Bybit derivs): `events.py` · `scan.py` · `fetch_ohlcv.py` (`--derivs` for funding/OI/L-S/basis) · `snapshot.py` (multi-TF structure, indicators, levels, flags, `--json`) · `confluence.py` · `position_size.py` · `journal.py` · `journal_stats.py` · `backtest.py` (pessimistic fills, `ema_pullback` + `range_fade`, `--split`) · **`ladder.py`** (scale-out ladder simulator: green rate vs expectancy vs fee tier, with a random-entry control — the 80% Mode engine) · **`experiment_80.py`** (the three published tables) · **`volgate.py`** (the Terminal's trained volatility gate + trend regime; crypto via Coinbase hourly, stocks via Yahoo, or a CSV) · **`decide.py`** (the Terminal's brain: TAKE / RESIZE / SKIP for one trade) · **`goal.py`** (required daily return + the measured outcome spread) · `selftest.py`. Perps fields the scripts return are read as information only.
+**Scripts** (Python 3.8+, standard library, no API keys; Binance geo-blocked → falls back to Coinbase/Kraken candles, OKX/Bybit derivs): `events.py` · `scan.py` · `fetch_ohlcv.py` (`--derivs` for funding/OI/L-S/basis) · `snapshot.py` (multi-TF structure, indicators, levels, flags, `--json`) · `confluence.py` · `position_size.py` · `journal.py` · `journal_stats.py` · `backtest.py` (pessimistic fills, `ema_pullback` + `range_fade`, `--split`) · **`ladder.py`** (scale-out ladder simulator: green rate vs expectancy vs fee tier, with a random-entry control — the 80% Mode engine) · **`experiment_80.py`** (the three published tables) · **`volgate.py`** (the Terminal's trained volatility gate + trend regime; crypto via Coinbase hourly, stocks via Yahoo, or a CSV) · **`decide.py`** (the Terminal's brain: TAKE / RESIZE / SKIP for one trade) · **`goal.py`** (required daily return + the measured outcome spread) · **`system_test.py`** (Jarvus's whole rulebook replayed on hourly history: every rule switchable, v6 vs v6.1, random windows) · `selftest.py`. Perps fields the scripts return are read as information only.
 
 ## Disclosure
 
@@ -5562,6 +5573,190 @@ back is rejection.
 **Hypothesis lineage**: An explicit link between a contextual variant and its broader parent concept, preventing variants from being mistaken for independent discoveries.
 
 
+<!-- ===== references/jarvus-backtest.md ===== -->
+
+# Jarvus, backtested (Oct 2026): every rule, 900+ backtests, what was wrong, what changed
+
+Jarvus's own rulebook was turned into code (`scripts/system_test.py`) and replayed on 5.75 years of real Coinbase
+hourly candles: **majors** BTC, ETH, SOL and **memecoins** DOGE, SHIB, PEPE, BONK, WIF, FLOKI (about 280,000 candles,
+Jan 2021 to Oct 2026). 350 backtests switched each rule off one at a time at three fee levels with 100 random
+90-day windows per group; 114 more searched for improvements; 46 tested how robust the winner is; 412 compared the
+old and new rules side by side (100 windows each). Results below are after fees and slippage, in R (1R = the
+amount a trade risks).
+
+Contents: 1 Short version · 2 How it was tested · 3 Jarvus v6 as written · 4 What each rule is worth ·
+5 Problems found and fixed · 6 How the improvement was chosen · 7 v6 vs v6.1 · 8 Compared with just holding ·
+9 What this does not show · 10 Re-running it
+
+## 1. Short version
+
+* **Jarvus v6 as written lost money on majors at every fee level**: at NDAX −0.073R per trade over 490 trades
+  (t = −3.0, so not bad luck), −15.6% with an 18% drawdown; positive in only **2 of 100** random 90-day windows. On
+  memecoins it was close to break-even and still negative: −0.034R, −4.5%, 25 of 100 windows positive.
+* **Every protective rule earned its place**: the volatility gate, the weekend rule, the trend/regime rule, BTC
+  first, the meme dead zone, the cost gate, the decision engine, the risk caps and limit (maker) entries each cut the
+  losses. Taking the same signals with no rules lost everything (−100%).
+* **The fix that made the difference: enter only when the gate says LOUD, keep the 4× ATR stop, take profit at 2R
+  in one exit, and give the trade 96 hours** (dropping the Signal Card's "exit if +1R is not reached in 8 candles").
+  Chosen on 2021–Mar 2025 only, then checked on later data.
+* **v6.1 results** at NDAX fees: majors **+0.230R per trade, +23.2%, max drawdown 3.6%**, 106 trades (about 1.5 a
+  month), positive in 49 of 100 windows (12 had no trade); memes **+0.186R, +4.2%, drawdown 3.3%**, 152 trades,
+  39 of 100 windows positive. On the untouched last nine months: majors +0.172R (10 trades), memes +0.666R (17).
+* **Honest size of it:** small and slow. Most of the in-sample gain sits in a period the gate was trained on; the
+  later data is thin (26 majors trades, 54 meme trades after Mar 2025: +0.02R and +0.28R on average). Random entries
+  under the same rules also made money, so the edge is **when** Jarvus trades (loud volatility inside an uptrend,
+  wide stop, time to run), not the pattern that triggers the entry.
+* **Six problems in the scripts and rules were found and fixed** (section 5), each with a test that proves it.
+
+## 2. How it was tested
+
+* **Rules, as SKILL.md v6 wrote them:** the playbooks exactly as Jarvus's scripts define them (`ladder.py`: P1
+  trend pullback, P3 breakout retest, P4 sweep reclaim, P6 opening-range breakout, RSI(2) dip), the trained gate at
+  every hour (QUIET = no trade, LOUD = 0.6× size), M4 no new majors trades Sat/Sun, M0 trend setups only with 1h and
+  4h uptrends, bear regime (BTC below its 200-day average: majors take only reversion setups at half size, memes off),
+  BTC first for memes (no meme longs while BTC's 4h trend is down), no meme entries 7 PM–midnight MT, cost gate
+  (> 0.33R skip, 0.20–0.33R half), the decision engine learning from Jarvus's own closed trades (refused trades
+  followed as shadow trades at half weight), 1% risk (0.5% for P4 and memes), daily −3R, 3 losses in a row ends the
+  day, 2 majors trades a day, one majors position at a time (BTC/ETH/SOL count as one), 2 meme positions, weekly −6R,
+  −5R from the peak = half risk, −10R = a week off, no leverage.
+* **Management as the Signal Card said:** limit entry 0.1% under the signal close (valid 3 bars, unfilled = no
+  trade), stop 4× ATR, half at +1R then stop to entry + fees, rest at +2R, exit if +1R is not reached within 8
+  bars, else a 96-bar limit.
+* **Fills, pessimistic:** stop and target touched in one bar = stop; a gap through the stop fills at the open;
+  stops and time exits pay taker fee + slippage (2 bps majors, 10 bps memes, doubled on stops); targets are resting
+  limits (maker).
+* **One account, all coins of a group, in time order**, $10,000 start, compounding.
+* **Three periods:** A = Jan 2021 – 19 Mar 2025, B = 20 Mar – 22 Dec 2025, C = 23 Dec 2025 – 1 Oct 2026. The gate was
+  fitted on data inside A and its thresholds chosen inside B; **only C is completely unseen by it.** The playbooks were
+  written earlier from general knowledge and v5's BTC study (2019–2026), so no period is perfectly untouched for them.
+
+## 3. Jarvus v6 as written
+
+| Group | Fees | Trades | Win | Avg R | t | Return | Max DD | A | B | C |
+|---|---|---|---|---|---|---|---|---|---|---|
+| majors | NDAX | 490 | 40% | −0.073 | −3.03 | −15.6% | 17.9% | −0.072 (412) | −0.126 (65) | +0.161 (13) |
+| majors | low-fee | 1,101 | 48% | −0.035 | −2.17 | −17.1% | 21.1% | −0.032 | −0.071 | +0.088 |
+| majors | Kraken Pro $0+ | 86 | 34% | −0.137 | −2.30 | −3.8% | 5.0% | −0.137 (then the engine benched everything) | — | — |
+| memes | NDAX | 394 | 43% | −0.034 | −1.15 | −4.5% | 5.1% | −0.027 | −0.043 | −0.045 |
+| memes | low-fee | 1,152 | 45% | −0.014 | −0.89 | −7.8% | 8.5% | −0.014 | −0.006 | −0.036 |
+| memes | Kraken Pro $0+ | 61 | 36% | −0.143 | −2.26 | −2.5% | 2.9% | −0.143 (then benched) | — | — |
+
+100 random 90-day windows (NDAX, fresh account each time): majors median −2.91%, average −3.21%, positive in 2;
+memes median −0.63%, average −1.10%, positive in 25 (17 windows had no trade). Gross edge per trade was only
++0.024R (majors) against 0.097R of costs: the playbooks barely beat random before costs.
+
+## 4. What each rule is worth (rules as written, NDAX fees; each row switches one thing)
+
+| Change | Majors avg R / return | Memes avg R / return |
+|---|---|---|
+| **as written** | −0.073 / −15.6% | −0.034 / −4.5% |
+| no volatility gate | −0.091 / −18.3% | −0.044 / −5.7% |
+| no weekend rule | −0.103 / −20.6% | (memes exempt) |
+| no trend/regime rule | −0.087 / −30.6% | −0.075 / −16.7% |
+| no BTC-first rule | — | −0.043 / −6.2% |
+| no meme dead zone | — | −0.061 / −8.6% |
+| no cost gate | −0.080 / −19.4% | −0.034 / −4.3% |
+| no decision engine | −0.101 / **−45.0%** | −0.043 / −16.2% |
+| no risk caps / drawdown protocol | −0.090 / −26.2% | −0.055 / −13.2% |
+| market (taker) entries | −0.093 / −21.5% | −0.063 / −9.7% |
+| stop 2× ATR | −0.160 / −7.3% | −0.109 / −6.1% |
+| stop 3× ATR | −0.100 / −11.1% | −0.051 / −6.6% |
+| 80% Mode (half at +0.25R) | −0.082 / −16.8% (58% winners) | −0.069 / −7.9% (56% winners) |
+| only P1 trend pullback | −0.186 (18 trades) | −0.097 (18) |
+| only P3 breakout retest | −0.061 (219) | −0.018 (297) |
+| only P4 sweep reclaim | −0.150 (12) | −0.118 (8) |
+| only P6 ORB, before the fix | −0.091 (30) | −0.021 (150) |
+| only P6 ORB, fixed | −0.101 (69) | **+0.031 (167)** |
+| only RSI(2) dip | −0.150 (108) | −0.210 (18) |
+| control: every 12th bar, no rules | −0.116 / −100% | −0.117 / −99.9% |
+
+Same pattern at the low-fee and Kraken levels (Kraken: the engine stops trading within about 90 trades because
+everything loses; that is the engine working). Full tables: `assets/system-test-results.md`.
+
+## 5. Problems found, fixed and proved
+
+| # | Problem | Fix | Proof |
+|---|---|---|---|
+| 1 | `confluence.py` gave the stop-quality point only to stops of 0.5–2.5× ATR, so the 4× ATR stop Jarvus requires scored 0 and a cost-killing 1× ATR stop scored 1 | The point now means: at least 1 ATR from entry **and** costs ≤ 0.20R at the chosen fee level; above 0.33R the verdict is a NO | `selftest.py`: a 3% stop at NDAX (0.15R) earns it; a 1% stop (0.44R) is blocked; the same 3% stop at Kraken Pro's entry tier (0.55R) is blocked |
+| 2 | `confluence.py` charged a fixed 0.14R of costs on the reward factor and graded out of 10 with the old thresholds, while SKILL.md scores 11 factors (factor 0 = the gate) | Real cost in R at `--fees`; factor 0 added (`--gate`); SKILL.md thresholds (A+ 10–11, A 9, B 8) | `selftest.py` (eleven factors; QUIET and NORMAL blocked) |
+| 3 | `position_size.py` assumed 0.05% fees per side by default, a quarter of NDAX's 0.20%: costs showed as 0.07R on a 2% BTC stop instead of 0.22R | Default `--venue ndax`; venues ndax, kraken, kraken10k, coinbase, low, stock | Same trade now reports 0.219R, matching `decide.py` |
+| 4 | `ladder.py`'s opening-range breakout always used the 13:00 UTC bar; from November to March the US market opens at 14:30 UTC, so it fired inside the opening hour itself | The open range is the bar containing the US open (13:00 UTC in US summer time, 14:00 UTC in winter) | `selftest.py` winter case; ORB-only backtests: memes NDAX −0.021R → +0.031R, memes low-fee +0.016R → +0.058R, majors low-fee −0.095R → −0.029R (more trades); the 80% Mode experiment re-run: 79.8% green (was 79.5%), random entries 78.5% (was 78.6%): conclusions unchanged |
+| 5 | The Signal Card's "exit if TP1 is not hit within 8 trigger-TF candles" was written for 5-minute triggers with tight stops; with the 4× ATR stop v5 made mandatory, +1R is 4 ATR away and is rarely reached in 8 hours, so most trades were cut early and paid fees for nothing | v6.1: no 8-candle exit; one exit at 2R or after 96 hours | Spot-checked trades (most v6 exits were "time"); v6.1 vs v6 tables below |
+| 6 | Trading NORMAL-gate hours lost money in every version tested; random entries in NORMAL+LOUD hours lost −0.125R (majors), in LOUD hours only they made +0.114R | v6.1 enters only on LOUD (NORMAL = wait); `decide.py` and `confluence.py` enforce it (`--allow-normal` restores the old rule) | Sections 6–7 |
+
+## 6. How the improvement was chosen (and why it is believable, and why only a little)
+
+* **Search:** 3 playbook sets × 2 gate rules (as written / LOUD only) × 3 exit styles (as written; half at 1R + 2R
+  over 96h; one exit at 2R over 96h) for each group and fee level (114 backtests). **Chosen on period A only.** The
+  top choice in A was "LOUD only, 96h" at every fee level in both groups.
+* **Then judged on B and C** (later data). At NDAX, "all playbooks, LOUD only, one exit at 2R, 96h": majors A +0.298R
+  (80 trades), B −0.076 (16), C +0.172 (10); memes A +0.134 (98), B +0.102 (37), C +0.666 (17).
+* **Robustness:** 18 neighbours per group (stop 3/4/5× ATR × 48/96/144h × one exit or half at 1R): 17 of 18 positive
+  over the whole period on majors, 18 of 18 on memes; it is not a lucky setting.
+* **Not outliers:** without the 5 best trades, majors still average +0.144R and memes +0.125R. Majors positive in 5 of
+  6 years (2022, the bear year: 6 trades, −0.17R), memes in 4 of 5 (2023: −0.10R).
+* **Random-entry control:** every-12th-bar entries under the same rules made +0.114R (majors) and +0.133R (memes).
+  The setups added a little on majors (+0.23 vs +0.11) and nothing on memes. **The edge is the conditions**: a
+  LOUD forecast, an uptrend (the M0 and BTC-first rules: removing them from memes cut the result to +0.037R and the
+  last period to −0.053R), a stop wide enough for costs, and time for the move.
+* **Why only a little:** the gate's LOUD calls in period A are in-sample (it was fitted there), so A flatters every
+  LOUD variant. After Mar 2025 the evidence is 26 majors trades averaging about +0.02R and 54 meme trades averaging
+  about +0.28R. Promising, not proven. Treat v6.1 as the best-supported rule set, keep journaling, and let the
+  decision engine bench it if Abhi's own results turn negative.
+
+## 7. v6 vs v6.1, side by side (same data, same windows)
+
+| Group | Fees | v6 trades / avg R / return / max DD | v6.1 trades / avg R / return / max DD | v6.1 by period A · B · C |
+|---|---|---|---|---|
+| majors | NDAX | 490 / −0.073 / −15.6% / 17.9% | **106 / +0.230 / +23.2% / 3.6%** | +0.298 (80) · −0.076 (16) · +0.172 (10) |
+| majors | low-fee | 1,101 / −0.035 / −17.1% / 21.1% | 106 / +0.277 / +26.3% / 3.8% | +0.342 · −0.020 · +0.228 |
+| majors | Kraken Pro $0+ | 86 / −0.137 / −3.8% / 5.0% | 89 / +0.217 / +9.3% / 2.5% | +0.239 · +0.049 · +0.342 |
+| memes | NDAX | 394 / −0.034 / −4.5% / 5.1% | **152 / +0.186 / +4.2% / 3.3%** | +0.134 (98) · +0.102 (37) · +0.666 (17) |
+| memes | low-fee | 1,152 / −0.014 / −7.8% / 8.5% | 152 / +0.214 / +7.8% / 3.4% | +0.161 · +0.133 · +0.697 |
+| memes | Kraken Pro $0+ | 61 / −0.143 / −2.5% / 2.9% | 144 / +0.066 / +1.9% / 2.9% | −0.010 · +0.010 · +0.590 |
+
+100 random 90-day windows each (NDAX, fresh account): **majors** v6 average −3.21%, 2 up / 98 down; v6.1 average
++0.54%, 49 up / 39 flat or down / 12 without a trade (best +5.51%, worst −2.71%). **Memes** v6 average −1.10%, 25
+up / 58 down; v6.1 average +0.18%, 39 up / 43 flat or down / 18 without a trade.
+
+v6.1 trades about 1.5 times a month on majors and 2.4 on memes, at 0.6% risk (LOUD size) on majors and 0.3% on
+memes. Returns are small because the risk is small and the trades are few: that is the design.
+
+## 8. Compared with just holding (context, not a recommendation)
+
+| Coin | Period | Buy and hold (max drawdown) | Hold only above the 200-day average (max drawdown) |
+|---|---|---|---|
+| BTC | A (2021 → Mar 2025) | +195% (77%) | +87% (37%) |
+| BTC | B | +5% (32%) | 0% (20%) |
+| BTC | C | −3% (40%) | +23% (7%) |
+| ETH | A / B / C | +181% (79%) / +52% (43%) / −8% (53%) | +189% (32%) / +12% (39%) / +20% (5%) |
+| SOL | A / B / C | +245% (96%) / −1% (52%) / −3% (58%) | +115% (59%) / −10% (33%) / +40% (11%) |
+| DOGE | A / B / C | −56% (87%) / −22% (58%) / −27% (54%) | +4% (76%) / −28% (38%) / −20% (23%) |
+
+Holding majors through 2021–2025 made far more than any trading rule here, with crushing drawdowns; the 200-day rule
+roughly halved the drawdowns. Memecoins lost money held. For growth, a long-term core (DCA, the benchmark active
+trading must beat: encyclopedia Part 20) matters more than trading; v6.1 is the careful, small part on top.
+
+## 9. What this does not show
+
+* No order book, no funding, no news: the confluence factors that need a chart read or derivatives data were not
+  simulated; tier-1 event blackouts were not applied (hourly granularity).
+* Memecoins here are exchange-listed survivors (Coinbase), not new DEX launches; the meme hard-fail list cannot be
+  backtested with candles.
+* Fills are modelled, not real; slippage is an assumption (2 bps majors, 10 bps memes per side).
+* Period C is nine months and v6.1 traded 10 majors and 17 meme trades in it. That is a small sample. The decision
+  engine is there for exactly this: if Abhi's own journal turns negative, it benches the setup.
+
+## 10. Re-running it
+
+```
+python3 scripts/system_test.py --data DIR --download              # Coinbase hourly history, no keys (~10 min)
+python3 scripts/system_test.py --data DIR --version v6.1 --group memes --fees ndax
+python3 scripts/system_test.py --data DIR --battery --md report.md # every rule switched off, 3 fee levels, 200 windows
+python3 scripts/system_test.py --data DIR --compare --md compare.md   # v6 vs v6.1 with 100 windows each
+```
+
+
 <!-- ===== references/terminal-evidence.md ===== -->
 
 # What the Jarvus Terminal measured (Sept–Oct 2026)
@@ -5832,7 +6027,7 @@ research schedule · 9 Safety rules it never broke · 10 Running it by hand
 market data (completed bars only)
   -> each strategy's rules: entry signal? (exact rules: strategy-scoreboard.md)
   -> COST GATE: round-trip cost / stop distance = cost in R
-  -> VOLATILITY GATE: LOUD / NORMAL / QUIET for the next 12h (crypto) or 7h (stocks)
+  -> VOLATILITY GATE: LOUD / NORMAL / QUIET for the next 12h (crypto) or 7h (stocks); v6.1 enters only on LOUD
   -> BENCH: is this strategy confidently losing here?
   -> LEARNED EDGE: expected R per trade, from history + its own closed trades
   -> SIZE: 0.25x to 1.5x of normal risk
@@ -5848,6 +6043,7 @@ market data (completed bars only)
 |---|---|---|
 | Cost | cost in R > **0.33** → refuse. 0.20–0.33 → half size | Fees are paid on every trade; the edge is not. In the system backtest the 172,746 cost-refused trades would have averaged **−2.155R**. |
 | QUIET | volatility gate QUIET → refuse new entries | The range is unlikely to pay the fixed fees (refused QUIET trades averaged −0.164R). |
+| NORMAL (v6.1) | wait for LOUD | Jarvus's own backtest: every version that traded NORMAL hours lost after costs; LOUD-only entries were positive, also on later data (`jarvus-backtest.md`). The Terminal itself traded NORMAL hours; `decide.py --allow-normal` reproduces that. |
 | LOUD | → 0.6x size, stop 3–4x ATR | Bigger swings against the same stop. Never a direction signal. |
 | Weekend (crypto majors) | no new entries Sat/Sun (Jarvus rule M4) | Measured zero direction edge on weekends (AUC 0.498); also the best single change in the brain experiments. |
 | Data | stale or missing data → no decision | Every number must trace to data actually seen. |
@@ -10650,4 +10846,4 @@ before leaning on it.
 
 # Bundled scripts
 
-The skill folder ships `events.py`, `scan.py`, `fetch_ohlcv.py`, `snapshot.py`, `confluence.py`, `position_size.py`, `journal.py`, `journal_stats.py`, `backtest.py`, `ladder.py` (the 80% Mode engine), `experiment_80.py`, `volgate.py` (the trained volatility gate), `decide.py` (the Terminal's decision engine), `goal.py` (the goal calculator) and `selftest.py`. A plain claude.ai chat cannot run them or reach exchange APIs, so there ask for the key numbers (price, today's high/low, PDH/PDL/PDC, funding) and say which data is missing. Without the scripts, apply the decision engine by hand (decision-engine.md section 10) and read the gate manually.
+The skill folder ships `events.py`, `scan.py`, `fetch_ohlcv.py`, `snapshot.py`, `confluence.py`, `position_size.py`, `journal.py`, `journal_stats.py`, `backtest.py`, `ladder.py` (the 80% Mode engine), `experiment_80.py`, `volgate.py` (the trained volatility gate), `decide.py` (the Terminal's decision engine), `goal.py` (the goal calculator), `system_test.py` (Jarvus's rulebook backtested) and `selftest.py`. A plain claude.ai chat cannot run them or reach exchange APIs, so there ask for the key numbers (price, today's high/low, PDH/PDL/PDC, funding) and say which data is missing. Without the scripts, apply the decision engine by hand (decision-engine.md section 10) and read the gate manually.

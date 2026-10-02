@@ -15,7 +15,7 @@ research schedule · 9 Safety rules it never broke · 10 Running it by hand
 market data (completed bars only)
   -> each strategy's rules: entry signal? (exact rules: strategy-scoreboard.md)
   -> COST GATE: round-trip cost / stop distance = cost in R
-  -> VOLATILITY GATE: LOUD / NORMAL / QUIET for the next 12h (crypto) or 7h (stocks)
+  -> VOLATILITY GATE: LOUD / NORMAL / QUIET for the next 12h (crypto) or 7h (stocks); v6.1 enters only on LOUD
   -> BENCH: is this strategy confidently losing here?
   -> LEARNED EDGE: expected R per trade, from history + its own closed trades
   -> SIZE: 0.25x to 1.5x of normal risk
@@ -31,6 +31,7 @@ market data (completed bars only)
 |---|---|---|
 | Cost | cost in R > **0.33** → refuse. 0.20–0.33 → half size | Fees are paid on every trade; the edge is not. In the system backtest the 172,746 cost-refused trades would have averaged **−2.155R**. |
 | QUIET | volatility gate QUIET → refuse new entries | The range is unlikely to pay the fixed fees (refused QUIET trades averaged −0.164R). |
+| NORMAL (v6.1) | wait for LOUD | Jarvus's own backtest: every version that traded NORMAL hours lost after costs; LOUD-only entries were positive, also on later data (`jarvus-backtest.md`). The Terminal itself traded NORMAL hours; `decide.py --allow-normal` reproduces that. |
 | LOUD | → 0.6x size, stop 3–4x ATR | Bigger swings against the same stop. Never a direction signal. |
 | Weekend (crypto majors) | no new entries Sat/Sun (Jarvus rule M4) | Measured zero direction edge on weekends (AUC 0.498); also the best single change in the brain experiments. |
 | Data | stale or missing data → no decision | Every number must trace to data actually seen. |

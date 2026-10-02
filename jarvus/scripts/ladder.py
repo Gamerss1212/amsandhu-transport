@@ -42,6 +42,7 @@ import sys
 from typing import Callable, Dict, List, Optional
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import events  # noqa: E402
 import indicators as ind  # noqa: E402
 from snapshot import load_csv  # noqa: E402
 
@@ -115,22 +116,22 @@ def s_sweep_reclaim(i, d, x) -> Optional[str]:
 
 
 def s_orb(i, d, x) -> Optional[str]:
-    """P6: on hourly bars, the first bar after 13:00 UTC defines the open range;
-    a later bar in the session closing above that high with RVOL >= 1.2 is the break."""
+    """P6: on hourly bars, the bar that contains the US equity open defines the open range (13:00 UTC while the
+    US is on summer time, 14:00 UTC in winter); a close above its high within the next 5 bars, with RVOL >= 1.2,
+    is the break. (Before Oct 2026 this always used 13:00 UTC, an hour early from November to March; the
+    system test measured the fix: references/jarvus-backtest.md.)"""
     if i < 205:
         return None
     ts = d["ts"][i]
-    if ts.hour < 14 or ts.hour > 18:
+    oh = 13 if events.us_dst(ts.date()) else 14
+    if ts.hour < oh + 1 or ts.hour > oh + 5:
         return None
-    # find the 13:00 bar of this same day
     j = i
-    while j > 0 and d["ts"][j].hour > 13 and d["ts"][j].date() == ts.date():
+    while j > 0 and d["ts"][j].hour > oh and d["ts"][j].date() == ts.date():
         j -= 1
-    if d["ts"][j].hour != 13 or d["ts"][j].date() != ts.date():
+    if d["ts"][j].hour != oh or d["ts"][j].date() != ts.date() or i <= j:
         return None
     or_high = d["high"][j]
-    if i <= j:
-        return None
     # first close above the OR high in the window
     if d["close"][i] <= or_high:
         return None
