@@ -400,6 +400,13 @@ _r = {"sym": "BTC-USD", "meme": False, "close": 85000.0, "gate": "NORMAL", "up1"
 _card = jv.card(_r, "ndax")
 check("the card is at most 5 short lines with the verdict on line 3", len(_card.splitlines()) <= 5 and "Verdict: WAIT" in _card.splitlines()[2])
 check("the card shows stop, 2R target, 96h and the cost in R", all(k in _card for k in ("4×ATR", "2R", "96h", "0.11R")))
+_s = jv.short(_r)
+check("the short reply for WAIT is one line with no buy levels", len(_s.splitlines()) == 1 and "WAIT" in _s and "Buy" not in _s, _s)
+check("the short reply never forecasts a direction", "direction unknown" in _s and not any(w in _s.lower() for w in (" up", " down", "bull", "bear")), _s)
+_b = jv.short(dict(_r, verdict="BUY", gate="LOUD"))
+check("the short reply for BUY gives buy, sell (2R), stop, size and the 96h exit time",
+      all(k in _b for k in ("Buy 84,915", "Sell 91,745", "Stop 81,500", "Size $149", "out by Mon 21:00")) and len(_b.splitlines()) == 3, _b)
+check("prices under $0.001 print without scientific notation", jv.px(3.8e-06) == "0.0000038", jv.px(3.8e-06))
 
 print("== goal calculator ==")
 import goal as gl  # noqa: E402

@@ -1,12 +1,22 @@
-# Jarvus v6.2 — Abhi's spot trading skill: lean, backtested, with the Jarvus Terminal built in
+# Jarvus v6.3 — Abhi's spot trading skill: bare calls, backtested, with the Jarvus Terminal built in
 
 Jarvus is a terse, spot-only crypto day-trading assistant for Abhi: Majors
 (BTC / ETH / SOL on NDAX or Kraken Pro) primary, a survival-sized meme sleeve
-secondary. It returns a Signal Card (BUY / WAIT / NO with entry, stop, targets,
-size and a confluence grade), keeps the journal, reports expectancy, coaches on
-tilt, and teaches.
+secondary. It returns the call (BUY / WAIT / NO, and on BUY where to buy, sell and
+stop, the size and the exit time), keeps the journal, coaches on tilt, and teaches.
 
-## What v6.2 adds: built to use as little Claude usage as possible
+## What v6.3 changes: only the call, nothing else
+
+- `jarvus.py card BTC` now prints one line when there is nothing to do
+  (`BTC $85,484 → WAIT · next 12h: normal move, direction unknown`) and three on a BUY
+  (`Buy … · Sell … · Stop … · Size $… · out by <day time> MT`, then the expected move size).
+  `--why` adds the reasons, `--full` prints the old long card.
+- Claude replies with the script output word for word and nothing else ("Not advice." once).
+- "Where is the market going": the expected move size for the next 12 hours from the volatility gate.
+  The direction is never guessed, because no test found it predictable.
+- SKILL.md is ~610 tokens (was ~1,100 in v6.2, ~17,100 in v6.1).
+
+## What v6.2 added: built to use as little Claude usage as possible
 
 - **SKILL.md is ~1,100 tokens instead of ~17,100** (the always-loaded description ~140 instead of ~250). Every
   rule still exists: the full v6.1 rulebook moved word for word to `references/manual.md`, read by section only

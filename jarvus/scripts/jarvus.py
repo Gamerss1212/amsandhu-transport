@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """Jarvus in one call: the whole v6.1 rulebook applied by code, printed as a short card (saves Claude tokens).
 
-  python3 jarvus.py card BTC [--account 1000] [--fees ndax]   # Signal Card for one market (~8 lines)
-  python3 jarvus.py scan [SOL ETH BTC DOGE BONK]               # one line per market (default: Jarvus's best 5)
+  python3 jarvus.py card BTC [--account 1000] [--fees ndax]   # the call: BUY/WAIT/NO, and on BUY buy/sell/stop/size
+  python3 jarvus.py scan [SOL ETH BTC DOGE BONK]               # the same for each market (default: Jarvus's best 5)
+  --why adds the reasons · --full prints the long card (gate, trend, setups, cost in R)
 
 What it checks, in order (references/manual.md has the reasons and the numbers):
   data (Coinbase 1h, last completed bar) -> weekend rule for majors -> volatility gate (LOUD only) ->
@@ -16,6 +17,7 @@ What it checks, in order (references/manual.md has the reasons and the numbers):
 from __future__ import annotations
 
 import argparse
+import math
 import sys
 from datetime import datetime, timedelta, timezone
 
@@ -149,11 +151,38 @@ def evaluate(sym, account, fees):
 
 
 def px(v):
-    return f"{v:,.2f}" if v >= 1 else f"{v:.6g}"
+    if v >= 1000:
+        return f"{v:,.0f}"
+    if v >= 1:
+        return f"{v:,.2f}"
+    return f"{v:.{max(2, 3 - math.floor(math.log10(v)))}f}".rstrip("0").rstrip(".") if v > 0 else "0"
 
 
 def arrow(b):
     return "↑" if b else "↓/↔"
+
+
+MOVE = {"LOUD": "big move likely", "NORMAL": "normal move", "QUIET": "small move"}
+
+
+def move(r):
+    return MOVE.get(r["gate"], "move size unknown")
+
+
+def orders(r):
+    out = r["mt"] + timedelta(hours=96)
+    return (f"Buy {px(r['entry'])} · Sell {px(r['target'])} · Stop {px(r['stop'])} · "
+            f"Size ${r['notional']:,.0f} · out by {out:%a %H:%M} MT")
+
+
+def short(r, why=False, scan=False):
+    """Default reply: only the call, the orders and the expected move size (never a direction)."""
+    head = f"{r['sym'].split('-')[0]} ${px(r['close'])} → {r['verdict']}"
+    tail = f"next 12h: {move(r)}" + ("" if scan else ", direction unknown")
+    lines = [f"{head}\n{orders(r)}\n{tail[0].upper() + tail[1:]}" if r["verdict"] == "BUY" else f"{head} · {tail}"]
+    if why and r["why"]:
+        lines.append("Why: " + "; ".join(r["why"]))
+    return "\n".join(lines)
 
 
 def card(r, fees):
@@ -175,6 +204,8 @@ def main():
     ap.add_argument("symbols", nargs="*")
     ap.add_argument("--account", type=float, default=1000.0)
     ap.add_argument("--fees", default="ndax", help="ndax | kraken | kraken10k | coinbase | low | <taker %% per side>")
+    ap.add_argument("--why", action="store_true", help="add the reasons behind each call")
+    ap.add_argument("--full", action="store_true", help="the long card (gate, trend, setups, cost) instead of the short call")
     a = ap.parse_args()
     syms = a.symbols or (BEST5 if a.cmd == "scan" else ["BTC"])
     out = []
@@ -185,6 +216,12 @@ def main():
             print(f"{s.upper()}: no data ({str(e).strip()[:120]})")
         except Exception as e:                                   # noqa: BLE001
             print(f"{s.upper()}: error {type(e).__name__}: {e}"[:160])
+    if not a.full:
+        for r in out:
+            print(short(r, a.why, a.cmd == "scan"))
+        if a.cmd == "scan" and out:
+            print("Direction: unknown (not predictable).")
+        return 0
     if a.cmd == "card":
         for r in out:
             print(card(r, a.fees))
