@@ -11,7 +11,7 @@ from __future__ import annotations
 import os
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-ORDER = ["SKILL.md"] + [f"references/{f}" for f in [
+ORDER = ["SKILL.md", "references/manual.md"] + [f"references/{f}" for f in [
     "market-structure.md", "indicators.md", "crypto-market-data.md", "risk-management.md",
     "playbooks.md", "strategy-encyclopedia.md", "probability-and-prediction.md",
     "regimes-and-cycles.md", "altcoins-and-memecoins.md", "execution-and-order-types.md",
@@ -45,6 +45,12 @@ def main() -> None:
                  "the scripts, apply the decision engine by hand (decision-engine.md section 10) and read the gate "
                  "manually.\n")
     md = "".join(parts)
+    lite = "".join(parts[:3]) + ("\n\n<!-- The lite build ends here: SKILL.md (the lean rules) + the full manual. Upload "
+                                  "jarvus-all-in-one.md instead if you also want every reference, scoreboard and handbook. -->\n")
+    os.makedirs(os.path.join(HERE, "dist"), exist_ok=True)
+    with open(os.path.join(HERE, "dist", "jarvus-lite.md"), "w", encoding="utf-8") as fh:
+        fh.write(lite)
+    print(f"wrote dist/jarvus-lite.md ({len(lite):,} chars, ~{len(lite)//4:,} tokens)")
     os.makedirs(os.path.join(HERE, "dist"), exist_ok=True)
     out = os.path.join(HERE, "dist", "jarvus-all-in-one.md")
     open(out, "w", encoding="utf-8").write(md)

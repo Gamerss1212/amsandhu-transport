@@ -387,6 +387,20 @@ check("system test: majors stop for the day after 2 trades (the 3rd and 4th sign
 _tk, _, _, _eq = stt.simulate([_cd(_mon, r=2.0)], _btc, _rules61)
 check("system test: a LOUD trade risks 0.6% and a +2R result adds 1.2%", abs(_eq - 10_120.0) < 1e-6, str(_eq))
 
+print("== jarvus.py (one-call card) ==")
+import jarvus as jv  # noqa: E402
+_t0 = int(datetime(2026, 9, 1, tzinfo=timezone.utc).timestamp() * 1000)
+_rows = [[_t0 + k * 3_600_000, 100 + k * 0.05, 100.3 + k * 0.05, 99.8 + k * 0.05, 100.1 + k * 0.05, 100.0] for k in range(420)]
+_an = jv.analyse_rows(_rows)
+check("jarvus.py reads a steady rise as 1h and 4h uptrends", _an["up1"] and _an["up4"])
+_r = {"sym": "BTC-USD", "meme": False, "close": 85000.0, "gate": "NORMAL", "up1": True, "up4": True, "setups": [],
+      "entry": 84915.0, "stop": 81500.0, "target": 91745.0, "stop_pct": 4.0, "cost_r": 0.11, "risk_pct": 0.6,
+      "risk_amt": 6.0, "units": 0.00176, "notional": 149.0, "verdict": "WAIT", "why": ["gate NORMAL: trade only on LOUD"],
+      "mt": datetime(2026, 10, 1, 21, 0), "bar": "02:00"}
+_card = jv.card(_r, "ndax")
+check("the card is at most 5 short lines with the verdict on line 3", len(_card.splitlines()) <= 5 and "Verdict: WAIT" in _card.splitlines()[2])
+check("the card shows stop, 2R target, 96h and the cost in R", all(k in _card for k in ("4×ATR", "2R", "96h", "0.11R")))
+
 print("== goal calculator ==")
 import goal as gl  # noqa: E402
 import json as _j  # noqa: E402

@@ -1,4 +1,4 @@
-# Jarvus v6.1 — Abhi's spot trading skill, with the Jarvus Terminal built in, backtested
+# Jarvus v6.2 — Abhi's spot trading skill: lean, backtested, with the Jarvus Terminal built in
 
 Jarvus is a terse, spot-only crypto day-trading assistant for Abhi: Majors
 (BTC / ETH / SOL on NDAX or Kraken Pro) primary, a survival-sized meme sleeve
@@ -6,7 +6,20 @@ secondary. It returns a Signal Card (BUY / WAIT / NO with entry, stop, targets,
 size and a confluence grade), keeps the journal, reports expectancy, coaches on
 tilt, and teaches.
 
-## What v6.1 adds: Jarvus backtested, fixed and improved
+## What v6.2 adds: built to use as little Claude usage as possible
+
+- **SKILL.md is ~1,100 tokens instead of ~17,100** (the always-loaded description ~140 instead of ~250). Every
+  rule still exists: the full v6.1 rulebook moved word for word to `references/manual.md`, read by section only
+  when a question needs it.
+- **`scripts/jarvus.py` does the analysis in one call** and prints a 5-line card (`card BTC`) or one line per
+  market (`scan`): data, volatility gate, trend, BTC regime, weekend and meme rules, playbook detection, cost in
+  R, the plan and the size. Claude relays it instead of reading reference files and reasoning it out.
+- **Short replies by default** (≤ 8 lines), grep-a-section instead of reading whole files.
+- A typical "Jarvus BTC" went from roughly 27,000 tokens of instructions, references and script output to
+  roughly 1,600 (estimate: 4 characters per token).
+- `dist/jarvus-lite.md` (lean rules + manual) for a Claude.ai Project; `dist/jarvus-all-in-one.md` keeps everything.
+
+## What v6.1 added: Jarvus backtested, fixed and improved
 
 Jarvus's whole rulebook was turned into code (`scripts/system_test.py`) and replayed on 5.75 years of
 Coinbase hourly data for BTC, ETH, SOL and six memecoins (900+ backtests; `references/jarvus-backtest.md`,
@@ -98,7 +111,7 @@ jarvus/
 │                             memecoin-screening-rules.json
 └── scripts/                  fetch_ohlcv, snapshot, scan, confluence, position_size, journal,
                               journal_stats, backtest, events, indicators, tradestats, ladder,
-                              experiment_80, volgate, decide, goal, system_test, selftest
+                              experiment_80, volgate, decide, goal, system_test, jarvus (one-call card/scan), selftest
 ```
 
 ## Install
