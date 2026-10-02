@@ -12,6 +12,8 @@ import os
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ORDER = ["SKILL.md", "references/manual.md"] + [f"references/{f}" for f in [
+    "kb-candles.md", "kb-chart-patterns.md", "kb-indicators.md", "kb-crypto.md", "kb-memecoins.md",
+    "kb-daytrading.md", "kb-measured.md",
     "market-structure.md", "indicators.md", "crypto-market-data.md", "risk-management.md",
     "playbooks.md", "strategy-encyclopedia.md", "probability-and-prediction.md",
     "regimes-and-cycles.md", "altcoins-and-memecoins.md", "execution-and-order-types.md",
@@ -38,7 +40,8 @@ def main() -> None:
                  "The skill folder ships `events.py`, `scan.py`, `fetch_ohlcv.py`, `snapshot.py`, "
                  "`confluence.py`, `position_size.py`, `journal.py`, `journal_stats.py`, `backtest.py`, "
                  "`ladder.py` (the 80% Mode engine), `experiment_80.py`, `volgate.py` (the trained volatility gate), "
-                 "`decide.py` (the Terminal's decision engine), `goal.py` (the goal calculator), `system_test.py` "
+                 "`decide.py` (the Terminal's decision engine), `goal.py` (the goal calculator), `jarvus.py` (the one-call "
+                 "card/scan), `know.py` (the knowledge lookup), `system_test.py` "
                  "(Jarvus's rulebook backtested) and `selftest.py`. A plain "
                  "claude.ai chat cannot run them or reach exchange APIs, so there ask for the key "
                  "numbers (price, today's high/low, PDH/PDL/PDC, funding) and say which data is missing. Without "

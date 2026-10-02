@@ -408,6 +408,37 @@ check("the short reply for BUY gives buy, sell (2R), stop, size and the 96h exit
       all(k in _b for k in ("Buy 84,915", "Sell 91,745", "Stop 81,500", "Size $149", "out by Mon 21:00")) and len(_b.splitlines()) == 3, _b)
 check("prices under $0.001 print without scientific notation", jv.px(3.8e-06) == "0.0000038", jv.px(3.8e-06))
 
+print("== know.py (knowledge lookup) ==")
+import know as kn  # noqa: E402
+import contextlib as _cl  # noqa: E402
+import io as _io  # noqa: E402
+
+
+def _know(*a):
+    buf = _io.StringIO()
+    with _cl.redirect_stdout(buf):
+        kn.main(list(a))
+    return buf.getvalue()
+
+
+_h = _know("hammer")
+check("know.py hammer prints the entry and Jarvus's measured result in under 1,200 characters",
+      _h.startswith("Hammer\n") and "Measured · Hammer:" in _h and len(_h) < 1200, str(len(_h)))
+check("know.py 'what is rsi' finds the RSI entry", _know("what is rsi").startswith("RSI (Relative Strength Index)"))
+check("know.py finds scoreboard strategies by id", _know("STRAT-075").startswith("STRAT-075 Engulfing"))
+check("know.py finds encyclopedia strategies by name", "Donchian" in _know("donchian channel breakout").splitlines()[0])
+check("know.py says so when a topic is not in the library", _know("qwertyuiop zzz").startswith("Not in Jarvus's library"))
+_ents = kn.load()
+_ids = {i for e in _ents if e["kb"] for i in e["ids"]}
+_res = kn.results()
+check("every measured signal has a knowledge entry and every entry id was measured",
+      _res is not None and _ids == set(_res["meta"]["defs"]), str(set(_res["meta"]["defs"]) ^ _ids if _res else "no results"))
+_bad = [(sid, g, tf) for g in ("majors", "memes") for tf in ("1h", "4h") for sid, r in _res["results"][g][tf].items()
+        if r and r.get("label") == "held up and made money" and not (r["r_all"] > 0 and r["r_early"] > 0 and r["r_late"] > 0
+                                                                       and r["t_r"] >= 2.5)]
+check("a ✓ (held up and made money) always means positive R overall and in both halves at t ≥ 2.5", not _bad, str(_bad[:3]))
+check("the knowledge base has 200+ short entries", sum(1 for e in _ents if e["kb"]) >= 200)
+
 print("== goal calculator ==")
 import goal as gl  # noqa: E402
 import json as _j  # noqa: E402

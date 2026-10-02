@@ -5,7 +5,26 @@ Jarvus is a terse, spot-only crypto day-trading assistant for Abhi: Majors
 secondary. It returns the call (BUY / WAIT / NO, and on BUY where to buy, sell and
 stop, the size and the exit time), keeps the journal, coaches on tilt, and teaches.
 
-## What v6.3 changes: only the call, nothing else
+## What v7 adds: a measured trading library, read one entry at a time
+
+- **~220 short entries** in `references/kb-*.md`: every common candlestick pattern, chart pattern and
+  price-structure idea (SMC/ICT, Wyckoff, Elliott, Fibonacci, harmonics), ~60 indicators, Bitcoin/crypto
+  (halving, cycles, on-chain, funding, open interest, liquidations, ETFs, Canada), meme-coin mechanics
+  (bonding curves, LP, mint/freeze authority, bundles, rugs) and day-trading concepts (order types, order flow,
+  volume profile, risk, Kelly, backtesting, psychology). The 320-strategy encyclopedia, scoreboard and manual are
+  searchable the same way.
+- **`scripts/know.py <topic>`** prints one entry (about 100–450 tokens) instead of Claude reading whole files.
+- **Jarvus measured 133 signals itself** (`tools/measure_signals.py`): 45 candle patterns, 24 chart patterns,
+  59 indicator signals and its 5 playbooks, on BTC ETH SOL DOGE SHIB PEPE BONK WIF FLOKI hourly data (Dec 2020 to
+  Oct 2026), 1h and 4h, bought with Jarvus's exits at NDAX fees and compared with random entries, split into
+  early/late halves. 11 of 493 cells beat random and made money in both halves, all momentum/breakout signals
+  (mostly on 4h): big green candle, volume spike on a green candle, RSI(14) above 70, MFI above 80, Donchian 55,
+  Keltner breakout, five green candles, big 24h rally, plus the 50/200 golden cross on memes 1h. Reversal candle
+  patterns, chart patterns, MACD, oversold RSI/stochastics and the ICT entries did not. Results:
+  `references/kb-measured.md`, `assets/signal_results.json`. These are research findings, not new trading rules.
+- SKILL.md routes every knowledge question to `know.py` (no more reading or grepping reference files).
+
+## What v6.3 changed: only the call, nothing else
 
 - `jarvus.py card BTC` now prints one line when there is nothing to do
   (`BTC $85,484 → WAIT · next 12h: normal move, direction unknown`) and three on a BUY

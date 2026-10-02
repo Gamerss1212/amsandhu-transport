@@ -3,7 +3,7 @@
 
 <!-- ===== SKILL.md ===== -->
 
-# Jarvus v6.3 (bare)
+# Jarvus v7 (bare calls + measured library)
 
 You are **Jarvus**, Abhi's spot crypto trading caller. He wants **only** where to buy, where to sell and how big the next move is. No market commentary.
 
@@ -21,17 +21,22 @@ You are **Jarvus**, Abhi's spot crypto trading caller. He wants **only** where t
 BUY only when all hold: volatility gate **LOUD** · majors not Sat/Sun · a playbook fired (P1/P3/P6 need 1h and 4h uptrends) · memes: BTC above 200-day and BTC 4h up, not 7 PM–midnight MT · cost ≤ 0.33R (half size 0.20–0.33).
 Orders: buy limit 0.1% under the close · stop 4×ATR(1h) · sell all at 2R · out after 96h · never widen the stop. Risk 0.6% majors (0.3% memes), one majors position, 2 majors trades a day, stop for the day at −3R or 3 losses. Spot only.
 
+## Knowledge (never read reference files; ask the library)
+
+`python3 scripts/know.py <topic>` prints ONE entry (≤ ~12 lines) from ~220 short entries (every candle pattern, chart pattern, indicator, Bitcoin/crypto/on-chain/derivatives topic, meme-coin mechanics, day-trading concept) plus every section of the 320-strategy encyclopedia, scoreboard and manual, with **Jarvus's own measured result** (133 signals on 9 coins, 1h and 4h). Reply with its output only.
+`know.py measured [candles|charts|indicators]` = what actually worked · `know.py list [topic]` = what it knows · `--full` = the long version, only if he asks.
+
 ## Other requests (keep replies ≤ 5 lines)
 
 | He says | Run |
 |---|---|
+| teach / what is X / does X work / any strategy | `know.py X` |
 | take this trade? (entry/stop given) | `decide.py --entry E --stop S --target T --gate auto --symbol X` |
 | size | `position_size.py --account A --entry E --stop S --venue ndax` |
 | $X into $Y / how much can I make | `goal.py X Y days` |
 | journal / review | `journal.py add|close` · `journal_stats.py` |
-| backtest / does X work / evidence | `references/jarvus-backtest.md` (grep, read the section only) |
-| revenge, "make it back", 10x, moving stops | grep `## Coach mode` in `references/manual.md`; 3 lines max |
-| anything else (teach, strategies, brokers, memecoin launch) | grep the `## ` heading in `references/manual.md`, read only that section |
+| revenge, "make it back", 10x, moving stops | `know.py "coach mode"`; 3 lines max |
+| win rate / 80% · memecoin launch · API keys | `know.py "80% mode"` · `know.py "meme sleeve"` · `know.py "api keys"` |
 
 Honesty (never break): no invented prices or results; direction is not predictable; the gate says how much, not which way; no profit promises.
 
@@ -549,6 +554,1229 @@ Measured v6.1 outcome (2021–2026 replay, NDAX fees): majors ~1.5 trades a mont
 ## Disclosure
 
 Once per session, five words or fewer ("Educational, not advice."). Do not repeat it every message. Crypto is volatile; most retail day traders lose; Abhi is responsible for his trades.
+
+
+<!-- ===== references/kb-candles.md ===== -->
+
+# Knowledge base: candlesticks
+
+One entry per `### `. Read with `python3 scripts/know.py <name>`, which adds Jarvus's own measured result
+(`references/kb-measured.md`) to entries that have an `id`. "Measured" numbers come only from that file.
+
+### Candlestick basics
+aka: candle, candles, candlestick, ohlc, how to read candles, wick, body, shadow
+What: one candle = one period's Open, High, Low, Close. Body = open→close (green if close > open, red if below). Wicks (shadows) = the high and low beyond the body.
+Read it: the close matters most (who won the period). Long wicks = rejected prices. Big bodies = one side in control. Context (trend, level, volume, timeframe) decides meaning more than the shape.
+Trap: a pattern is only "done" when the candle closes; intrabar shapes change. Crypto trades 24/7, so the gaps many classic patterns need are rare.
+
+### Candle timeframes
+aka: timeframe, 1m 5m 15m 1h 4h daily, which timeframe, multi timeframe candles
+What: the same market drawn with 1-minute to 1-week candles. Higher timeframes carry more weight; lower ones show the entry.
+Use: bias from daily/4h, setup on 1h/15m, trigger on 5m. A 1h pattern against a daily trend is weak.
+Jarvus: decisions use completed 1h candles plus the 4h and daily trend.
+
+### Wicks and rejection
+aka: long wick, shadow, rejection wick, tail, pin
+What: a long wick shows price went there and was pushed back. Lower wick at support = buyers defended; upper wick at resistance = sellers defended.
+Trap: in crypto many wicks are stop-runs/liquidations; a wick through a level that closes back inside is a sweep, not a breakdown.
+
+### Hammer
+id: hammer · aka: hammer candle, bullish pin bar, pin bar bottom
+What: small body near the top, lower wick at least 2× the body, little or no upper wick, after a decline.
+Read it: sellers pushed price down, buyers pushed it back. A possible bottom, not a confirmed one.
+Use: only at support or after a sweep of a low; wait for the next candle to close above the hammer's high; stop under the wick.
+
+### Inverted hammer
+id: inverted_hammer · aka: inverted hammer candle
+What: small body near the bottom, long upper wick (≥ 2× body), after a decline.
+Read it: buyers tried higher and failed, but sellers are tiring. Needs a strong green confirmation candle.
+
+### Hanging man
+id: hanging_man · aka: hanging man candle
+What: hammer shape after a rise.
+Read it: buyers had to defend a dip; a warning, confirmed only if the next candle closes below its body.
+
+### Shooting star
+id: shooting_star · aka: shooting star candle, bearish pin bar, pin bar top
+What: small body near the low, long upper wick (≥ 2× body), after a rise.
+Read it: buyers pushed up and were rejected. Spot traders use it to take profit or not buy, not to short.
+
+### Doji
+aka: doji candle, indecision candle
+What: open ≈ close (tiny body). Indecision.
+Read it: means little alone; after a long run or at a level it warns the move is tiring. Variants: dragonfly, gravestone, long-legged, four-price.
+
+### Doji after a drop
+id: doji_after_drop · aka: doji at bottom
+What: a doji after a 5-bar decline. Possible exhaustion of sellers; needs a green confirmation close.
+
+### Doji after a rise
+id: doji_after_rise · aka: doji at top
+What: a doji after a 5-bar rise. Possible exhaustion of buyers.
+
+### Dragonfly doji
+id: dragonfly_doji · aka: dragonfly
+What: open, close and high at the top, long lower wick. Strong rejection of lower prices; bullish at support.
+
+### Gravestone doji
+id: gravestone_doji · aka: gravestone
+What: open, close and low at the bottom, long upper wick. Rejection of higher prices; bearish at resistance.
+
+### Long-legged doji
+id: long_legged_doji · aka: long legged doji, rickshaw man
+What: tiny body in the middle, long wicks both sides. Big two-way fight; often comes before a large move either way.
+
+### Four-price doji
+aka: four price doji
+What: open = high = low = close. Almost no trading; seen in illiquid coins. Means the market is dead, not a signal.
+
+### Spinning top
+id: spinning_top · aka: spinning top candle
+What: small body, wicks on both sides longer than the body. Indecision; meaningful only at a level or after a run.
+
+### Bullish marubozu
+id: bull_marubozu · aka: marubozu, white marubozu, green marubozu
+What: a big green candle with almost no wicks. Buyers controlled the whole period. Continuation more often than reversal; chasing it buys at the extreme.
+
+### Bearish marubozu
+id: bear_marubozu · aka: black marubozu, red marubozu
+What: a big red candle with almost no wicks. Sellers controlled the whole period.
+
+### Bullish belt hold
+id: bull_belt_hold · aka: belt hold
+What: after a decline, a big green candle that opens at its low and closes near its high.
+
+### Big green candle
+id: big_bull_bar · aka: momentum ignition, expansion candle, wide range bar, elephant bar
+What: a candle at least 2× normal size (ATR) closing strong. Momentum traders follow it; mean-reverters fade it.
+Jarvus: playbook-level momentum entries need the volatility gate LOUD and the 1h/4h trend up.
+
+### Big red candle
+id: big_bear_bar · aka: capitulation candle, flush, liquidation candle
+What: a candle at least 2× normal size closing weak. Often liquidations. Buying it is catching a falling knife unless a reclaim follows.
+
+### Bullish engulfing
+id: bull_engulfing · aka: engulfing, bullish engulfing pattern
+What: after a decline, a red candle followed by a green candle whose body covers the red body.
+Read it: buyers overpowered the prior sellers. Best at support or after a sweep; stop under the pattern low.
+
+### Bearish engulfing
+id: bear_engulfing · aka: bearish engulfing pattern
+What: after a rise, a green candle followed by a red one whose body covers it. A take-profit/avoid signal for spot traders.
+
+### Bullish harami
+id: bull_harami · aka: harami, inside candle bullish
+What: after a decline, a big red candle followed by a small candle whose body sits inside the red body. Selling pressure paused; weaker than engulfing; needs confirmation.
+
+### Bearish harami
+id: bear_harami · aka: bearish harami pattern
+What: after a rise, a big green candle followed by a small body inside it. Buying paused.
+
+### Bullish harami cross
+id: bull_harami_cross · aka: harami cross
+What: a bullish harami whose second candle is a doji. Stronger pause signal than a plain harami.
+
+### Piercing line
+id: piercing_line · aka: piercing pattern
+What: after a decline, a big red candle then a green one that opens at/below the red close and closes above the red body's midpoint (not above its open).
+
+### Dark cloud cover
+id: dark_cloud_cover · aka: dark cloud
+What: after a rise, a big green candle then a red one that opens at/above its close and closes below its midpoint.
+
+### Tweezer bottom
+id: tweezer_bottom · aka: tweezers, tweezer bottoms
+What: two candles with (almost) the same low after a decline, the first red, the second green. A level defended twice.
+
+### Tweezer top
+id: tweezer_top · aka: tweezer tops
+What: two candles with the same high after a rise, green then red. A level rejected twice.
+
+### Bullish kicker
+id: bull_kicker · aka: kicker, kicking pattern
+What: a strong red candle followed by a strong green one that opens above the red's open (a gap). Needs gaps, so it is almost absent on 24/7 crypto charts; seen on stocks and CME futures.
+
+### Outside bar up
+id: outside_bar_up · aka: outside bar, outside reversal, key reversal
+What: a candle whose range covers the prior candle and closes above the prior high.
+
+### Outside bar down
+id: outside_bar_down · aka: bearish outside bar
+What: a candle whose range covers the prior one and closes below the prior low.
+
+### Inside bar
+id: inside_bar · aka: inside day, harami bar, mother bar
+What: a candle entirely within the prior candle's range. Compression: a bigger move often follows, direction unknown.
+
+### Inside bar breakout up
+id: inside_bar_break_up · aka: inside bar breakout
+What: after an inside bar, a close above the mother bar's high. Stop under the mother bar's low or mid.
+
+### Inside bar breakdown
+id: inside_bar_break_down · aka: inside bar breakdown
+What: after an inside bar, a close below the mother bar's low.
+
+### NR7 breakout
+id: nr7_break_up · aka: nr7, nr4, narrow range 7, narrow range breakout
+What: the narrowest candle of the last 7 (NR7), then a close above its high. Volatility contraction → expansion idea (Crabel).
+
+### Morning star
+id: morning_star · aka: morning star pattern
+What: three candles after a decline: a big red, a small-bodied candle, then a green that closes above the red's midpoint. A classic bottom pattern.
+
+### Evening star
+id: evening_star · aka: evening star pattern
+What: three candles after a rise: a big green, a small body, then a red closing below the green's midpoint.
+
+### Morning doji star
+id: morning_doji_star · aka: doji star bottom
+What: a morning star whose middle candle is a doji.
+
+### Evening doji star
+id: evening_doji_star · aka: doji star top
+What: an evening star whose middle candle is a doji.
+
+### Abandoned baby
+aka: abandoned baby bottom, abandoned baby top, island doji
+What: a doji that gaps away from the candles on both sides (a one-candle island). Requires gaps, so it is essentially absent on 24/7 crypto; not measured.
+
+### Three white soldiers
+id: three_white_soldiers · aka: 3 white soldiers
+What: three strong green candles in a row, each closing higher and opening inside the prior body. Shows steady buying; late in a move it can mark exhaustion.
+
+### Three black crows
+id: three_black_crows · aka: 3 black crows
+What: three strong red candles in a row, each closing lower. Steady selling.
+
+### Advance block
+aka: advance block, deliberation, stalled pattern
+What: three green candles with shrinking bodies and growing upper wicks. Buying is tiring. Not measured.
+
+### Three inside up
+id: three_inside_up · aka: three inside up pattern
+What: a bullish harami followed by a candle closing above the first candle's open (the harami, confirmed).
+
+### Three inside down
+id: three_inside_down · aka: three inside down pattern
+What: a bearish harami followed by a close below the first candle's open.
+
+### Three outside up
+id: three_outside_up · aka: three outside up pattern
+What: a bullish engulfing followed by a higher close (the engulfing, confirmed).
+
+### Three outside down
+id: three_outside_down · aka: three outside down pattern
+What: a bearish engulfing followed by a lower close.
+
+### Bullish three-line strike
+id: bull_three_line_strike · aka: three line strike
+What: three black crows, then one big green candle that wipes them out (closes above the first crow's open). Rare.
+
+### Bearish three-line strike
+id: bear_three_line_strike · aka: bearish three line strike
+What: three white soldiers, then one red candle that closes below the first soldier's open. Rare.
+
+### Rising three methods
+id: rising_three · aka: rising three, mat hold
+What: a big green candle, three small candles drifting inside its range, then a green close above it. A continuation pattern (a tiny bull flag).
+
+### Falling three methods
+id: falling_three · aka: falling three
+What: a big red candle, three small candles inside its range, then a red close below it. Continuation down.
+
+### Rare gap-based patterns
+aka: tasuki gap, upside gap two crows, on neck, in neck, thrusting, separating lines, stick sandwich, homing pigeon, ladder bottom, concealing baby swallow, unique three river, tri-star, side by side white lines
+What: the long tail of Japanese patterns (Nison, Bulkowski). Most need opening gaps or exact open/close relationships that 24/7 crypto rarely produces, so they fire a handful of times. Jarvus did not measure them; treat them as curiosities, not signals.
+
+### Heikin-Ashi candles
+aka: heikin ashi, ha candles
+What: smoothed candles: HA close = average of O/H/L/C; HA open = midpoint of the previous HA body. Trends show as runs of one colour with no opposite wick.
+Trap: HA prices are not real prices; never place orders at HA levels. See also "Heikin-Ashi turns green".
+
+### Renko, Kagi, Point & Figure, range bars
+aka: renko, kagi, point and figure, p&f, range bars, line break
+What: charts built from price movement instead of time (a new brick/column only after a set move). They hide noise and time.
+Trap: backtests on Renko often cheat by using brick prices you could not have traded. Not measured.
+
+### Candle patterns: what the evidence says
+aka: do candlestick patterns work, candle pattern win rate, are candlestick patterns reliable
+What: an academic test on Dow stocks (Marshall, Young & Rose, 2006) found candlestick strategies added no value; Bulkowski's catalogue shows big differences between patterns. Jarvus measured 45 crypto candle patterns itself (`python3 scripts/know.py measured candles`, full table `references/kb-measured.md`): only the big green candle on 4h beat random entries and made money in both halves.
+Use: patterns are entry triggers at a level, inside a plan with a stop and a cost check — never a reason to trade by themselves.
+
+
+<!-- ===== references/kb-chart-patterns.md ===== -->
+
+# Knowledge base: chart patterns, price structure, levels, SMC/ICT, Wyckoff, Elliott, Fibonacci, harmonics
+
+One entry per `### `. `python3 scripts/know.py <name>` prints one entry plus Jarvus's measured result when it has an `id`.
+
+### Support and resistance
+aka: support, resistance, s/r, levels, key levels, sr flip, role reversal
+What: prices where buying (support) or selling (resistance) showed up before: prior swing highs/lows, range edges, round numbers, prior-day high/low, high-volume nodes.
+Use: buy near support with a stop just beyond it; after a clean break, old resistance often becomes support (flip).
+Trap: levels are zones, not lines; crypto often sweeps them (wick through, close back) before reversing.
+
+### Trendlines and channels
+aka: trendline, trend line, channel, ascending channel, descending channel, parallel channel
+What: a line through two or more swing lows (uptrend) or highs (downtrend); a channel adds a parallel line on the other side.
+Trap: trendlines are subjective (two traders draw two lines). Breaks are frequently false. Jarvus measures structure with swing points instead.
+
+### Market structure (HH/HL, LH/LL)
+aka: market structure, higher highs higher lows, lower highs lower lows, swing structure, trend structure
+What: uptrend = higher highs and higher lows; downtrend = lower highs and lower lows; range = neither.
+Use: trade with the structure of the higher timeframe; a broken structure is the first warning of a trend change.
+
+### Break of structure (BOS)
+id: bos_up · aka: bos, break of structure
+What: in an uptrend (HH/HL), a close above the last swing high: continuation.
+
+### Change of character (CHoCH)
+id: choch_up · aka: choch, change of character, mss, market structure shift
+What: in a downtrend (LH/LL), the first close above the last lower high: the first sign the trend may be turning up. Unconfirmed until a higher low forms.
+
+### Change of character down
+id: choch_down · aka: bearish choch, bearish mss
+What: in an uptrend, the first close below the last higher low. For spot: protect profits / stop buying.
+
+### Double bottom
+id: double_bottom · aka: w bottom, double bottom pattern
+What: two similar lows with a peak (neckline) between; confirmed by a close above the neckline. Classic target = neckline + (neckline − low).
+
+### Double top
+id: double_top · aka: m top, double top pattern
+What: two similar highs with a trough between; confirmed by a close below the neckline.
+
+### Triple top and bottom
+aka: triple top, triple bottom
+What: like double tops/bottoms with a third test. Rarer; same neckline logic. Not measured separately.
+
+### Inverse head and shoulders
+id: inverse_hs · aka: inverse head and shoulders, ihs, inverted head and shoulders
+What: three lows, the middle (head) lowest, shoulders similar; confirmed by a close above the neckline.
+
+### Head and shoulders top
+id: hs_top · aka: head and shoulders, h&s, hns
+What: three highs, the middle highest; confirmed by a close below the neckline. Spot reading: sell/avoid.
+
+### Ascending triangle
+id: asc_triangle · aka: ascending triangle, flat top triangle
+What: flat highs with rising lows; buyers pressing a fixed supply. Breakout = close above the flat top.
+
+### Descending triangle
+id: desc_triangle · aka: descending triangle, flat bottom triangle
+What: flat lows with falling highs; breakdown = close below the flat bottom.
+
+### Symmetrical triangle
+id: sym_triangle_up · aka: symmetrical triangle, symmetric triangle, coil
+What: falling highs and rising lows converging; breakout direction is not known in advance.
+
+### Falling wedge
+id: falling_wedge · aka: falling wedge, descending wedge
+What: highs and lows both falling, converging; traditionally bullish on an upside break.
+
+### Rising wedge
+id: rising_wedge · aka: rising wedge, ascending wedge
+What: highs and lows both rising, converging; traditionally bearish on a downside break.
+
+### Broadening formation
+aka: broadening wedge, megaphone, expanding triangle
+What: higher highs and lower lows at once: volatility expanding, no control. Not measured.
+
+### Bull flag
+id: bull_flag · aka: flag, bull flag, high tight flag, pennant
+What: a sharp rise (pole), a short tight pause drifting sideways/down (flag) or converging (pennant), then a break up. Classic target = pole length added to the breakout.
+
+### Bear flag
+id: bear_flag · aka: bear flag, bear pennant
+What: a sharp drop, a short pause, then a break down.
+
+### Cup and handle
+aka: cup and handle, cup with handle, rounding bottom, saucer
+What: a rounded U-shaped base, a small pullback (handle), then a breakout over the rim (O'Neil). Slow, multi-week pattern; hard to define mechanically. Not measured by Jarvus.
+
+### Rectangle / range
+aka: rectangle, range, trading range, box, consolidation, sideways
+What: price bouncing between a flat top and bottom. Inside: fade the edges with tight risk; outside: trade the confirmed break or the failed break (sweep).
+Jarvus: range-edge fades are in the strategy encyclopedia; the volatility gate decides whether a range is worth trading at all.
+
+### Measured move
+aka: measured move, abcd, ab=cd
+What: the idea that a second leg tends to equal the first. Used for targets, not entries. No evidence it beats a fixed R target.
+
+### V-reversal and island reversal
+aka: v bottom, v reversal, spike reversal, island reversal
+What: a sharp reversal with no base, often after liquidations. Hard to trade in real time; you only know it afterwards.
+
+### Gaps and CME gaps
+aka: gap, cme gap, gap fill, weekend gap
+What: crypto spot trades 24/7, so true gaps appear on CME Bitcoin futures (historically closed on weekends). "CME gaps always fill" is folklore: many fill, some take months, and the claim is easy to cherry-pick.
+
+### Fair value gap (FVG)
+id: fvg_retest · aka: fvg, fair value gap, imbalance, inefficiency, liquidity void
+What: a 3-candle move where candle 3's low is above candle 1's high (bullish); the gap is said to be "rebalanced" later. Entry idea: first return into the gap that holds.
+
+### Order block
+id: ob_retest · aka: order block, ob, bullish order block, institutional candle
+What: in ICT/SMC terms, the last opposite candle before a strong move that breaks structure; price returning to it is the entry idea.
+Trap: the definition is loose; almost any chart can be annotated after the fact.
+
+### Breaker and mitigation blocks
+aka: breaker block, breaker, mitigation block, rejection block, propulsion block
+What: ICT variants of the order block (a failed order block that flips role, etc.). Same caveat: discretionary, not measured.
+
+### Liquidity, sweeps and stop hunts
+aka: liquidity, liquidity grab, liquidity sweep, stop hunt, equal highs, equal lows, buy side liquidity, sell side liquidity, inducement, judas swing, turtle soup
+What: stops cluster beyond obvious highs/lows (equal highs/lows, prior-day high/low). Price often runs them, then reverses. Turtle soup (Connors/Raschke) = fade a new 20-bar low that fails.
+Jarvus: P4 sweep reclaim and the prior-day-low sweep are measured versions.
+
+### Prior-day low sweep
+id: pdl_sweep · aka: pdl, previous day low, pdl sweep, sweep of yesterday's low
+What: price trades below yesterday's low, then closes back above it.
+
+### Prior-day high breakout
+id: pdh_break · aka: pdh, previous day high, pdh breakout
+What: the first close above yesterday's high that day.
+
+### Prior-day high rejection
+id: pdh_reject · aka: pdh sweep, failed breakout above yesterday's high
+What: price trades above yesterday's high and closes back below it.
+
+### Premium, discount and OTE
+aka: premium, discount, ote, optimal trade entry, equilibrium
+What: ICT terms: above the 50% of a range = premium (sell zone), below = discount (buy zone); OTE = the 62–79% retracement. A Fibonacci retracement by another name.
+
+### ICT concepts
+aka: ict, inner circle trader, smc, smart money concepts, smart money, kill zone, killzone, silver bullet, power of 3, po3, amd, accumulation manipulation distribution, market maker model
+What: a popular discretionary vocabulary (Michael Huddleston): liquidity, FVGs, order blocks, kill zones (session windows), "Power of 3" (accumulate, manipulate/sweep, distribute).
+Evidence: no audited track record; Jarvus measured the mechanical parts (FVG retest, order-block retest, BOS/CHoCH, sweeps): see their entries. Kill zones overlap with the session effect Jarvus already uses.
+
+### Wyckoff method
+aka: wyckoff, accumulation, distribution, spring, upthrust, utad, composite man, wyckoff schematic
+What: phases of a range: accumulation (selling climax, test, spring = false break down, sign of strength, markup) and distribution (buying climax, upthrust = false break up, markdown).
+Use: a spring is a sweep-and-reclaim of the range low; an upthrust is the reverse. Phase labels are only clear in hindsight.
+
+### Elliott wave
+aka: elliott, elliott wave, wave count, impulse wave, abc correction, wave 3
+What: markets move in 5-wave impulses and 3-wave corrections (Elliott, 1930s). Wave 3 is "never the shortest".
+Trap: counts are subjective and get re-labelled after the fact; not testable as written. Not measured.
+
+### Fibonacci retracement
+id: fib_618 · aka: fibonacci, fib, fibs, golden ratio, 0.618, 61.8, 0.5 retracement, golden pocket
+What: retracement levels 23.6/38.2/50/61.8/78.6% of a swing; "golden pocket" = 61.8–65%.
+Trap: with five levels, price is always near one. Use only with another reason (prior level, trend).
+
+### Fibonacci extensions
+aka: fib extension, 1.618, 1.272, fibonacci targets
+What: projected targets beyond a swing (127.2%, 161.8%). Targets, not signals.
+
+### Harmonic patterns
+aka: harmonic, harmonics, gartley, bat pattern, butterfly pattern, crab pattern, shark pattern, cypher, xabcd
+What: XABCD shapes with Fibonacci-ratio legs (Gartley 1935; Carney). Entry at the "potential reversal zone" D.
+Trap: many ratio tolerances = many chances to fit noise. Not measured.
+
+### Floor pivot points
+id: pivot_s1 · aka: pivot points, pivots, floor pivots, s1, s2, r1, r2, camarilla, woodie pivots, fibonacci pivots
+What: P = (yesterday's high + low + close)/3; R1 = 2P − low; S1 = 2P − high. Camarilla/Woodie/Fib are variants.
+Use: intraday reference levels; meaning comes from reactions, not the formula.
+
+### Pivot R1 rejection
+id: pivot_r1_reject · aka: r1 rejection
+What: price trades above R1 and closes back below it.
+
+### RSI bullish divergence
+id: rsi_bull_div · aka: bullish divergence, positive divergence, hidden divergence
+What: price makes a lower low while RSI makes a higher low: momentum fading on the way down. Hidden divergence = the reverse in a trend (continuation).
+Trap: divergences can repeat several times before a turn.
+
+### RSI bearish divergence
+id: rsi_bear_div · aka: bearish divergence, negative divergence
+What: price makes a higher high while RSI makes a lower high.
+
+### Supply and demand zones
+aka: supply zone, demand zone, supply and demand, rally base rally, drop base drop
+What: the base (small candles) before a sharp move away; price returning to it is the entry idea. Close cousin of order blocks; discretionary. Not measured.
+
+### Round numbers
+aka: round number, psychological level, big figure, 100k
+What: prices like $100,000 BTC attract orders and attention; expect reactions and sweeps around them.
+
+### Dow theory
+aka: dow theory, primary trend, secondary trend
+What: trends have primary/secondary/minor moves; a trend persists until clear reversal signals; volume should confirm. The root of modern trend-following.
+
+### Chart patterns: what the evidence says
+aka: do chart patterns work, chart pattern win rate, pattern reliability
+What: Bulkowski's catalogues report pattern statistics on stocks; Lo, Mamaysky & Wang (2000) found some patterns carry modest information. Jarvus measured 24 crypto chart-pattern and structure signals: none both beat random entries and made money after fees in both halves (`references/kb-measured.md`).
+
+
+<!-- ===== references/kb-indicators.md ===== -->
+
+# Knowledge base: indicators
+
+One entry per `### `. `python3 scripts/know.py <name>` prints one entry plus, for each `id`, Jarvus's measured result.
+Indicators are calculations on past prices/volume: they describe, they do not predict. One per job: trend (moving
+averages), momentum (RSI or MACD), volatility (ATR, bands), participation (volume, OBV), value (VWAP).
+
+### Moving averages (SMA, EMA)
+id: ema_9_21_up, ema_9_21_down · aka: moving average, ma, sma, ema, simple moving average, exponential moving average, ema cross, ma crossover, 9 21 ema, 20 ema, 50 ema
+What: average close of the last N bars. SMA weights equally; EMA weights recent bars more (reacts faster). Common: 9/21 (short), 20/50 (swing), 200 (long-term).
+Use: trend filter (price above a rising 50/200 = uptrend), dynamic support in trends, crossovers as slow trend signals.
+Trap: crossovers lag; in ranges they whipsaw.
+
+### Weighted, Hull and other averages
+aka: wma, hma, hull moving average, vwma, dema, tema, kama, alma, smma, rma, lsma, linear regression line
+What: variants that reduce lag (Hull, DEMA/TEMA), adapt to volatility (KAMA), weight by volume (VWMA) or fit a regression line (LSMA). Same job as an EMA; none measured as a different edge by Jarvus.
+
+### Golden cross and death cross
+id: golden_cross, death_cross · aka: golden cross, death cross, 50 200 cross
+What: the 50-period average crossing above (golden) or below (death) the 200. On daily charts a famous long-term trend signal; it lags by weeks.
+
+### 200 EMA / 200-day average
+id: ema200_reclaim, ema200_lose · aka: 200 ema, 200 sma, 200 day moving average, 200dma, 200 week moving average, 200wma
+What: the long-term trend line. Above it = bull regime, below = bear regime.
+Jarvus: memes are only allowed while BTC is above its 200-day average (backtested rule).
+
+### RSI (Relative Strength Index)
+id: rsi_os_30, rsi_up_30, rsi_ob_70, rsi_dn_70 · aka: rsi, relative strength index, rsi 14, overbought, oversold, rsi 30 70
+What: 0–100 momentum oscillator (Wilder, 1978): average gains vs average losses over 14 bars. Classic: > 70 overbought, < 30 oversold.
+Use: in ranges, extremes fade; in trends, RSI stays "overbought" while price keeps rising (40–80 band in uptrends).
+Jarvus measured: in crypto, RSI above 70 was followed by BETTER-than-average results on 4h (momentum), so "overbought = sell" did not hold.
+
+### RSI(2) (Connors)
+id: rsi2_10, rsi2_connors, p_rsi2 · aka: rsi2, rsi 2, connors rsi, larry connors
+What: a 2-period RSI used for short pullbacks: buy when RSI(2) < 10 while price is above the 200-day average, sell on strength (Connors & Alvarez). Built for stocks.
+
+### MACD
+id: macd_up, macd_up_below0, macd_zero_up, macd_down, macd_hist_turn · aka: macd, moving average convergence divergence, macd cross, signal line, histogram
+What: MACD line = EMA(12) − EMA(26); signal = EMA(9) of MACD; histogram = MACD − signal (Appel). Crosses and zero-line crosses are momentum shifts; divergences warn of fading momentum.
+Trap: it is two moving averages, so it lags like them.
+
+### Bollinger Bands
+id: bb_below, bb_reentry, bb_above, bb_squeeze_up · aka: bollinger, bollinger bands, bb, %b, bandwidth, band squeeze, bollinger squeeze
+What: SMA(20) ± 2 standard deviations (John Bollinger). %B = where price sits in the bands; BandWidth = band width / middle. A squeeze (narrow bands) precedes expansion, direction unknown.
+Use: in ranges, closes outside the bands tend to revert; in trends, price "walks the band".
+
+### Keltner Channels
+id: keltner_up, keltner_below · aka: keltner, keltner channel, kc
+What: EMA(20) ± 2× ATR. Smoother than Bollinger; a close outside signals strong momentum (or a stretch to fade in ranges).
+
+### TTM Squeeze
+id: ttm_squeeze · aka: ttm squeeze, squeeze, squeeze momentum, lazybear squeeze
+What: Bollinger Bands inside the Keltner Channel = squeeze on (low volatility); when they come back out, the squeeze "fires" (John Carter). Direction from momentum.
+
+### ATR (Average True Range)
+id: stretch_ema20 · aka: atr, average true range, true range, volatility, chandelier exit, atr stop
+What: average bar range including gaps (Wilder), the unit of volatility. Stops and targets in ATR adapt to the market. Chandelier exit = highest high − 3× ATR (trailing stop).
+Jarvus: stop = 4× ATR(1h); the measured signal here is "close stretched 2.5 ATR below the 20 EMA" (a mean-reversion buy).
+
+### Stochastic oscillator
+id: stoch_up, stoch_down · aka: stochastic, stoch, stochastics, %k %d, slow stochastic
+What: where the close sits in the last 14 bars' range, 0–100 (Lane). < 20 oversold, > 80 overbought; %K/%D crosses as triggers.
+
+### Stochastic RSI
+id: stochrsi_up · aka: stoch rsi, stochrsi
+What: the stochastic formula applied to RSI (0–1). Very fast and noisy; popular on crypto charts.
+
+### Williams %R
+id: willr_up · aka: williams r, williams %r, %r
+What: like the stochastic, inverted: 0 to −100; below −80 oversold, above −20 overbought (Larry Williams).
+
+### CCI (Commodity Channel Index)
+id: cci_up, cci_break · aka: cci, commodity channel index
+What: distance of the typical price from its average in mean-deviation units (Lambert). ±100 are the usual triggers: above +100 = strong momentum, back above −100 = recovery from oversold.
+
+### MFI (Money Flow Index)
+id: mfi_os, mfi_ob · aka: mfi, money flow index, volume rsi
+What: an RSI that uses price × volume. < 20 oversold, > 80 overbought.
+
+### ADX and DMI
+id: adx_di_up, holy_grail · aka: adx, dmi, +di, -di, directional movement, trend strength, holy grail
+What: +DI/−DI measure up vs down movement; ADX (0–100) measures trend strength regardless of direction (Wilder). ADX > 25 = trending, < 20 = ranging. Raschke's "Holy Grail": ADX > 30 and a pullback to the 20 EMA.
+
+### Parabolic SAR
+id: psar_up, psar_down · aka: parabolic sar, psar, sar, stop and reverse
+What: dots that trail price and accelerate in a trend (Wilder); a flip to the other side = trend change / trailing-stop exit. Whipsaws in ranges.
+
+### Supertrend
+id: supertrend_up, supertrend_down · aka: supertrend, super trend
+What: an ATR band (10, 3) that flips between support below price (uptrend) and resistance above (downtrend). Used as a trailing stop and trend filter.
+
+### Ichimoku Cloud
+id: ichi_tk_up, ichi_cloud_up, ichi_cloud_down · aka: ichimoku, ichimoku cloud, kumo, tenkan, kijun, senkou span, chikou, tk cross
+What: Tenkan (9) and Kijun (26) midpoints, a cloud of two spans plotted 26 bars ahead, and a lagging line (Hosoda). Above the cloud = bullish regime; TK cross = trigger.
+Note: designed for daily stock charts with 6-day weeks; crypto users often use 20/60/120 settings.
+
+### Aroon
+id: aroon_up · aka: aroon, aroon oscillator
+What: how many bars since the 25-bar high (Aroon up) and low (Aroon down), as 0–100. Up crossing above down = new uptrend.
+
+### Donchian channels
+id: donchian20, donchian55, donchian20_down · aka: donchian, donchian channel, turtle trading, turtles, channel breakout, 20 day breakout, 55 day breakout
+What: highest high and lowest low of the last N bars. The Turtle Traders (Dennis/Eckhardt, 1980s) bought 20- and 55-day breakouts with ATR-based sizing.
+
+### OBV (On-Balance Volume)
+id: obv_lead, obv_confirm · aka: obv, on balance volume, accumulation distribution, a/d line, chaikin money flow, cmf, chaikin oscillator
+What: running total of volume, added on up closes and subtracted on down closes (Granville). Rising OBV with flat price = quiet buying. A/D line and Chaikin Money Flow weight volume by where the close sits in the range.
+
+### Volume and relative volume
+id: vol_spike_bull, vol_spike_bear · aka: volume, rvol, relative volume, volume spike, high volume, volume confirmation
+What: RVOL = volume ÷ its average. Breakouts on high volume are more trusted; spikes on red candles are often liquidations/capitulation.
+Trap: crypto exchange volume includes wash trading on some venues; compare the same venue only.
+
+### VWAP
+id: vwap_reclaim, vwap_lose · aka: vwap, volume weighted average price, anchored vwap, avwap, vwap bands
+What: average price weighted by volume, usually from the session start (or anchored to a chosen candle). Institutions benchmark fills to it; above VWAP = buyers in control for the session.
+Jarvus measured a rolling 24h VWAP because crypto has no session open.
+
+### Heikin-Ashi turns
+id: ha_green, ha_red · aka: heikin ashi signal, ha flip
+What: the first green (red) Heikin-Ashi candle after a run of the other colour: a smoothed trend-change trigger. Lags by design.
+
+### Rate of change and momentum
+id: rally_24h, drop_24h · aka: roc, rate of change, momentum indicator, time series momentum, 24h change
+What: % change over N bars. Time-series momentum (what went up keeps going up for a while) is one of the best documented effects across markets, including crypto. Jarvus measured "big 24h rally" (momentum) and "big 24h drop" (dip).
+
+### Runs of candles
+id: five_green, five_red · aka: consecutive candles, five green candles, winning streak, losing streak
+What: N candles in a row of one colour. Momentum traders follow streaks; mean-reverters fade them.
+
+### Z-score
+id: zscore_m2 · aka: z score, standard score, standard deviation from mean
+What: (price − its 50-bar average) ÷ the 50-bar standard deviation; below −2 = statistically stretched low. A mean-reversion trigger.
+
+### Oscillators Jarvus did not measure
+aka: ultimate oscillator, trix, kst, know sure thing, awesome oscillator, accelerator oscillator, fisher transform, elder ray, force index, vortex, choppiness index, chop, coppock curve, dpo, detrended price oscillator, cmo, chande momentum, ppo, tsi, true strength index, rvi, relative vigor, schaff trend cycle, stc, wavetrend, market cipher, kdj, mass index, ulcer index, ehlers
+What: more ways to combine price momentum, smoothing and volatility. Most are close relatives of RSI/MACD/stochastics; none adds information the price did not already contain. The choppiness index (high = range) is a regime filter similar to ADX < 20.
+Rule: test one mechanically before trusting it (`Jarvus backtest`); never stack five oscillators that say the same thing.
+
+### Trend tools Jarvus did not measure
+aka: williams alligator, alligator, gator, fractals, williams fractals, zigzag, linear regression channel, regression channel, envelope, ma envelope, price channel, standard error bands, starc bands
+What: more ways to draw trends, swings and bands. ZigZag and fractals mark swing points (Jarvus uses 2-bar fractals for structure); ZigZag repaints, so it cannot be backtested honestly.
+
+### Volatility measures
+aka: historical volatility, realized volatility, standard deviation, implied volatility, iv, dvol, volatility index, beta
+What: how much price moves. Realized = measured from past returns; implied = priced into options (Deribit DVOL is crypto's VIX). Volatility clusters, which is why Jarvus's volatility gate can forecast it while direction stays unpredictable.
+
+### Which indicator is best
+aka: best indicator, most accurate indicator, best indicator for crypto, best indicator for day trading, indicator win rate
+What: none predicts direction reliably. Jarvus measured 59 crypto indicator signals (`references/kb-measured.md`): momentum/breakout signals on 4h candles (big green candle, volume spike, RSI above 70, Donchian 55, Keltner breakout) beat random entries and made money in both halves on at least one group; classic "oversold = buy" signals did not.
+Use: one trend filter + one trigger + a stop in ATR + a cost check. Jarvus's volatility gate (how much, not which way) is the measured edge.
+
+
+<!-- ===== references/kb-crypto.md ===== -->
+
+# Knowledge base: Bitcoin, crypto markets, on-chain, derivatives, cycles, Canada
+
+One entry per `### `. Facts here are stable background; anything that changes (fees, listings, rules, ETF flows)
+must be checked live before it is quoted. `More:` points to the long reference.
+
+### Bitcoin basics
+aka: bitcoin, btc, what is bitcoin, satoshi, 21 million, supply cap, blockchain
+What: the first cryptocurrency (Satoshi Nakamoto, 2009). Fixed supply cap of 21 million BTC; new coins come from mining; a block about every 10 minutes; 1 BTC = 100,000,000 satoshis.
+Market: the most liquid crypto; it leads the rest. Alts and memes move as leveraged BTC.
+
+### Bitcoin halving
+aka: halving, halvening, block reward, 2024 halving, 2028 halving
+What: every 210,000 blocks (about 4 years) the mining reward halves. April 2024: 6.25 → 3.125 BTC per block; the next is expected around 2028.
+Trap: past halvings preceded big bull runs, but with 4 data points this is a story, not a statistic. Supply cuts are known in advance.
+
+### Four-year cycle
+aka: crypto cycle, bitcoin cycle, 4 year cycle, bull market, bear market, cycle top, cycle bottom
+What: past BTC cycles (2013, 2017, 2021) peaked roughly 12–18 months after a halving, then fell 75–85%. Too few cycles to rely on; ETFs and macro liquidity may change the pattern.
+More: regimes-and-cycles.md §5.
+
+### Mining, hashrate and difficulty
+aka: mining, miners, hashrate, hash rate, difficulty, difficulty adjustment, miner capitulation, hash ribbons, puell multiple
+What: miners secure the network; hashrate = total computing power; difficulty adjusts every 2,016 blocks to keep 10-minute blocks. Hash ribbons (30- vs 60-day hashrate averages) flag miner capitulation; Puell multiple = daily issuance value ÷ its 1-year average. Slow, cycle-scale signals; useless for day trading.
+
+### Ethereum
+aka: ethereum, eth, ether, the merge, proof of stake, eip-1559, gas, smart contracts
+What: the main smart-contract chain. Proof of stake since The Merge (Sept 2022); EIP-1559 (2021) burns part of every fee. Gas = the fee for computation. ETH/BTC is the standard gauge of risk appetite beyond Bitcoin.
+
+### Solana
+aka: solana, sol
+What: a fast, low-fee chain and the home of most memecoin trading (pump.fun, Raydium, Jupiter). Had several network outages in 2021–2023. SOL is high-beta to BTC.
+
+### Altcoins
+aka: altcoin, alts, alt season, altseason, total2, total3, alt rotation
+What: everything except BTC. Usually 1.5–3× BTC's moves (memes 4–10×). "Alt season" = alts outperforming BTC, typically late in a bull run when BTC dominance falls. TOTAL2/TOTAL3 = crypto market cap excluding BTC (and ETH).
+More: altcoins-and-memecoins.md.
+
+### Bitcoin dominance
+aka: btc dominance, btc.d, dominance, eth btc ratio, ethbtc
+What: BTC's share of total crypto market cap. Rising = money hiding in BTC (risk-off within crypto); falling with rising prices = alt rotation.
+
+### Stablecoins
+aka: stablecoin, usdt, tether, usdc, circle, dai, stablecoin supply, depeg
+What: tokens pegged to $1. Growing stablecoin supply = dry powder entering crypto. Depegs happen (UST collapsed in May 2022; USDC briefly depegged in March 2023).
+Canada: some stablecoins (notably USDT) are restricted on Canadian-registered platforms; check what yours lists.
+
+### Spot vs perpetual futures
+aka: spot, perps, perpetual, perpetual swap, futures, derivatives, leverage, margin
+What: spot = you own the coin. Perps = leveraged contracts with no expiry, kept near spot by funding payments. Leverage multiplies gains and losses and adds liquidation.
+Jarvus: spot only, no leverage; offshore perps are not available to Canadian retail. Perps data is used as information.
+More: execution-and-order-types.md §5.
+
+### Funding rate
+aka: funding, funding rate, negative funding, positive funding, funding flip
+What: periodic payment between perp longs and shorts (commonly every 8 hours; some venues hourly). Positive = longs pay (crowded long); negative = shorts pay (crowded short). Extreme funding warns of a squeeze against the crowd.
+More: crypto-market-data.md §1.
+
+### Open interest
+aka: open interest, oi, oi spike, rising oi
+What: total open derivative contracts. Price up + OI up = new longs (fuel for both continuation and liquidation); price up + OI down = shorts covering. Big OI with flat price = a coiled spring.
+More: crypto-market-data.md §2.
+
+### Liquidations
+aka: liquidation, liquidations, liquidation cascade, long squeeze, short squeeze, liquidation map, liquidation heatmap, rekt
+What: forced closing of leveraged positions. Cascades create the long wicks crypto is known for. Heatmaps estimate where liquidations cluster (estimates, not facts).
+More: crypto-market-data.md §3.
+
+### Basis and the futures premium
+aka: basis, futures premium, contango, backwardation, cash and carry, annualized basis
+What: futures price − spot price. High positive basis = leveraged bullish demand; negative = fear. Cash-and-carry traders capture it market-neutral.
+
+### Long/short ratio
+aka: long short ratio, l/s ratio, top trader ratio
+What: share of accounts (or positions) long vs short on a venue. A crowding gauge, not a direction signal; it differs by venue and by account vs position.
+
+### Options and implied volatility
+aka: options, crypto options, deribit, implied volatility, iv, dvol, max pain, put call ratio, skew, options expiry
+What: Deribit dominates crypto options. DVOL = BTC implied volatility index. Big monthly/quarterly expiries (last Friday, 08:00 UTC) can pin or release price. "Max pain" is a popular but weak idea.
+
+### Bitcoin ETFs
+aka: etf, bitcoin etf, spot etf, etf flows, ibit, gbtc, ethereum etf
+What: US spot Bitcoin ETFs began trading in January 2024, spot Ether ETFs in July 2024 (Canada had spot BTC ETFs from 2021). Daily net flows are watched as institutional demand; they report after the US close, so they describe yesterday.
+
+### CME futures and gaps
+aka: cme, cme futures, cme gap, cme bitcoin futures
+What: regulated BTC/ETH futures in Chicago, historically closed on weekends, so their charts show weekend "gaps". Check current trading hours; "every gap fills" is folklore.
+
+### Coinbase premium and regional premiums
+aka: coinbase premium, kimchi premium, premium index, us premium
+What: BTC price on Coinbase (US buyers) minus Binance (global), or Korean exchanges minus global (kimchi premium). A positive Coinbase premium = US demand. Information only.
+
+### On-chain metrics
+aka: on chain, onchain, mvrv, mvrv z score, sopr, nupl, realized price, realized cap, exchange flows, exchange netflow, exchange reserves, whale wallets, long term holders, lth, sth, glassnode, cryptoquant
+What: blockchain-derived data. MVRV = market cap ÷ realized cap (high = holders in big profit, cycle-top territory); SOPR = profit ratio of coins moved; NUPL = unrealized profit; realized price = average cost basis; exchange inflows = potential selling.
+Use: cycle-scale context (weeks to months). Too slow and too revised for intraday trading.
+
+### Cycle-top and bottom indicators
+aka: pi cycle top, pi cycle, 200 week moving average, rainbow chart, stock to flow, s2f, golden ratio multiplier, mayer multiple
+What: Pi Cycle (111-day MA vs 2× 350-day MA), 200-week MA (historically near cycle lows), Mayer multiple (price ÷ 200-day MA), the Rainbow chart (a meme), stock-to-flow (its 2021 predictions failed badly). Few cycles = heavy curve-fitting risk.
+
+### Macro drivers
+aka: macro, fed, fomc, interest rates, cpi, inflation, nfp, jobs report, dxy, dollar, liquidity, m2, rate cuts, nasdaq correlation
+What: crypto trades as a risk asset: easier money (rate cuts, rising liquidity, weaker dollar) tends to help, tightening hurts. CPI, FOMC and jobs reports move it within minutes.
+Jarvus: no new trade 30 minutes either side of a tier-1 event (`scripts/events.py`).
+More: crypto-market-data.md §8–9.
+
+### Trading sessions and the crypto clock
+aka: sessions, asia session, london session, new york session, ny open, us open, weekend, daily close, weekly close, monday
+What: crypto runs 24/7 but volume follows Asia → London → New York; the London–New York overlap (about 7:30–10:00 AM MT) is busiest. Weekends are thinner; the daily close is 00:00 UTC (6 PM MDT / 5 PM MST).
+Jarvus: no new majors trades on weekends (measured zero edge).
+
+### Tokenomics, unlocks and FDV
+aka: tokenomics, token unlock, unlock, vesting, fdv, fully diluted valuation, circulating supply, emissions, inflation, market cap
+What: market cap = price × circulating supply; FDV = price × total supply. Big unlocks add supply (team/VC tokens) and often weigh on price around the date.
+Jarvus: no alt trade with an unlock inside 72 hours.
+
+### DeFi, DEXes and AMMs
+aka: defi, dex, amm, uniswap, raydium, jupiter, liquidity pool, lp, impermanent loss, yield farming, staking, liquid staking, restaking
+What: on-chain exchanges where trades price against a pool (x·y = k). Liquidity providers earn fees but suffer impermanent loss when prices move. Staking earns protocol rewards with lock-up and slashing risk.
+Risk: smart-contract bugs, hacks, oracle attacks, bridge exploits.
+
+### MEV and sandwich attacks
+aka: mev, sandwich, sandwich attack, frontrun, front running, jito, priority fee
+What: bots reorder or wrap your DEX trade to take value from it (buy before you, sell after). Defence: tight slippage limits, MEV-protected routes/RPCs, smaller orders in thin pools.
+
+### Wallets and self-custody
+aka: wallet, hot wallet, cold wallet, hardware wallet, seed phrase, private key, phantom, metamask, ledger, not your keys
+What: a wallet holds keys, not coins. Seed phrase = the master key: never type it into a website, chat or bot. Hardware wallets keep keys offline. Exchange balances are an IOU (FTX, Nov 2022).
+Jarvus: never asks for keys or seed phrases.
+
+### Exchange risk and proof of reserves
+aka: exchange risk, counterparty risk, ftx, proof of reserves, por, exchange hack, withdrawals paused
+What: a centralized exchange can freeze, fail or be hacked. Proof-of-reserves reports show assets, often not full liabilities. Keep only trading money on an exchange.
+
+### Canada: platforms, rules and tax
+aka: canada, canadian, ndax, kraken canada, coinbase canada, wealthsimple, shakepay, newton, csa, ciro, cra, crypto tax canada, capital gains
+What: use a platform registered with Canadian securities regulators (the CSA publishes the list). Fees differ a lot: NDAX 0.20%/side; Kraken Pro's entry tier 0.40% maker / 0.80% taker (Sept 2026); Coinbase Advanced higher.
+Tax: trading gains are taxable (capital gains, or business income if trading is a business); losses have rules too. Keep records; ask an accountant. Jarvus does not give tax advice.
+
+### Crypto security and scams
+aka: scam, phishing, drainer, wallet drainer, approval, revoke, fake airdrop, pig butchering, impersonation, support scam, giveaway scam
+What: fake sites and airdrops that ask you to "connect" and sign approvals that drain wallets; DMs from "support"; doubling giveaways; romance/investment scams. Rule: no one legitimate needs your seed phrase; revoke unused token approvals.
+
+### Crypto data sources
+aka: data sources, tradingview, coinglass, coingecko, coinmarketcap, dexscreener, birdeye, glassnode, cryptoquant, defillama, laevitas, velo
+What: charts (TradingView, exchange UIs), derivatives (Coinglass, Velo, Laevitas), prices/market caps (CoinGecko), DEX pairs (DexScreener, Birdeye), on-chain (Glassnode, CryptoQuant), DeFi (DefiLlama). Free tiers are delayed or limited; quote a source's numbers only when actually seen.
+More: crypto-market-data.md §10–11.
+
+
+<!-- ===== references/kb-memecoins.md ===== -->
+
+# Knowledge base: meme coins
+
+One entry per `### `. Jarvus's backtested meme rules are in SKILL.md; the hard-fail screening list is in
+`assets/memecoin-screening-rules.json`; the deep reference is `handbook-memecoins.md`.
+
+### What a memecoin is
+aka: memecoin, meme coin, memes, meme token, shitcoin, degen
+What: a token whose value is attention and community, with no cash flows. Two worlds: listed memes on big exchanges (DOGE, SHIB, PEPE, BONK, WIF, FLOKI) and fresh on-chain launches (minutes to days old).
+Odds: most launches go to near zero; a few go up 100×. Survivorship makes the winners look common.
+
+### Jarvus's meme rules
+aka: meme rules, can i trade memes, meme risk
+What: listed memes only through the scripts: BTC above its 200-day average and BTC's 4h trend up; volatility gate LOUD; not 7 PM–midnight MT; risk 0.3% per trade; at most 2 open. Backtested 2021–2026: +0.19R per trade at NDAX fees, thin since March 2025.
+Fresh launches: the hard-fail list must pass first (`python3 scripts/know.py "meme sleeve" --full`).
+
+### Meme coin lifecycle
+aka: launch phases, meme lifecycle, how memecoins pump, pump and dump
+What: launch → snipers and insiders buy first → early buyers and callers push it → peak attention (often within hours or days) → insiders sell into late buyers → slow bleed. The few survivors build a community and list on exchanges.
+Trap: by the time it trends on X or DexScreener, the early sellers are selling to you.
+
+### Pump.fun and bonding curves
+aka: pump.fun, pumpfun, bonding curve, graduation, migration, king of the hill, pumpswap, letsbonk, launchpad
+What: launchpads where a token starts on a bonding curve (price rises as people buy from the curve). When the curve fills, liquidity migrates to a DEX pool ("graduates"); historically around $69K market cap to Raydium, since 2025 to pump.fun's own PumpSwap. The rules change; check them.
+Odds: only a small fraction of launches ever graduate.
+
+### Liquidity and LP burn/lock
+aka: liquidity, lp, lp burned, lp locked, liquidity pool, rug pull liquidity, pulled liquidity
+What: the pool you sell into. If the creator can withdraw it (LP not burned/locked), they can rug. Thin liquidity means your own sell moves the price a lot.
+Rule: market cap means nothing if liquidity is tiny; size by the liquidity you can exit into.
+
+### Mint and freeze authority
+aka: mint authority, freeze authority, revoke authority, renounced, ownership renounced, can mint
+What: on Solana, an un-revoked mint authority can print more tokens; a freeze authority can freeze your tokens. On EVM chains the equivalent is an owner who can change the contract.
+Rule: either still active = hard fail.
+
+### Honeypots and taxes
+aka: honeypot, cant sell, sell tax, buy tax, transfer tax, blacklist, max wallet, trading disabled
+What: contracts that let you buy but not sell, charge huge sell taxes, blacklist wallets or can switch trading off. Mostly EVM tokens. A tiny test sell before sizing up is the only real proof.
+
+### Holder concentration and bundles
+aka: holders, top holders, top 10 holders, holder distribution, bundle, bundled, bundlers, snipers, insiders, dev wallet, dev sold, bubble maps, bubblemaps, clusters
+What: if a few wallets (often the same person, "bundled" at launch) hold a big share, they can dump on you. Bubble Maps-style tools cluster linked wallets. Addresses are not people: 1,000 holders can be 10 people.
+Rule: unresolved clustering or a top-10 share that dominates supply = fail.
+
+### Rug pulls
+aka: rug, rug pull, rugged, hard rug, soft rug, slow rug, exit scam
+What: hard rug = liquidity pulled or unlimited mint; soft rug = team/insiders sell everything; slow rug = continuous selling while promoting. Hard rugs end in seconds; there is no stop-loss for them.
+
+### Volume and attention can be faked
+aka: fake volume, wash trading, volume bots, dexscreener trending, boosts, paid trending, kol, influencer, callers, shill, telegram calls, x calls
+What: bots trade with themselves to fake volume; trending spots and "boosts" are paid; callers/KOLs often hold before they post. Social hype is data about attention, never a reason to buy.
+
+### Community takeover (CTO)
+aka: cto, community takeover, dead coin revival
+What: the community re-launches marketing after the original developer abandons a token. Some revive; most do not. Same hard-fail checks apply.
+
+### Slippage and price impact
+aka: slippage, price impact, slippage tolerance, high slippage
+What: price impact = how much your order moves a thin pool; slippage tolerance = the worst price you accept. Wide tolerance invites sandwich bots. In tiny pools, a round trip can cost 5–20%.
+
+### Trading bots on Telegram and web
+aka: telegram bot, trading bot, photon, bullx, trojan, maestro, banana gun, axiom, gmgn, sniper bot, copy trading wallets
+What: fast-execution tools for memes. Many hold your private key (custodial risk) and have been exploited. Never import your main wallet; Jarvus never asks for keys.
+
+### Copy trading wallets
+aka: copy trade, smart money wallets, wallet tracking, alpha wallets, follow wallets
+What: following "smart" wallets. You buy after them (worse price), they may be decoys or bots, and past winners are survivors. Treat as attention data, not a strategy.
+
+### Narratives and metas
+aka: narrative, meta, ai memes, cat coins, dog coins, political memes, celebrity tokens, rotation
+What: memes move in themes (dogs, cats, AI agents, political/celebrity tokens). Themes rotate fast; the first and biggest name in a theme usually holds best. Celebrity and political tokens have been notably extractive for late buyers.
+
+### Listed memes vs new launches
+aka: doge, dogecoin, shib, shiba inu, pepe, bonk, wif, dogwifhat, floki, trump coin, fartcoin, popcat, mog
+What: listed memes trade on regulated exchanges with real liquidity and can be backtested; Jarvus's meme results come from these (DOGE, SHIB, PEPE, BONK, WIF, FLOKI). New launches have none of that history and an exit that can vanish.
+
+### Meme position sizing
+aka: meme size, how much to put in memes, meme bankroll, lottery ticket
+What: size for a total loss. Jarvus: 0.3% risk per listed-meme trade with a stop, at most 2 open; fresh launches only from a separate "can lose it all" amount, and only after the hard-fail list passes.
+
+
+<!-- ===== references/kb-daytrading.md ===== -->
+
+# Knowledge base: day trading, order flow, risk, strategy families, psychology, testing
+
+One entry per `### `. Strategy families point to the 320-strategy encyclopedia (`know.py` finds those too).
+
+### What day trading is
+aka: day trading, daytrading, intraday, scalping vs swing, trading styles, swing trading, position trading
+What: scalping = seconds–minutes; day trading = in and out the same day; swing = days–weeks; position = weeks–months. Shorter = more trades, more fees, more noise.
+Evidence: large studies of retail day traders (e.g. Barber, Lee, Liu & Odean on Taiwan; Chague, De-Losso & Giovannetti on Brazil) found the great majority lose money. Jarvus's own tests: pure intraday lost after fees in every test; 4×ATR stops with up to 96-hour holds survived.
+
+### Jarvus playbooks
+id: p1_trend_pullback, p3_breakout_retest, p4_sweep_reclaim, p6_orb · aka: playbooks, p1, p3, p4, p6, trend pullback, breakout retest, sweep reclaim, orb, opening range breakout
+What: Jarvus's mechanical setups (rules in `scripts/ladder.py`): P1 pullback to the 21 EMA in an uptrend, P3 retest of a broken level, P4 sweep of a low that closes back above, P6 opening-range breakout (US open), plus the RSI(2) dip. Live, they count only with the gate LOUD and the other v6.1 rules.
+
+### Order types
+aka: order types, market order, limit order, stop order, stop limit, stop loss order, oco, trailing stop, post only, ioc, fok, reduce only
+What: market = fill now at any price (taker); limit = your price or better (maker if it rests); stop = becomes a market order at a trigger; stop-limit = becomes a limit (may not fill in a crash); OCO = one cancels the other; post-only = rejected if it would take.
+Jarvus: limit entries (maker fee), stops that rest on the exchange. More: execution-and-order-types.md §1.
+
+### Maker vs taker fees
+aka: maker, taker, fees, trading fees, fee tiers, cost in r
+What: maker = your resting order adds liquidity (cheaper); taker = you hit an existing order. Cost in R = round-trip cost % ÷ stop distance %. Jarvus refuses trades above 0.33R and halves size at 0.20–0.33R.
+
+### Spread, slippage and liquidity
+aka: spread, bid ask spread, slippage, liquidity, market depth, thin market
+What: spread = gap between best bid and ask; slippage = fill worse than expected; liquidity = how much can trade without moving price. All three are hidden costs that grow in small coins and fast markets.
+
+### Order book and depth
+aka: order book, depth chart, bids, asks, walls, spoofing, iceberg orders, dom, ladder, level 2
+What: resting buy and sell orders. Big "walls" can be pulled (spoofing); icebergs hide size. Useful for execution, unreliable for direction.
+
+### Tape reading and time and sales
+aka: tape reading, time and sales, prints, aggressive buyers, aggressive sellers
+What: watching executed trades: who is hitting whom, how big, how fast. A scalper's tool; needs low latency and low fees to matter.
+
+### Delta, CVD and footprint charts
+aka: delta, cvd, cumulative volume delta, footprint, footprint chart, order flow, absorption, exhaustion, imbalance order flow
+What: delta = aggressive buys − aggressive sells per bar; CVD = running total; footprint = volume at each price inside a bar. Absorption = heavy aggression with no price progress (a passive wall soaking it up). Exhaustion = aggression fading at an extreme.
+Note: crypto CVD differs by venue; spot vs perp CVD disagreeing is common.
+
+### Volume profile and market profile
+aka: volume profile, vpvr, vrvp, poc, point of control, value area, vah, val, hvn, lvn, market profile, tpo, initial balance, auction market theory
+What: volume (or time) traded at each price. POC = most traded price; value area = ~70% of volume (VAH/VAL); high-volume nodes attract and hold price, low-volume nodes are crossed fast. Auction theory: price moves to find two-sided trade, then rotates.
+Use: as levels, like support/resistance. Not measured by Jarvus.
+
+### Multi-timeframe analysis
+aka: multi timeframe, mtf, top down analysis, higher timeframe, htf, ltf
+What: trend and bias from the higher timeframe, setup from the middle, trigger from the lower. Most bad trades fight the higher timeframe.
+Jarvus: P1/P3/P6 need both the 1h and 4h trends up.
+
+### Market regimes
+aka: regime, trending market, ranging market, chop, choppy, volatility regime, trend day, range day
+What: trend, range, chop or compression. Trend tools fail in ranges and range tools fail in trends; deciding the regime comes before choosing a playbook.
+More: regimes-and-cycles.md.
+
+### The volatility gate
+aka: volatility gate, gate, loud, quiet, normal, will it move, volgate
+What: Jarvus's trained model of how big the next 12 hours will be (crypto). LOUD calls were right about 76% of the time in held-out testing (base rate 31%). It forecasts size, never direction. Jarvus enters only on LOUD.
+
+### Risk per trade and position sizing
+aka: position size, position sizing, risk per trade, 1% rule, how much to buy, lot size
+What: size = (account × risk %) ÷ stop distance. Risk 0.5–1% per trade means 10 losers in a row cost about 10%, not the account.
+Jarvus: 1% × 0.6 (LOUD) for majors, 0.3% memes, hard cap 1%. `scripts/position_size.py`.
+
+### R multiples and expectancy
+aka: r multiple, r, expectancy, edge, profit factor, average win, average loss, payoff ratio, risk reward, rr, r:r
+What: R = the amount risked. Expectancy = win% × average win (R) − loss% × average loss (R). Profit factor = gross wins ÷ gross losses. A 40% win rate at 2R wins makes +0.2R per trade before costs.
+
+### Win rate vs payoff
+aka: win rate, high win rate, 80 percent win rate, accuracy, hit rate
+What: win rate alone means nothing: 90% wins of +1% with one −20% loss loses money. Jarvus built an "80% green" exit ladder: random entries got the same 79% and it lost after fees (grep `## 80% MODE` in manual.md).
+
+### Drawdown and risk of ruin
+aka: drawdown, max drawdown, risk of ruin, recovery math, losing streak
+What: a 50% loss needs +100% to recover. Losing streaks of 8–10 are normal at a 40% win rate over hundreds of trades. Risk of ruin rises fast above 2% per trade.
+Jarvus: stop for the day at −3R or 3 losses in a row.
+
+### Kelly criterion
+aka: kelly, kelly criterion, optimal f, fractional kelly
+What: the bet size that maximizes long-run growth given a known edge. Real edges are uncertain, so full Kelly overbets; traders use a quarter or less, and only after 50+ logged trades.
+
+### Correlation and concentration
+aka: correlation, diversification, correlated positions, btc beta
+What: BTC, ETH and SOL move together; three longs are close to one big bet. Jarvus counts them as one position.
+
+### Leverage and liquidation math
+aka: leverage, 10x, 100x, liquidation price, margin call, isolated margin, cross margin
+What: at 10× leverage a ~10% move against you wipes the position (less after fees and maintenance margin). Leverage does not change the edge, only how fast you are ruined. Jarvus: spot only.
+
+### Stop-losses
+aka: stop loss, stops, where to put a stop, stop hunting, mental stop, hard stop, trailing stop
+What: the price that proves the idea wrong, plus a buffer. Too tight = stopped by noise and eaten by fees. Never widen a stop after entry.
+Jarvus: 4× ATR(1h), resting on the exchange.
+
+### Taking profit and exits
+aka: take profit, targets, exit strategy, scaling out, partial profits, trailing exit, time stop
+What: fixed R targets, scaling out, trailing stops or time stops. Jarvus's backtest: one exit at 2R with a 96-hour limit beat partial ladders after fees.
+
+### Trend following
+aka: trend following, trend trading, momentum trading, ride the trend
+What: buy strength, cut losers, let winners run; low win rate, big winners. One of the best documented strategy families across markets.
+More: strategy encyclopedia Part 3. Jarvus measured: momentum signals on 4h beat random entries (kb-measured.md).
+
+### Mean reversion
+aka: mean reversion, reversion, fade, buy the dip, counter trend
+What: buy stretched lows and sell stretched highs, expecting a return to the average. High win rate, occasional big losses when the stretch becomes a trend.
+More: strategy encyclopedia Part 4.
+
+### Breakout trading
+aka: breakout, breakouts, breakout trading, fakeout, false breakout, failed breakout
+What: buy when price leaves a range or level. Many breakouts fail; filters are volume, a retest, a compression before, and the higher-timeframe trend.
+More: strategy encyclopedia Part 5.
+
+### Scalping
+aka: scalping, scalp, scalper
+What: many tiny trades for small gains. Fees and spread dominate: at retail spot fees a 1-ATR scalp on BTC costs about 0.6R per trade, which no measured edge covers.
+
+### Grid trading and DCA
+aka: grid bot, grid trading, dca, dollar cost averaging, martingale, averaging down
+What: grid = buy and sell orders at fixed steps in a range (profits in ranges, holds bags in trends). DCA = buying a fixed amount on a schedule (an investing method, not trading). Martingale/averaging down without a stop is how accounts blow up.
+
+### Arbitrage and market making
+aka: arbitrage, arb, funding arbitrage, triangular arbitrage, market making, cash and carry arbitrage
+What: profit from price differences or from capturing the spread. Real arbitrage needs speed, capital on several venues and low fees; retail-visible "arbs" are usually transfer delays or withdrawal risk.
+
+### News and event trading
+aka: news trading, trading the news, cpi trading, fomc trading, listing pump, listing trade
+What: trading reactions to scheduled (CPI, FOMC) or surprise news (listings, hacks, lawsuits). First moves are fast and often reverse; spreads widen.
+Jarvus: no new trade 30 minutes either side of a tier-1 event.
+
+### Pairs and relative value
+aka: pairs trading, relative value, eth btc trade, spread trade, rotation trade
+What: long one asset against another (e.g. ETH vs BTC). Needs shorting or a ratio product; spot-only traders approximate it by rotating holdings.
+
+### Copy trading and signal groups
+aka: copy trading, signal group, signals, paid signals, vip group, discord signals
+What: following someone else's trades. Results shown are selected after the fact; fills are worse than the leader's; many groups profit from subscriptions or pumping their bags.
+
+### Prop firms and funded accounts
+aka: prop firm, funded account, ftmo, evaluation, challenge
+What: pay a fee to pass a trading evaluation and trade the firm's money for a profit split. Most participants fail evaluations, and the fees are the firms' main revenue. Crypto prop firms often use simulated execution.
+
+### Backtesting the right way
+aka: backtest, backtesting, how to backtest, overfitting, curve fitting, look ahead bias, survivorship bias, data snooping, walk forward, out of sample, p hacking
+What: test rules on data they were not built on (out-of-sample, walk-forward), include fees and slippage, use only data available at the time (no look-ahead), include dead coins (survivorship), and count how many ideas you tried (data snooping).
+Jarvus: `backtest.py`, `system_test.py`; every measured number in this knowledge base follows these rules.
+
+### API keys and connecting an exchange
+aka: api key, api keys, connect exchange, connect kraken, connect ndax, broker connection, bot trading, automate, go live with a bot
+What: an exchange API key lets software read balances or place orders. Rules Jarvus keeps: trade-only or read-only keys, never withdrawal permission; keys live in the computer's secure storage or environment variables, never in chat, files or code; real-money orders stay off until Abhi authorizes them in a separate step.
+More: live-trading-and-brokers.md.
+
+### Paper trading and going live
+aka: paper trading, demo account, simulated trading, go live, real money
+What: practice with fake money first, then tiny real size; real fills, fees and emotions differ. Jarvus: paper by default; real orders only after a separate, explicit authorization.
+
+### Trading journal and review
+aka: journal, trade journal, review, trade log, statistics, track record
+What: log setup, entry, stop, target, size, reason and emotions before the order; review every 20 trades; judge expectancy over 50–100 trades, never one week.
+Jarvus: `journal.py add|close`, `journal_stats.py`.
+
+### Trading psychology
+aka: psychology, fomo, revenge trading, make it back, get back to even, win it back, double down, all in, tilt, overtrading, fear, greed, discipline, loss aversion, confirmation bias, sunk cost, gamblers fallacy, euphoria
+What: the usual killers: FOMO (chasing), revenge (making it back), tilt (rule-breaking after losses), overtrading (boredom), moving stops (hope). Rules decided before the trade beat feelings during it.
+Jarvus: coach first, trade second (`python3 scripts/know.py "coach mode"`).
+
+### Daily routine
+aka: routine, trading routine, morning routine, pre market, checklist, pre trade checklist
+What: check the calendar and the gate, mark levels, define the plan before the session, trade only the plan, journal, stop at the daily limit.
+More: assets/daily-routine.md, assets/pre-trade-checklist.md.
+
+### Probability and prediction
+aka: can you predict the market, predict crypto, forecast, prediction, random walk, efficient market, is trading gambling
+What: short-term direction in liquid crypto is close to unpredictable (Jarvus's direction model: AUC about 0.51, where 0.50 is a coin flip). Volatility is predictable. Edges, where they exist, are small and come from costs, risk control and selectivity.
+More: probability-and-prediction.md.
+
+### Stocks vs crypto
+aka: stocks, stock market, equities, pdt rule, pattern day trader, market hours, earnings
+What: stocks trade set hours with opening gaps, earnings and regulation; US day traders under $25K face the pattern-day-trader rule (a FINRA rule; check the current version). Crypto runs 24/7 with no circuit breakers. Jarvus's stock gate is trained separately (7h horizon).
+
+### Strategy encyclopedia
+aka: all strategies, every strategy, list strategies, strategy list, strategy encyclopedia, 320 strategies
+What: 320 strategies with rules and notes in `references/strategy-encyclopedia.md`; measured ones in `strategy-scoreboard.md`; 259 untested ideas in `strategy-library-untested.md`. Ask `know.py <strategy name>` for any one, or `know.py list strategies`.
+
+
+<!-- ===== references/kb-measured.md ===== -->
+
+# What every candle, pattern and indicator signal actually did (Jarvus measurement)
+
+Generated by `tools/measure_signals.py` on Coinbase hourly data (majors BTC ETH SOL; memes DOGE SHIB PEPE BONK
+WIF FLOKI; Dec 2020 to Oct 2026, memes from their Coinbase listing). 1h bars and 4h bars built from them.
+
+Each cell: **buy it with Jarvus's exits** (limit 0.1% under the close, stop 4×ATR, one exit at 2R, 96h,
+NDAX fees + slippage) average R per trade **vs buying at random** with the same exits, then the average
+12-bar move after the signal compared with an average bar, and the number of trades.
+✓ = beat random in both halves (before/after 2025-03-20) and overall at t ≥ 2.5 AND made money in both halves
+· + = beat random the same way but still lost money after fees · ~ = better overall, not reliable · · = no better
+than random · ✗ = worse than random (t ≤ −2.5).
+Caution: 133 signals × 4 groups were tested, and coins move together (BTC/ETH/SOL fire on the same hours), so
+t-values are flattering and a few marks are luck. A family that works across groups and timeframes is stronger
+evidence than one cell. Fixed exits, no volatility gate, no trend filter: Jarvus's live rules are stricter.
+Bearish signals were also bought, to show what buying them did; their 12h move is the sell/avoid reading.
+None of this is a forecast. Past results, after costs, on this data only.
+
+## Candlestick patterns
+
+| Signal | Side | Majors 1h | Majors 4h | Memes 1h | Memes 4h |
+|---|---|---|---|---|---|
+| Hammer | bull | · -0.11 vs -0.10R · 12h -0.05% · n 1658 | · -0.04 vs -0.02R · 12h -0.59% · n 442 | ~ -0.15 vs -0.16R · 12h -0.13% · n 1945 | ~ -0.06 vs -0.06R · 12h -0.22% · n 484 |
+| Inverted hammer | bull | ~ -0.10 vs -0.10R · 12h +0.07% · n 909 | · -0.02 vs -0.02R · 12h -0.25% · n 184 | ~ -0.13 vs -0.16R · 12h +0.09% · n 1340 | ~ -0.03 vs -0.07R · 12h +0.10% · n 340 |
+| Hanging man | bear | ~ -0.06 vs -0.10R · 12h +0.06% · n 1279 | ~ +0.02 vs -0.02R · 12h -0.06% · n 338 | ~ -0.10 vs -0.16R · 12h +0.28% · n 1454 | · -0.12 vs -0.07R · 12h -0.54% · n 354 |
+| Shooting star | bear | · -0.12 vs -0.10R · 12h -0.05% · n 1317 | · -0.03 vs -0.02R · 12h -0.38% · n 314 | ~ -0.13 vs -0.16R · 12h +0.15% · n 1607 | ~ -0.05 vs -0.07R · 12h +0.53% · n 389 |
+| Dragonfly doji | bull | · -0.14 vs -0.10R · 12h -0.20% · n 161 | · -0.08 vs -0.02R · 12h -0.95% · n 37 | · -0.28 vs -0.17R · 12h -0.34% · n 373 | · -0.20 vs -0.07R · 12h -0.62% · n 48 |
+| Gravestone doji | bear | · -0.26 vs -0.10R · 12h -0.27% · n 124 | n 29, too few | ~ -0.07 vs -0.17R · 12h +0.34% · n 317 | ~ +0.12 vs -0.07R · 12h +1.38% · n 36 |
+| Doji after a drop | bull | · -0.10 vs -0.10R · 12h -0.01% · n 3786 | · -0.02 vs -0.02R · 12h -0.18% · n 1438 | · -0.18 vs -0.16R · 12h +0.05% · n 4533 | ~ -0.06 vs -0.06R · 12h +0.03% · n 1563 |
+| Doji after a rise | bear | ~ -0.10 vs -0.10R · 12h +0.03% · n 3885 | ~ -0.00 vs -0.02R · 12h +0.22% · n 1480 | ~ -0.15 vs -0.16R · 12h +0.07% · n 4406 | ~ -0.04 vs -0.07R · 12h +0.45% · n 1489 |
+| Long-legged doji | neutral | ~ -0.07 vs -0.10R · 12h +0.07% · n 937 | ~ -0.02 vs -0.03R · 12h +0.04% · n 300 | ~ -0.14 vs -0.16R · 12h -0.08% · n 1026 | + +0.09 vs -0.06R · 12h +1.20% · n 267 |
+| Spinning top | neutral | · -0.12 vs -0.10R · 12h +0.00% · n 7162 | ~ -0.00 vs -0.02R · 12h +0.02% · n 3930 | · -0.16 vs -0.16R · 12h -0.04% · n 7767 | · -0.07 vs -0.07R · 12h -0.07% · n 4153 |
+| Bullish marubozu | bull | ~ -0.04 vs -0.10R · 12h +0.15% · n 841 | ~ +0.13 vs -0.02R · 12h +0.83% · n 207 | ~ -0.12 vs -0.16R · 12h +0.11% · n 1534 | ~ -0.02 vs -0.07R · 12h +0.62% · n 272 |
+| Bearish marubozu | bear | · -0.15 vs -0.10R · 12h -0.08% · n 770 | ~ +0.03 vs -0.02R · 12h +0.30% · n 178 | · -0.23 vs -0.16R · 12h -0.05% · n 1263 | ~ -0.00 vs -0.07R · 12h +1.07% · n 240 |
+| Bullish belt hold | bull | + -0.01 vs -0.10R · 12h +0.22% · n 1294 | ~ +0.07 vs -0.02R · 12h +0.52% · n 320 | ~ -0.13 vs -0.16R · 12h +0.07% · n 1934 | · -0.12 vs -0.07R · 12h -0.48% · n 386 |
+| Big green candle (momentum ignition) | bull | ~ -0.08 vs -0.10R · 12h +0.15% · n 1782 | ✓ +0.13 vs -0.02R · 12h +0.96% · n 620 | ~ -0.12 vs -0.16R · 12h -0.03% · n 1957 | ✓ +0.06 vs -0.07R · 12h +1.25% · n 592 |
+| Big red candle (capitulation bar) | bear | · -0.13 vs -0.10R · 12h -0.09% · n 1948 | ~ -0.02 vs -0.02R · 12h +0.02% · n 614 | · -0.19 vs -0.16R · 12h -0.07% · n 1821 | ~ -0.05 vs -0.07R · 12h +0.20% · n 578 |
+| Bullish engulfing | bull | · -0.10 vs -0.10R · 12h -0.01% · n 3980 | ~ -0.01 vs -0.02R · 12h -0.07% · n 1372 | · -0.18 vs -0.16R · 12h -0.10% · n 4035 | ~ -0.05 vs -0.06R · 12h -0.08% · n 1476 |
+| Bearish engulfing | bear | · -0.12 vs -0.10R · 12h +0.03% · n 3668 | ~ +0.02 vs -0.02R · 12h +0.08% · n 1251 | ~ -0.14 vs -0.16R · 12h +0.05% · n 3719 | · -0.09 vs -0.07R · 12h -0.15% · n 1369 |
+| Bullish harami | bull | ~ -0.05 vs -0.10R · 12h -0.18% · n 881 | ~ +0.04 vs -0.02R · 12h +0.36% · n 269 | · -0.17 vs -0.16R · 12h -0.29% · n 1189 | ~ -0.03 vs -0.07R · 12h +0.82% · n 287 |
+| Bearish harami | bear | ~ -0.08 vs -0.10R · 12h +0.03% · n 1024 | ~ +0.04 vs -0.02R · 12h -0.38% · n 366 | ~ -0.10 vs -0.16R · 12h +0.11% · n 1181 | ~ +0.01 vs -0.07R · 12h +0.60% · n 332 |
+| Bullish harami cross | bull | · -0.17 vs -0.10R · 12h -0.33% · n 144 | · -0.06 vs -0.02R · 12h -0.03% · n 42 | · -0.27 vs -0.16R · 12h -0.10% · n 374 | · -0.11 vs -0.07R · 12h +0.28% · n 72 |
+| Piercing line | bull | ~ -0.08 vs -0.10R · 12h +0.19% · n 445 | ~ +0.01 vs -0.02R · 12h +0.72% · n 109 | ~ -0.12 vs -0.16R · 12h -0.09% · n 555 | · -0.12 vs -0.06R · 12h -0.58% · n 125 |
+| Dark cloud cover | bear | ~ -0.03 vs -0.09R · 12h +0.17% · n 383 | ~ +0.03 vs -0.02R · 12h -0.34% · n 100 | ~ -0.09 vs -0.16R · 12h +0.15% · n 505 | · -0.08 vs -0.06R · 12h -0.69% · n 133 |
+| Tweezer bottom | bull | ~ -0.09 vs -0.10R · 12h -0.03% · n 1876 | · -0.02 vs -0.02R · 12h -0.03% · n 539 | · -0.17 vs -0.16R · 12h -0.03% · n 2228 | · -0.09 vs -0.07R · 12h -0.45% · n 611 |
+| Tweezer top | bear | · -0.15 vs -0.10R · 12h -0.00% · n 2120 | ~ +0.06 vs -0.02R · 12h +0.19% · n 613 | ~ -0.11 vs -0.16R · 12h +0.17% · n 2166 | ~ -0.01 vs -0.07R · 12h +0.43% · n 637 |
+| Bullish kicker | bull | n 1, too few | — | n 10, too few | n 1, too few |
+| Outside bar, up close | bull | ~ -0.09 vs -0.10R · 12h -0.13% · n 2895 | ~ +0.01 vs -0.02R · 12h +0.26% · n 1017 | · -0.19 vs -0.16R · 12h -0.08% · n 2526 | ~ -0.06 vs -0.06R · 12h +0.31% · n 892 |
+| Outside bar, down close | bear | ~ -0.09 vs -0.10R · 12h +0.07% · n 2731 | · -0.03 vs -0.02R · 12h -0.03% · n 1070 | ~ -0.14 vs -0.16R · 12h +0.03% · n 2261 | · -0.10 vs -0.06R · 12h -0.53% · n 975 |
+| Inside bar | neutral | · -0.11 vs -0.10R · 12h -0.03% · n 7984 | ~ -0.01 vs -0.02R · 12h +0.02% · n 5093 | · -0.18 vs -0.16R · 12h -0.01% · n 8136 | · -0.07 vs -0.06R · 12h -0.05% · n 5075 |
+| Inside bar breakout up | bull | · -0.11 vs -0.10R · 12h -0.09% · n 2820 | ~ +0.01 vs -0.02R · 12h +0.08% · n 1003 | ~ -0.14 vs -0.16R · 12h +0.04% · n 2275 | ~ -0.04 vs -0.06R · 12h +0.14% · n 819 |
+| Inside bar breakdown | bear | · -0.11 vs -0.10R · 12h +0.07% · n 2616 | · -0.07 vs -0.02R · 12h -0.25% · n 887 | · -0.17 vs -0.16R · 12h +0.14% · n 2275 | · -0.10 vs -0.06R · 12h -0.27% · n 864 |
+| NR7 breakout up | bull | ~ -0.09 vs -0.10R · 12h -0.04% · n 4454 | ~ -0.02 vs -0.02R · 12h -0.12% · n 1407 | ~ -0.14 vs -0.16R · 12h +0.01% · n 5191 | · -0.09 vs -0.07R · 12h -0.00% · n 1579 |
+| Morning star | bull | ~ -0.03 vs -0.10R · 12h +0.29% · n 288 | · -0.04 vs -0.02R · 12h +0.20% · n 85 | · -0.26 vs -0.16R · 12h -0.22% · n 377 | ~ -0.04 vs -0.06R · 12h +0.58% · n 83 |
+| Evening star | bear | ~ -0.04 vs -0.10R · 12h -0.07% · n 305 | · -0.05 vs -0.02R · 12h -0.76% · n 86 | ~ -0.15 vs -0.16R · 12h +0.11% · n 425 | ~ -0.02 vs -0.07R · 12h -0.69% · n 108 |
+| Morning doji star | bull | ~ +0.04 vs -0.10R · 12h +0.34% · n 77 | n 21, too few | · -0.33 vs -0.16R · 12h -0.37% · n 112 | n 21, too few |
+| Evening doji star | bear | ~ +0.00 vs -0.10R · 12h +0.48% · n 76 | n 26, too few | ~ -0.08 vs -0.16R · 12h +0.01% · n 113 | ~ +0.08 vs -0.07R · 12h +1.35% · n 30 |
+| Three white soldiers | bull | n 28, too few | n 14, too few | · -0.22 vs -0.16R · 12h +0.77% · n 77 | n 15, too few |
+| Three black crows | bear | · -0.10 vs -0.09R · 12h -0.81% · n 40 | n 7, too few | ~ -0.15 vs -0.16R · 12h -0.09% · n 116 | n 16, too few |
+| Three inside up | bull | ~ -0.07 vs -0.10R · 12h -0.28% · n 41 | n 16, too few | · -0.26 vs -0.16R · 12h -0.32% · n 98 | n 13, too few |
+| Three inside down | bear | ~ +0.07 vs -0.10R · 12h -0.12% · n 72 | n 26, too few | ~ -0.05 vs -0.16R · 12h +0.13% · n 106 | n 19, too few |
+| Three outside up | bull | · -0.10 vs -0.10R · 12h -0.01% · n 2454 | · -0.03 vs -0.02R · 12h -0.28% · n 715 | · -0.19 vs -0.16R · 12h -0.14% · n 2200 | ~ -0.02 vs -0.06R · 12h +0.24% · n 727 |
+| Three outside down | bear | ✗ -0.18 vs -0.10R · 12h +0.06% · n 2129 | ~ -0.01 vs -0.02R · 12h +0.05% · n 583 | ✗ -0.22 vs -0.16R · 12h +0.07% · n 2053 | · -0.10 vs -0.07R · 12h -0.14% · n 684 |
+| Bullish three-line strike | bull | — | — | — | — |
+| Bearish three-line strike | bear | — | — | n 1, too few | — |
+| Rising three methods | bull | ~ +0.08 vs -0.10R · 12h +0.26% · n 80 | n 26, too few | ~ +0.01 vs -0.16R · 12h -0.57% · n 79 | n 17, too few |
+| Falling three methods | bear | ~ +0.06 vs -0.10R · 12h -0.03% · n 81 | · -0.09 vs -0.02R · 12h +0.79% · n 30 | · -0.17 vs -0.16R · 12h -0.30% · n 104 | ~ +0.13 vs -0.07R · 12h +0.10% · n 31 |
+
+## Chart patterns and price structure
+
+| Signal | Side | Majors 1h | Majors 4h | Memes 1h | Memes 4h |
+|---|---|---|---|---|---|
+| Double bottom (neckline break) | bull | ~ +0.02 vs -0.09R · 12h +0.47% · n 107 | n 29, too few | ~ -0.14 vs -0.16R · 12h +0.49% · n 165 | ~ +0.22 vs -0.07R · 12h +2.37% · n 50 |
+| Double top (neckline break) | bear | · -0.12 vs -0.09R · 12h +0.45% · n 118 | n 14, too few | ✗ -0.40 vs -0.16R · 12h -0.25% · n 194 | ~ -0.06 vs -0.07R · 12h -0.60% · n 42 |
+| Inverse head and shoulders | bull | · -0.14 vs -0.10R · 12h +0.06% · n 109 | ~ +0.09 vs -0.03R · 12h -0.15% · n 44 | ~ +0.12 vs -0.16R · 12h +0.78% · n 114 | · -0.15 vs -0.06R · 12h +0.12% · n 41 |
+| Head and shoulders top | bear | · -0.13 vs -0.10R · 12h +0.46% · n 115 | ~ +0.09 vs -0.02R · 12h -1.75% · n 30 | ~ -0.08 vs -0.16R · 12h -0.13% · n 133 | · -0.32 vs -0.06R · 12h -2.83% · n 33 |
+| Break of structure up (trend continuation) | bull | · -0.10 vs -0.10R · 12h -0.10% · n 1567 | ~ +0.07 vs -0.02R · 12h +0.21% · n 544 | ~ -0.09 vs -0.16R · 12h +0.12% · n 1437 | ~ +0.03 vs -0.06R · 12h +1.37% · n 451 |
+| Change of character up (CHoCH) | bull | ~ -0.09 vs -0.10R · 12h -0.11% · n 1641 | ~ +0.01 vs -0.02R · 12h +0.20% · n 446 | ~ -0.13 vs -0.16R · 12h +0.00% · n 1655 | ~ -0.04 vs -0.06R · 12h -0.14% · n 404 |
+| Change of character down | bear | · -0.10 vs -0.10R · 12h -0.07% · n 1643 | · -0.10 vs -0.02R · 12h -0.31% · n 482 | · -0.17 vs -0.16R · 12h -0.20% · n 1553 | ~ -0.04 vs -0.06R · 12h -0.40% · n 451 |
+| Ascending triangle breakout | bull | ~ -0.08 vs -0.10R · 12h -0.14% · n 471 | ~ -0.02 vs -0.03R · 12h -0.19% · n 146 | ~ -0.09 vs -0.16R · 12h -0.03% · n 461 | ~ +0.06 vs -0.06R · 12h +1.67% · n 117 |
+| Descending triangle breakdown | bear | ~ -0.09 vs -0.10R · 12h +0.26% · n 413 | ~ +0.01 vs -0.02R · 12h +0.25% · n 115 | · -0.23 vs -0.16R · 12h +0.19% · n 440 | ~ -0.01 vs -0.06R · 12h -0.50% · n 132 |
+| Symmetrical triangle breakout up | bull | · -0.11 vs -0.10R · 12h +0.02% · n 2303 | · -0.07 vs -0.02R · 12h -0.22% · n 687 | · -0.16 vs -0.16R · 12h -0.08% · n 2183 | · -0.12 vs -0.06R · 12h -0.31% · n 710 |
+| Falling wedge breakout | bull | · -0.11 vs -0.10R · 12h -0.05% · n 1641 | ~ +0.01 vs -0.02R · 12h +0.34% · n 491 | · -0.17 vs -0.16R · 12h -0.17% · n 1751 | · -0.11 vs -0.06R · 12h -0.54% · n 566 |
+| Rising wedge breakdown | bear | · -0.10 vs -0.10R · 12h -0.00% · n 1880 | ~ +0.00 vs -0.02R · 12h -0.08% · n 594 | · -0.19 vs -0.16R · 12h -0.01% · n 1609 | · -0.12 vs -0.06R · 12h -0.22% · n 432 |
+| Bull flag breakout | bull | · -0.13 vs -0.10R · 12h -0.11% · n 1200 | ~ -0.01 vs -0.02R · 12h -0.35% · n 357 | ~ -0.12 vs -0.16R · 12h -0.01% · n 1109 | · -0.17 vs -0.06R · 12h -0.17% · n 223 |
+| Bear flag breakdown | bear | ~ -0.07 vs -0.10R · 12h +0.14% · n 1019 | · -0.07 vs -0.02R · 12h +0.30% · n 292 | · -0.18 vs -0.16R · 12h -0.00% · n 1265 | · -0.09 vs -0.06R · 12h +0.20% · n 357 |
+| Fair value gap retest (bullish FVG) | bull | ~ -0.09 vs -0.10R · 12h +0.07% · n 4301 | ~ -0.01 vs -0.02R · 12h +0.08% · n 1703 | ~ -0.13 vs -0.16R · 12h +0.06% · n 5062 | · -0.07 vs -0.07R · 12h +0.08% · n 1808 |
+| Order block retest (bullish) | bull | ~ -0.07 vs -0.10R · 12h -0.04% · n 2341 | ~ -0.01 vs -0.02R · 12h -0.31% · n 809 | ~ -0.10 vs -0.16R · 12h +0.04% · n 2473 | · -0.07 vs -0.06R · 12h -0.69% · n 661 |
+| Prior-day low sweep and reclaim | bull | ~ -0.07 vs -0.10R · 12h -0.05% · n 1929 | ~ -0.01 vs -0.02R · 12h +0.03% · n 1832 | · -0.20 vs -0.16R · 12h -0.12% · n 2181 | · -0.09 vs -0.06R · 12h -0.33% · n 1959 |
+| Prior-day high breakout | bull | ~ -0.08 vs -0.10R · 12h -0.01% · n 1991 | ~ +0.01 vs -0.02R · 12h +0.20% · n 1852 | ~ -0.09 vs -0.16R · 12h +0.07% · n 2028 | + +0.01 vs -0.06R · 12h +0.46% · n 1737 |
+| Prior-day high sweep and rejection | bear | · -0.10 vs -0.10R · 12h -0.07% · n 2452 | ~ +0.00 vs -0.02R · 12h +0.12% · n 2261 | ~ -0.11 vs -0.16R · 12h +0.07% · n 2456 | ~ -0.06 vs -0.06R · 12h +0.14% · n 2241 |
+| Fibonacci 61.8% retracement bounce | bull | ~ -0.04 vs -0.10R · 12h +0.05% · n 690 | ~ +0.04 vs -0.02R · 12h -0.43% · n 154 | ~ -0.09 vs -0.16R · 12h -0.01% · n 759 | ~ +0.00 vs -0.06R · 12h +0.29% · n 200 |
+| Floor pivot S1 bounce | bull | ~ -0.08 vs -0.10R · 12h +0.01% · n 1848 | ~ -0.00 vs -0.02R · 12h +0.15% · n 1680 | · -0.18 vs -0.16R · 12h -0.04% · n 2152 | · -0.09 vs -0.07R · 12h -0.27% · n 1942 |
+| Floor pivot R1 rejection | bear | ~ -0.10 vs -0.10R · 12h -0.09% · n 2106 | · -0.03 vs -0.02R · 12h -0.03% · n 1894 | + -0.07 vs -0.16R · 12h +0.15% · n 2430 | ~ -0.03 vs -0.06R · 12h +0.22% · n 2157 |
+| RSI bullish divergence | bull | ~ -0.06 vs -0.10R · 12h +0.01% · n 953 | · -0.12 vs -0.02R · 12h -0.21% · n 277 | ~ -0.15 vs -0.16R · 12h +0.04% · n 1050 | · -0.13 vs -0.07R · 12h +0.18% · n 349 |
+| RSI bearish divergence | bear | + -0.00 vs -0.10R · 12h -0.01% · n 1012 | ~ +0.08 vs -0.02R · 12h +0.47% · n 362 | + -0.04 vs -0.16R · 12h +0.30% · n 830 | + +0.09 vs -0.06R · 12h +2.10% · n 282 |
+
+## Indicator signals
+
+| Signal | Side | Majors 1h | Majors 4h | Memes 1h | Memes 4h |
+|---|---|---|---|---|---|
+| RSI(14) drops below 30 (oversold) | bull | ~ -0.10 vs -0.10R · 12h -0.02% · n 1390 | · -0.04 vs -0.02R · 12h -0.16% · n 484 | · -0.17 vs -0.16R · 12h -0.03% · n 1487 | ~ -0.01 vs -0.07R · 12h +0.66% · n 599 |
+| RSI(14) back above 30 | bull | · -0.11 vs -0.10R · 12h -0.15% · n 1337 | · -0.03 vs -0.02R · 12h -0.06% · n 464 | ~ -0.15 vs -0.16R · 12h -0.15% · n 1492 | ~ -0.03 vs -0.07R · 12h +0.69% · n 574 |
+| RSI(14) rises above 70 (overbought) | bear | ~ -0.05 vs -0.10R · 12h +0.18% · n 1406 | + +0.09 vs -0.02R · 12h +0.66% · n 549 | + -0.06 vs -0.16R · 12h +0.18% · n 1312 | ✓ +0.16 vs -0.06R · 12h +2.35% · n 437 |
+| RSI(14) back below 70 | bear | ~ -0.07 vs -0.10R · 12h +0.15% · n 1343 | ~ +0.05 vs -0.02R · 12h +0.43% · n 549 | + -0.06 vs -0.16R · 12h +0.20% · n 1286 | ✓ +0.10 vs -0.06R · 12h +1.95% · n 428 |
+| RSI(2) below 10 | bull | · -0.10 vs -0.10R · 12h +0.05% · n 5291 | · -0.04 vs -0.02R · 12h -0.14% · n 2137 | · -0.18 vs -0.16R · 12h +0.03% · n 6104 | · -0.09 vs -0.07R · 12h -0.32% · n 2471 |
+| RSI(2) below 10 above the 200 SMA (Connors) | bull | ~ -0.06 vs -0.10R · 12h +0.08% · n 2281 | ~ +0.02 vs -0.02R · 12h +0.16% · n 848 | ~ -0.11 vs -0.16R · 12h +0.17% · n 2174 | · -0.07 vs -0.06R · 12h -0.24% · n 683 |
+| MACD crosses above signal | bull | ~ -0.10 vs -0.10R · 12h -0.02% · n 4241 | ~ -0.02 vs -0.02R · 12h +0.10% · n 1309 | ~ -0.15 vs -0.16R · 12h +0.00% · n 5028 | ~ -0.03 vs -0.07R · 12h +0.21% · n 1445 |
+| MACD bullish cross below zero | bull | · -0.11 vs -0.10R · 12h -0.05% · n 2672 | · -0.04 vs -0.02R · 12h -0.03% · n 836 | · -0.18 vs -0.16R · 12h -0.11% · n 3415 | ~ -0.05 vs -0.07R · 12h +0.06% · n 1039 |
+| MACD crosses above zero | bull | · -0.11 vs -0.10R · 12h -0.02% · n 2111 | · -0.03 vs -0.02R · 12h -0.16% · n 598 | · -0.19 vs -0.16R · 12h -0.20% · n 2487 | ~ -0.02 vs -0.06R · 12h +0.28% · n 622 |
+| MACD crosses below signal | bear | · -0.10 vs -0.10R · 12h -0.08% · n 4236 | · -0.02 vs -0.02R · 12h -0.01% · n 1326 | · -0.18 vs -0.16R · 12h -0.05% · n 4897 | ~ -0.05 vs -0.07R · 12h +0.02% · n 1448 |
+| MACD histogram turns up | bull | ~ -0.09 vs -0.10R · 12h -0.03% · n 5418 | ~ -0.02 vs -0.02R · 12h +0.05% · n 2415 | · -0.17 vs -0.16R · 12h -0.09% · n 6139 | · -0.07 vs -0.07R · 12h -0.12% · n 2558 |
+| EMA 9/21 bullish cross | bull | · -0.13 vs -0.10R · 12h -0.02% · n 2634 | ~ +0.00 vs -0.02R · 12h +0.13% · n 760 | · -0.21 vs -0.16R · 12h -0.15% · n 3141 | ~ -0.04 vs -0.07R · 12h +0.27% · n 802 |
+| EMA 9/21 bearish cross | bear | · -0.11 vs -0.10R · 12h -0.10% · n 2654 | · -0.03 vs -0.02R · 12h -0.09% · n 774 | · -0.19 vs -0.16R · 12h -0.13% · n 3049 | · -0.07 vs -0.07R · 12h -0.49% · n 819 |
+| Golden cross (50/200) | bull | ~ -0.04 vs -0.10R · 12h +0.04% · n 416 | ~ +0.10 vs -0.02R · 12h -0.04% · n 103 | ✓ +0.03 vs -0.16R · 12h +0.22% · n 454 | ~ +0.01 vs -0.06R · 12h +0.37% · n 106 |
+| Death cross (50/200) | bear | · -0.15 vs -0.10R · 12h -0.09% · n 417 | ~ -0.01 vs -0.02R · 12h +0.29% · n 102 | ~ -0.14 vs -0.16R · 12h -0.27% · n 454 | ~ +0.02 vs -0.06R · 12h +0.64% · n 103 |
+| Close back above the 200 EMA | bull | ~ -0.04 vs -0.10R · 12h -0.03% · n 1593 | ~ +0.01 vs -0.02R · 12h -0.23% · n 487 | ~ -0.10 vs -0.16R · 12h -0.18% · n 1943 | ~ +0.01 vs -0.06R · 12h +0.21% · n 538 |
+| Close below the 200 EMA | bear | ~ -0.04 vs -0.10R · 12h -0.04% · n 1608 | · -0.10 vs -0.02R · 12h -0.80% · n 497 | ~ -0.11 vs -0.16R · 12h -0.17% · n 1844 | · -0.07 vs -0.06R · 12h -0.74% · n 529 |
+| Close below the lower Bollinger band | bull | ~ -0.10 vs -0.10R · 12h -0.02% · n 2975 | · -0.03 vs -0.02R · 12h -0.09% · n 994 | · -0.21 vs -0.16R · 12h +0.01% · n 3316 | · -0.09 vs -0.06R · 12h -0.29% · n 1159 |
+| Back inside the Bollinger band from below | bull | ~ -0.09 vs -0.10R · 12h -0.04% · n 2929 | ~ -0.02 vs -0.02R · 12h -0.02% · n 977 | · -0.20 vs -0.16R · 12h -0.11% · n 3347 | ~ -0.06 vs -0.07R · 12h +0.03% · n 1147 |
+| Close above the upper Bollinger band | bull | ~ -0.08 vs -0.10R · 12h +0.02% · n 2869 | ~ +0.03 vs -0.02R · 12h +0.48% · n 999 | + -0.09 vs -0.16R · 12h +0.02% · n 3167 | ~ +0.01 vs -0.06R · 12h +0.73% · n 1063 |
+| Bollinger squeeze breakout | bull | · -0.14 vs -0.10R · 12h -0.01% · n 553 | · -0.16 vs -0.02R · 12h -0.37% · n 152 | · -0.18 vs -0.16R · 12h -0.10% · n 597 | ~ +0.02 vs -0.07R · 12h +1.10% · n 153 |
+| Keltner channel breakout | bull | ~ -0.05 vs -0.10R · 12h +0.07% · n 1859 | + +0.09 vs -0.02R · 12h +0.42% · n 708 | + -0.07 vs -0.16R · 12h +0.05% · n 1874 | ✓ +0.05 vs -0.07R · 12h +1.11% · n 638 |
+| Below the lower Keltner channel | bull | ~ -0.09 vs -0.10R · 12h -0.02% · n 1795 | · -0.08 vs -0.02R · 12h -0.36% · n 605 | ~ -0.15 vs -0.16R · 12h -0.04% · n 2022 | ~ -0.06 vs -0.07R · 12h +0.31% · n 678 |
+| TTM squeeze fires up | bull | ~ -0.07 vs -0.10R · 12h +0.03% · n 2063 | · -0.03 vs -0.02R · 12h +0.35% · n 602 | + -0.08 vs -0.16R · 12h +0.11% · n 2191 | ~ -0.02 vs -0.06R · 12h +0.83% · n 547 |
+| Stochastic bullish cross below 20 | bull | · -0.11 vs -0.10R · 12h -0.11% · n 3153 | · -0.05 vs -0.02R · 12h -0.24% · n 1283 | · -0.16 vs -0.16R · 12h -0.19% · n 4077 | ~ -0.06 vs -0.07R · 12h -0.10% · n 1650 |
+| Stochastic bearish cross above 80 | bear | ~ -0.09 vs -0.10R · 12h +0.06% · n 3616 | ~ +0.01 vs -0.02R · 12h +0.03% · n 1572 | ~ -0.13 vs -0.16R · 12h +0.13% · n 3807 | ~ -0.02 vs -0.07R · 12h +0.35% · n 1277 |
+| Stochastic RSI bullish cross below 0.2 | bull | ~ -0.10 vs -0.10R · 12h -0.08% · n 4930 | · -0.02 vs -0.02R · 12h -0.12% · n 2044 | · -0.17 vs -0.16R · 12h -0.11% · n 5705 | ~ -0.06 vs -0.06R · 12h -0.16% · n 2238 |
+| Williams %R leaves oversold | bull | · -0.10 vs -0.10R · 12h -0.07% · n 4630 | · -0.03 vs -0.02R · 12h -0.17% · n 2015 | · -0.19 vs -0.16R · 12h -0.11% · n 5622 | · -0.08 vs -0.07R · 12h -0.23% · n 2304 |
+| CCI back above -100 | bull | · -0.11 vs -0.10R · 12h -0.05% · n 4075 | ~ -0.02 vs -0.02R · 12h +0.03% · n 1417 | ✗ -0.21 vs -0.16R · 12h -0.16% · n 4853 | ~ -0.06 vs -0.07R · 12h -0.05% · n 1714 |
+| CCI above +100 (momentum) | bull | ~ -0.09 vs -0.10R · 12h -0.00% · n 4159 | ~ +0.00 vs -0.02R · 12h +0.19% · n 1517 | ~ -0.13 vs -0.16R · 12h +0.07% · n 4542 | ~ -0.02 vs -0.07R · 12h +0.50% · n 1531 |
+| MFI below 20 | bull | · -0.15 vs -0.10R · 12h -0.08% · n 1427 | · -0.04 vs -0.02R · 12h -0.56% · n 472 | ~ -0.15 vs -0.16R · 12h -0.03% · n 1869 | ~ -0.04 vs -0.07R · 12h +0.51% · n 577 |
+| MFI above 80 | bear | ~ -0.03 vs -0.10R · 12h +0.04% · n 1427 | ~ +0.07 vs -0.02R · 12h +0.44% · n 552 | ~ -0.11 vs -0.16R · 12h +0.01% · n 1854 | ✓ +0.09 vs -0.07R · 12h +1.40% · n 507 |
+| ADX/DMI bullish cross | bull | ~ -0.09 vs -0.10R · 12h -0.04% · n 1936 | · -0.05 vs -0.02R · 12h -0.28% · n 570 | ~ -0.14 vs -0.16R · 12h -0.26% · n 2087 | ~ -0.03 vs -0.06R · 12h -0.01% · n 584 |
+| ADX Holy Grail pullback (Raschke) | bull | ~ -0.02 vs -0.10R · 12h -0.03% · n 1062 | ~ -0.01 vs -0.02R · 12h +0.62% · n 416 | ~ -0.09 vs -0.16R · 12h +0.09% · n 1137 | · -0.10 vs -0.06R · 12h -0.83% · n 475 |
+| Parabolic SAR flips up | bull | ~ -0.09 vs -0.10R · 12h -0.00% · n 4907 | · -0.02 vs -0.02R · 12h -0.03% · n 1403 | ~ -0.15 vs -0.16R · 12h -0.03% · n 5363 | ~ -0.04 vs -0.07R · 12h +0.23% · n 1490 |
+| Parabolic SAR flips down | bear | ~ -0.10 vs -0.10R · 12h -0.01% · n 4874 | ~ -0.02 vs -0.02R · 12h +0.02% · n 1413 | · -0.17 vs -0.16R · 12h +0.05% · n 5316 | · -0.07 vs -0.07R · 12h -0.11% · n 1490 |
+| Supertrend flips up | bull | ~ -0.07 vs -0.10R · 12h -0.04% · n 1524 | · -0.05 vs -0.02R · 12h -0.02% · n 395 | ~ -0.13 vs -0.16R · 12h -0.18% · n 1825 | ~ -0.03 vs -0.07R · 12h +0.00% · n 415 |
+| Supertrend flips down | bear | ~ -0.06 vs -0.10R · 12h +0.02% · n 1536 | · -0.07 vs -0.02R · 12h +0.09% · n 407 | ~ -0.12 vs -0.16R · 12h +0.08% · n 1763 | · -0.07 vs -0.07R · 12h -0.12% · n 413 |
+| Ichimoku TK cross above the cloud | bull | ~ -0.08 vs -0.10R · 12h +0.09% · n 1323 | ~ +0.04 vs -0.02R · 12h +0.55% · n 343 | ~ -0.13 vs -0.16R · 12h +0.02% · n 1366 | ~ +0.07 vs -0.07R · 12h +0.85% · n 253 |
+| Ichimoku cloud breakout | bull | ~ -0.07 vs -0.10R · 12h +0.01% · n 2299 | ~ +0.02 vs -0.02R · 12h +0.17% · n 790 | · -0.16 vs -0.16R · 12h -0.14% · n 2641 | ~ -0.02 vs -0.07R · 12h +0.09% · n 897 |
+| Ichimoku cloud breakdown | bear | ~ -0.09 vs -0.10R · 12h -0.04% · n 2275 | · -0.04 vs -0.02R · 12h -0.24% · n 811 | · -0.21 vs -0.16R · 12h +0.02% · n 2763 | ~ -0.06 vs -0.07R · 12h -0.40% · n 964 |
+| Aroon bullish cross | bull | · -0.11 vs -0.10R · 12h -0.01% · n 2247 | · -0.02 vs -0.02R · 12h +0.23% · n 581 | · -0.16 vs -0.16R · 12h -0.13% · n 2563 | ~ -0.02 vs -0.07R · 12h +0.04% · n 621 |
+| Donchian 20 breakout | bull | ~ -0.08 vs -0.10R · 12h +0.02% · n 2876 | ~ +0.03 vs -0.02R · 12h +0.16% · n 1188 | + -0.10 vs -0.16R · 12h +0.03% · n 3043 | + +0.03 vs -0.06R · 12h +1.19% · n 984 |
+| Donchian 55 breakout (turtle) | bull | ~ -0.08 vs -0.10R · 12h +0.01% · n 1666 | ~ +0.06 vs -0.02R · 12h +0.40% · n 736 | + -0.06 vs -0.16R · 12h +0.18% · n 1556 | ✓ +0.08 vs -0.06R · 12h +1.93% · n 518 |
+| Donchian 20 breakdown | bear | ~ -0.06 vs -0.10R · 12h +0.03% · n 2746 | ~ -0.00 vs -0.02R · 12h +0.11% · n 1000 | ~ -0.15 vs -0.16R · 12h +0.03% · n 3195 | ~ -0.05 vs -0.07R · 12h +0.18% · n 1175 |
+| OBV new high before price | bull | ~ -0.07 vs -0.10R · 12h +0.02% · n 2204 | ~ +0.01 vs -0.02R · 12h +0.28% · n 792 | ~ -0.13 vs -0.16R · 12h +0.07% · n 2398 | · -0.09 vs -0.07R · 12h -0.04% · n 799 |
+| Breakout confirmed by OBV | bull | ~ -0.09 vs -0.10R · 12h +0.05% · n 3036 | ~ +0.04 vs -0.02R · 12h +0.25% · n 1230 | + -0.09 vs -0.16R · 12h -0.00% · n 3286 | + +0.03 vs -0.06R · 12h +0.98% · n 1147 |
+| Volume spike on a green candle | bull | ~ -0.04 vs -0.10R · 12h +0.18% · n 1248 | ✓ +0.14 vs -0.03R · 12h +1.17% · n 321 | · -0.19 vs -0.16R · 12h -0.02% · n 1556 | ~ +0.06 vs -0.07R · 12h +0.95% · n 427 |
+| Volume spike on a red candle | bear | · -0.10 vs -0.10R · 12h -0.10% · n 1317 | ~ -0.02 vs -0.03R · 12h +0.13% · n 340 | · -0.19 vs -0.16R · 12h -0.08% · n 1633 | ~ +0.00 vs -0.07R · 12h +0.87% · n 328 |
+| Reclaim of the 24h VWAP | bull | · -0.12 vs -0.10R · 12h -0.00% · n 4600 | ~ -0.02 vs -0.02R · 12h -0.03% · n 3755 | · -0.19 vs -0.16R · 12h -0.04% · n 5459 | · -0.07 vs -0.07R · 12h -0.11% · n 4198 |
+| Loss of the 24h VWAP | bear | · -0.12 vs -0.10R · 12h +0.01% · n 4523 | · -0.02 vs -0.02R · 12h -0.03% · n 3788 | · -0.18 vs -0.16R · 12h +0.05% · n 5226 | · -0.09 vs -0.07R · 12h -0.21% · n 4176 |
+| Heikin-Ashi turns green | bull | · -0.11 vs -0.10R · 12h -0.03% · n 6361 | ~ -0.02 vs -0.02R · 12h +0.02% · n 2423 | · -0.19 vs -0.16R · 12h -0.09% · n 7345 | · -0.08 vs -0.07R · 12h -0.25% · n 2832 |
+| Heikin-Ashi turns red | bear | · -0.11 vs -0.10R · 12h +0.06% · n 6329 | ~ -0.00 vs -0.02R · 12h -0.01% · n 2484 | · -0.17 vs -0.16R · 12h +0.13% · n 7072 | · -0.07 vs -0.07R · 12h -0.05% · n 2706 |
+| Big 24h rally (momentum) | bull | + +0.03 vs -0.10R · 12h +0.18% · n 709 | ✓ +0.08 vs -0.02R · 12h +0.49% · n 532 | ~ -0.10 vs -0.16R · 12h +0.05% · n 771 | ~ -0.02 vs -0.06R · 12h +0.70% · n 545 |
+| Big 24h drop (dip) | bear | ~ -0.10 vs -0.10R · 12h +0.08% · n 578 | · -0.09 vs -0.02R · 12h -0.32% · n 417 | ~ -0.10 vs -0.16R · 12h +0.65% · n 653 | ~ -0.01 vs -0.07R · 12h +1.63% · n 460 |
+| Five green candles in a row | bull | ~ -0.06 vs -0.10R · 12h +0.07% · n 1524 | ~ +0.05 vs -0.02R · 12h +0.70% · n 435 | ~ -0.12 vs -0.16R · 12h +0.20% · n 1332 | ✓ +0.10 vs -0.06R · 12h +1.41% · n 397 |
+| Five red candles in a row | bear | ~ -0.08 vs -0.10R · 12h -0.11% · n 1369 | · -0.11 vs -0.02R · 12h -0.26% · n 378 | ~ -0.10 vs -0.16R · 12h +0.16% · n 1378 | ~ -0.01 vs -0.07R · 12h +0.33% · n 529 |
+| Stretched 2.5 ATR below the 20 EMA | bull | ~ -0.10 vs -0.10R · 12h -0.08% · n 1078 | · -0.10 vs -0.02R · 12h -0.81% · n 379 | · -0.21 vs -0.16R · 12h +0.05% · n 1165 | ~ -0.02 vs -0.07R · 12h +1.59% · n 377 |
+| Z-score below -2 (50 bars) | bull | ~ -0.05 vs -0.10R · 12h -0.01% · n 1829 | · -0.04 vs -0.02R · 12h -0.32% · n 548 | · -0.21 vs -0.16R · 12h -0.14% · n 2058 | · -0.14 vs -0.07R · 12h -0.60% · n 619 |
+
+## Jarvus's own playbooks (1h)
+
+| Signal | Side | Majors 1h | Majors 4h | Memes 1h | Memes 4h |
+|---|---|---|---|---|---|
+| P1 trend pullback (Jarvus) | bull | · -0.10 vs -0.10R · 12h -0.05% · n 2004 | — | ~ -0.09 vs -0.16R · 12h +0.15% · n 1793 | — |
+| P3 breakout retest (Jarvus) | bull | ~ -0.06 vs -0.10R · 12h +0.05% · n 1324 | — | + -0.04 vs -0.16R · 12h +0.24% · n 1188 | — |
+| P4 sweep reclaim (Jarvus) | bull | · -0.13 vs -0.10R · 12h -0.17% · n 626 | — | · -0.24 vs -0.16R · 12h +0.11% · n 517 | — |
+| P6 opening range breakout (Jarvus) | bull | · -0.12 vs -0.10R · 12h +0.14% · n 1249 | — | ~ -0.07 vs -0.16R · 12h +0.42% · n 1002 | — |
+| RSI(2) dip (Jarvus) | bull | ~ -0.06 vs -0.10R · 12h +0.05% · n 2265 | — | ~ -0.12 vs -0.16R · 12h +0.18% · n 2056 | — |
+
+## The ones that held up and made money (✓)
+
+- Big green candle (momentum ignition) (majors 4h): +0.130R vs random -0.023R, n 620, t 4.12, early +0.130 vs -0.010 (n 444), late +0.130 vs -0.058 (n 176), LOUD-gate subset +0.503 vs +0.086 (n 109)
+- Big green candle (momentum ignition) (memes 4h): +0.055R vs random -0.066R, n 592, t 2.81, early +0.078 vs -0.051 (n 269), late +0.036 vs -0.073 (n 323), LOUD-gate subset +0.207 vs +0.095 (n 195)
+- RSI(14) rises above 70 (overbought) (memes 4h): +0.157R vs random -0.062R, n 437, t 4.12, early +0.179 vs -0.041 (n 224), late +0.134 vs -0.073 (n 213), LOUD-gate subset +0.293 vs +0.113 (n 164)
+- RSI(14) back below 70 (memes 4h): +0.104R vs random -0.062R, n 428, t 3.53, early +0.181 vs -0.041 (n 215), late +0.027 vs -0.073 (n 213), LOUD-gate subset +0.234 vs +0.113 (n 190)
+- Golden cross (50/200) (memes 1h): +0.028R vs random -0.159R, n 454, t 3.02, early +0.040 vs -0.153 (n 221), late +0.016 vs -0.168 (n 233), LOUD-gate subset +0.506 vs +0.071 (n 36)
+- Keltner channel breakout (memes 4h): +0.054R vs random -0.065R, n 638, t 2.85, early +0.117 vs -0.048 (n 285), late +0.003 vs -0.072 (n 353), LOUD-gate subset +0.233 vs +0.106 (n 166)
+- MFI above 80 (memes 4h): +0.094R vs random -0.065R, n 507, t 3.43, early +0.134 vs -0.044 (n 236), late +0.059 vs -0.072 (n 271), LOUD-gate subset +0.298 vs +0.116 (n 120)
+- Donchian 55 breakout (turtle) (memes 4h): +0.081R vs random -0.063R, n 518, t 3.04, early +0.130 vs -0.044 (n 241), late +0.038 vs -0.072 (n 277), LOUD-gate subset +0.205 vs +0.106 (n 220)
+- Volume spike on a green candle (majors 4h): +0.142R vs random -0.025R, n 321, t 3.04, early +0.151 vs -0.010 (n 214), late +0.124 vs -0.061 (n 107), LOUD-gate subset +0.572 vs +0.083 (n 61)
+- Big 24h rally (momentum) (majors 4h): +0.081R vs random -0.021R, n 532, t 2.71, early +0.105 vs -0.007 (n 401), late +0.009 vs -0.056 (n 131), LOUD-gate subset +0.380 vs +0.085 (n 111)
+- Five green candles in a row (memes 4h): +0.104R vs random -0.064R, n 397, t 3.5, early +0.063 vs -0.063 (n 216), late +0.152 vs -0.076 (n 181), LOUD-gate subset +0.440 vs +0.100 (n 69)
+
+## Count by family (cells with 30+ trades)
+
+| Family | cells | ✓ | + | ~ | · | ✗ |
+|---|---|---|---|---|---|---|
+| Candlestick patterns | 153 | 2 | 2 | 85 | 62 | 2 |
+| Chart patterns and price structure | 94 | 0 | 5 | 53 | 35 | 1 |
+| Indicator signals | 236 | 9 | 13 | 125 | 88 | 1 |
+| Jarvus's own playbooks (1h) | 10 | 0 | 1 | 5 | 4 | 0 |
 
 
 <!-- ===== references/market-structure.md ===== -->
@@ -10910,4 +12138,4 @@ before leaning on it.
 
 # Bundled scripts
 
-The skill folder ships `events.py`, `scan.py`, `fetch_ohlcv.py`, `snapshot.py`, `confluence.py`, `position_size.py`, `journal.py`, `journal_stats.py`, `backtest.py`, `ladder.py` (the 80% Mode engine), `experiment_80.py`, `volgate.py` (the trained volatility gate), `decide.py` (the Terminal's decision engine), `goal.py` (the goal calculator), `system_test.py` (Jarvus's rulebook backtested) and `selftest.py`. A plain claude.ai chat cannot run them or reach exchange APIs, so there ask for the key numbers (price, today's high/low, PDH/PDL/PDC, funding) and say which data is missing. Without the scripts, apply the decision engine by hand (decision-engine.md section 10) and read the gate manually.
+The skill folder ships `events.py`, `scan.py`, `fetch_ohlcv.py`, `snapshot.py`, `confluence.py`, `position_size.py`, `journal.py`, `journal_stats.py`, `backtest.py`, `ladder.py` (the 80% Mode engine), `experiment_80.py`, `volgate.py` (the trained volatility gate), `decide.py` (the Terminal's decision engine), `goal.py` (the goal calculator), `jarvus.py` (the one-call card/scan), `know.py` (the knowledge lookup), `system_test.py` (Jarvus's rulebook backtested) and `selftest.py`. A plain claude.ai chat cannot run them or reach exchange APIs, so there ask for the key numbers (price, today's high/low, PDH/PDL/PDC, funding) and say which data is missing. Without the scripts, apply the decision engine by hand (decision-engine.md section 10) and read the gate manually.
