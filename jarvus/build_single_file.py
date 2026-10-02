@@ -15,7 +15,10 @@ ORDER = ["SKILL.md"] + [f"references/{f}" for f in [
     "market-structure.md", "indicators.md", "crypto-market-data.md", "risk-management.md",
     "playbooks.md", "strategy-encyclopedia.md", "probability-and-prediction.md",
     "regimes-and-cycles.md", "altcoins-and-memecoins.md", "execution-and-order-types.md",
-    "psychology-and-rules.md", "journal-and-backtesting.md", "worked-examples.md", "glossary.md"]] + \
+    "psychology-and-rules.md", "journal-and-backtesting.md", "worked-examples.md", "glossary.md",
+    "terminal-evidence.md", "decision-engine.md", "any-balance-and-goals.md", "live-trading-and-brokers.md",
+    "strategy-scoreboard.md", "strategy-library-untested.md", "handbook-day-trading.md", "handbook-memecoins.md",
+    "sources-knowledge-pack.md", "rule-language.md"]] + \
     [f"assets/{f}" for f in [
     "trade-plan-template.md", "pre-trade-checklist.md", "daily-routine.md",
     "event-calendar-2026.md", "jarvus-clock-mt.md"]]
@@ -34,9 +37,12 @@ def main() -> None:
     parts.append("\n\n<!-- ===== scripts ===== -->\n\n# Bundled scripts\n\n"
                  "The skill folder ships `events.py`, `scan.py`, `fetch_ohlcv.py`, `snapshot.py`, "
                  "`confluence.py`, `position_size.py`, `journal.py`, `journal_stats.py`, `backtest.py`, "
-                 "`ladder.py` (the 80% Mode engine), `experiment_80.py` and `selftest.py`. A plain "
+                 "`ladder.py` (the 80% Mode engine), `experiment_80.py`, `volgate.py` (the trained volatility gate), "
+                 "`decide.py` (the Terminal's decision engine), `goal.py` (the goal calculator) and `selftest.py`. A plain "
                  "claude.ai chat cannot run them or reach exchange APIs, so there ask for the key "
-                 "numbers (price, today's high/low, PDH/PDL/PDC, funding) and say which data is missing.\n")
+                 "numbers (price, today's high/low, PDH/PDL/PDC, funding) and say which data is missing. Without "
+                 "the scripts, apply the decision engine by hand (decision-engine.md section 10) and read the gate "
+                 "manually.\n")
     md = "".join(parts)
     os.makedirs(os.path.join(HERE, "dist"), exist_ok=True)
     out = os.path.join(HERE, "dist", "jarvus-all-in-one.md")

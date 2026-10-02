@@ -1827,7 +1827,7 @@ This part is therefore more valuable to Abhi than most of the signal parts.
 Execution · any · Any · the single biggest retail improvement
 Thesis: pay the maker fee instead of the taker fee by resting a limit order.
 Rules: place the limit at the level the plan named; accept that some fills are missed.
-Crypto notes: on Kraken Pro this is 16bps vs 26bps; on Coinbase Advanced and MEXC the maker fee can be **zero**. In the measured tables, that difference is the whole difference between a live edge and a dead one.
+Crypto notes: on Kraken Pro's entry tier this is 0.40% vs 0.80% per side (Sept 2026; 0.22% vs 0.38% once you trade $10K+ a month with $20K on platform), at NDAX 0.20% either way; some venues run zero-maker promotions, so check the current fee page. In the measured tables, that difference is the whole difference between a live edge and a dead one.
 Test: re-run any journal at maker vs taker fees. The gap will be larger than any setup change.
 
 ### 234. Limit-at-level vs market-on-confirmation
@@ -2234,7 +2234,7 @@ exit pays more because each rung is another fill.
 | Binance / OKX spot 20bps | 51.0% | −0.011 | 79.5% | −0.053 |
 | good maker tier 30bps | 50.6% | −0.044 | 78.3% | −0.077 |
 | NDAX 40bps | 50.5% | −0.077 | 74.9% | −0.112 |
-| Kraken Pro taker 52bps | 50.7% | −0.111 | **68.3%** | −0.147 |
+| 52bps round trip (Kraken Pro's older taker tier; today's entry tier is 160bps, see terminal-evidence.md) | 50.7% | −0.111 | **68.3%** | −0.147 |
 
 Three things to take from this table.
 

@@ -19,7 +19,8 @@ from snapshot import load_csv
 STOP_ATR, TARGET_R, HORIZON, SLIP = 4.0, 2.0, 96, 2.0
 # one side, in bps. Round trip for a plain entry+exit is 2x these.
 FEE_TIERS = {"gross (0)": 0.0, "maker 10 (Coinbase/MEXC)": 5.0, "Binance/OKX spot 20": 10.0,
-             "good maker 30": 15.0, "NDAX 40": 20.0, "Kraken taker 52": 26.0}
+             "good maker 30": 15.0, "NDAX 40": 20.0, "old Kraken taker 52": 26.0,
+             "Kraken Pro entry taker 160": 80.0}
 KEY_LADDERS = ["none", "half_at_1R", "half_at_p5", "half_at_p33", "half_at_p25", "half_at_p2", "most_at_p15"]
 
 

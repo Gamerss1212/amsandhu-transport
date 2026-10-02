@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Self-test for the crypto-day-trading scripts. Run after installing:  python3 scripts/selftest.py
+"""Self-test for the Jarvus scripts (v6: also the Terminal's gate, decision engine and goal calculator). Run after installing:  python3 scripts/selftest.py
 
 Checks the indicator math against hand-computed values, the sizing formula, the
 statistics, the backtest engine on synthetic candles with a known outcome, the
@@ -280,6 +280,61 @@ ck2 = snapshot.clock(datetime(2026, 12, 10, 12, 0, tzinfo=timezone.utc))
 check("clock reports US open 14:30 UTC in winter", ck2["us_open_utc"] == "14:30")
 check("clock: CME closed on Saturday", snapshot.clock(datetime(2026, 9, 19, 12, 0, tzinfo=timezone.utc))["cme_closed"])
 check("clock: CME open on Wednesday", not ck["cme_closed"])
+
+# ------------------------------------------------- the Terminal, built in (v6) ---
+print("== volatility gate (trained model) ==")
+import math as _m  # noqa: E402
+import random as _r  # noqa: E402
+import volgate as vg  # noqa: E402
+_g = vg.VolGate()
+check("gate model loads for crypto and stocks", _g.model.get("crypto", {}).get("kind") == "gbm" and _g.model.get("stock", {}).get("kind") == "logit")
+_rng = _r.Random(3)
+_t0 = 1_780_000_000_000 - (1_780_000_000_000 % 3_600_000)
+_rows, _p = [], 100.0
+for _k in range(500):
+    _vol = 0.004 * (2.5 if (_k // 60) % 3 == 0 else 1.0)
+    _o = _p
+    _p = _p * _m.exp(_rng.gauss(0, _vol))
+    _rows.append([_t0 + _k * 3_600_000, _o, max(_o, _p) * (1 + abs(_rng.gauss(0, _vol / 2))),
+                  min(_o, _p) * (1 - abs(_rng.gauss(0, _vol / 2))), _p, _rng.uniform(50, 150)])
+_t, _o, _h, _l, _c, _v = (list(x) for x in zip(*_rows))
+_rd = _g.read(vg.Bars(_t, _o, _h, _l, _c, _v, 12), 499, "crypto")
+check("gate reproduces the Terminal's reading on a fixed series (NORMAL 0.2179 / 0.4391)",
+      _rd["state"] == "NORMAL" and _rd["p_loud"] == 0.2179 and _rd["p_quiet"] == 0.4391, str(_rd)[:200])
+check("gate attaches tested evidence (observed rate and hours) to the reading",
+      _rd["evidence"]["loud"]["n"] > 1000 and 0 < _rd["evidence"]["loud"]["observed_rate"] < 1)
+check("gate refuses to read with too little history", vg.read_rows(_g, _rows[:100], "crypto")["state"] == "UNKNOWN")
+check("regime: a straight rise is 'up'", vg.regime([100.0 + i for i in range(260)])["trend"] == "up")
+check("regime: a zigzag is 'sideways'", vg.regime([100.0 + (i % 2) for i in range(260)])["trend"] == "sideways")
+
+print("== decision engine (the Terminal's brain) ==")
+import decide as dc  # noqa: E402
+_c1 = dc.cost_r(100.0, 98.0, False, "ndax", 0.02)
+check("NDAX round trip 0.44% on a 2% stop = 0.22R", close(_c1["cost_r"], 0.22, 1e-6), str(_c1))
+check("cost above 0.33R is refused", dc.decide(dc.cost_r(100.0, 99.5, False, "kraken", 0.02), "NORMAL", None)["action"] == "SKIP")
+check("QUIET is refused", dc.decide(dc.cost_r(100.0, 96.0, True, "ndax", 0.02), "QUIET", None)["kind"] == "quiet")
+check("0.20-0.33R cost halves the size", dc.decide(_c1, "NORMAL", None)["size"] == 0.5)
+check("LOUD with fine costs = 0.6x", dc.decide(dc.cost_r(100.0, 96.0, True, "ndax", 0.02), "LOUD", None)["size"] == 0.6)
+_neg = dc.estimate({"mean": -0.4, "trades": 200}, [])
+check("history counts as at most 25 pseudo-trades", _neg["evidence"] == 25.0)
+check("a measured negative edge is refused", dc.decide(dc.cost_r(100.0, 96.0, True, "ndax", 0.02), "NORMAL", _neg)["action"] == "SKIP")
+_own = dc.estimate({"mean": -0.4, "trades": 200}, [1.0] * 40)
+check("his own trades overturn history (40 wins at +1R beat 25 pseudo-trades at -0.4R)", _own["mean"] > 0.4, str(_own))
+_pos = dc.decide(dc.cost_r(100.0, 96.0, True, "ndax", 0.02), "NORMAL", {"mean": 0.2, "sd": 0.1, "evidence": 30, "own_trades": 5})
+check("a positive edge sizes up, at most 1.5x", _pos["action"] == "RESIZE" and close(_pos["size"], 1.3, 1e-6), str(_pos))
+_pr = dc.strategy_prior("STRAT-407", "SOL-USD", "ndax")
+check("scoreboard lookup interpolates NDAX between low-fee and retail runs",
+      _pr and _pr["mean"] is not None and abs(_pr["mean"] - (0.183 + (-0.011 - 0.183) * (0.002 - 0.001) / 0.007)) < 0.02, str(_pr)[:200])
+
+print("== goal calculator ==")
+import goal as gl  # noqa: E402
+import json as _j  # noqa: E402
+_inp = _j.load(open(gl.INPUTS))
+_gr = gl.project(_inp, "ndax", 100, 90, 300_000)
+check("$100 -> $300K in 90 days needs +9.30% every day", close(_gr["goal"]["per_day_pct"], 9.3037, 1e-3), str(_gr["goal"]))
+check("none of 5,000 measured paths reach it", _gr["goal"]["share_reaching"] == 0.0)
+check("the measured middle outcome stays near $100", 95 < _gr["median"] < 106, str(_gr["median"]))
+check("all five fee levels are bundled", set(_inp["profiles"]) == {"venue", "coinbase", "kraken", "ndax", "low_fee"})
 
 print()
 if FAILS:
