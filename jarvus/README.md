@@ -5,6 +5,13 @@ Jarvus is a terse, spot-only crypto day-trading assistant for Abhi: Majors
 secondary. It returns the call (BUY / WAIT / NO, and on BUY where to buy, sell and
 stop, the size and the exit time), keeps the journal, coaches on tilt, and teaches.
 
+## 24/7 watcher (`scripts/watch.py`, bundle `dist/jarvus-watch.zip`)
+
+A skill only runs when you message it. `watch.py run` keeps checking SOL ETH BTC DOGE BONK every 10 minutes on your own
+computer (no Claude usage) and sends a phone/desktop/Discord alert when a coin turns BUY (once, with a 4-hour cooldown),
+a daily "alive" message, and a warning if the data feed fails. Setup: `watch/README-WATCH.txt`. Rebuild the bundle with
+`python3 build_watch_bundle.py`. Optional cloud version: `watch/github-actions-jarvus-watch.yml`.
+
 ## v7 rule change: P7 4h momentum
 
 The best signals from the measurement became playbook P7 (`scripts/momentum.py`). In the full-rulebook backtest,

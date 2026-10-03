@@ -30,6 +30,7 @@ Orders: buy limit 0.1% under the close · stop 4×ATR(1h) (P7: 4×ATR(4h)) · se
 
 | He says | Run |
 |---|---|
+| watch 24/7 / alert me / notify me when to buy | Jarvus can't watch by itself; the watcher runs on his computer, zero Claude usage: `scripts/watch.py` (setup: `watch/README-WATCH.txt` in jarvus-watch.zip). 2 lines max. |
 | teach / what is X / does X work / any strategy | `know.py X` |
 | take this trade? (entry/stop given) | `decide.py --entry E --stop S --target T --gate auto --symbol X` |
 | size | `position_size.py --account A --entry E --stop S --venue ndax` |

@@ -1,0 +1,30 @@
+# OPTIONAL: run the Jarvus watcher in the cloud (no PC needed). To use it:
+#  1. Copy this file to .github/workflows/jarvus-watch.yml in your repository, on the DEFAULT branch
+#     (GitHub only runs schedules from the default branch).
+#  2. Repository Settings > Secrets and variables > Actions > New repository secret:
+#     name JARVUS_NTFY_TOPIC, value = the topic printed by `python watch.py setup` (never put it in a file).
+#  3. Subscribe to the same topic in the ntfy app. Scheduled runs are best-effort and can be delayed 5-30 minutes.
+name: jarvus-watch
+on:
+  schedule:
+    - cron: "7,22,37,52 * * * *"
+  workflow_dispatch: {}
+permissions:
+  contents: read
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/cache@v4            # remembers what was already alerted
+        with:
+          path: .jarvus-state
+          key: jarvus-state-${{ github.run_id }}
+          restore-keys: jarvus-state-
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - env:
+          JARVUS_NTFY_TOPIC: ${{ secrets.JARVUS_NTFY_TOPIC }}
+        run: python jarvus/scripts/watch.py once --state .jarvus-state/state.json --no-desktop

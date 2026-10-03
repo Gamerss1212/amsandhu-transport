@@ -464,6 +464,64 @@ _bad = [(sid, g, tf) for g in ("majors", "memes") for tf in ("1h", "4h") for sid
 check("a ✓ (held up and made money) always means positive R overall and in both halves at t ≥ 2.5", not _bad, str(_bad[:3]))
 check("the knowledge base has 200+ short entries", sum(1 for e in _ents if e["kb"]) >= 200)
 
+print("== watch.py (24/7 alerts) ==")
+import watch as wt  # noqa: E402
+import threading as _th  # noqa: E402
+from http.server import BaseHTTPRequestHandler as _H, HTTPServer as _S  # noqa: E402
+
+_got = []
+
+
+class _Rec(_H):
+    def do_POST(self):
+        _got.append((self.path, dict(self.headers), self.rfile.read(int(self.headers.get("Content-Length", 0))).decode()))
+        self.send_response(200)
+        self.end_headers()
+
+    def log_message(self, *a):
+        pass
+
+
+_srv = _S(("127.0.0.1", 0), _Rec)
+_th.Thread(target=_srv.serve_forever, daemon=True).start()
+_secret = "jarvus-SECRETtopic123"
+os.environ["JARVUS_NTFY_TOPIC"] = _secret
+os.environ["JARVUS_NTFY_URL"] = f"http://127.0.0.1:{_srv.server_address[1]}"
+os.environ.pop("JARVUS_WEBHOOK_URL", None)
+_buy = dict(_r, verdict="BUY", gate="LOUD", setups=["P7"], mt=datetime(2026, 10, 3, 9, 0))
+_wait = dict(_r, verdict="WAIT")
+
+
+def _fake(seq):
+    it = iter(seq)
+    return lambda c, a, f: dict(next(it), sym=f"{c}-USD")
+
+
+_buf = _io.StringIO()
+_st = {}
+with _cl.redirect_stdout(_buf):
+    wt.cycle(["BTC"], 1000, "ndax", _st, desktop=False, evaluate=_fake([_wait]))
+    wt.cycle(["BTC"], 1000, "ndax", _st, desktop=False, evaluate=_fake([_buy]))
+    wt.cycle(["BTC"], 1000, "ndax", _st, desktop=False, evaluate=_fake([_buy]))        # still BUY: no second alert
+_alerts = [g for g in _got if "BUY" in g[2]]
+check("watch: one alert when a coin turns BUY, none while it stays BUY", len(_alerts) == 1, str(len(_alerts)))
+check("watch: the alert goes to the user's private topic and holds the plan",
+      _alerts and _alerts[0][0] == f"/{_secret}" and all(k in _alerts[0][2] for k in ("Buy (limit) 84,915", "Sell 91,745", "Stop 81,500", "cancel if not filled by Sat 12:00")),
+      str(_alerts[:1]))
+check("watch: the topic never appears in the printed log", _secret not in _buf.getvalue())
+check("watch: no alert while WAIT", not wt.should_alert({}, "WAIT", 10 ** 12))
+check("watch: a flip back to BUY inside the 4h cooldown is not re-alerted",
+      not wt.should_alert({"was_buy": False, "last_alert_ms": 10 ** 12 - 3_600_000}, "BUY", 10 ** 12))
+check("watch: a new BUY after the cooldown is alerted", wt.should_alert({"was_buy": False, "last_alert_ms": 0}, "BUY", 10 ** 12))
+with _cl.redirect_stdout(_io.StringIO()):
+    _res, _err = wt.cycle(["BTC", "ETH"], 1000, "ndax", {}, desktop=False,
+                          evaluate=lambda c, a, f: (_ for _ in ()).throw(SystemExit("down")) if c == "BTC" else dict(_wait, sym="ETH-USD"))
+check("watch: one coin with no data does not stop the others", len(_res) == 1 and _err == 1)
+check("watch: the alert never forecasts a direction", "direction unknown" in wt.buy_message(_buy))
+_srv.shutdown()
+os.environ.pop("JARVUS_NTFY_TOPIC", None)
+os.environ.pop("JARVUS_NTFY_URL", None)
+
 print("== goal calculator ==")
 import goal as gl  # noqa: E402
 import json as _j  # noqa: E402
