@@ -57,6 +57,14 @@ def ms(y, m, d):
 
 
 WF_START, B_START, C_START = ms(2022, 1, 1), ms(2025, 3, 20), ms(2025, 12, 23)
+# signals that the TradingView indicator reproduces exactly (pure OHLCV + standard ta.* functions)
+TV_SIGNALS = {k for k, v in sg.DEFS.items() if v[2] == "candle"} | {
+    "rsi_os_30", "rsi_up_30", "rsi_ob_70", "rsi_dn_70", "rsi2_10", "rsi2_connors", "macd_up", "macd_up_below0", "macd_zero_up",
+    "macd_down", "macd_hist_turn", "ema_9_21_up", "ema_9_21_down", "golden_cross", "death_cross", "ema200_reclaim", "ema200_lose",
+    "bb_below", "bb_reentry", "bb_above", "bb_squeeze_up", "keltner_up", "keltner_below", "ttm_squeeze", "stoch_up", "stoch_down",
+    "stochrsi_up", "willr_up", "cci_up", "cci_break", "mfi_os", "mfi_ob", "adx_di_up", "holy_grail", "donchian20", "donchian55",
+    "donchian20_down", "obv_lead", "obv_confirm", "vol_spike_bull", "vol_spike_bear", "vwap_reclaim", "vwap_lose", "ha_green",
+    "ha_red", "rally_24h", "drop_24h", "five_green", "five_red", "stretch_ema20", "zscore_m2"}
 NAMES = ["ORION", "VEGA", "NOVA", "ATLAS", "LYRA", "TITAN", "AEGIS", "HELIOS", "SIRIUS", "KEPLER", "POLARIS", "RIGEL",
          "CYGNUS", "DRACO", "PULSAR", "QUASAR", "ZENITH", "AURORA", "BOREAS", "CALYPSO", "CASSINI", "CEPHEUS", "ELARA",
          "EOS", "GAIA", "HALO", "HERMES", "HYDRA", "HYPERION", "ICARUS", "JUNO", "MIRA", "NYX", "OBERON", "PALLAS",
@@ -72,7 +80,7 @@ def mt_weekend(t_ms):
 
 
 def build_coin(job):
-    data_dir, coin, btc_bull = job
+    data_dir, coin, btc_bull, gate_model, allowed = job
     p = st.prepare((data_dir, coin))
     d = load_csv(os.path.join(data_dir, f"{coin}_1h.csv"))
     n = len(p["c"])
@@ -80,6 +88,11 @@ def build_coin(job):
     o, h, l, c = (np.array(p[k], float) for k in ("o", "h", "l", "c"))
     v = np.array(d["volume"][:n], float)
     group, kind = ("majors", "major") if coin in MAJORS else ("memes", "meme")
+    gate = p["gate"]
+    if gate_model is not None:                               # TradingView mode: the Pine-computable gate
+        sys.path.insert(0, os.path.join(ROOT, "tv"))
+        import pine_gate
+        gate = list(pine_gate.states(t, o, h, l, c, v, gate_model))
     S1, _ = sg.all_signals(t, o, h, l, c, v, 24)
     s4, e4 = sg.bars4h_index(t)
     t4, o4, c4 = t[s4], o[s4], c[e4]
@@ -91,6 +104,9 @@ def build_coin(job):
         m = np.zeros(n, bool)
         m[[i for i in p["sig"].get(name, []) if i < n]] = True
         S1[sid] = m
+    if allowed is not None:
+        S1 = {k: v_ for k, v_ in S1.items() if k in allowed}
+        S4 = {k: v_ for k, v_ in S4.items() if k in allowed}
     memo = {}
 
     def trade(i, stop_atr):
@@ -121,16 +137,16 @@ def build_coin(job):
                 if tr is None:
                     continue
                 t_dec = int(t[i]) + HOUR
-                loud, up = p["gate"][i] == "L", bool(p["up1"][i] and p["trend4"][i])
+                loud, up = gate[i] == "L", bool(p["up1"][i] and p["trend4"][i])
                 base = (t_dec, None, coin, tr["t_exit"], float(tr["r"]), float(tr["rt_cost_r"]), float(tr["stop_pct"]),
-                        p["gate"][i], btc_bull.get(int(t[i])), up, mt_weekend(t_dec), float(c[i]))
+                        gate[i], btc_bull.get(int(t[i])), up, mt_weekend(t_dec), float(c[i]))
                 for var, ok in (("any", True), ("loud", loud), ("trend", up), ("loudtrend", loud and up)):
                     if ok:
                         out.append(base[:1] + (f"{cid}|{var}",) + base[2:])
     return coin, out
 
 
-def build_events(data_dir, workers, cache):
+def build_events(data_dir, workers, cache, gate_model=None, allowed=None):
     if os.path.exists(cache):
         with open(cache, "rb") as fh:
             return pickle.load(fh)
@@ -138,7 +154,7 @@ def build_events(data_dir, workers, cache):
     btc_bull = {int(tt): b for tt, b in zip(btc["t"], btc["bull"])}
     coins = [c for c in MAJORS + MEMES if os.path.exists(os.path.join(data_dir, f"{c}_1h.csv"))]
     with Pool(workers) as pool:
-        got = pool.map(build_coin, [(data_dir, c, btc_bull) for c in coins])
+        got = pool.map(build_coin, [(data_dir, c, btc_bull, gate_model, allowed) for c in coins])
     events = sorted((e for _, evs in got for e in evs), key=lambda e: (e[0], e[1], e[2]))
     defs = {}
     for e in events:
@@ -317,8 +333,8 @@ SPACE = {"theta": [-0.05, 0.0, 0.03, 0.05, 0.08, 0.12, 0.18], "z": [0.0, 0.5, 1.
          "variants": ["all", "loud_only", "loudtrend"], "sel_window_days": [0, 365, 730], "evidence": ["all", "since_selected"]}
 
 
-def improve(events, defs, iters, log):
-    best_p = dict(DEFAULT_PARAMS)
+def improve(events, defs, iters, log, base_params=None):
+    best_p = dict(DEFAULT_PARAMS, **(base_params or {}))
     base = simulate(events, defs, best_p)
     best_dev, best_b = base["metrics"]["dev"]["score"], base["metrics"]["B"]["score"]
     log.append({"iter": 0, "change": "start (defaults)", "dev": base["metrics"]["dev"], "B": base["metrics"]["B"],
@@ -505,13 +521,24 @@ def main():
     ap.add_argument("--iters", type=int, default=100)
     ap.add_argument("--workers", type=int, default=4)
     ap.add_argument("--cache", default=None)
+    ap.add_argument("--tv", action="store_true", help="TradingView build: Pine gate, Pine-portable signals, 25 agents")
     a = ap.parse_args()
     t0 = time.time()
-    cache = a.cache or os.path.join(a.data, "ultron_events.pkl")
-    events, defs, coins = build_events(a.data, a.workers, cache)
+    gate_model, allowed, base = None, None, {}
+    out_model, out_bt, out_md = (os.path.join(ROOT, "assets", "ultron_model.json"), os.path.join(ROOT, "assets", "ultron_backtest.json"),
+                                 os.path.join(ROOT, "docs", "BACKTEST.md"))
+    if a.tv:
+        with open(os.path.join(ROOT, "tv", "pine_gate_model.json")) as fh:
+            gate_model = json.load(fh)
+        allowed = TV_SIGNALS
+        base = {"n_agents": 25}
+        out_model, out_bt, out_md = (os.path.join(ROOT, "tv", "tv_model.json"), os.path.join(ROOT, "tv", "tv_backtest.json"),
+                                     os.path.join(ROOT, "tv", "BACKTEST.md"))
+    cache = a.cache or os.path.join(a.data, "ultron_tv_events.pkl" if a.tv else "ultron_events.pkl")
+    events, defs, coins = build_events(a.data, a.workers, cache, gate_model, allowed)
     print(f"{len(defs)} candidates, {len(events):,} signals, coins {coins} ({time.time() - t0:.0f}s)", flush=True)
     log = []
-    params = improve(events, defs, a.iters, log)
+    params = improve(events, defs, a.iters, log, base)
     final = simulate(events, defs, params, record=True)
     print("final:", {k: fmt(v) for k, v in final["metrics"].items()}, flush=True)
     stress_res = stress(events, defs, params)
@@ -520,13 +547,16 @@ def main():
     boot = bootstrap(final["trades"])
     os.makedirs(os.path.join(ROOT, "assets"), exist_ok=True)
     os.makedirs(os.path.join(ROOT, "docs"), exist_ok=True)
-    model = export(events, defs, params, final, os.path.join(ROOT, "assets", "ultron_model.json"))
-    report(os.path.join(ROOT, "docs", "BACKTEST.md"), final, stress_res, win, boot, log, params, model, len(defs), len(events),
-           time.time() - t0)
+    model = export(events, defs, params, final, out_model)
+    if a.tv:
+        model["gate"] = gate_model
+        with open(out_model, "w") as fh:
+            json.dump(model, fh, separators=(",", ":"))
+    report(out_md, final, stress_res, win, boot, log, params, model, len(defs), len(events), time.time() - t0)
     summary = {"metrics": final["metrics"], "decisions": final["decisions"], "stress": {k: v["all"] for k, v in stress_res.items()},
                "windows": win, "bootstrap": boot, "params": params, "iterations": len(log) - 1,
                "kept": sum(1 for x in log if x["kept"]) - 1}
-    with open(os.path.join(ROOT, "assets", "ultron_backtest.json"), "w") as fh:
+    with open(out_bt, "w") as fh:
         json.dump(summary, fh, indent=1)
     print("done", round(time.time() - t0), "s", flush=True)
 
