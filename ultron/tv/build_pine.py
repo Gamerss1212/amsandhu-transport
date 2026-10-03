@@ -542,10 +542,35 @@ def build(models, strategy):
     return "\n".join(L) + "\n"
 
 
+def results_md(models):
+    """Per-timeframe results table, generated from the model files (README section between the RESULTS markers)."""
+    out = ["| Chart | Agents | Test since Dec 2025 (untouched) | Validation 2025 | Development | All: trades · avg R · return · max DD | LOUD precision (test) | Status |",
+           "|---|---|---|---|---|---|---|---|"]
+    for m in models:
+        b = m["backtest"]["metrics"]
+        f = lambda k: f"{b[k]['avg_r']:+.3f}R × {b[k]['n']}"            # noqa: E731
+        a = b["all"]
+        p = m["gate"]["scores"]["C"]["loud_precision"]
+        out.append(f"| {m['tf']} | {len(m['agents'])} | {f('C')} | {f('B')} | {f('dev')} | {a['n']} · {a['avg_r']:+.3f}R · "
+                   f"{a['ret']:+.1f}% · {a['mdd']:.1f}% | {p if p is not None else 'n/a'}% | "
+                   f"{'passed' if test_line(m)[1] else '**caution**'} |")
+    return "\n".join(out)
+
+
 def main():
     models = load_models()
     if not models:
         raise SystemExit("no models in ultron/tv/models")
+    readme = os.path.join(HERE, "README.md")
+    if os.path.exists(readme):
+        with open(readme) as fh:
+            txt = fh.read()
+        a, b = "<!-- RESULTS -->", "<!-- /RESULTS -->"
+        if a in txt and b in txt:
+            txt = txt[:txt.index(a) + len(a)] + "\n" + results_md(models) + "\n" + txt[txt.index(b):]
+            with open(readme, "w") as fh:
+                fh.write(txt)
+            print("README results table updated")
     for strategy, name in ((False, "ULTRON_indicator.pine"), (True, "ULTRON_strategy.pine")):
         src = build(models, strategy)
         with open(os.path.join(HERE, name), "w") as fh:
