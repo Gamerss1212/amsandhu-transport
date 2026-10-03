@@ -84,14 +84,22 @@ The backtest below only applies to the trained defaults.
 <!-- RESULTS -->
 | Chart | Agents | Test since Dec 2025 (untouched) | Validation 2025 | Development | All: trades · avg R · return · max DD | LOUD precision (test) | Status |
 |---|---|---|---|---|---|---|---|
-| 15m | 25 | -0.172R × 18 | -0.013R × 31 | -0.193R × 45 | 94 · -0.130R · -2.6% · 2.8% | 71.5% | **caution** |
-| 30m | 25 | +0.005R × 128 | +0.119R × 105 | +0.116R × 80 | 313 · +0.072R · +13.1% · 12.1% | 74.4% | passed |
-| 1h | 25 | +0.154R × 56 | +0.192R × 55 | +0.172R × 158 | 269 · +0.173R · +40.6% · 5.9% | 80.2% | passed |
-| 2h | 25 | +0.030R × 67 | +0.264R × 63 | +0.157R × 286 | 416 · +0.153R · +43.6% · 9.7% | 83.1% | passed |
-| 4h | 25 | +0.069R × 22 | +0.330R × 19 | +0.527R × 81 | 122 · +0.414R · +36.5% · 3.4% | 87.3% | passed |
-| 1D | 25 | +0.495R × 4 | -0.315R × 11 | +0.660R × 33 | 48 · +0.423R · +13.8% · 5.5% | 29.4% | **caution** |
+| 5m | 25 | -0.029R × 33 | -0.015R × 182 | +0.013R × 37 | 252 · -0.013R · +0.6% · 2.3% | 81.2% | **flat by default** |
+| 15m | 25 | -0.172R × 18 | -0.013R × 31 | -0.193R × 45 | 94 · -0.130R · -2.6% · 2.8% | 71.5% | **flat by default** |
+| 30m | 25 | +0.005R × 128 | +0.119R × 105 | +0.116R × 80 | 313 · +0.072R · +13.1% · 12.1% | 74.4% | trades |
+| 1h | 25 | +0.154R × 56 | +0.192R × 55 | +0.172R × 158 | 269 · +0.173R · +40.6% · 5.9% | 80.2% | trades |
+| 2h | 25 | +0.030R × 67 | +0.264R × 63 | +0.157R × 286 | 416 · +0.153R · +43.6% · 9.7% | 83.1% | trades |
+| 4h | 25 | +0.069R × 22 | +0.330R × 19 | +0.527R × 81 | 122 · +0.414R · +36.5% · 3.4% | 87.3% | trades |
+| 1D | 25 | +0.495R × 4 | -0.315R × 11 | +0.660R × 33 | 48 · +0.423R · +13.8% · 5.5% | 29.4% | **flat by default** |
 <!-- /RESULTS -->
 
+- **What this means:** 1h is the strongest and steadiest council. 2h, 4h and 30m passed, but their untouched-test
+  edge is thin (30m and 2h are close to break-even since Dec 2025). 5m and 15m found no edge after fees: on fast
+  charts the fee is too large next to the stop. 1D had too few test trades to judge. Councils marked
+  **flat by default** show their backtest and "Flat: no reliable edge on this timeframe in testing" in the table and
+  do not signal buys, unless you switch off "Only trade timeframes that passed the untouched test".
+- 5m, 15m and 30m only have 5-minute data from Oct 2023, so their walk-forward starts in Jul 2024 and their
+  development period is shorter.
 - Per-timeframe stress tests (fees ×2, Kraken entry fees, slippage ×3), 200 random 90-day windows and 2,000
   bootstrap reshuffles are stored in `models/<tf>.json` under `backtest`.
 - Most of the edge comes from the volatility gate plus trend filters. The candle and indicator agents are the

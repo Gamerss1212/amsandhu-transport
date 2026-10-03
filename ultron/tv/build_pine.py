@@ -553,7 +553,7 @@ def results_md(models):
         p = m["gate"]["scores"]["C"]["loud_precision"]
         out.append(f"| {m['tf']} | {len(m['agents'])} | {f('C')} | {f('B')} | {f('dev')} | {a['n']} · {a['avg_r']:+.3f}R · "
                    f"{a['ret']:+.1f}% · {a['mdd']:.1f}% | {p if p is not None else 'n/a'}% | "
-                   f"{'passed' if test_line(m)[1] else '**caution**'} |")
+                   f"{'trades' if test_line(m)[1] else '**flat by default**'} |")
     return "\n".join(out)
 
 
