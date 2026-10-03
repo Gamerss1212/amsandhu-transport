@@ -1,0 +1,121 @@
+{
+ "metrics": {
+  "dev": {
+   "n": 152,
+   "avg_r": 0.1897,
+   "t": 2.06,
+   "win": 50.7,
+   "ret": 23.43,
+   "mdd": 4.18,
+   "score": 21.34058054779075
+  },
+  "B": {
+   "n": 62,
+   "avg_r": 0.1305,
+   "t": 0.83,
+   "win": 43.5,
+   "ret": 5.93,
+   "mdd": 3.36,
+   "score": 4.252736112687266
+  },
+  "C": {
+   "n": 33,
+   "avg_r": 0.2857,
+   "t": 1.35,
+   "win": 51.5,
+   "ret": 3.27,
+   "mdd": 4.68,
+   "score": 0.9359799011144032
+  },
+  "all": {
+   "n": 247,
+   "avg_r": 0.1877,
+   "t": 2.53,
+   "win": 49.0,
+   "ret": 35.04,
+   "mdd": 7.19,
+   "score": 31.443076898191677
+  }
+ },
+ "decisions": {
+  "taken": 247,
+  "refused": 3303
+ },
+ "stress": {
+  "NDAX fees x2": {
+   "n": 247,
+   "avg_r": 0.1144,
+   "t": 1.53,
+   "win": 47.0,
+   "ret": 18.26,
+   "mdd": 10.12,
+   "score": 13.20193534141394
+  },
+  "Kraken Pro entry-tier fees": {
+   "n": 241,
+   "avg_r": 0.0793,
+   "t": 1.05,
+   "win": 46.1,
+   "ret": 12.78,
+   "mdd": 11.42,
+   "score": 7.070252916102271
+  },
+  "slippage x3": {
+   "n": 245,
+   "avg_r": 0.1479,
+   "t": 1.98,
+   "win": 48.2,
+   "ret": 26.41,
+   "mdd": 7.96,
+   "score": 22.428210663288574
+  }
+ },
+ "windows": {
+  "n": 200,
+  "days": 90,
+  "median": 0.9546567626809388,
+  "p10": -1.9421466681184718,
+  "p90": 6.656065413840562,
+  "best": 10.469431892814018,
+  "worst": -3.085262993436977,
+  "positive": 122,
+  "flat": 0,
+  "avg": 1.6962611406196655,
+  "avg_trades": 15.525
+ },
+ "bootstrap": {
+  "n": 2000,
+  "ret_p5": 11.878417141287589,
+  "ret_p50": 34.75136514670096,
+  "ret_p95": 63.51564304195267,
+  "loss_share": 0.5499999999999999,
+  "dd_p50": 5.775073017841914,
+  "dd_p95": 9.849000410322194
+ },
+ "params": {
+  "theta": -0.05,
+  "z": 1.5,
+  "shrink": 20.0,
+  "size_a": 2.0,
+  "gate_rule": "no_quiet",
+  "loud_mult": 1.0,
+  "weekend_off": true,
+  "regime_rule": "memes_off_in_bear",
+  "max_open": 3,
+  "max_major_open": 1,
+  "max_meme_open": 3,
+  "risk_major": 0.006,
+  "risk_meme": 0.003,
+  "daily_stop_r": -3.0,
+  "loss_streak": 3,
+  "sel_z": 0.0,
+  "sel_min_n": 40,
+  "max_per_signal": 2,
+  "n_agents": 50,
+  "variants": "loudtrend",
+  "sel_window_days": 0,
+  "evidence": "all"
+ },
+ "iterations": 100,
+ "kept": 12
+}

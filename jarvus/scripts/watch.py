@@ -111,7 +111,7 @@ def send_desktop(title, body):
                   "$n.Icon = [System.Drawing.SystemIcons]::Information; $n.Visible = $true; "
                   f"$n.ShowBalloonTip(20000, '{t}', '{b}', 'Info'); [console]::beep(880,300); Start-Sleep -Seconds 21; $n.Dispose()")
             subprocess.Popen(["powershell", "-NoProfile", "-WindowStyle", "Hidden", "-Command", ps],
-                             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, creationflags=0x08000000)  # no console flash
         elif sys.platform == "darwin":
             esc = lambda s: s.replace("\\", "").replace('"', "'")    # noqa: E731
             subprocess.Popen(["osascript", "-e", f'display notification "{esc(body)}" with title "{esc(title)}" sound name "Glass"'],

@@ -45,7 +45,8 @@ from datetime import datetime, timezone
 from typing import Dict, List, Optional
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-MODEL_PATH = os.path.join(os.path.dirname(HERE), "assets", "volgate_model.json")
+MODEL_PATH = os.path.join(os.environ.get("JARVUS_ASSETS") or os.path.join(getattr(sys, "_MEIPASS", os.path.dirname(HERE)), "assets"),
+                          "volgate_model.json")                     # _MEIPASS: inside the packaged Windows app
 HORIZON = {"crypto": 12, "stock": 7}
 WEEK = 168
 NEED_BARS = 420                     # one week of features + two weeks of the hour-of-day profile + warm-up

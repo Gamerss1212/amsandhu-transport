@@ -52,7 +52,8 @@ from datetime import datetime, timezone
 from typing import Optional
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-BOARD = os.path.join(os.path.dirname(HERE), "assets", "strategy_scoreboard.json")
+BOARD = os.path.join(os.environ.get("JARVUS_ASSETS") or os.path.join(getattr(sys, "_MEIPASS", os.path.dirname(HERE)), "assets"),
+                     "strategy_scoreboard.json")                     # _MEIPASS: inside the packaged Windows app
 
 COST_VETO_R = 0.33
 COST_HALF_R = 0.20
