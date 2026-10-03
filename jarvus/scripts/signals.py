@@ -180,8 +180,21 @@ def P(a, k=1):
 
 def roll(a, n, fn):
     out = np.full(len(a), np.nan)
-    if len(a) >= n:
-        out[n - 1:] = fn(swv(a, n), axis=1)
+    if len(a) < n:
+        return out
+    if n > 256 and fn in (np.sum, np.mean, np.nanmean):                  # long windows (5m-30m charts): O(n) memory
+        cum = lambda x: np.concatenate([[0.0], np.cumsum(x)])                # noqa: E731
+        nan = np.isnan(a)
+        s = cum(np.where(nan, 0.0, a))
+        s = s[n:] - s[:-n]
+        k = cum(~nan)
+        k = k[n:] - k[:-n]                                               # valid values in each window
+        if fn is np.nanmean:
+            out[n - 1:] = np.where(k > 0, s / np.maximum(k, 1), np.nan)
+        else:
+            out[n - 1:] = np.where(k == n, s if fn is np.sum else s / n, np.nan)
+        return out
+    out[n - 1:] = fn(swv(a, n), axis=1)
     return out
 
 

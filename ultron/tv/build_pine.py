@@ -224,7 +224,7 @@ def build(models, strategy):
     w('gB = "Brain"')
     w('iNearest = input.bool(true, "On untrained timeframes, use the nearest trained council", group=gB)')
     w('iOther = input.bool(false, "Also run on markets it was not trained on", group=gB)')
-    w('iOnlyPassed = input.bool(false, "Only trade timeframes that passed the untouched test", group=gB)')
+    w('iOnlyPassed = input.bool(true, "Only trade timeframes that passed the untouched test", group=gB, tooltip="On: timeframes whose council lost money in testing, or had too few test trades, stay flat. Off: trade them anyway (not recommended).")')
     w('iExtra = input.float(0.0, "Extra caution: raise the minimum edge by (R)", step=0.01, group=gB)')
     w('iGate = input.string("Trained", "Volatility filter", options=["Trained", "LOUD only", "LOUD or NORMAL", "Off"], group=gB)')
     w('iCostMax = input.float(0.33, "Max fee cost (R)", minval=0.05, step=0.01, group=gB)')
@@ -526,7 +526,7 @@ def build(models, strategy):
     w('    cell(2, "Backtest", mTest + (mPassed ? "" : " · caution"), mPassed ? ink : cStop)')
     w("    if not active")
     w('        cell(3, "Status", not (isMajor or isMeme or iOther) ? "Not trained on " + base : not mPassed and iOnlyPassed ? '
-      '"Off: this timeframe failed the test" : "Untrained timeframe", cStop)')
+      '"Flat: no reliable edge on this timeframe in testing" : "Untrained timeframe", cStop)')
     w("    else")
     w('        gTxt = gate == "L" ? "LOUD (big move likely)" : gate == "Q" ? "QUIET" : gate == "N" ? "NORMAL" : "warming up"')
     w('        cell(3, "Volatility", gTxt + " · LOUD right " + array.get(G_PREC, mi), gate == "L" ? cBuy : ink)')

@@ -56,7 +56,8 @@ nearest one.
 - **Brain:**
   - nearest council on untrained timeframes on/off
   - other markets on/off
-  - trade only timeframes that passed the untouched test
+  - trade only timeframes that passed the untouched test (on by default: a council that lost money in testing,
+    or had too few test trades, stays flat and says so in the table)
   - extra caution
   - volatility filter (Trained / LOUD only / LOUD or NORMAL / Off)
   - max fee cost, stop distance, target, limit-order life, max hold
@@ -83,6 +84,8 @@ The backtest below only applies to the trained defaults.
 <!-- RESULTS -->
 | Chart | Agents | Test since Dec 2025 (untouched) | Validation 2025 | Development | All: trades · avg R · return · max DD | LOUD precision (test) | Status |
 |---|---|---|---|---|---|---|---|
+| 15m | 25 | -0.172R × 18 | -0.013R × 31 | -0.193R × 45 | 94 · -0.130R · -2.6% · 2.8% | 71.5% | **caution** |
+| 30m | 25 | +0.005R × 128 | +0.119R × 105 | +0.116R × 80 | 313 · +0.072R · +13.1% · 12.1% | 74.4% | passed |
 | 1h | 25 | +0.154R × 56 | +0.192R × 55 | +0.172R × 158 | 269 · +0.173R · +40.6% · 5.9% | 80.2% | passed |
 | 2h | 25 | +0.030R × 67 | +0.264R × 63 | +0.157R × 286 | 416 · +0.153R · +43.6% · 9.7% | 83.1% | passed |
 | 4h | 25 | +0.069R × 22 | +0.330R × 19 | +0.527R × 81 | 122 · +0.414R · +36.5% · 3.4% | 87.3% | passed |
