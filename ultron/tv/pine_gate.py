@@ -121,7 +121,7 @@ def labels(h, l, c, window=720):
     for i in range(window + H, n, 24):                         # thresholds refreshed daily (causal: ranges ended by i)
         w = fwd[i - window - H:i - H]
         w = w[~np.isnan(w)]
-        if len(w) > 200:
+        if len(w) > 0.6 * window:
             hi_q[i:i + 24], lo_q[i:i + 24] = np.percentile(w, 66.67), np.percentile(w, 33.33)
     loud = np.where(np.isnan(fwd) | np.isnan(hi_q), np.nan, (fwd > hi_q).astype(float))
     quiet = np.where(np.isnan(fwd) | np.isnan(lo_q), np.nan, (fwd < lo_q).astype(float))
@@ -146,12 +146,12 @@ def auc(p, y):
     return float((r[y == 1].sum() - n1 * (n1 + 1) / 2) / (n1 * n0)) if n1 and n0 else float("nan")
 
 
-def fit(data, split_b, split_c, flag_share=0.05):
+def fit(data, split_b, split_c, flag_share=0.05, window=720):
     """data: list of (t, o, h, l, c, v) numpy arrays per coin. Fit on bars before split_b; report B and C."""
     rows = {"A": [], "B": [], "C": []}
     for t, o, h, l, c, v in data:
         X = features(t, o, h, l, c, v)
-        yl, yq = labels(h, l, c)
+        yl, yq = labels(h, l, c, window)
         ok = ~np.isnan(X).any(axis=1) & ~np.isnan(yl) & ~np.isnan(yq)
         for k, m in (("A", t < split_b), ("B", (t >= split_b) & (t < split_c)), ("C", t >= split_c)):
             sel = ok & m
