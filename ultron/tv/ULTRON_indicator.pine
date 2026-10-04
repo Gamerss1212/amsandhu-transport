@@ -20,7 +20,7 @@ iExtra = input.float(0.0, "Extra caution: raise the minimum edge by (R)", step=0
 iGate = input.string("Trained", "Volatility filter", options=["Trained", "LOUD only", "LOUD or NORMAL", "Off"], group=gB)
 iCostMax = input.float(0.33, "Max fee cost (R)", minval=0.05, step=0.01, group=gB)
 iStopMult = input.float(1.0, "Stop distance (x the trained stop)", minval=0.25, step=0.05, group=gB, tooltip="Trained stop: 4x ATR on 1h and slower; wider on 5m-30m so fees stay small next to the stop.")
-iTargetR = input.float(2.0, "Target (R)", minval=0.5, step=0.25, group=gB)
+iExit = input.string("Auto: highest win rate that stayed profitable", "Exit style", options=["Auto: highest win rate that stayed profitable", "2R (trained)", "1.5R", "1R", "0.5R", "Half at 1R, rest 2R", "Half at 0.5R, rest 2R", "Half at 0.5R, rest 1R"], group=gB, tooltip="Same buys, different sells. Auto = per timeframe, the style with the highest win rate that was profitable in both the fit and validation periods (chosen without the test period). Smaller targets win more often but make less per trade; the table shows the tested win rate and average result of the style you pick on this timeframe. Half at ...: sell half there, move the stop to breakeven, sell the rest at the second level.")
 iOrderBars = input.int(3, "Limit order valid (bars)", minval=1, group=gB)
 iHoldX = input.float(1.0, "Max hold (x the trained hold)", minval=0.1, step=0.1, group=gB, tooltip="Trained hold: 96 bars on 1h and slower; longer on 5m-30m (about 4 days in every case).")
 gS = "Agents by signal (switch any off)"
@@ -110,7 +110,6 @@ bdChart = math.max(1, math.round(86400 / tfSec))
 bdHtf = mi == 0 ? 96 : mi == 1 ? 24 : mi == 2 ? 12 : mi == 3 ? 6 : mi == 4 ? 3 : mi == 5 ? 1 : mi == 6 ? 1 : 1
 mName = mi == 0 ? "5m" : mi == 1 ? "15m" : mi == 2 ? "30m" : mi == 3 ? "1h" : mi == 4 ? "2h" : mi == 5 ? "4h" : mi == 6 ? "1D" : "1D markets"
 mTest = mi == 0 ? "all -0.01R x 252 · test -0.03R x 33" : mi == 1 ? "all -0.10R x 184 · test -0.20R x 68" : mi == 2 ? "all +0.09R x 209 · test -0.09R x 75" : mi == 3 ? "all +0.17R x 269 · test +0.15R x 56" : mi == 4 ? "all +0.16R x 397 · test -0.02R x 65" : mi == 5 ? "all +0.41R x 122 · test +0.07R x 22" : mi == 6 ? "all +0.32R x 58 · test +0.49R x 4" : "all +0.43R x 181 · test +0.43R x 22"
-mPassed = mi == 0 ? false : mi == 1 ? false : mi == 2 ? false : mi == 3 ? true : mi == 4 ? false : mi == 5 ? true : mi == 6 ? false : true
 
 // ═════════ trained constants (all councils; mi picks one)
 var int[] M_OFF = array.from(0, 25, 50, 75, 100, 125, 150, 175)
@@ -130,6 +129,17 @@ var float[] P_SC = array.from(4.0, 8.0, 5.657, 4.0, 4.0, 4.0, 4.0, 4.0)
 var float[] P_SH = array.from(4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0)
 var int[] P_HOLD = array.from(96, 384, 192, 96, 96, 96, 96, 96)
 var float[] P_THETA = array.from(0.05, -0.05, -0.05, 0.18, -0.05, 0.0, 0.18, 0.18)
+var float[] X_R = array.from(0.0, 0.0, 0.0, 0.0, 1.0, 0.5, 0.5)
+var float[] X_F = array.from(0.0, 0.0, 0.0, 0.0, 0.5, 0.5, 0.5)
+var float[] X_T = array.from(2.0, 1.5, 1.0, 0.5, 2.0, 2.0, 1.0)
+var float[] S_WIN = array.from(44.4, 45.2, 49.6, 61.1, 49.6, 60.7, 60.7, 35.9, 39.1, 47.3, 67.4, 47.3, 66.8, 66.8, 42.1, 44.5, 51.7, 66.5, 51.7, 66.5, 66.5, 49.1, 50.9, 56.1, 71.0, 56.1, 71.0, 71.0, 45.6, 46.9, 50.9, 65.5, 50.9, 65.5, 65.5, 52.5, 53.3, 60.7, 70.5, 60.7, 70.5, 70.5, 51.7, 51.7, 53.4, 65.5, 53.4, 65.5, 65.5, 53.6, 55.8, 61.3, 75.1, 61.3, 74.0, 74.0)
+var float[] S_AVG = array.from(-0.013, -0.041, -0.048, -0.119, -0.047, -0.1, -0.101, -0.099, -0.109, -0.068, -0.033, -0.112, -0.058, -0.015, 0.093, 0.046, 0.017, -0.034, 0.064, 0.01, -0.025, 0.173, 0.128, 0.078, 0.05, 0.106, 0.066, 0.05, 0.159, 0.114, 0.041, -0.001, 0.095, 0.05, 0.014, 0.414, 0.289, 0.248, 0.083, 0.311, 0.145, 0.115, 0.315, 0.182, 0.063, -0.014, 0.142, 0.1, 0.037, 0.425, 0.326, 0.191, 0.109, 0.275, 0.191, 0.131)
+var float[] S_TWIN = array.from(36.4, 39.4, 45.5, 63.6, 45.5, 63.6, 63.6, 26.5, 27.9, 36.8, 57.4, 36.8, 57.4, 57.4, 33.3, 33.3, 45.3, 60.0, 45.3, 60.0, 60.0, 46.4, 48.2, 55.4, 69.6, 55.4, 69.6, 69.6, 35.4, 36.9, 40.0, 55.4, 40.0, 55.4, 55.4, 45.5, 45.5, 50.0, 54.5, 50.0, 54.5, 54.5, 75.0, 75.0, 75.0, 75.0, 75.0, 75.0, 75.0, 54.5, 63.6, 72.7, 81.8, 72.7, 81.8, 81.8)
+var float[] S_TAVG = array.from(-0.029, -0.005, -0.055, -0.088, -0.031, -0.031, -0.053, -0.195, -0.248, -0.219, -0.136, -0.247, -0.162, -0.134, -0.09, -0.169, -0.083, -0.124, -0.058, -0.098, -0.116, 0.154, 0.108, 0.067, -0.002, 0.127, 0.082, 0.024, -0.017, -0.084, -0.142, -0.147, -0.089, -0.068, -0.129, 0.069, 0.015, 0.113, -0.078, 0.102, -0.035, -0.024, 0.495, 0.37, 0.296, 0.047, 0.396, 0.024, 0.05, 0.431, 0.502, 0.424, 0.252, 0.469, 0.338, 0.293)
+var int[] S_TN = array.from(33, 33, 33, 33, 33, 33, 33, 68, 68, 68, 68, 68, 68, 68, 75, 75, 75, 75, 75, 75, 75, 56, 56, 56, 56, 56, 56, 56, 65, 65, 65, 65, 65, 65, 65, 22, 22, 22, 22, 22, 22, 22, 4, 4, 4, 4, 4, 4, 4, 22, 22, 22, 22, 22, 22, 22)
+var int[] AUTO_K = array.from(0, 6, 4, 5, 5, 5, 0, 3)
+var bool[] S_PASS = array.from(false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, true, true, true, false, true, true, true, false, false, false, false, false, false, false, true, true, true, false, true, false, false, false, false, false, false, false, false, false, true, true, true, true, true, true, true)
+var string[] X_NAME = array.from("2R (trained)", "1.5R", "1R", "0.5R", "Half at 1R, rest 2R", "Half at 0.5R, rest 2R", "Half at 0.5R, rest 1R")
 var float[] P_Z = array.from(2.0, 0.0, 1.5, 2.0, 0.0, 0.5, 0.0, 0.5)
 var float[] P_SIZEA = array.from(0.0, 0.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0)
 var float[] P_LOUDM = array.from(0.6, 0.6, 1.0, 1.0, 1.0, 1.0, 1.0, 0.6)
@@ -152,6 +162,17 @@ isMeme = base == "DOGE" or base == "SHIB" or base == "PEPE" or base == "BONK" or
 useMajor = isMajor or (not isMeme and iOther)
 mktKnown = syminfo.ticker == "AAPL" or syminfo.ticker == "AMD" or syminfo.ticker == "AMZN" or syminfo.ticker == "AUDUSD" or syminfo.ticker == "CNQ" or syminfo.ticker == "DIA" or syminfo.ticker == "ENB" or syminfo.ticker == "EURUSD" or syminfo.ticker == "GBPUSD" or syminfo.ticker == "GLD" or syminfo.ticker == "GOOGL" or syminfo.ticker == "IWM" or syminfo.ticker == "JPM" or syminfo.ticker == "META" or syminfo.ticker == "MSFT" or syminfo.ticker == "NFLX" or syminfo.ticker == "NVDA" or syminfo.ticker == "QQQ" or syminfo.ticker == "RY" or syminfo.ticker == "SHOP" or syminfo.ticker == "SLV" or syminfo.ticker == "SPY" or syminfo.ticker == "TD" or syminfo.ticker == "TSLA" or syminfo.ticker == "USDCAD" or syminfo.ticker == "USDJPY" or syminfo.ticker == "USO" or syminfo.ticker == "XIU"
 hasMkt = true
+exSel = iExit == "Auto: highest win rate that stayed profitable" ? -1 : iExit == "2R (trained)" ? 0 : iExit == "1.5R" ? 1 : iExit == "1R" ? 2 : iExit == "0.5R" ? 3 : iExit == "Half at 1R, rest 2R" ? 4 : iExit == "Half at 0.5R, rest 2R" ? 5 : 6
+exK = exSel < 0 ? array.get(AUTO_K, mi) : exSel
+exR = array.get(X_R, exK)
+exF = array.get(X_F, exK)
+exT = array.get(X_T, exK)
+sK = mi * 7 + exK
+mPassed = array.get(S_PASS, sK)
+pass2R = array.get(S_PASS, mi * 7)
+exName = array.get(X_NAME, exK)
+sg3(x) => (x >= 0 ? "+" : "") + str.tostring(x, "0.000")
+wonTxt = na(array.get(S_WIN, sK)) ? "not tested" : str.tostring(array.get(S_WIN, sK), "#") + "% of trades won · " + sg3(array.get(S_AVG, sK)) + "R avg" + (na(array.get(S_TWIN, sK)) ? "" : " (test since Dec 2025: " + str.tostring(array.get(S_TWIN, sK), "#") + "% · " + sg3(array.get(S_TAVG, sK)) + "R, " + str.tostring(array.get(S_TN, sK)) + " trades)")
 active = (isMarket ? hasMkt and (mktKnown or iOther) and exact : (isMajor or isMeme or iOther) and (exact or iNearest)) and (mPassed or not iOnlyPassed)
 slip = useMajor or isMarket ? 0.0002 : 0.001
 
@@ -411,12 +432,17 @@ for j = 0 to nA - 1
 var float pEntry = na
 var float pStop = na
 var float pTarget = na
+var float pTp1 = na
+var float pBe = na
+var bool pMoved = false
+var float pQtyFull = 0.0
 var int pBar = na
 var int pFill = na
 var string pAgent = ""
 var float pQty = 0.0
 buyNow = false
 sellMsg = ""
+halfNow = false
 riskPct = useMajor or isMarket ? iRiskMaj : iRiskMem
 busy = not na(pEntry)
 holdBars = math.max(1, math.round(iHoldX * array.get(P_HOLD, mi)))
@@ -425,7 +451,10 @@ if barstate.isconfirmed and bestK >= 0 and not busy
     sz = math.max(0.5, math.min(1.5, 1 + array.get(P_SIZEA, mi) * bestM)) * (bestCost > 0.20 ? 0.5 : 1.0) * (loud ? array.get(P_LOUDM, mi) : 1.0)
     pEntry := entryPx
     pStop := entryPx - bestStop
-    pTarget := entryPx + iTargetR * bestStop
+    pTarget := entryPx + exT * bestStop
+    pTp1 := exR > 0 ? entryPx + exR * bestStop : na
+    pBe := entryPx * (1 + (isMarket ? 2 * iMkt : iMaker + iTaker) / 100 + slip)
+    pMoved := false
     pBar := bar_index
     pFill := na
     pAgent := array.get(A_NAME, bestK)
@@ -434,6 +463,8 @@ if barstate.isconfirmed and bestK >= 0 and not busy
         line.new(bar_index, pEntry, bar_index + 20, pEntry, color=cBuy, style=line.style_dashed)
         line.new(bar_index, pStop, bar_index + 20, pStop, color=cStop, style=line.style_dashed)
         line.new(bar_index, pTarget, bar_index + 20, pTarget, color=cTarget, style=line.style_dashed)
+        if not na(pTp1)
+            line.new(bar_index, pTp1, bar_index + 20, pTp1, color=cTarget, style=line.style_dotted)
     if iPast
         label.new(bar_index, low, "BUY\n" + pAgent, style=label.style_label_up, color=cBuy, textcolor=color.white, size=size.small)
 else if busy and barstate.isconfirmed and bar_index > pBar
@@ -444,29 +475,41 @@ else if busy and barstate.isconfirmed and bar_index > pBar
             sellMsg := "CANCEL"
     if not na(pFill) and sellMsg == ""
         if low <= pStop
-            sellMsg := "STOP"
-        else if high >= pTarget
-            sellMsg := "TARGET"
-        else if bar_index - pFill >= holdBars
-            sellMsg := "TIME"
+            sellMsg := pMoved ? "BREAKEVEN" : "STOP"
+        else
+            if not pMoved and not na(pTp1) and high >= pTp1
+                pMoved := true
+                halfNow := true
+                pStop := math.max(pStop, pBe)
+            if high >= pTarget
+                sellMsg := "TARGET"
+            else if bar_index - pFill >= holdBars
+                sellMsg := "TIME"
+    if halfNow and iPast and sellMsg == ""
+        label.new(bar_index, high, "SELL HALF\nstop to breakeven", style=label.style_label_down, color=cTarget, textcolor=color.white, size=size.small)
     if sellMsg != ""
         if iPast and sellMsg != "CANCEL"
             label.new(bar_index, high, "SELL\n" + sellMsg, style=label.style_label_down, color=sellMsg == "TARGET" ? cTarget : cStop, textcolor=color.white, size=size.small)
         pEntry := na
         pStop := na
         pTarget := na
+        pTp1 := na
         pFill := na
+        pMoved := false
 
 // ═════════ alerts: create ONE alert → condition ULTRON → "Any alert() function call"
 if buyNow
     msgB = iMsg == "Readable" ? "ULTRON BUY " + syminfo.ticker + " (" + mName + ") · limit " + str.tostring(pEntry, format.mintick) + " · stop " + str.tostring(pStop, format.mintick) + " · sell " + str.tostring(pTarget, format.mintick) + " · size " + str.tostring(pQty, "#.####") + " · agent " + pAgent : '{"ultron":"BUY","symbol":"' + syminfo.ticker + '","tf":"' + mName + '","agent":"' + pAgent + '","entry":' + str.tostring(pEntry, format.mintick) + ',"stop":' + str.tostring(pStop, format.mintick) + ',"target":' + str.tostring(pTarget, format.mintick) + ',"qty":' + str.tostring(pQty, "#.########") + ',"edge_r":' + str.tostring(bestM, "#.###") + '}'
     alert(msgB, alert.freq_once_per_bar_close)
-if sellMsg == "STOP" or sellMsg == "TARGET" or sellMsg == "TIME"
-    why = sellMsg == "TARGET" ? "target reached" : sellMsg == "STOP" ? "stop-loss hit" : "time limit reached"
+if halfNow and sellMsg == ""
+    alert("ULTRON SELL HALF " + syminfo.ticker + " · first target " + str.tostring(pTp1, format.mintick) + " reached · move the stop to breakeven " + str.tostring(pStop, format.mintick) + " · rest sells at " + str.tostring(pTarget, format.mintick), alert.freq_once_per_bar_close)
+if sellMsg == "STOP" or sellMsg == "TARGET" or sellMsg == "TIME" or sellMsg == "BREAKEVEN"
+    why = sellMsg == "TARGET" ? "target reached" : sellMsg == "STOP" ? "stop-loss hit" : sellMsg == "BREAKEVEN" ? "breakeven stop hit (half was already sold)" : "time limit reached"
     msgS = iMsg == "Readable" ? "ULTRON SELL " + syminfo.ticker + " now · " + why + " · price " + str.tostring(close, format.mintick) : '{"ultron":"SELL","symbol":"' + syminfo.ticker + '","reason":"' + sellMsg + '","price":' + str.tostring(close, format.mintick) + '}'
     alert(msgS, alert.freq_once_per_bar_close)
 alertcondition(buyNow, "ULTRON BUY", "ULTRON: BUY {{ticker}} at {{close}} (see chart for entry, stop, target)")
-alertcondition(sellMsg == "STOP" or sellMsg == "TARGET" or sellMsg == "TIME", "ULTRON SELL", "ULTRON: SELL {{ticker}} at {{close}}")
+alertcondition(sellMsg == "STOP" or sellMsg == "TARGET" or sellMsg == "TIME" or sellMsg == "BREAKEVEN", "ULTRON SELL", "ULTRON: SELL {{ticker}} at {{close}}")
+alertcondition(halfNow, "ULTRON SELL HALF", "ULTRON: SELL HALF {{ticker}} at {{close}}, move the stop to breakeven")
 
 // ═════════ chart
 bgcolor(iGateBg and active and gate == "L" ? cLoud : na)
@@ -478,7 +521,7 @@ cell(r, a, b, col) =>
     table.cell(T, 0, r, a, text_color=color.new(#56657C, 0), text_size=tsz, text_halign=text.align_left)
     table.cell(T, 1, r, b, text_color=col, text_size=tsz, text_halign=text.align_left)
 ink = color.new(#0A1426, 0)
-statusTxt = not ((isMarket and hasMkt and (mktKnown or iOther)) or (not isMarket and (isMajor or isMeme or iOther))) ? "Not trained on " + syminfo.ticker : isMarket and not exact ? "Markets: trained on daily (1D) charts only" : not mPassed and iOnlyPassed ? "Flat: no reliable edge on this timeframe in testing" : "Untrained timeframe"
+statusTxt = not ((isMarket and hasMkt and (mktKnown or iOther)) or (not isMarket and (isMajor or isMeme or iOther))) ? "Not trained on " + syminfo.ticker : isMarket and not exact ? "Markets: trained on daily (1D) charts only" : not mPassed and iOnlyPassed ? "Flat: this exit style lost money or had too few trades on unseen data here" + (pass2R and exK != 0 ? " · 2R (trained) passed here" : "") : "Untrained timeframe"
 unitTxt = isMarket ? "units" : base
 gTxt = gate == "L" ? "LOUD (big move likely)" : gate == "Q" ? "QUIET" : gate == "N" ? "NORMAL" : "warming up"
 verdict = not active ? statusTxt : not na(pEntry) ? (na(pFill) ? "BUY · limit order waiting" : "IN TRADE") : "WAIT · no setup now"
@@ -492,12 +535,13 @@ if barstate.islast and iTable
         cell(2, "Now", verdict, vcol)
         cell(3, "Buy at", px(pEntry), cBuy)
         cell(4, "Stop-loss", px(pStop), cStop)
-        cell(5, "Sell (target)", px(pTarget), cTarget)
+        cell(5, "Sell (target)", na(pTp1) ? px(pTarget) : "half at " + px(pTp1) + ", rest at " + px(pTarget), cTarget)
         cell(6, "Size", na(pEntry) ? "—" : str.tostring(pQty, "#.####") + " " + unitTxt, ink)
         cell(7, "Volatility", active ? gTxt : "—", active and gate == "L" ? cBuy : ink)
-        cell(8, "Not advice", "paper-test first", color.new(#97A3B6, 0))
+        cell(8, "Won in backtest", exName + ": " + wonTxt, ink)
+        cell(9, "Not advice", "past results, paper-test first", color.new(#97A3B6, 0))
     else
-        cell(2, "Backtest", mTest + (mPassed ? "" : " · caution"), mPassed ? ink : cStop)
+        cell(2, "Backtest", exName + ": " + wonTxt + (mPassed ? "" : " · caution"), mPassed ? ink : cStop)
         if not active
             cell(3, "Status", statusTxt, cStop)
         else

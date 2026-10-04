@@ -41,6 +41,7 @@ def build(models):
     w('iTintL = input.bool(true, "Tint LOUD periods", group=gD)')
     w('iTintQ = input.bool(true, "Tint QUIET periods", group=gD)')
     w('cLoud = input.color(color.new(#1F5BFF, 90), "LOUD", group=gD, inline="c")')
+    w('cVLoud = input.color(color.new(#1F5BFF, 78), "VERY LOUD", group=gD, inline="c")')
     w('cQuiet = input.color(color.new(#8A94A6, 92), "QUIET", group=gD, inline="c")')
     w('cStop = input.color(color.new(#E2474D, 0), "Stop", group=gD, inline="c")')
     w('cTarget = input.color(color.new(#0E9F63, 0), "Target", group=gD, inline="c")')
@@ -68,11 +69,23 @@ def build(models):
     w(f"var float[] G_WQ = {arr([x for g in G for x in g['w_quiet']], 8)}")
     w(f"var float[] G_TL = {arr([g['t_loud'] for g in G], 6)}")
     w(f"var float[] G_TQ = {arr([g['t_quiet'] for g in G], 6)}")
-    sc = [g["scores"]["C"] for g in G]
-    pr = lambda x: f"{x:.0f}%" if x is not None else "n/a"                          # noqa: E731
-    w("var string[] G_PL = array.from(" + ", ".join(f'"{pr(s["loud_precision"])}"' for s in sc) + ")")
-    w("var string[] G_PQ = array.from(" + ", ".join(f'"{pr(s["quiet_precision"])}"' for s in sc) + ")")
-    w("var string[] G_BASE = array.from(" + ", ".join(f'"{pr(s["base_rate"])}"' for s in sc) + ")")
+    w(f"var float[] G_TVL = {arr([g.get('t_vloud', 2.0) for g in G], 6)}")
+    w(f"var float[] G_TVQ = {arr([g.get('t_vquiet', 2.0) for g in G], 6)}")
+    tiers = [g.get("scores_tiers", {}).get("all|C", {}) for g in G]
+    def acc(t, k):
+        v = t.get(k)
+        return f"right {v[0]:.0f}% of {v[1]:,} calls" if v and v[0] is not None and v[1] else "not enough calls to test"
+    for key, nm_ in (("loud", "A_L"), ("very_loud", "A_VL"), ("quiet", "A_Q"), ("very_quiet", "A_VQ")):
+        w(f"var string[] {nm_} = array.from(" + ", ".join(f'"{acc(t, key)}"' for t in tiers) + ")")
+    w("var string[] A_BASE = array.from(" + ", ".join(f'"{t.get("base_loud", 0):.0f}%"' for t in tiers) + ")")
+    w("var string[] A_BASEQ = array.from(" + ", ".join(f'"{t.get("base_quiet", 0):.0f}%"' for t in tiers) + ")")
+    for key, nm_ in (("move_all", "M_ALL"), ("move_loud", "M_L"), ("move_very_loud", "M_VL"), ("move_quiet", "M_Q")):
+        w(f"var float[] {nm_} = {arr([t.get(key) for t in tiers], 2)}")
+    def weak(t, k):                                                     # a call that was right < 50% or tested < 30 times
+        v = t.get(k)
+        return not (v and v[0] is not None and v[1] >= 30 and v[0] >= 50)
+    for key, nm_ in (("loud", "W_L"), ("very_loud", "W_VL"), ("quiet", "W_Q"), ("very_quiet", "W_VQ")):
+        w(f"var bool[] {nm_} = array.from({', '.join('true' if weak(t, key) else 'false' for t in tiers)})")
     X = [m.get("exit", {"stop_chart": 4.0}) for m in models]
     w(f"var float[] P_SC = {arr([x['stop_chart'] for x in X], 3)}")
     win = [min(720, max(120, 30 * max(1, round(86400 / SEC[m['tf']])))) for m in models]
@@ -107,7 +120,12 @@ def build(models):
     w("        zz = (x - array.get(G_MU, gOff + k)) / array.get(G_SD, gOff + k)")
     w("        zl += zz * array.get(G_WL, gOff + k)")
     w("        zq += zz * array.get(G_WQ, gOff + k)")
-    w('gate = bad ? "U" : 1 / (1 + math.exp(-zl)) >= array.get(G_TL, mi) ? "L" : 1 / (1 + math.exp(-zq)) >= array.get(G_TQ, mi) ? "Q" : "N"')
+    w("pL = 1 / (1 + math.exp(-zl))")
+    w("pQ = 1 / (1 + math.exp(-zq))")
+    w('gate = bad ? "U" : pL >= array.get(G_TVL, mi) ? "VL" : pL >= array.get(G_TL, mi) ? "L" : pQ >= array.get(G_TVQ, mi) ? "VQ" : '
+      'pQ >= array.get(G_TQ, mi) ? "Q" : "N"')
+    w('isLoud = gate == "VL" or gate == "L"')
+    w('isQuiet = gate == "VQ" or gate == "Q"')
     w("// what LOUD and QUIET mean here: the next 12 bars' high-low range vs the last month of finished 12-bar ranges")
     w("rngDone = (ta.highest(high, 12) - ta.lowest(low, 12)) / close[12]")
     w("winN = array.get(G_WIN, mi)")
@@ -130,7 +148,7 @@ def build(models):
     w("qty = math.min(iAccount * iRisk / 100 / stopD, iAccount / close)")
     w("")
     w("// ═════════ chart")
-    w('bgcolor(iTintL and gate == "L" ? cLoud : iTintQ and gate == "Q" ? cQuiet : na, title="Volatility forecast")')
+    w('bgcolor(iTintL and gate == "VL" ? cVLoud : iTintL and gate == "L" ? cLoud : iTintQ and isQuiet ? cQuiet : na, title="Volatility forecast")')
     w("var line lS = na")
     w("var line lT = na")
     w("if barstate.islast and iLines and not na(stopD)")
@@ -138,19 +156,22 @@ def build(models):
     w("    line.delete(lT)")
     w("    lS := line.new(bar_index - 5, close - stopD, bar_index + 15, close - stopD, color=cStop, style=line.style_dashed)")
     w("    lT := line.new(bar_index - 5, close + iTargetR * stopD, bar_index + 15, close + iTargetR * stopD, color=cTarget, style=line.style_dashed)")
-    w('loudStart = gate == "L" and gate[1] != "L"')
-    w('quietStart = gate == "Q" and gate[1] != "Q"')
+    w('loudStart = isLoud and not isLoud[1]')
+    w('vloudStart = gate == "VL" and gate[1] != "VL"')
+    w('quietStart = isQuiet and not isQuiet[1]')
     w('plotshape(loudStart, "LOUD starts", shape.diamond, location.top, color.new(#1F5BFF, 0), size=size.tiny)')
+    w('plotshape(vloudStart, "VERY LOUD starts", shape.diamond, location.top, color.new(#0B2FA8, 0), size=size.small)')
+    w('alertcondition(vloudStart, "ULTRON Radar: VERY LOUD", "ULTRON Radar: {{ticker}} VERY LOUD, a big move is very likely in the next 12 bars (direction unknown)")')
     w('alertcondition(loudStart, "ULTRON Radar: LOUD", "ULTRON Radar: {{ticker}} LOUD, a big move is likely in the next 12 bars (direction unknown)")')
     w('alertcondition(quietStart, "ULTRON Radar: QUIET", "ULTRON Radar: {{ticker}} QUIET, a small move is likely: fees eat small moves")')
-    w("if barstate.isconfirmed and loudStart")
-    w('    alert("ULTRON Radar: " + syminfo.ticker + " LOUD · a big move is likely in the next 12 bars (direction unknown) · range > " + '
-      'str.tostring(bigCutW * 100, "#.##") + "%", alert.freq_once_per_bar_close)')
+    w("if barstate.isconfirmed and (loudStart or vloudStart)")
+    w('    alert("ULTRON Radar: " + syminfo.ticker + (gate == "VL" ? " VERY LOUD" : " LOUD") + " · a big move is likely in the next 12 bars '
+      '(direction unknown) · range > " + str.tostring(bigCutW * 100, "#.##") + "%", alert.freq_once_per_bar_close)')
     w("")
     w("// ═════════ table")
     w('posT = iPos == "Top right" ? position.top_right : iPos == "Top left" ? position.top_left : iPos == "Bottom right" ? position.bottom_right : position.bottom_left')
     w('tsz = iText == "Tiny" ? size.tiny : iText == "Normal" ? size.normal : size.small')
-    w("var table T = table.new(posT, 2, 10, bgcolor=color.white, frame_color=#D9E0EB, frame_width=1, border_color=#E9EEF5, border_width=1)")
+    w("var table T = table.new(posT, 2, 11, bgcolor=color.white, frame_color=#D9E0EB, frame_width=1, border_color=#E9EEF5, border_width=1)")
     w("ink = #0A1426")
     w("dim = #56657C")
     w("cell(r, a, b, col) =>")
@@ -160,16 +181,25 @@ def build(models):
     w("if barstate.islast and iTable")
     w('    table.cell(T, 0, 0, "ULTRON RADAR", text_color=color.white, bgcolor=#1F5BFF, text_size=tsz)')
     w('    table.cell(T, 1, 0, mName + (exact ? " model" : " model (nearest, untested here)"), text_color=color.white, bgcolor=#1F5BFF, text_size=tsz)')
-    w('    gTxt = gate == "L" ? "LOUD · big move likely" : gate == "Q" ? "QUIET · small move likely" : gate == "N" ? "NORMAL" : "warming up"')
-    w('    cell(1, "Next 12 bars", gTxt, gate == "L" ? #1F5BFF : ink)')
+    w('    gTxt = gate == "VL" ? "VERY LOUD · big move very likely" : gate == "L" ? "LOUD · big move likely" : gate == "VQ" ? '
+      '"VERY QUIET · small move very likely" : gate == "Q" ? "QUIET · small move likely" : gate == "N" ? "NORMAL · no strong call" : "warming up"')
+    w('    weakNow = gate == "VL" ? array.get(W_VL, mi) : gate == "L" ? array.get(W_L, mi) : gate == "VQ" ? array.get(W_VQ, mi) : '
+      'gate == "Q" ? array.get(W_Q, mi) : false')
+    w('    cell(1, "Next 12 bars", gTxt + (weakNow ? " (weak call here: see testing)" : ""), weakNow ? dim : isLoud ? #1F5BFF : ink)')
     w('    cell(2, "Big / small move", "range > " + str.tostring(bigCutW * 100, "#.##") + "% / < " + str.tostring(smallCutW * 100, "#.##") + "%", ink)')
-    w('    cell(3, "Right in testing", "LOUD " + array.get(G_PL, mi) + " · QUIET " + array.get(G_PQ, mi) + " (chance alone " + array.get(G_BASE, mi) + ")", ink)')
-    w('    cell(4, "Direction", "not forecast: nobody can, reliably", dim)')
+    w('    accTxt = gate == "VL" ? array.get(A_VL, mi) + " (chance " + array.get(A_BASE, mi) + ")" : gate == "L" ? array.get(A_L, mi) + " (chance " + '
+      'array.get(A_BASE, mi) + ")" : gate == "VQ" ? array.get(A_VQ, mi) + " (chance " + array.get(A_BASEQ, mi) + ")" : gate == "Q" ? '
+      'array.get(A_Q, mi) + " (chance " + array.get(A_BASEQ, mi) + ")" : "LOUD " + array.get(A_L, mi) + " · VERY LOUD " + array.get(A_VL, mi)')
+    w('    cell(3, "This call in testing", accTxt, ink)')
+    w('    mv = gate == "VL" ? array.get(M_VL, mi) : gate == "L" ? array.get(M_L, mi) : isQuiet ? array.get(M_Q, mi) : array.get(M_ALL, mi)')
+    w('    cell(4, "Typical 12-bar move", na(mv) ? "n/a" : str.tostring(mv, "0.00") + "% after this call (all bars " + str.tostring(array.get(M_ALL, mi), "0.00") + "%)", ink)')
+
     w('    cell(5, "Trend chart / higher", (up1 ? "up" : dn1 ? "down" : "mixed") + " / " + (upH ? "up" : "not up"), up1 and upH ? cTarget : dn1 ? cStop : ink)')
     w('    cell(6, "Long stop / target", px(close - stopD) + " (-" + str.tostring(stopPct, "#.##") + "%) / " + px(close + iTargetR * stopD), ink)')
     w('    cell(7, "Fee cost", str.tostring(costR, "#.##") + "R · " + (costR <= 0.20 ? "OK" : costR <= 0.33 ? "costly: half size" : "too expensive: skip"), costR <= 0.20 ? cTarget : costR <= 0.33 ? ink : cStop)')
     w('    cell(8, "Size for " + str.tostring(iRisk) + "% risk", str.tostring(qty, "#.####") + " units ($" + str.tostring(qty * close, "#,###") + ")", ink)')
-    w('    cell(9, "Not advice", "volatility, not direction", #97A3B6)')
+    w('    cell(9, "Direction", "not forecast: nobody can, reliably", dim)')
+    w('    cell(10, "Not advice", "past results, not a promise", #97A3B6)')
     return "\n".join(L) + "\n"
 
 

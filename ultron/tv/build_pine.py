@@ -165,6 +165,47 @@ HELPERS = """    A = ta.atr(14)
 """
 
 
+STYLES = [("2R (trained)", 0.0, 0.0, 2.0), ("1.5R", 0.0, 0.0, 1.5), ("1R", 0.0, 0.0, 1.0), ("0.5R", 0.0, 0.0, 0.5),
+          ("Half at 1R, rest 2R", 1.0, 0.5, 2.0), ("Half at 0.5R, rest 2R", 0.5, 0.5, 2.0), ("Half at 0.5R, rest 1R", 0.5, 0.5, 1.0)]
+BT_NAMES = ["2R (trained)", "1.5R", "1R", "0.5R", "half at 1R, rest 2R", "half at 0.5R, rest 2R", "half at 0.5R, rest 1R"]
+
+
+AUTO = "Auto: highest win rate that stayed profitable"
+
+
+def style_pass(x):
+    """An exit style passes on a timeframe if its overall and untouched-test averages are positive, with 15+ test trades."""
+    return bool(x) and x["all"]["avg_r"] > 0 and x["C"]["n"] >= 15 and x["C"]["avg_r"] > 0
+
+
+def auto_pick(styles):
+    """Index into BT_NAMES: the highest win rate among styles profitable in BOTH the fit and validation periods (the test
+    period is not used); ties go to the higher fit-period average. 0 (2R) if none qualifies."""
+    best = None
+    for k, nm_ in enumerate(BT_NAMES):
+        x = styles.get(nm_)
+        if not x:
+            continue
+        d_, b_ = x["dev"], x["B"]
+        if d_["n"] and b_["n"] and d_["avg_r"] > 0 and b_["avg_r"] > 0:
+            key = (round((d_["win"] * d_["n"] + b_["win"] * b_["n"]) / (d_["n"] + b_["n"])), d_["avg_r"])
+            if best is None or key > best[0]:
+                best = (key, k)
+    return best[1] if best else 0
+
+
+def model_key(m):
+    return "1Dm" if m.get("market") else m["tf"]
+
+
+def load_results():
+    try:
+        with open(os.path.join(HERE, "backtest", "results.json")) as fh:
+            return json.load(fh)
+    except (OSError, ValueError):
+        return {}
+
+
 def num(x, d=6):
     if x is None or x != x:
         return "na"
@@ -240,7 +281,10 @@ def build(models, strategy):
     w('iGate = input.string("Trained", "Volatility filter", options=["Trained", "LOUD only", "LOUD or NORMAL", "Off"], group=gB)')
     w('iCostMax = input.float(0.33, "Max fee cost (R)", minval=0.05, step=0.01, group=gB)')
     w('iStopMult = input.float(1.0, "Stop distance (x the trained stop)", minval=0.25, step=0.05, group=gB, tooltip="Trained stop: 4x ATR on 1h and slower; wider on 5m-30m so fees stay small next to the stop.")')
-    w('iTargetR = input.float(2.0, "Target (R)", minval=0.5, step=0.25, group=gB)')
+    w(f'iExit = input.string("{AUTO}", "Exit style", options=["{AUTO}", ' + ", ".join(f'"{x[0]}"' for x in STYLES) + '], group=gB, '
+      'tooltip="Same buys, different sells. Auto = per timeframe, the style with the highest win rate that was profitable in both the fit and validation periods (chosen without the test period). Smaller targets win more often but make less per trade; the table shows the '
+      'tested win rate and average result of the style you pick on this timeframe. Half at ...: sell half there, move the '
+      'stop to breakeven, sell the rest at the second level.")')
     w('iOrderBars = input.int(3, "Limit order valid (bars)", minval=1, group=gB)')
     w('iHoldX = input.float(1.0, "Max hold (x the trained hold)", minval=0.1, step=0.1, group=gB, tooltip="Trained hold: 96 bars on 1h and slower; longer on 5m-30m (about 4 days in every case).")')
     w('gS = "Agents by signal (switch any off)"')
@@ -273,7 +317,6 @@ def build(models, strategy):
     w('mName = ' + "".join(f'mi == {k} ? "{tag(m)}" : ' for k, m in enumerate(models[:-1])) + f'"{tag(models[-1])}"')
     tl = [test_line(m) for m in models]
     w('mTest = ' + "".join(f'mi == {k} ? "{tl[k][0]}" : ' for k in range(nm - 1)) + f'"{tl[-1][0]}"')
-    w('mPassed = ' + "".join(f'mi == {k} ? {"true" if tl[k][1] else "false"} : ' for k in range(nm - 1)) + ("true" if tl[-1][1] else "false"))
     w("")
     w("// ═════════ trained constants (all councils; mi picks one)")
     offs, flat = [], []
@@ -297,6 +340,34 @@ def build(models, strategy):
     w(f"var float[] P_SH = {arr([x['stop_htf'] for x in X], 3)}")
     w(f"var int[] P_HOLD = array.from({', '.join(str(int(x['hold'])) for x in X)})")
     w(f"var float[] P_THETA = {arr([p['theta'] for p in P], 4)}")
+    w(f"var float[] X_R = {arr([x[1] for x in STYLES], 2)}")
+    w(f"var float[] X_F = {arr([x[2] for x in STYLES], 2)}")
+    w(f"var float[] X_T = {arr([x[3] for x in STYLES], 2)}")
+    R = load_results()
+    sw, sa, tw, ta, tn = [], [], [], [], []
+    for m in models:
+        st_ = ((R.get("1Dm" if m.get("market") else m["tf"]) or {}).get("council") or {}).get("styles") or {}
+        for nm_ in BT_NAMES:
+            x = st_.get(nm_)
+            sw.append(x["all"]["win"] if x else None)
+            sa.append(x["all"]["avg_r"] if x else None)
+            tw.append(x["C"]["win"] if x and x["C"]["n"] else None)
+            ta.append(x["C"]["avg_r"] if x and x["C"]["n"] else None)
+            tn.append(x["C"]["n"] if x else 0)
+    w(f"var float[] S_WIN = {arr(sw, 1)}")
+    w(f"var float[] S_AVG = {arr(sa, 3)}")
+    w(f"var float[] S_TWIN = {arr(tw, 1)}")
+    w(f"var float[] S_TAVG = {arr(ta, 3)}")
+    w(f"var int[] S_TN = array.from({', '.join(str(int(x)) for x in tn)})")
+    auto_k, spass = [], []
+    for m in models:
+        st_ = ((R.get(model_key(m)) or {}).get("council") or {}).get("styles") or {}
+        auto_k.append(auto_pick(st_))
+        for k_, nm_ in enumerate(BT_NAMES):
+            spass.append(style_pass(st_.get(nm_)) if st_ else (test_line(m)[1] if k_ == 0 else False))
+    w(f"var int[] AUTO_K = array.from({', '.join(map(str, auto_k))})")
+    w(f"var bool[] S_PASS = array.from({', '.join('true' if x else 'false' for x in spass)})")
+    w("var string[] X_NAME = array.from(" + ", ".join(f'"{x[0]}"' for x in STYLES) + ")")
     w(f"var float[] P_Z = {arr([p['z'] for p in P], 4)}")
     w(f"var float[] P_SIZEA = {arr([p['size_a'] for p in P], 4)}")
     w(f"var float[] P_LOUDM = {arr([p['loud_mult'] for p in P], 4)}")
@@ -322,6 +393,20 @@ def build(models, strategy):
     tick = " or ".join(f'syminfo.ticker == "{x}"' for x in (mkt["symbols"] if mkt else []))
     w(f"mktKnown = {tick if tick else 'false'}")
     w(f"hasMkt = {'true' if mkt else 'false'}")
+    w(f'exSel = iExit == "{AUTO}" ? -1 : ' + "".join(f'iExit == "{x[0]}" ? {k} : ' for k, x in enumerate(STYLES[:-1])) + str(len(STYLES) - 1))
+    w("exK = exSel < 0 ? array.get(AUTO_K, mi) : exSel")
+    w("exR = array.get(X_R, exK)")
+    w("exF = array.get(X_F, exK)")
+    w("exT = array.get(X_T, exK)")
+    w(f"sK = mi * {len(STYLES)} + exK")
+    w("mPassed = array.get(S_PASS, sK)")
+    w(f"pass2R = array.get(S_PASS, mi * {len(STYLES)})")
+    w("exName = array.get(X_NAME, exK)")
+    w('sg3(x) => (x >= 0 ? "+" : "") + str.tostring(x, "0.000")')
+    w('wonTxt = na(array.get(S_WIN, sK)) ? "not tested" : str.tostring(array.get(S_WIN, sK), "#") + "% of trades won · " + '
+      'sg3(array.get(S_AVG, sK)) + "R avg" + (na(array.get(S_TWIN, sK)) ? "" : " (test since Dec 2025: " + '
+      'str.tostring(array.get(S_TWIN, sK), "#") + "% · " + sg3(array.get(S_TAVG, sK)) + "R, " + '
+      'str.tostring(array.get(S_TN, sK)) + " trades)")')
     w('active = (isMarket ? hasMkt and (mktKnown or iOther) and exact : (isMajor or isMeme or iOther) and (exact or iNearest)) and (mPassed or not iOnlyPassed)')
     w('slip = useMajor or isMarket ? 0.0002 : 0.001')
     w("")
@@ -448,12 +533,17 @@ def build(models, strategy):
     w("var float pEntry = na")
     w("var float pStop = na")
     w("var float pTarget = na")
+    w("var float pTp1 = na")
+    w("var float pBe = na")
+    w("var bool pMoved = false")
+    w("var float pQtyFull = 0.0")
     w("var int pBar = na")
     w("var int pFill = na")
     w('var string pAgent = ""')
     w("var float pQty = 0.0")
     w("buyNow = false")
     w('sellMsg = ""')
+    w("halfNow = false")
     w("riskPct = useMajor or isMarket ? iRiskMaj : iRiskMem")
     w("busy = not na(pEntry)")
     w("holdBars = math.max(1, math.round(iHoldX * array.get(P_HOLD, mi)))")
@@ -462,33 +552,48 @@ def build(models, strategy):
     w("    sz = math.max(0.5, math.min(1.5, 1 + array.get(P_SIZEA, mi) * bestM)) * (bestCost > 0.20 ? 0.5 : 1.0) * (loud ? array.get(P_LOUDM, mi) : 1.0)")
     w("    pEntry := entryPx")
     w("    pStop := entryPx - bestStop")
-    w("    pTarget := entryPx + iTargetR * bestStop")
+    w("    pTarget := entryPx + exT * bestStop")
+    w("    pTp1 := exR > 0 ? entryPx + exR * bestStop : na")
+    w("    pBe := entryPx * (1 + (isMarket ? 2 * iMkt : iMaker + iTaker) / 100 + slip)")
+    w("    pMoved := false")
     w("    pBar := bar_index")
     w("    pFill := na")
     w("    pAgent := array.get(A_NAME, bestK)")
     w("    pQty := math.min(iAccount * riskPct / 100 * sz / bestStop, iAccount / entryPx)")
     if strategy:
         w('    strategy.entry("ULTRON", strategy.long, qty=pQty, limit=pEntry, comment=pAgent)')
-        w('    strategy.exit("EXIT", "ULTRON", stop=pStop, limit=pTarget)')
+        w("    if exR > 0")
+        w('        strategy.exit("TP1", "ULTRON", qty_percent=exF * 100, limit=pTp1, stop=pStop, comment_profit="half", comment_loss="stop")')
+        w('        strategy.exit("TP2", "ULTRON", limit=pTarget, stop=pStop, comment_profit="target", comment_loss="stop")')
+        w("    else")
+        w('        strategy.exit("EXIT", "ULTRON", stop=pStop, limit=pTarget, comment_profit="target", comment_loss="stop")')
     w("    if iLines")
     w("        line.new(bar_index, pEntry, bar_index + 20, pEntry, color=cBuy, style=line.style_dashed)")
     w("        line.new(bar_index, pStop, bar_index + 20, pStop, color=cStop, style=line.style_dashed)")
     w("        line.new(bar_index, pTarget, bar_index + 20, pTarget, color=cTarget, style=line.style_dashed)")
+    w("        if not na(pTp1)")
+    w("            line.new(bar_index, pTp1, bar_index + 20, pTp1, color=cTarget, style=line.style_dotted)")
     w("    if iPast")
     w('        label.new(bar_index, low, "BUY\\n" + pAgent, style=label.style_label_up, color=cBuy, textcolor=color.white, size=size.small)')
     w("else if busy and barstate.isconfirmed and bar_index > pBar")
     if strategy:
         w("    if na(pFill) and strategy.position_size > 0")
         w("        pFill := bar_index")
+        w("        pQtyFull := strategy.position_size")
         w("    if na(pFill) and bar_index - pBar >= iOrderBars")
         w('        strategy.cancel("ULTRON")')
         w('        sellMsg := "CANCEL"')
         w("    else if not na(pFill)")
+        w("        if exR > 0 and not pMoved and strategy.position_size > 0 and strategy.position_size < pQtyFull * 0.99")
+        w("            pMoved := true")
+        w("            halfNow := true")
+        w("            pStop := math.max(pStop, pBe)")
+        w('            strategy.exit("TP2", "ULTRON", limit=pTarget, stop=pStop, comment_profit="target", comment_loss="breakeven")')
         w("        if bar_index - pFill >= holdBars")
         w('            strategy.close("ULTRON", comment="time")')
         w('            sellMsg := "TIME"')
         w("        else if strategy.position_size == 0")
-        w('            sellMsg := high >= pTarget ? "TARGET" : "STOP"')
+        w('            sellMsg := high >= pTarget ? "TARGET" : pMoved ? "BREAKEVEN" : "STOP"')
     else:
         w("    if na(pFill)")
         w("        if low <= pEntry")
@@ -497,11 +602,18 @@ def build(models, strategy):
         w('            sellMsg := "CANCEL"')
         w('    if not na(pFill) and sellMsg == ""')
         w("        if low <= pStop")
-        w('            sellMsg := "STOP"')
-        w("        else if high >= pTarget")
-        w('            sellMsg := "TARGET"')
-        w("        else if bar_index - pFill >= holdBars")
-        w('            sellMsg := "TIME"')
+        w('            sellMsg := pMoved ? "BREAKEVEN" : "STOP"')
+        w("        else")
+        w("            if not pMoved and not na(pTp1) and high >= pTp1")
+        w("                pMoved := true")
+        w("                halfNow := true")
+        w("                pStop := math.max(pStop, pBe)")
+        w("            if high >= pTarget")
+        w('                sellMsg := "TARGET"')
+        w("            else if bar_index - pFill >= holdBars")
+        w('                sellMsg := "TIME"')
+    w('    if halfNow and iPast and sellMsg == ""')
+    w('        label.new(bar_index, high, "SELL HALF\\nstop to breakeven", style=label.style_label_down, color=cTarget, textcolor=color.white, size=size.small)')
     w('    if sellMsg != ""')
     w('        if iPast and sellMsg != "CANCEL"')
     w('            label.new(bar_index, high, "SELL\\n" + sellMsg, style=label.style_label_down, color=sellMsg == "TARGET" ? cTarget : cStop, '
@@ -509,7 +621,9 @@ def build(models, strategy):
     w("        pEntry := na")
     w("        pStop := na")
     w("        pTarget := na")
+    w("        pTp1 := na")
     w("        pFill := na")
+    w("        pMoved := false")
     w("")
     w('// ═════════ alerts: create ONE alert → condition ULTRON → "Any alert() function call"')
     w("if buyNow")
@@ -521,14 +635,18 @@ def build(models, strategy):
       'str.tostring(pTarget, format.mintick) + \',"qty":\' + str.tostring(pQty, "#.########") + \',"edge_r":\' + '
       'str.tostring(bestM, "#.###") + \'}\'')
     w("    alert(msgB, alert.freq_once_per_bar_close)")
-    w('if sellMsg == "STOP" or sellMsg == "TARGET" or sellMsg == "TIME"')
-    w('    why = sellMsg == "TARGET" ? "target reached" : sellMsg == "STOP" ? "stop-loss hit" : "time limit reached"')
+    w('if halfNow and sellMsg == ""')
+    w('    alert("ULTRON SELL HALF " + syminfo.ticker + " · first target " + str.tostring(pTp1, format.mintick) + " reached · move the stop to breakeven " + '
+      'str.tostring(pStop, format.mintick) + " · rest sells at " + str.tostring(pTarget, format.mintick), alert.freq_once_per_bar_close)')
+    w('if sellMsg == "STOP" or sellMsg == "TARGET" or sellMsg == "TIME" or sellMsg == "BREAKEVEN"')
+    w('    why = sellMsg == "TARGET" ? "target reached" : sellMsg == "STOP" ? "stop-loss hit" : sellMsg == "BREAKEVEN" ? "breakeven stop hit (half was already sold)" : "time limit reached"')
     w('    msgS = iMsg == "Readable" ? "ULTRON SELL " + syminfo.ticker + " now · " + why + " · price " + str.tostring(close, format.mintick) : '
       '\'{"ultron":"SELL","symbol":"\' + syminfo.ticker + \'","reason":"\' + sellMsg + \'","price":\' + str.tostring(close, format.mintick) + \'}\'')
     w("    alert(msgS, alert.freq_once_per_bar_close)")
     if not strategy:
         w('alertcondition(buyNow, "ULTRON BUY", "ULTRON: BUY {{ticker}} at {{close}} (see chart for entry, stop, target)")')
-        w('alertcondition(sellMsg == "STOP" or sellMsg == "TARGET" or sellMsg == "TIME", "ULTRON SELL", "ULTRON: SELL {{ticker}} at {{close}}")')
+        w('alertcondition(sellMsg == "STOP" or sellMsg == "TARGET" or sellMsg == "TIME" or sellMsg == "BREAKEVEN", "ULTRON SELL", "ULTRON: SELL {{ticker}} at {{close}}")')
+        w('alertcondition(halfNow, "ULTRON SELL HALF", "ULTRON: SELL HALF {{ticker}} at {{close}}, move the stop to breakeven")')
     w("")
     w("// ═════════ chart")
     w('bgcolor(iGateBg and active and gate == "L" ? cLoud : na)')
@@ -544,7 +662,8 @@ def build(models, strategy):
     w("ink = color.new(#0A1426, 0)")
     w('statusTxt = not ((isMarket and hasMkt and (mktKnown or iOther)) or (not isMarket and (isMajor or isMeme or iOther))) ? '
       '"Not trained on " + syminfo.ticker : isMarket and not exact ? "Markets: trained on daily (1D) charts only" : '
-      'not mPassed and iOnlyPassed ? "Flat: no reliable edge on this timeframe in testing" : "Untrained timeframe"')
+      'not mPassed and iOnlyPassed ? "Flat: this exit style lost money or had too few trades on unseen data here" + '
+      '(pass2R and exK != 0 ? " · 2R (trained) passed here" : "") : "Untrained timeframe"')
     w('unitTxt = isMarket ? "units" : base')
     w('gTxt = gate == "L" ? "LOUD (big move likely)" : gate == "Q" ? "QUIET" : gate == "N" ? "NORMAL" : "warming up"')
     w('verdict = not active ? statusTxt : not na(pEntry) ? (na(pFill) ? "BUY · limit order waiting" : "IN TRADE") : "WAIT · no setup now"')
@@ -558,12 +677,13 @@ def build(models, strategy):
     w('        cell(2, "Now", verdict, vcol)')
     w('        cell(3, "Buy at", px(pEntry), cBuy)')
     w('        cell(4, "Stop-loss", px(pStop), cStop)')
-    w('        cell(5, "Sell (target)", px(pTarget), cTarget)')
+    w('        cell(5, "Sell (target)", na(pTp1) ? px(pTarget) : "half at " + px(pTp1) + ", rest at " + px(pTarget), cTarget)')
     w('        cell(6, "Size", na(pEntry) ? "—" : str.tostring(pQty, "#.####") + " " + unitTxt, ink)')
     w('        cell(7, "Volatility", active ? gTxt : "—", active and gate == "L" ? cBuy : ink)')
-    w('        cell(8, "Not advice", "paper-test first", color.new(#97A3B6, 0))')
+    w('        cell(8, "Won in backtest", exName + ": " + wonTxt, ink)')
+    w('        cell(9, "Not advice", "past results, paper-test first", color.new(#97A3B6, 0))')
     w("    else")
-    w('        cell(2, "Backtest", mTest + (mPassed ? "" : " · caution"), mPassed ? ink : cStop)')
+    w('        cell(2, "Backtest", exName + ": " + wonTxt + (mPassed ? "" : " · caution"), mPassed ? ink : cStop)')
     w("        if not active")
     w('            cell(3, "Status", statusTxt, cStop)')
     w("        else")
@@ -579,17 +699,34 @@ def build(models, strategy):
 
 
 def results_md(models):
-    """Per-timeframe results table, generated from the model files (README section between the RESULTS markers)."""
-    out = ["| Chart | Agents | Test since Dec 2025 (untouched) | Validation 2025 | Development | All: trades · avg R · return · max DD | LOUD precision (test) | Status |",
-           "|---|---|---|---|---|---|---|---|"]
+    """README tables between the RESULTS markers, generated from backtest/results.json and the model files."""
+    R = load_results()
+    out = ["**ULTRON Council**: default exit style (Auto) vs the trained 2R exit. Win rate = trades closed in profit after fees.", "",
+           "| Chart | Auto exit picks | Auto: win rate · avg R (all) | Auto: untouched test | 2R: win rate · avg R (all) | 2R: untouched test | Default |",
+           "|---|---|---|---|---|---|---|"]
     for m in models:
-        b = m["backtest"]["metrics"]
-        f = lambda k: f"{b[k]['avg_r']:+.3f}R × {b[k]['n']}"            # noqa: E731
-        a = b["all"]
-        p = m["gate"]["scores"]["C"]["loud_precision"]
-        out.append(f"| {m['tf'] + (' markets' if m.get('market') else ' crypto')} | {len(m['agents'])} | {f('C')} | {f('B')} | {f('dev')} | {a['n']} · {a['avg_r']:+.3f}R · "
-                   f"{a['ret']:+.1f}% · {a['mdd']:.1f}% | {p if p is not None else 'n/a'}% | "
-                   f"{'trades' if test_line(m)[1] else '**flat by default**'} |")
+        st_ = ((R.get(model_key(m)) or {}).get("council") or {}).get("styles") or {}
+        if not st_:
+            continue
+        k = auto_pick(st_)
+        x, y = st_[BT_NAMES[k]], st_[BT_NAMES[0]]
+        f = lambda z: f"{z['all']['win']:.0f}% · {z['all']['avg_r']:+.3f}R"                                    # noqa: E731
+        g = lambda z: f"{z['C']['win']:.0f}% · {z['C']['avg_r']:+.3f}R ({z['C']['n']})" if z["C"]["n"] else "–"   # noqa: E731
+        name = m["tf"] + (" markets" if m.get("market") else " crypto")
+        status = "trades" if style_pass(x) else ("flat (2R passes: pick it to trade)" if style_pass(y) else "**flat**")
+        out.append(f"| {name} | {STYLES[k][0]} | {f(x)} | {g(x)} | {f(y)} | {g(y)} | {status} |")
+    out += ["", "**ULTRON Radar**: how often each call came true on the untouched test (number of calls), vs chance.", "",
+            "| Chart | LOUD | VERY LOUD | Chance (big move) | QUIET | VERY QUIET | Chance (small move) | Typical 12-bar move: all / after VERY LOUD |",
+            "|---|---|---|---|---|---|---|---|"]
+    acc = lambda v: f"{v[0]:.0f}% ({v[1]:,})" if v and v[0] is not None and v[1] else "–"                       # noqa: E731
+    for m in models:
+        r = (((R.get(model_key(m)) or {}).get("radar") or {}).get("rows") or {}).get("all|C")
+        if not r:
+            continue
+        name = m["tf"] + (" markets" if m.get("market") else " crypto")
+        mv = lambda v: f"{v:.2f}%" if v is not None else "–"                                                    # noqa: E731
+        out.append(f"| {name} | {acc(r['loud'])} | {acc(r['very_loud'])} | {r['base_loud']:.0f}% | {acc(r['quiet'])} | "
+                   f"{acc(r['very_quiet'])} | {r['base_quiet']:.0f}% | {mv(r['move_all'])} / {mv(r['move_very_loud'])} |")
     return "\n".join(out)
 
 

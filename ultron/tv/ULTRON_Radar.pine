@@ -18,6 +18,7 @@ iText = input.string("Small", "Table text", options=["Tiny", "Small", "Normal"],
 iTintL = input.bool(true, "Tint LOUD periods", group=gD)
 iTintQ = input.bool(true, "Tint QUIET periods", group=gD)
 cLoud = input.color(color.new(#1F5BFF, 90), "LOUD", group=gD, inline="c")
+cVLoud = input.color(color.new(#1F5BFF, 78), "VERY LOUD", group=gD, inline="c")
 cQuiet = input.color(color.new(#8A94A6, 92), "QUIET", group=gD, inline="c")
 cStop = input.color(color.new(#E2474D, 0), "Stop", group=gD, inline="c")
 cTarget = input.color(color.new(#0E9F63, 0), "Target", group=gD, inline="c")
@@ -38,9 +39,22 @@ var float[] G_WL = array.from(-0.76805543, 1.22830657, -0.09026469, 0.12141701, 
 var float[] G_WQ = array.from(-0.71350186, -1.18399871, 0.06952846, -0.06186877, 0.33857105, 0.12451232, -0.20305884, -0.12265613, 0.03006537, 0.06499053, 0.32131755, -0.02217419, 0.0946048, -0.08536985, -0.74079568, -1.15899659, 0.07755161, -0.06323477, 0.27502988, 0.23637411, -0.18305491, -0.18582265, 0.0962674, 0.28736447, 0.32157357, -0.00617539, 0.05986263, 0.09381984, -0.75271244, -1.11704907, 0.05815662, 0.00955993, 0.11722379, 0.19760617, -0.14774734, -0.17582204, 0.00583139, 0.33470721, 0.23871965, 0.02014563, 0.07704687, 0.14758509, -0.65715546, -0.7879693, -0.15809324, 0.0662735, 0.24754194, 0.18897011, -0.07079198, -0.17524815, -0.17091167, 0.24656256, 0.26754159, -0.0559487, 0.01833281, 0.04452539, -0.63702239, -0.69096014, 0.12029648, -0.05311288, 0.17960987, 0.07753753, -0.16292125, -0.15050618, -0.04361465, 0.02696867, 0.19820507, -0.06672688, -0.20289335, 0.06941506, -0.59740917, -0.4971175, 0.02682835, -0.05674631, 0.0952404, -0.08597192, -0.04081181, -0.17779639, -0.04184137, -0.02561205, -0.04885428, -0.02243451, -0.23074698, -0.02924057, -0.62051931, -0.32920627, 0.02026985, -0.12627576, 0.22307401, 0.32809408, -0.14925422, -0.23847002, 0.0, 0.0, -0.10077898, -0.08359941, -0.50684308, -0.26729686, -0.5955303, -0.2898272, -0.03770005, 0.06072607, -0.12548925, -0.26400929, 0.18613742, -0.13445751, 0.0, 0.0, 0.0, -0.09192632, -0.15568659, -0.08450543)
 var float[] G_TL = array.from(0.730561, 0.685067, 0.686702, 0.621175, 0.645973, 0.628116, 0.562162, 0.668685)
 var float[] G_TQ = array.from(0.68239, 0.687253, 0.676569, 0.63675, 0.62689, 0.630119, 0.599922, 0.648265)
-var string[] G_PL = array.from("81%", "72%", "74%", "80%", "83%", "87%", "29%", "80%")
-var string[] G_PQ = array.from("66%", "69%", "71%", "56%", "44%", "41%", "37%", "77%")
-var string[] G_BASE = array.from("35%", "33%", "33%", "32%", "32%", "33%", "30%", "40%")
+var float[] G_TVL = array.from(0.867708, 0.817353, 0.828309, 0.783991, 0.821071, 0.795331, 0.698553, 0.822512)
+var float[] G_TVQ = array.from(0.80213, 0.783412, 0.782682, 0.731926, 0.72702, 0.723261, 0.692756, 0.760897)
+var string[] A_L = array.from("right 81% of 37,336 calls", "right 72% of 12,834 calls", "right 74% of 5,362 calls", "right 80% of 2,623 calls", "right 83% of 1,687 calls", "right 87% of 731 calls", "right 29% of 34 calls", "right 80% of 204 calls")
+var string[] A_VL = array.from("right 91% of 7,710 calls", "right 82% of 2,695 calls", "right 92% of 1,285 calls", "right 92% of 679 calls", "right 94% of 420 calls", "right 99% of 149 calls", "right 50% of 2 calls", "right 91% of 67 calls")
+var string[] A_Q = array.from("right 66% of 40,718 calls", "right 69% of 16,361 calls", "right 71% of 7,429 calls", "right 56% of 3,620 calls", "right 44% of 1,410 calls", "right 41% of 204 calls", "right 37% of 419 calls", "right 77% of 87 calls")
+var string[] A_VQ = array.from("right 74% of 12,374 calls", "right 75% of 5,572 calls", "right 79% of 2,152 calls", "right 60% of 852 calls", "right 38% of 195 calls", "right 13% of 15 calls", "right 42% of 137 calls", "right 86% of 21 calls")
+var string[] A_BASE = array.from("35%", "33%", "33%", "32%", "32%", "33%", "30%", "40%")
+var string[] A_BASEQ = array.from("34%", "35%", "35%", "35%", "35%", "38%", "40%", "31%")
+var float[] M_ALL = array.from(0.9, 1.57, 2.26, 3.29, 4.79, 6.95, 18.26, 7.31)
+var float[] M_L = array.from(1.48, 2.4, 3.79, 6.3, 8.71, 11.55, 20.6, 17.62)
+var float[] M_VL = array.from(1.72, 2.86, 5.1, 7.48, 10.31, 12.69, 17.55, 23.33)
+var float[] M_Q = array.from(0.61, 0.95, 1.32, 2.49, 4.2, 7.33, 22.57, 5.37)
+var bool[] W_L = array.from(false, false, false, false, false, false, true, false)
+var bool[] W_VL = array.from(false, false, false, false, false, false, true, false)
+var bool[] W_Q = array.from(false, false, false, false, true, true, true, false)
+var bool[] W_VQ = array.from(false, false, false, false, true, true, true, true)
 var float[] P_SC = array.from(4.0, 8.0, 5.657, 4.0, 4.0, 4.0, 4.0, 4.0)
 var int[] G_WIN = array.from(720, 720, 720, 720, 360, 180, 120, 120)
 
@@ -68,7 +82,11 @@ for k = 0 to 13
         zz = (x - array.get(G_MU, gOff + k)) / array.get(G_SD, gOff + k)
         zl += zz * array.get(G_WL, gOff + k)
         zq += zz * array.get(G_WQ, gOff + k)
-gate = bad ? "U" : 1 / (1 + math.exp(-zl)) >= array.get(G_TL, mi) ? "L" : 1 / (1 + math.exp(-zq)) >= array.get(G_TQ, mi) ? "Q" : "N"
+pL = 1 / (1 + math.exp(-zl))
+pQ = 1 / (1 + math.exp(-zq))
+gate = bad ? "U" : pL >= array.get(G_TVL, mi) ? "VL" : pL >= array.get(G_TL, mi) ? "L" : pQ >= array.get(G_TVQ, mi) ? "VQ" : pQ >= array.get(G_TQ, mi) ? "Q" : "N"
+isLoud = gate == "VL" or gate == "L"
+isQuiet = gate == "VQ" or gate == "Q"
 // what LOUD and QUIET mean here: the next 12 bars' high-low range vs the last month of finished 12-bar ranges
 rngDone = (ta.highest(high, 12) - ta.lowest(low, 12)) / close[12]
 winN = array.get(G_WIN, mi)
@@ -96,7 +114,7 @@ costR = (2 * fee + 2 * slip) / stopPct
 qty = math.min(iAccount * iRisk / 100 / stopD, iAccount / close)
 
 // ═════════ chart
-bgcolor(iTintL and gate == "L" ? cLoud : iTintQ and gate == "Q" ? cQuiet : na, title="Volatility forecast")
+bgcolor(iTintL and gate == "VL" ? cVLoud : iTintL and gate == "L" ? cLoud : iTintQ and isQuiet ? cQuiet : na, title="Volatility forecast")
 var line lS = na
 var line lT = na
 if barstate.islast and iLines and not na(stopD)
@@ -104,18 +122,21 @@ if barstate.islast and iLines and not na(stopD)
     line.delete(lT)
     lS := line.new(bar_index - 5, close - stopD, bar_index + 15, close - stopD, color=cStop, style=line.style_dashed)
     lT := line.new(bar_index - 5, close + iTargetR * stopD, bar_index + 15, close + iTargetR * stopD, color=cTarget, style=line.style_dashed)
-loudStart = gate == "L" and gate[1] != "L"
-quietStart = gate == "Q" and gate[1] != "Q"
+loudStart = isLoud and not isLoud[1]
+vloudStart = gate == "VL" and gate[1] != "VL"
+quietStart = isQuiet and not isQuiet[1]
 plotshape(loudStart, "LOUD starts", shape.diamond, location.top, color.new(#1F5BFF, 0), size=size.tiny)
+plotshape(vloudStart, "VERY LOUD starts", shape.diamond, location.top, color.new(#0B2FA8, 0), size=size.small)
+alertcondition(vloudStart, "ULTRON Radar: VERY LOUD", "ULTRON Radar: {{ticker}} VERY LOUD, a big move is very likely in the next 12 bars (direction unknown)")
 alertcondition(loudStart, "ULTRON Radar: LOUD", "ULTRON Radar: {{ticker}} LOUD, a big move is likely in the next 12 bars (direction unknown)")
 alertcondition(quietStart, "ULTRON Radar: QUIET", "ULTRON Radar: {{ticker}} QUIET, a small move is likely: fees eat small moves")
-if barstate.isconfirmed and loudStart
-    alert("ULTRON Radar: " + syminfo.ticker + " LOUD · a big move is likely in the next 12 bars (direction unknown) · range > " + str.tostring(bigCutW * 100, "#.##") + "%", alert.freq_once_per_bar_close)
+if barstate.isconfirmed and (loudStart or vloudStart)
+    alert("ULTRON Radar: " + syminfo.ticker + (gate == "VL" ? " VERY LOUD" : " LOUD") + " · a big move is likely in the next 12 bars (direction unknown) · range > " + str.tostring(bigCutW * 100, "#.##") + "%", alert.freq_once_per_bar_close)
 
 // ═════════ table
 posT = iPos == "Top right" ? position.top_right : iPos == "Top left" ? position.top_left : iPos == "Bottom right" ? position.bottom_right : position.bottom_left
 tsz = iText == "Tiny" ? size.tiny : iText == "Normal" ? size.normal : size.small
-var table T = table.new(posT, 2, 10, bgcolor=color.white, frame_color=#D9E0EB, frame_width=1, border_color=#E9EEF5, border_width=1)
+var table T = table.new(posT, 2, 11, bgcolor=color.white, frame_color=#D9E0EB, frame_width=1, border_color=#E9EEF5, border_width=1)
 ink = #0A1426
 dim = #56657C
 cell(r, a, b, col) =>
@@ -125,13 +146,17 @@ px(x) => str.tostring(x, format.mintick)
 if barstate.islast and iTable
     table.cell(T, 0, 0, "ULTRON RADAR", text_color=color.white, bgcolor=#1F5BFF, text_size=tsz)
     table.cell(T, 1, 0, mName + (exact ? " model" : " model (nearest, untested here)"), text_color=color.white, bgcolor=#1F5BFF, text_size=tsz)
-    gTxt = gate == "L" ? "LOUD · big move likely" : gate == "Q" ? "QUIET · small move likely" : gate == "N" ? "NORMAL" : "warming up"
-    cell(1, "Next 12 bars", gTxt, gate == "L" ? #1F5BFF : ink)
+    gTxt = gate == "VL" ? "VERY LOUD · big move very likely" : gate == "L" ? "LOUD · big move likely" : gate == "VQ" ? "VERY QUIET · small move very likely" : gate == "Q" ? "QUIET · small move likely" : gate == "N" ? "NORMAL · no strong call" : "warming up"
+    weakNow = gate == "VL" ? array.get(W_VL, mi) : gate == "L" ? array.get(W_L, mi) : gate == "VQ" ? array.get(W_VQ, mi) : gate == "Q" ? array.get(W_Q, mi) : false
+    cell(1, "Next 12 bars", gTxt + (weakNow ? " (weak call here: see testing)" : ""), weakNow ? dim : isLoud ? #1F5BFF : ink)
     cell(2, "Big / small move", "range > " + str.tostring(bigCutW * 100, "#.##") + "% / < " + str.tostring(smallCutW * 100, "#.##") + "%", ink)
-    cell(3, "Right in testing", "LOUD " + array.get(G_PL, mi) + " · QUIET " + array.get(G_PQ, mi) + " (chance alone " + array.get(G_BASE, mi) + ")", ink)
-    cell(4, "Direction", "not forecast: nobody can, reliably", dim)
+    accTxt = gate == "VL" ? array.get(A_VL, mi) + " (chance " + array.get(A_BASE, mi) + ")" : gate == "L" ? array.get(A_L, mi) + " (chance " + array.get(A_BASE, mi) + ")" : gate == "VQ" ? array.get(A_VQ, mi) + " (chance " + array.get(A_BASEQ, mi) + ")" : gate == "Q" ? array.get(A_Q, mi) + " (chance " + array.get(A_BASEQ, mi) + ")" : "LOUD " + array.get(A_L, mi) + " · VERY LOUD " + array.get(A_VL, mi)
+    cell(3, "This call in testing", accTxt, ink)
+    mv = gate == "VL" ? array.get(M_VL, mi) : gate == "L" ? array.get(M_L, mi) : isQuiet ? array.get(M_Q, mi) : array.get(M_ALL, mi)
+    cell(4, "Typical 12-bar move", na(mv) ? "n/a" : str.tostring(mv, "0.00") + "% after this call (all bars " + str.tostring(array.get(M_ALL, mi), "0.00") + "%)", ink)
     cell(5, "Trend chart / higher", (up1 ? "up" : dn1 ? "down" : "mixed") + " / " + (upH ? "up" : "not up"), up1 and upH ? cTarget : dn1 ? cStop : ink)
     cell(6, "Long stop / target", px(close - stopD) + " (-" + str.tostring(stopPct, "#.##") + "%) / " + px(close + iTargetR * stopD), ink)
     cell(7, "Fee cost", str.tostring(costR, "#.##") + "R · " + (costR <= 0.20 ? "OK" : costR <= 0.33 ? "costly: half size" : "too expensive: skip"), costR <= 0.20 ? cTarget : costR <= 0.33 ? ink : cStop)
     cell(8, "Size for " + str.tostring(iRisk) + "% risk", str.tostring(qty, "#.####") + " units ($" + str.tostring(qty * close, "#,###") + ")", ink)
-    cell(9, "Not advice", "volatility, not direction", #97A3B6)
+    cell(9, "Direction", "not forecast: nobody can, reliably", dim)
+    cell(10, "Not advice", "past results, not a promise", #97A3B6)

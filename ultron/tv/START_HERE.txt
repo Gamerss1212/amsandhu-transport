@@ -27,8 +27,10 @@ INSTALL (2 minutes, one time)
 
 
 HOW TO READ ULTRON RADAR
+  "VERY LOUD"                  -> a big move is VERY likely in the next 12 bars (right 82-99% of the time on
+                                  unseen data on 5m-4h crypto and daily markets). Direction unknown.
   "LOUD · big move likely"     -> the next 12 bars will probably move a lot (direction unknown). Good time to look
-                                  for trades. Shows how often LOUD was right in testing.
+                                  for trades. The table shows how often this call was right in testing.
   "QUIET · small move likely"  -> the next 12 bars will probably barely move. Fees eat small moves: stand aside.
   "Fee cost"                   -> OK / costly / too expensive for the stop shown. Skip "too expensive".
   "Long stop / target / Size"  -> where the stop and 2R target would be for a buy now, and how much to buy.
@@ -38,8 +40,12 @@ HOW TO READ ULTRON COUNCIL
   "BUY · limit order waiting"  -> place a LIMIT BUY at the "Buy at" price, with the "Stop-loss" and the
                                   "Sell (target)" prices shown, for the "Size" shown.
   "IN TRADE"                   -> your order filled; leave the stop and target in place.
-  "Flat: ..."                  -> this chart or timeframe had no reliable edge in testing, so ULTRON stays out.
+  "Flat: ..."                  -> this chart, timeframe or exit style had no reliable edge in testing, so ULTRON
+                                  stays out (on 4h, switch Exit style to "2R (trained)" to trade it).
   Blue background              -> LOUD: a big move is likely soon (direction unknown).
+  "Won in backtest"            -> how often trades with your exit style closed in profit on this timeframe.
+  Exit style (gear -> Inputs)  -> Auto (default) = highest win rate that stayed profitable in training. 2R = bigger
+                                  wins, fewer of them. "Half at 0.5R": sells half early, stop to breakeven.
   On the chart: BUY label with blue (buy), red (stop) and green (target) lines; SELL label when it ends.
 
 
