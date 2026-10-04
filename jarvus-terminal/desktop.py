@@ -115,6 +115,10 @@ def main() -> int:
     print("   Educational research tool, not financial advice.")
     print("  " + "=" * 62)
     print()
+    if launcher.inside_temp(config.BASE_DIR):
+        print("   !! Jarvus is running from a TEMPORARY folder (opened straight from the zip?).")
+        print("   !! Windows may delete it, with your paper trades and settings. Close this window,")
+        print("   !! right-click the zip -> Extract All..., and start JarvusTerminal.exe from there.\n")
     if not background:
         try:
             from engine import startup

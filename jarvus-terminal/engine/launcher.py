@@ -139,6 +139,16 @@ def stop_pids(pids: Set[int]) -> None:
             pass
 
 
+def inside_temp(folder: str, temp: Optional[str] = None) -> bool:
+    """True when the program runs from the temporary folder (Windows Explorer runs an exe opened inside a zip from
+    %TEMP%\\Temp1_<name>.zip\\...; that folder, and the data saved next to the program, can be deleted)."""
+    temp = temp if temp is not None else os.environ.get("TEMP") or os.environ.get("TMP") or ""
+    if not temp or not folder:
+        return False
+    f, t = os.path.normcase(os.path.abspath(folder)), os.path.normcase(os.path.abspath(temp))
+    return f == t or f.startswith(t.rstrip("\\/") + os.sep)
+
+
 def write_shortcut(folder: str, url: str, name: str = "Open Jarvus.url") -> Optional[str]:
     """A double-clickable link to the page next to the program (Windows .url file)."""
     path = os.path.join(folder, name)

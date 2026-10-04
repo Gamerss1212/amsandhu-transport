@@ -1,10 +1,16 @@
 JARVUS TERMINAL + ULTRON BRAIN  (Windows)
 
 RUN IT
-  1. Unzip this folder anywhere. Keep JarvusTerminal.exe in it.
+  1. Right-click the zip -> Extract All... (do not run it from inside the zip: Windows may delete that copy and
+     your data with it). Keep JarvusTerminal.exe in its folder.
   2. Double-click JarvusTerminal.exe. If Windows says "Windows protected your PC": More info -> Run anyway (once).
-  3. A black window opens and your browser goes to http://127.0.0.1:8787 (paste it in if it doesn't).
-     Keep the black window open: closing it stops Jarvus and every bot.
+  3. A black window opens, and as soon as Jarvus is ready (a few seconds, up to a minute the first time) your
+     browser opens at http://127.0.0.1:8787. Keep the black window open: closing it stops Jarvus and every bot.
+  Later: double-click "Open Jarvus" (it appears next to the exe) to get back to the page, or start the exe again:
+  if Jarvus is already running it just opens it. If an OLDER Jarvus is still running (for example one that was set
+  to start with Windows), the black window says so and closes it when you press Enter.
+  This is the ULTRON website app. Ultron.exe from earlier was a separate desktop window (no website); you don't
+  need it for this.
 
 WHAT'S NEW: THE ULTRON BRAIN
   The smartest part of the terminal is now the ULTRON councils: the trained AI that also powers the ULTRON TradingView

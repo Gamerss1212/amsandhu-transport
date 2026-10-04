@@ -149,3 +149,10 @@ def test_start_with_windows_follows_the_copy_run_now(monkeypatch):
     assert startup.adopt(old) is False                                  # already this copy
     off = Reg()
     assert startup.adopt(off) is False and off.values == {}              # never switched on by the owner: stays off
+
+
+def test_running_from_the_temporary_folder_is_noticed(tmp_path):
+    temp = str(tmp_path / "Temp")
+    assert launcher.inside_temp(os.path.join(temp, "Temp1_Jarvus-Terminal-ULTRON.zip", "JarvusTerminal"), temp)
+    assert not launcher.inside_temp(str(tmp_path / "Downloads" / "JarvusTerminal"), temp)
+    assert not launcher.inside_temp(str(tmp_path / "TempFiles"), temp)              # a name that only starts alike
