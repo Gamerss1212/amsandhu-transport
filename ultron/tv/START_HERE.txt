@@ -3,8 +3,10 @@ ULTRON - AI trade council for TradingView
 
 WHAT YOU NEED
   1. A free TradingView account (tradingview.com, or the TradingView Desktop app).
-  2. ULTRON_indicator.pine  <- the software (required)
-  3. ULTRON_strategy.pine   <- optional: shows how ULTRON's rules did in the past on any chart
+  2. ULTRON_indicator.pine  <- indicator 1, ULTRON Council: the AI that says BUY / WAIT with entry, stop, target, size
+  3. ULTRON_Radar.pine      <- indicator 2, ULTRON Radar: forecasts big move / small move for the next 12 bars, plus
+                               trend, stop, fee check and position size. Works on ANY chart and timeframe.
+  4. ULTRON_strategy.pine   <- optional: shows how the Council's rules did in the past on any chart
   4. The free TradingView phone app, if you want buy/sell alerts on your phone.
 
 
@@ -19,10 +21,19 @@ INSTALL (2 minutes, one time)
   3. Delete everything in the editor.
   4. Open ULTRON_indicator.pine with Notepad, press Ctrl+A then Ctrl+C, and paste it into the editor (Ctrl+V).
   5. Click "Save" (name it ULTRON), then click "Add to chart".
-  Done. The ULTRON table appears in the top-right corner of the chart.
+  6. Do steps 2-5 again with ULTRON_Radar.pine (click "Open" -> "New indicator" in the Pine Editor first).
+     Put the Radar table in another corner: Radar gear icon -> Inputs -> Table position -> Top left.
+  Done. Both tables appear on the chart.
 
 
-HOW TO READ IT
+HOW TO READ ULTRON RADAR
+  "LOUD · big move likely"     -> the next 12 bars will probably move a lot (direction unknown). Good time to look
+                                  for trades. Shows how often LOUD was right in testing.
+  "QUIET · small move likely"  -> the next 12 bars will probably barely move. Fees eat small moves: stand aside.
+  "Fee cost"                   -> OK / costly / too expensive for the stop shown. Skip "too expensive".
+  "Long stop / target / Size"  -> where the stop and 2R target would be for a buy now, and how much to buy.
+
+HOW TO READ ULTRON COUNCIL
   "WAIT · no setup now"        -> do nothing.
   "BUY · limit order waiting"  -> place a LIMIT BUY at the "Buy at" price, with the "Stop-loss" and the
                                   "Sell (target)" prices shown, for the "Size" shown.
