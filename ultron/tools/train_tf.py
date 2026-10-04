@@ -256,7 +256,12 @@ def train_tf(tf, a, bull_day, base_params, log):
         f"gate LOUD precision A/B/C {gate_model['scores']['A']['loud_precision']}/{gate_model['scores']['B']['loud_precision']}/"
         f"{gate_model['scores']['C']['loud_precision']}% ({time.time() - t0:.0f}s)")
     it_log = []
+    space = dict(T.SPACE)
+    if tf == "1Dm":                                                    # 28 markets across asset classes move far less
+        T.SPACE["max_open"] = [1, 2, 3, 4, 6, 8]                       # together than coins: allow more open positions
     params = T.improve(events, defs, a.iters, it_log, base_params)
+    T.SPACE.clear()
+    T.SPACE.update(space)
     final = T.simulate(events, defs, params, record=True)
     if tf == "1Dm":                                                    # market costs, not NDAX
         stress = {"fees x2": T.simulate(events, defs, params, adj=lambda e: 0.1 / e[6])["metrics"],
