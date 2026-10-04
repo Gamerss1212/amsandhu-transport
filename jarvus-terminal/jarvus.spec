@@ -52,10 +52,12 @@ def _modules(root, pkg):
 
 hiddenimports = ["config", "server", "selftest", "engine", "engine.auth", "engine.supervisor", "engine.library"] \
     + _modules(MAB, "mab") + ["council", "pine_gate", "signals", "events", "numpy"]
-try:                                   # the AI research assistant (optional: the app runs without it)
-    hiddenimports += collect_submodules("anthropic")
-except Exception:                      # noqa: BLE001
-    pass
+SLIM = os.environ.get("JARVUS_SLIM") == "1"     # slim build: no AI research assistant (fits a 30 MB download)
+if not SLIM:
+    try:                               # the AI research assistant (optional: the app runs without it)
+        hiddenimports += collect_submodules("anthropic")
+    except Exception:                  # noqa: BLE001
+        pass
 
 a = Analysis(
     ["desktop.py"],
@@ -66,7 +68,8 @@ a = Analysis(
     hookspath=[],
     runtime_hooks=[],
     excludes=["tkinter", "test", "unittest", "pydoc_data", "lib2to3", "setuptools", "pkg_resources", "distutils",
-              "_distutils_hack", "numpy.f2py", "numpy.distutils", "numpy.testing", "numpy.array_api"],   # never used
+              "_distutils_hack", "numpy.f2py", "numpy.distutils", "numpy.testing", "numpy.array_api"]   # never used
+             + (["anthropic", "pydantic", "pydantic_core", "httpx", "httpcore", "anyio", "jiter"] if SLIM else []),
     cipher=block_cipher,
     noarchive=False,
 )
