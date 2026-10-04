@@ -62,6 +62,10 @@ FEATURES = ["bias", "trend_aligned", "rsi_aligned", "vol_percentile", "vwap_dist
 COST_VETO_R = 0.33           # round-trip costs above a third of the risk: no trade
 COST_HALF_R = 0.20           # 20-33%: half size
 LOUD_SIZE = 0.6              # volatility gate LOUD: 0.6x size (bigger swings against the same stop)
+# Families whose stops already widen with volatility and that carry their own trained volatility gate: no LOUD cut.
+# ULTRON's walk-forward trades (market entries, NDAX fees) in LOUD hours: +0.30R x 235 on train+validation and
+# +0.19R x 65 on the untouched test, against +0.19R x 77 and -0.20R x 13 in NORMAL hours (ultron/tools/gate_check.py).
+OWN_GATE_FAMILIES = {"ultron"}
 R_CLIP = 3.0                 # trade R is winsorised before learning, so one extreme trade cannot dominate
 PRIOR_WEIGHT = 0.5           # pseudo-trades per backtest trade
 PRIOR_CAP = 25.0             # at most this many pseudo-trades from history
@@ -399,7 +403,7 @@ class FleetBrain:
                     if cost_r is not None and cost_r > COST_HALF_R:
                         size *= 0.5
                         reason = f"half size: costs are {100 * cost_r:.0f}% of the risk; " + reason
-                    if gstate == "LOUD":
+                    if gstate == "LOUD" and self.family.get(strategy_id) not in OWN_GATE_FAMILIES:
                         size *= LOUD_SIZE
                         reason = f"volatility gate LOUD: {LOUD_SIZE}x size; " + reason
                     size = max(0.25, min(1.5, size))
@@ -451,7 +455,7 @@ class FleetBrain:
             size = max(0.5, min(1.5, 1.0 + 1.5 * edge))
             if cost_r is not None and cost_r > COST_HALF_R:
                 size *= 0.5
-            if gate_state == "LOUD":
+            if gate_state == "LOUD" and self.family.get(strategy_id) not in OWN_GATE_FAMILIES:
                 size *= LOUD_SIZE
             return {"action": "approve", "size": max(0.25, min(1.5, size)), "edge": edge}
 

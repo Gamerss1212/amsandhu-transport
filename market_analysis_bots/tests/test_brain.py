@@ -251,3 +251,21 @@ def test_volatility_gate_reads_states():
     model["crypto"]["w_loud"][0], model["crypto"]["w_quiet"][0] = -5.0, 5.0
     assert VG.VolGate(model).read(bars, n - 1)["state"] == "QUIET"
     assert VG.VolGate({}).read(bars, n - 1)["state"] == "UNKNOWN"
+
+
+def test_loud_size_cut_spares_strategies_with_their_own_volatility_gate():
+    """ULTRON's stops widen with volatility and its LOUD-hour trades are its best (ultron/tools/gate_check.py): the
+    brain's 0.6x LOUD cut applies to the other strategies only. QUIET still vetoes everyone."""
+    b = FleetBrain(seed=11)
+    b.deterministic = True
+    b.connect("BU", "STRAT-U01", "ultron", "ULTRON council 1h", "TST")
+    b.connect("BX", "SX", "trend_following", "some strategy", "TST")
+    for _ in range(30):
+        for bot, sid in (("BU", "STRAT-U01"), ("BX", "SX")):
+            b.score(bot, sid, "TST", F, 500, 1); b.learn(bot, sid, "TST", 0.3)
+    loud = {"state": "LOUD"}
+    u = b.score("BU", "STRAT-U01", "TST", F, 500, 1, cost_r=0.1, gate=loud)
+    x = b.score("BX", "SX", "TST", F, 500, 1, cost_r=0.1, gate=loud)
+    assert u["action"] != "veto" and x["action"] != "veto"
+    assert abs(x["size"] / u["size"] - 0.6) < 0.05 and "LOUD" not in u["reason"]
+    assert b.score("BU", "STRAT-U01", "TST", F, 500, 1, cost_r=0.1, gate={"state": "QUIET"})["action"] == "veto"
