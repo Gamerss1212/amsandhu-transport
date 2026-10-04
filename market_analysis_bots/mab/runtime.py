@@ -639,6 +639,16 @@ class Fleet(DeploymentMixin):
                     self._evaluation.update(json.load(fh).get("strategies", {}))
         return (self._evaluation.get(sid) or {}).get("runs", [])
 
+    def _eval_cost_key(self, br) -> str:
+        """Which evaluation rows judge this bot: the fee level it pays. Stocks: "base"; a low-fee venue: "low_fee_venue";
+        crypto on the NDAX / low-fee profile: rows measured at those fees when the strategy has them; else retail."""
+        cost = "base" if br.venue == "yahoo" else ("low_fee_venue" if br.venue == "okx" else "retail_kraken")
+        if br.venue != "yahoo" and getattr(self, "fee_profile", None) in ("ndax", "low_fee"):
+            alt = {"ndax": "ndax", "low_fee": "low_fee_venue"}[self.fee_profile]
+            if any(x.get("cost") == alt for x in self._evaluation_rows(br.c.id)):
+                cost = alt
+        return cost
+
     def _live_eligible(self, bot_id: str) -> tuple:
         """(eligible, why): has this bot earned real money? Out-of-sample positive at its venue's costs AND at
         least 20 paper trades with a positive average R, market orders only, not benched by the brain."""
@@ -649,11 +659,7 @@ class Fleet(DeploymentMixin):
             return False, "uses resting stop/limit entries, which live trading does not support"
         if br.id in self.brain.bench:
             return False, "benched by the brain"
-        cost = "base" if br.venue == "yahoo" else ("low_fee_venue" if br.venue == "okx" else "retail_kraken")
-        if br.venue != "yahoo" and self.fee_profile in ("ndax", "low_fee"):   # judged at the fees actually paid
-            alt = {"ndax": "ndax", "low_fee": "low_fee_venue"}[self.fee_profile]
-            if any(x.get("cost") == alt for x in self._evaluation_rows(br.c.id)):
-                cost = alt
+        cost = self._eval_cost_key(br)
         rows = [x for x in self._evaluation_rows(br.c.id) if x.get("cost") == cost]
         good = [x for x in rows if x.get("candidate") and (x["test"].get("expectancy_r") or -1) > 0 and (x["test"].get("trades") or 0) >= 10]
         if not good:

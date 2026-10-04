@@ -35,20 +35,20 @@ def ema_first(x, n):
 
 
 def aggregate(rows, size_ms):
-    """Completed hourly rows -> completed bars of size_ms (UTC-aligned); drops a bucket that is not complete."""
+    """Completed hourly rows -> bars of size_ms (UTC-aligned), as the trainer built them: a bucket with a missing hour
+    is kept (exchanges skip empty hours); only the last bucket is dropped while it is still open."""
     out, cur, k_cur = [], None, None
-    per = size_ms // (60 * MIN)
     for r in rows:
         k = r[0] // size_ms
         if k != k_cur:
             if cur is not None:
                 out.append(cur)
-            k_cur, cur = k, [k * size_ms, r[1], r[2], r[3], r[4], r[5], 1]
+            k_cur, cur = k, [k * size_ms, r[1], r[2], r[3], r[4], r[5]]
         else:
-            cur[2], cur[3], cur[4], cur[5], cur[6] = max(cur[2], r[2]), min(cur[3], r[3]), r[4], cur[5] + r[5], cur[6] + 1
-    if cur is not None:
-        out.append(cur)
-    return [b[:6] for b in out if b[6] == per]
+            cur[2], cur[3], cur[4], cur[5] = max(cur[2], r[2]), min(cur[3], r[3]), r[4], cur[5] + r[5]
+    if cur is not None and rows and cur[0] + size_ms <= rows[-1][0] + 3_600_000:
+        out.append(cur)                                             # the last bucket has ended: complete
+    return out
 
 
 def bars_since(t, i, t_last):
@@ -165,7 +165,7 @@ def _buckets(t, hsize, weekly):
     return (t // DAY + 3) // 7 if weekly else t // hsize
 
 
-def series(model, t, o, h, l, c, v, bull_of_bar, weekend_of_bar, fees, slip, group, market=False, fired_log=None):
+def series(model, t, o, h, l, c, v, bull_of_bar, weekend_of_bar, fees, slip, group, market=False, fired_log=None, htf=None):
     """The council over every bar of a chart, exactly as the trainer built its signals (train_tf.build_coin): returns
     (approve, stop_dist, edge, agent_name) lists, one entry per bar. approve[i] = 1 where the council's brain approves a
     long entry at the close of bar i. Used by the Jarvus Terminal's rule function ultron(...)."""
@@ -186,8 +186,9 @@ def series(model, t, o, h, l, c, v, bull_of_bar, weekend_of_bar, fees, slip, gro
     k = _buckets(t, hsize, weekly)
     starts = np.flatnonzero(np.r_[True, k[1:] != k[:-1]])
     ends = np.r_[starts[1:], n] - 1
-    per = hsize // size if not weekly else None
-    keep = [j for j, (s_, e_) in enumerate(zip(starts, ends)) if weekly or e_ - s_ + 1 == per]
+    keep = list(range(len(starts)))                                    # as the trainer: partial buckets count
+    if not weekly and keep and int(t[ends[-1]]) + size < (int(k[ends[-1]]) + 1) * hsize:
+        keep = keep[:-1]                                                # the last bucket is still open
     if weekly and keep and keep[-1] == len(starts) - 1 and (int(t[-1]) // DAY + 3) % 7 != 4:
         keep = keep[:-1]                                                   # the current week is not complete yet
     s_k, e_k = starts[keep], ends[keep]
@@ -196,15 +197,25 @@ def series(model, t, o, h, l, c, v, bull_of_bar, weekend_of_bar, fees, slip, gro
     hh = np.array([h[a:b + 1].max() for a, b in zip(s_k, e_k)])
     hl = np.array([l[a:b + 1].min() for a, b in zip(s_k, e_k)])
     hv = np.array([v[a:b + 1].sum() for a, b in zip(s_k, e_k)])
+    if htf is not None and len(htf[0]):                              # longer history from the real higher-timeframe bars
+        close_at = {int(x) + size: i for i, x in enumerate(t)}
+        H = [np.asarray(x, float) for x in htf[1:]]
+        hts = np.asarray(htf[0], dtype=np.int64)
+        ends_ext = np.array([close_at.get(int(x) + hsize, -1) for x in hts])
+        ht, ho, hh, hl, hc, hv = hts, H[0], H[1], H[2], H[3], H[4]
+        e_k = ends_ext                                              # -1: that HTF bar closes outside this chart
     hup = np.zeros(len(hc), bool)
     if len(hc):
         h21, h50 = ema_first(hc, 21), ema_first(hc, 50)
         hup = (hc > h50) & (h21 > h50)
     # trend of the last completed HTF bar at each chart bar
+    # the chart index from which each HTF bar counts as completed (-1: before this chart, n + 1: after it)
+    ends_t = np.asarray(ht, dtype=np.int64) + hsize
+    done_at = [int(e) if e >= 0 else (-1 if ends_t[jj] <= int(t[0]) + size else n + 1) for jj, e in enumerate(e_k)]
     upH = np.zeros(n, bool)
     j = -1
     for i in range(n):
-        while j + 1 < len(e_k) and e_k[j + 1] <= i:
+        while j + 1 < len(done_at) and done_at[j + 1] <= i:
             j += 1
         upH[i] = bool(hup[j]) if j >= 0 else False
     A = pg.atr(h, l, c)
@@ -237,7 +248,7 @@ def series(model, t, o, h, l, c, v, bull_of_bar, weekend_of_bar, fees, slip, gro
                     continue
                 last = jh
                 i = int(e_k[jh])                                        # the chart bar that closes HTF bar jh
-                if i >= 250:
+                if i >= 250:                                            # (-1: closes outside this chart)
                     fired_h.setdefault(i, {})[sid] = float(AH[jh])
     p = model["params"]
     ex = model.get("exit", {"stop_chart": 4.0, "stop_htf": 4.0, "hold": 96})

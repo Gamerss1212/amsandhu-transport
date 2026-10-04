@@ -38,7 +38,9 @@ not been verified, and what you (or a developer) must do before any real money i
 8. Run a walk-forward evaluation of the exact strategy version on the market (Live Intelligence → Research,
    or let the autopilot's schedule do it) and approve that version for live. If checks failed you must type
    `I ACCEPT THE FAILED CHECKS`. At the time of writing **no strategy has passed every check** after retail
-   costs.
+   costs. The ULTRON bots trade a few times a year per market, so a job on one market cannot reach the 30
+   test trades the check asks for; their evidence is the multi-market walk-forward bundled with the app
+   (ULTRON backtest.md), and approving one for live needs the typed acceptance.
 9. The strategy must also have earned it on paper: a positive untouched-test result and at least 20 paper
    trades with a positive average on that market (you may waive this in the live authorisation; not
    recommended).

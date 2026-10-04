@@ -70,3 +70,48 @@ def test_ultron_strategy_runs(sid):
     for i in range(n):
         tm.on_bar(rs, i)                                       # trade management runs without error
     assert d["order"]["type"] == "market"                       # live trading supports market entries only
+
+
+def test_research_job_feeds_the_council_its_other_history(monkeypatch, tmp_path):
+    """The walk-forward research job (needed to approve a version for live) loads the warm-up and the series the
+    council reads besides its own chart: the BTC daily trend and the coin's daily bars."""
+    from mab.models import Bar, now_ms
+    from mab.research import data as D, worker
+    asked = []
+
+    def fake_fetch(venue, sym, tf, days, cache_dir=None, **kw):
+        asked.append((venue, sym, tf, days))
+        step = 86_400_000 if tf == "1d" else 3_600_000
+        n = days * 86_400_000 // step
+        end = now_ms() // step * step
+        cols = _walk(n, step, end - n * step, seed=len(asked))
+        bars = [Bar(venue, sym, tf, *row) for row in zip(*cols)]
+        return bars, {"fingerprint": f"{sym}{tf}{n}"}
+
+    monkeypatch.setattr(D, "fetch", fake_fetch)
+    cache = SimpleQueue()
+    d = dict(_strategies()["STRAT-U03"]["definition"], id="STRAT-U03")
+    res, _, _ = worker.walk_forward(None, cache, {"definition": d, "venue": "coinbase", "instrument": "BTC-USD",
+                                                  "days": 180, "draws": 5}, str(tmp_path), lambda f, m: None)
+    got = {(v, s, tf): days for v, s, tf, days in asked}
+    assert got[("coinbase", "BTC-USD", "1h")] >= 180 + 1700 / 24              # the window plus the council's warm-up
+    assert ("coinbase", "BTC-USD", "1d") in got
+    assert set(res["segments"]) >= {"train", "validation", "test"} and "checks" in res
+
+
+class SimpleQueue:
+    def cache_get(self, key):
+        return None
+
+
+def test_live_record_judged_at_the_fees_paid():
+    from types import SimpleNamespace
+    from mab.runtime import Fleet
+    rows = [{"cost": "retail_kraken", "candidate": True, "test": {"expectancy_r": -0.1, "trades": 15}},
+            {"cost": "ndax", "candidate": True, "test": {"expectancy_r": 0.5, "trades": 15}}]
+    fleet = SimpleNamespace(fee_profile="ndax", _evaluation_rows=lambda sid: rows)
+    br = SimpleNamespace(venue="coinbase", c=SimpleNamespace(id="STRAT-U01"))
+    assert Fleet._eval_cost_key(fleet, br) == "ndax"
+    fleet.fee_profile = "kraken"
+    assert Fleet._eval_cost_key(fleet, br) == "retail_kraken"
+    assert Fleet._eval_cost_key(fleet, SimpleNamespace(venue="yahoo", c=br.c)) == "base"

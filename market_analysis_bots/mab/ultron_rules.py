@@ -132,7 +132,12 @@ def compute(ev, name):
         size = cn.SIZE[name]
         bull = [None if bull_day is None else bull_day.get(x // DAY - 1) for x in t]
         wk = [_weekend_mt(x + size) for x in t]
-        ok, dist, edge, _ = cn.series(m, t, o, h, l, c, v, bull, wk, FEES["crypto"], SLIP[group], group)
+        htf = None
+        if name == "4h" and ev.resolver is not None:          # the real daily bars: the HTF history the council trained with
+            g = ev.resolver(f.venue, f.instrument, "1d")
+            if g is not None and g.n >= 60:
+                htf = (g.t, g.o, g.h, g.l, g.c, g.v)
+        ok, dist, edge, _ = cn.series(m, t, o, h, l, c, v, bull, wk, FEES["crypto"], SLIP[group], group, htf=htf)
         ref = c
     for j, i in enumerate(idx):
         if i is None or not ok[j]:

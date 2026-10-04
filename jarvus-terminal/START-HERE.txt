@@ -36,12 +36,24 @@ REAL MONEY (only when you switch it on yourself)
   your fees, after at least 20 paper trades with a positive average on that bot. At NDAX fees that is currently
   ULTRON 1h (BTC/ETH/SOL), ULTRON 4h (meme coins) and ULTRON daily (US stocks/ETFs through Alpaca). The others keep
   paper trading until they earn it.
+  The readiness check also asks for the strategy version to be approved: Research -> run a walk-forward on it ->
+  Approve. ULTRON trades only a few times a year on any one market, so that one-market test can never reach the
+  30 test trades it wants: approving it means typing  I ACCEPT THE FAILED CHECKS  (recorded). Its real evidence
+  is the many-market walk-forward below and in "ULTRON backtest.md".
+
+  HOW OFTEN ULTRON TRADES (be patient - it is picky on purpose)
+  From the walk-forward tests, per year across all its markets:
+    ULTRON 1h BTC/ETH/SOL ~16 trades · 1h meme coins ~41 · 4h BTC/ETH/SOL ~10 · 4h meme coins ~15 · daily markets ~38
+  About 10 trades a month for all 46 bots together. Days with no trade are normal.
+  So 20 paper trades on ONE bot can take a long time. The Live trading authorisation has a box to waive the paper
+  record. Ticking it skips your own proof - only do it with an amount you can afford to lose.
   Back to paper at any time: "Revoke live authorisation" pauses every live bot; EMERGENCY STOP blocks all new orders.
   Your live account's money, trades and P&L show on the Live money page and in Your money.
 
   IMPORTANT: the NDAX and Kraken order connections were written to their published APIs but have never been run
-  against the real exchanges (no keys were ever available to test them). Start with the smallest amounts, keep the
-  daily loss limit low, and check the first orders on the exchange's own website.
+  against the real exchanges (no keys were ever available to test them). Kraken's request signing matches the
+  worked example in Kraken's own documentation; nothing more than that has been checked. Start with the smallest
+  amounts, keep the daily loss limit low, and check the first orders on the exchange's own website.
 
 SETTINGS
   Settings -> your exchange's fees: NDAX is the default. The cost check, the brain and paper results use it.

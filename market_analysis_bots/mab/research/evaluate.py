@@ -86,11 +86,11 @@ def random_baseline(c, rs: RuleSeries, frame: Frame, start: int, end: int, n_tra
 
 def run(definition: dict, frame: Frame, venue: str, fees: Optional[dict] = None, cost_mult: float = 1.0,
         participation: Optional[float] = 0.05, k_folds: int = 5, draws: int = 100, seed: int = 7,
-        can_short: bool = False, progress=None) -> dict:
+        can_short: bool = False, progress=None, resolver=None) -> dict:
     step = progress or (lambda frac, msg: None)
     c = compile_strategy(definition, None, frame.asset_type)
     step(0.05, "evaluating rules on the whole history (causal)")
-    rs = eval_rules(c, frame)
+    rs = eval_rules(c, frame, resolver)
     b = boundaries(frame)
     segs = {}
     for k, (name, (s, e)) in enumerate(b.items()):

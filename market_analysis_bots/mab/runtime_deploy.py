@@ -846,7 +846,7 @@ class DeploymentMixin:
         return ck.report()
 
     def _strategy_live_record(self, br) -> tuple:
-        cost = "base" if br.venue == "yahoo" else ("low_fee_venue" if br.venue == "okx" else "retail_kraken")
+        cost = self._eval_cost_key(br)
         rows = [x for x in self._evaluation_rows(br.c.id) if x.get("cost") == cost]
         good = [x for x in rows if x.get("candidate") and (x["test"].get("expectancy_r") or -1) > 0
                 and (x["test"].get("trades") or 0) >= 10]

@@ -11,13 +11,16 @@ Handlers
 
 from __future__ import annotations
 
+import hashlib
 import json
 import math
 import os
 import time
 import traceback
 
+from mab.clock import tf_ms
 from mab.research.jobs import JobQueue, spec_hash
+from mab.strategy import compile_strategy
 
 
 def main(db_path: str, jid: str, cache_dir: str):
@@ -60,6 +63,16 @@ def _definition(spec: dict) -> dict:
     raise ValueError(f"strategy {sid} has no executable definition")
 
 
+def _warm_days(bars: int, tf: str, asset: str) -> int:
+    """Calendar days that hold `bars` bars (stocks trade ~6.5 hours a day, 5 days a week)."""
+    if bars <= 1:
+        return 0
+    per_day = 86_400_000 / tf_ms(tf)
+    if asset == "stock":
+        per_day = (1 if tf == "1d" else min(per_day, 6.5 * per_day / 24)) * 5 / 7
+    return int(math.ceil(bars / per_day * 1.05)) + 1
+
+
 def walk_forward(st, q, spec, cache_dir, progress):
     from mab.costs import FEE_PROFILES
     from mab.research import data as D, evaluate as RE
@@ -70,11 +83,22 @@ def walk_forward(st, q, spec, cache_dir, progress):
     if not 7 <= days <= 2000:
         raise ValueError("days must be between 7 and 2000")
     asset = "stock" if venue == "yahoo" else "crypto"
-    progress(0.02, f"loading {days} days of {tf} bars for {inst}")
-    bars, qual = D.fetch(venue, inst, tf, days, cache_dir)
+    warm = compile_strategy(d, None, asset).warmup
+    load = min(2000, days + _warm_days(warm.get((None, tf), 1), tf, asset))   # plus the bars the rules need to warm up
+    progress(0.02, f"loading {load} days of {tf} bars for {inst}")
+    bars, qual = D.fetch(venue, inst, tf, load, cache_dir)
     if len(bars) < 500:
         raise ValueError(f"only {len(bars)} bars available for {venue}:{inst} {tf}; not enough to evaluate")
     fee = FEE_PROFILES.get(spec.get("fee_profile") or "venue")
+    other = {}                                         # other series the rules read (another timeframe or market)
+    for (ref, rtf), n in warm.items():
+        if ref is None and rtf == tf:
+            continue
+        rv, rs = ref.split(":", 1) if ref else (venue, inst)
+        ra = "stock" if rv == "yahoo" else "crypto"
+        rb, rq = D.fetch(rv, rs, rtf, min(2000, load + _warm_days(n, rtf, ra)), cache_dir)
+        other[(rv, rs, rtf)] = (rb, ra)
+        qual["fingerprint"] = hashlib.sha256((qual["fingerprint"] + rq["fingerprint"]).encode()).hexdigest()[:16]
     key = spec_hash("walk_forward", {k: v for k, v in spec.items() if k != "catalog"} | {"definition": d},
                     qual["fingerprint"])
     hit = q.cache_get(key)
@@ -82,7 +106,9 @@ def walk_forward(st, q, spec, cache_dir, progress):
         progress(1.0, "answered from the cache (same question, same data)")
         return dict(hit, _cached=True), key, qual["fingerprint"]
     fr = D.frame(bars, asset)
-    res = RE.run(d, fr, venue, fees=fee, cost_mult=float(spec.get("cost_mult") or 1.0),
+    frames = {k: D.frame(b, a) for k, (b, a) in other.items() if b}
+    resolver = (lambda v, s, t: frames.get((v, s, t))) if frames else None
+    res = RE.run(d, fr, venue, fees=fee, cost_mult=float(spec.get("cost_mult") or 1.0), resolver=resolver,
                  participation=float(spec["participation"]) if spec.get("participation") is not None else 0.05,
                  k_folds=int(spec.get("k_folds") or 5), draws=min(int(spec.get("draws") or 100), 500),
                  seed=int(spec.get("seed") or 7), progress=lambda f, m: progress(0.05 + 0.9 * f, m))
