@@ -3,7 +3,7 @@
 
 Double-click and leave it open. Every hour Ultron's 50 agents read 9 crypto markets; the brain approves or refuses
 every signal; approved ones become paper trades that Ultron manages by itself (limit entry, stop-loss, target,
-96-hour limit). It pops up when it buys or sells so you can copy the trade on your exchange if you choose.
+time limit). It pops up when it buys or sells so you can copy the trade on your exchange if you choose.
 Paper money only: it does not connect to any exchange account.
 
   python ultron_app.py            (Windows build: Ultron.exe)
@@ -47,7 +47,7 @@ import engine as en                                               # noqa: E402
 import jarvus as jv                                               # noqa: E402
 import watch as wt                                                # noqa: E402
 
-VERSION = "1.0"
+VERSION = "2.0"
 PORT = 47392
 W0, H0 = 1440, 900
 C = {"bg": "#EDF1F7", "panel": "#FFFFFF", "line": "#D9E0EB", "line2": "#E9EEF5", "text": "#0A1426", "muted": "#56657C",
@@ -185,8 +185,11 @@ class App:
     def load_backtest(self):
         base = getattr(sys, "_MEIPASS", None) or os.path.dirname(HERE)
         try:
-            with open(os.path.join(base, "assets", "ultron_backtest.json"), encoding="utf-8") as fh:
-                return json.load(fh)
+            out = {}
+            for tf in ("1h", "4h"):
+                with open(os.path.join(base, "assets", "councils", f"{tf}.json"), encoding="utf-8") as fh:
+                    out[tf] = json.load(fh)["backtest"]
+            return dict(out["1h"], other=out["4h"])
         except (OSError, ValueError):
             return None
 
@@ -669,9 +672,9 @@ class App:
     def draw_overlay(self, ov):
         if ov == "welcome":
             x, y = self.modal(620, 360, "Ultron is on autopilot")
-            lines = ["50 trained agents read 9 crypto markets every hour, day and night.",
-                     "One brain approves or refuses every signal, sizes the trades and manages them: limit entry, "
-                     "stop-loss, target and a 96-hour limit. It learns from every signal as it finishes.",
+            lines = ["50 trained agents in two councils (1h and 4h) read 9 crypto markets every hour, day and night.",
+                     "Each council's brain approves or refuses every signal, sizes the trade and manages it: limit entry, "
+                     "stop-loss, target and a time limit (4 days on 1h, 16 days on 4h). Same rules as the TradingView script.",
                      "It trades a PAPER account (no real money). When it buys or sells it pops up with a sound, so you can "
                      "copy the trade on your exchange if you want to.",
                      "Leave this window open (minimise it). Settings: paper balance, fees, start with Windows, phone alerts."]
@@ -794,9 +797,11 @@ class App:
             self.t(x + 24, y + 80, "No backtest file bundled.", "body", C["muted"])
             return
         m = b["metrics"]
-        self.t(x + 24, y + 62, "Walk-forward: every quarter since 2022 the brain picked its 50 agents using only data that already "
-               "existed, then traded the next quarter. Results after fees (NDAX) on a $10,000 paper account.", "bodyS", C["muted"],
-               width=930)
+        o = b["other"]["metrics"]
+        self.t(x + 24, y + 62, "Walk-forward: every quarter since 2022 each council picked its 25 agents using only data that already "
+               "existed, then traded the next quarter. After NDAX fees, $10,000 paper account. Shown: the 1h council. 4h council: "
+               f"{o['all']['n']} trades, {o['all']['avg_r']:+.3f}R, {o['all']['ret']:+.1f}%, max drawdown {o['all']['mdd']:.1f}%; "
+               f"untouched test {o['C']['avg_r']:+.3f}R on {o['C']['n']} trades.", "bodyS", C["muted"], width=930)
         cols = ["PERIOD", "TRADES", "AVG R", "WIN", "RETURN", "MAX DRAWDOWN"]
         xs = [x + 24, x + 300, x + 420, x + 540, x + 660, x + 800]
         yy = y + 112

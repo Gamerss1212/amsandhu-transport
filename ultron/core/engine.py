@@ -1,11 +1,11 @@
-"""Ultron's live engine: 50 agents, one brain, a paper account. Runs in a background thread of the app.
+"""Ultron's live engine: the trained councils (1h and 4h crypto, 25 agents each), a paper account, fully automatic.
 
-Every hour, just after a candle closes, it downloads the last 900 hourly candles of each coin from Coinbase,
-runs every agent's signal on the newest completed 1h (and 4h) candle, and asks the brain about each signal.
-Approved signals become paper limit orders (0.1% under the close, valid 3 hours) with a stop at 4x ATR and a
-target at 2R; the paper broker checks 5-minute candles every minute for fills, stops, targets and the 96-hour
-limit. Every signal, taken or not, is followed to its end and taught to the brain ("shadow" learning).
-Paper money only: there is no real-exchange connection in this version.
+Every hour, just after a candle closes, it downloads each coin's recent hourly (and daily) candles from Coinbase and
+asks the 1h council about the newest completed hour, and the 4h council when a 4-hour candle has just closed
+(ultron/core/council.py: the same rules as the TradingView indicator). An approved trade becomes a paper limit order
+(0.1% under the close, valid 3 bars) with the council's stop and a target at 2R; the paper broker checks 5-minute
+candles every minute for fills, stops, targets and the time limit (96 bars). Paper money only: this version has no
+real-exchange connection.
 """
 
 from __future__ import annotations
@@ -21,6 +21,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 _ROOT = getattr(sys, "_MEIPASS", None)
 if not _ROOT:
     sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(HERE)), "jarvus", "scripts"))
+    sys.path.insert(0, os.path.join(os.path.dirname(HERE), "tv"))
 sys.path.insert(0, HERE)
 
 import numpy as np  # noqa: E402
@@ -29,8 +30,8 @@ import events as evmod  # noqa: E402
 import jarvus as jv  # noqa: E402
 import signals as sg  # noqa: E402
 import system_test as st  # noqa: E402
-import volgate  # noqa: E402
-from brain import Book, Brain  # noqa: E402
+import council as cn  # noqa: E402
+from brain import Book  # noqa: E402
 from fetch_ohlcv import fetch_coinbase  # noqa: E402
 
 HOUR = 3_600_000
@@ -40,16 +41,33 @@ FEES = {"ndax": (0.002, 0.002), "kraken": (0.004, 0.008), "coinbase": (0.006, 0.
 SLIP = {"majors": 0.0002, "memes": 0.001}
 ORDER_BARS = 3
 HOLD_H = 96
-MODEL_FILE = "ultron_model.json"
+COUNCILS = ("1h", "4h")                    # the crypto councils that passed the untouched test
 
 
 def now_ms():
     return int(time.time() * 1000)
 
 
-def model_path():
+def load_councils():
+    """-> ({tf: council model}, one combined model for the screen: 50 agents with unique ids and names)."""
     base = _ROOT or os.path.dirname(HERE)
-    return os.path.join(base, "assets", MODEL_FILE)
+    cs, agents = {}, []
+    for k, tf in enumerate(COUNCILS):
+        with open(os.path.join(base, "assets", "councils", f"{tf}.json"), encoding="utf-8") as fh:
+            m = json.load(fh)
+        for j, a in enumerate(m["agents"]):
+            a["uid"] = f"{tf}:{a['id']}"
+            if k:
+                a["name"] = NAMES[25 * k + j] if 25 * k + j < len(NAMES) else f"{a['name']}-{tf}"
+            agents.append(dict(a, id=a["uid"], tf=({"1h": "4h", "4h": "1D"}[tf] if a["htf"] else tf), council=tf))
+        cs[tf] = m
+    first = cs[COUNCILS[0]]
+    combined = {"agents": agents, "params": first["params"], "trained": first["trained"],
+                "stats": {f"{a['id']}|{r}": v for a in agents for r, v in a["edges"].items()}, "councils": list(COUNCILS)}
+    return cs, combined
+
+
+NAMES = ["ORION", "VEGA", "NOVA", "ATLAS", "LYRA", "TITAN", "AEGIS", "HELIOS", "SIRIUS", "KEPLER", "POLARIS", "RIGEL", "CYGNUS", "DRACO", "PULSAR", "QUASAR", "ZENITH", "AURORA", "BOREAS", "CALYPSO", "CASSINI", "CEPHEUS", "ELARA", "EOS", "GAIA", "HALO", "HERMES", "HYDRA", "HYPERION", "ICARUS", "JUNO", "MIRA", "NYX", "OBERON", "PALLAS", "PHOEBE", "RHEA", "SELENE", "SPICA", "TALOS", "TETHYS", "THEIA", "TRITON", "VESTA", "ZEPHYR", "ARGUS", "ALTAIR", "DENEB", "ANTARES", "CASTOR", "POLLUX", "IOTA", "SIGMA", "OMEGA", "KAPPA"]
 
 
 def parse_key(s):
@@ -87,12 +105,10 @@ class Engine:
         self.fetch = fetch or fetch_coinbase
         self.notify = notify or (lambda kind, title, body: None)
         self.lock = threading.RLock()
-        with open(model_path(), encoding="utf-8") as fh:
-            self.model = json.load(fh)
+        self.councils, self.model = load_councils()
         self.agents = {a["id"]: a for a in self.model["agents"]}
+        self.params = self.model["params"]
         self.s = self._load()
-        stats = {parse_key(k): v for k, v in (self.s.get("brain") or self.model["stats"]).items()}
-        self.brain = Brain(self.model["params"], stats)
         self.stop_flag = threading.Event()
         self.wake = threading.Event()
         self.status = {"state": "starting", "last_scan": None, "next_scan": None, "errors": []}
@@ -118,6 +134,7 @@ class Engine:
         s.setdefault("equity", [])
         s.setdefault("last_bar", {})
         s.setdefault("last_fire", {})
+        s.setdefault("views", {})
         s.setdefault("counts", {"signals": 0, "approved": 0, "refused": 0, "learned": 0})
         s.setdefault("agent_live", {})
         s.setdefault("started", now_ms())
@@ -125,7 +142,6 @@ class Engine:
 
     def save(self):
         with self.lock:
-            self.s["brain"] = {key_str(k): [round(v[0], 3), round(v[1], 4), round(v[2], 4)] for k, v in self.brain.stats.items()}
             tmp = self.path + ".tmp"
             with open(tmp, "w", encoding="utf-8") as fh:
                 json.dump(self.s, fh, separators=(",", ":"))
@@ -188,8 +204,7 @@ class Engine:
     # ------------------------------------------------------------ hourly: agents -> brain -> orders
     def scan(self):
         jv._BTC.clear()
-        btc = jv.btc_regime()
-        bull = btc.get("bull")
+        bull = jv.btc_regime().get("bull")
         errors = []
         for coin in COINS:
             try:
@@ -198,13 +213,12 @@ class Engine:
                 errors.append(coin)
                 print(f"scan {coin}: {type(e).__name__}: {e}", flush=True)
         self.status["errors"] = [f"no data: {', '.join(errors)}"] if errors else []
-        self.resolve_shadows()
 
     def scan_coin(self, coin, bull):
-        rows = self.fetch(coin, "USD", "1h", 900)
+        rows = self.fetch(coin, "USD", "1h", 1600)
         if rows and rows[-1][0] + HOUR > now_ms():
             rows = rows[:-1]                                         # the current hour is still open
-        if len(rows) < 400:
+        if len(rows) < 1100:
             raise ValueError("not enough candles")
         last_t = rows[-1][0]
         self.market.setdefault(coin, {})
@@ -214,103 +228,77 @@ class Engine:
             if self.s["last_bar"].get(coin) == last_t:
                 return                                               # this hour was already handled
             self.s["last_bar"][coin] = last_t
-        a = jv.analyse_rows(rows)
-        gate = volgate.read_rows(volgate.VolGate(), rows, "crypto").get("state", "UNKNOWN")[0]
-        up = bool(a["up1"] and a["up4"])
-        t = np.array([r[0] for r in rows], dtype=np.int64)
-        o, h, l, c, v = (np.array([r[k] for r in rows], float) for k in (1, 2, 3, 4, 5))
-        S1, A1 = sg.all_signals(t, o, h, l, c, v, 24)
-        s4, e4 = sg.bars4h_index(t)
-        fired = {}
-        n = len(rows)
-        atr1 = a["x"]["atr"][n - 1] or float(A1[-1])
-        for sid, m in S1.items():
-            if m[-1]:
-                fired[(sid, "1h")] = 4.0
-        if len(e4) and e4[-1] == n - 1:                              # a 4h candle closed with this hour
-            o4, c4 = o[s4], c[e4]
-            h4 = np.array([h[x:y + 1].max() for x, y in zip(s4, e4)])
-            l4 = np.array([l[x:y + 1].min() for x, y in zip(s4, e4)])
-            v4 = np.array([v[x:y + 1].sum() for x, y in zip(s4, e4)])
-            S4, A4 = sg.all_signals(t[s4], o4, h4, l4, c4, v4, 6)
-            for sid, m in S4.items():
-                if m[-1] and A4[-1] == A4[-1] and atr1:
-                    fired[(sid, "4h")] = round(4.0 * float(A4[-1]) / atr1, 2)
-        for sid, name in sg.PLAYBOOK.items():
-            if name in a["fired"]:
-                fired[(sid, "1h")] = 4.0
         group = "majors" if coin in MAJORS else "memes"
-        loud = gate == "L"
-        variants = ["any"] + (["loud"] if loud else []) + (["trend"] if up else []) + (["loudtrend"] if loud and up else [])
-        close = rows[-1][4]
-        for (sid, tf), stop_atr in fired.items():
-            for var in variants:
-                cid = f"{sid}|{group}|{tf}|{var}"
-                if cid not in self.agents:
-                    continue
-                gap = 12 * HOUR if tf == "1h" else 12 * HOUR
-                key = f"{cid}|{coin}"
-                with self.lock:
-                    if last_t - self.s["last_fire"].get(key, -10 ** 15) < gap:
-                        continue
-                    self.s["last_fire"][key] = last_t
-                    self.s["counts"]["signals"] += 1
-                self.consider(cid, coin, group, last_t, close, atr1 * stop_atr, gate, bull, stop_atr)
-
-    def consider(self, cid, coin, group, bar_t, close, stop_dist, gate, bull, stop_atr):
-        mk, tk = FEES[self.s["fees"]]
-        entry = close * 0.999
-        stop_frac = stop_dist / entry
-        cost_r = ((mk + tk) + 2 * SLIP[group]) / stop_frac if stop_frac > 0 else 9.9
-        t_dec = bar_t + HOUR
-        ev = {"agent": cid, "fam": self.agents[cid]["family"], "group": group, "gate": gate, "bull": bull, "cost_r": cost_r,
-              "weekend": weekend_mt(t_dec), "coin": coin}
-        take, size, why, m, se = self.brain.decide(ev)
-        with self.lock:
-            self.s["shadows"].append({"cid": cid, "coin": coin, "bar_t": bar_t, "stop_dist": stop_dist, "ev": ev})
-        if take:
-            book = Book(self.brain.p)
+        fees = FEES[self.s["fees"]]
+        jobs = [("1h", rows, cn.aggregate(rows, 4 * HOUR))]
+        if (last_t + HOUR) % (4 * HOUR) == 0:                        # a 4-hour candle closed with this hour
+            daily = self.fetch(coin, "USD", "1d", 300)
+            daily = [r for r in daily if r[0] + 24 * HOUR <= last_t + HOUR]
+            jobs.append(("4h", cn.aggregate(rows, 4 * HOUR), daily))
+        for tf, bars, hbars in jobs:
+            if len(bars) < 300 or len(hbars) < 60:
+                continue
             with self.lock:
-                for p in self.s["positions"] + self.s["orders"]:
-                    book.opened(p["coin"], p["group"])
-                day = (t_dec - 6 * HOUR) // (24 * HOUR)
-                closed_today = [x for x in self.s["history"] if (x["closed"] - 6 * HOUR) // (24 * HOUR) == day]
-                book.day = day
-                book.day_r = sum(x["r"] * x["size"] for x in closed_today)
-                streak = 0
-                for x in closed_today:
-                    streak = streak + 1 if x["r"] < 0 else 0
-                book.streak = streak
-            ok, why2 = book.can_open(coin, group, day)
-            if not ok:
-                take, why = False, why2
-        name = self.agents[cid]["name"]
-        self.log("decisions", {"t": now_ms(), "agent": name, "cid": cid, "coin": coin, "ok": take, "why": why,
-                               "m": round(m, 3)})
+                lf = self.s["last_fire"].setdefault(f"{tf}|{coin}", {})
+            dec, info = cn.evaluate(self.councils[tf], coin, bars, hbars, bull, weekend_mt(bars[-1][0] + cn.SIZE[tf]), fees,
+                                    SLIP[group], lf, group)
+            with self.lock:
+                self.s["views"][f"{coin}|{tf}"] = dict(info, t=now_ms())
+                self.s["counts"]["signals"] += info["firing"]
+            if dec:
+                self.consider(dec, coin, group, tf)
+            elif info["firing"]:
+                self.log("decisions", {"t": now_ms(), "agent": f"{tf} council", "cid": "", "coin": coin, "ok": False,
+                                       "why": info["why"], "m": 0.0})
+                with self.lock:
+                    self.s["counts"]["refused"] += 1
+
+    def consider(self, dec, coin, group, tf):
+        a = self.agents[f"{tf}:{dec['agent']['id']}"]
+        take, why = True, f"approved: learned edge {dec['m']:+.2f}R"
+        book = Book(self.params)
+        with self.lock:
+            for p in self.s["positions"] + self.s["orders"]:
+                book.opened(p["coin"], p["group"])
+            day = (dec["t_dec"] - 6 * HOUR) // (24 * HOUR)
+            closed_today = [x for x in self.s["history"] if (x["closed"] - 6 * HOUR) // (24 * HOUR) == day]
+            book.day = day
+            book.day_r = sum(x["r"] * x["size"] for x in closed_today)
+            streak = 0
+            for x in closed_today:
+                streak = streak + 1 if x["r"] < 0 else 0
+            book.streak = streak
+        ok, why2 = book.can_open(coin, group, day)
+        if not ok:
+            take, why = False, why2
+        self.log("decisions", {"t": now_ms(), "agent": a["name"], "cid": a["id"], "coin": coin, "ok": take, "why": why,
+                               "m": round(dec["m"], 3)})
         with self.lock:
             self.s["counts"]["approved" if take else "refused"] += 1
         if not take:
             return
+        mk, tk = FEES[self.s["fees"]]
         eq = self.equity()
-        risk_pct = (self.brain.p["risk_major"] if group == "majors" else self.brain.p["risk_meme"]) * size
+        risk_pct = (self.params["risk_major"] if group == "majors" else self.params["risk_meme"]) * dec["size"]
         risk_amt = eq * risk_pct
-        stop = entry - stop_dist
-        target = entry + 2 * stop_dist
+        entry, stop_dist = dec["entry"], dec["stop_dist"]
+        stop, target = entry - stop_dist, entry + 2 * stop_dist
         units = risk_amt / stop_dist
         if units * entry > self.s["cash"] * 0.98:
             units = self.s["cash"] * 0.98 / entry
         if units <= 0:
             return
         reserved = units * entry * (1 + mk)
-        order = {"id": f"{coin}-{t_dec}", "cid": cid, "agent": name, "coin": coin, "group": group, "limit": entry,
-                 "stop": stop, "target": target, "units": units, "size": size, "risk_amt": risk_amt, "reserved": reserved,
-                 "placed": now_ms(), "expires": t_dec + ORDER_BARS * HOUR, "m": round(m, 3)}
+        order = {"id": f"{coin}-{tf}-{dec['t_dec']}", "cid": a["id"], "agent": a["name"], "coin": coin, "group": group,
+                 "limit": entry, "stop": stop, "target": target, "units": units, "size": dec["size"], "risk_amt": risk_amt,
+                 "reserved": reserved, "placed": now_ms(), "expires": dec["t_dec"] + dec["order_ms"],
+                 "hold_ms": dec["hold_ms"], "council": tf, "m": round(dec["m"], 3)}
         with self.lock:
             self.s["cash"] -= reserved
             self.s["orders"].append(order)
-        self.log("execs", {"t": now_ms(), "kind": "ORDER", "coin": coin, "agent": name, "px": entry,
-                           "text": f"limit buy {jv.px(entry)} · stop {jv.px(stop)} · target {jv.px(target)}"})
-        self.notify("buy", f"BUY {coin}", f"Limit {jv.px(entry)} · Sell {jv.px(target)} · Stop {jv.px(stop)} · {name}")
+        self.log("execs", {"t": now_ms(), "kind": "ORDER", "coin": coin, "agent": a["name"], "px": entry,
+                           "text": f"{tf} council · limit buy {jv.px(entry)} · stop {jv.px(stop)} · target {jv.px(target)}"})
+        self.notify("buy", f"BUY {coin}", f"Limit {jv.px(entry)} · Sell {jv.px(target)} · Stop {jv.px(stop)} · {a['name']} ({tf})")
 
     # ------------------------------------------------------------ every minute: the paper broker
     def tick(self):
@@ -372,7 +360,7 @@ class Engine:
                     self.s["orders"].remove(o)
                     self.s["cash"] += o["reserved"] - cost
                     pos = {k: o[k] for k in ("id", "cid", "agent", "coin", "group", "stop", "target", "units", "size", "risk_amt", "m")}
-                    pos.update(entry=px, opened=fill[0], expires=fill[0] + HOLD_H * HOUR, cost=cost, checked=fill[0])
+                    pos.update(entry=px, opened=fill[0], expires=fill[0] + o.get("hold_ms", HOLD_H * HOUR), cost=cost, checked=fill[0])
                     self.s["positions"].append(pos)
                     self.log("execs", {"t": now_ms(), "kind": "FILL", "coin": coin, "agent": o["agent"], "px": px,
                                        "text": f"bought {o['units']:.6g} @ {jv.px(px)}"})
@@ -380,7 +368,7 @@ class Engine:
                     self.s["orders"].remove(o)
                     self.s["cash"] += o["reserved"]
                     self.log("execs", {"t": now_ms(), "kind": "CANCEL", "coin": coin, "agent": o["agent"], "px": o["limit"],
-                                       "text": "limit not filled in 3 hours: cancelled"})
+                                       "text": "limit not filled in 3 bars: cancelled"})
             for p in list(self.s["positions"]):
                 if p["coin"] != coin:
                     continue
@@ -413,7 +401,7 @@ class Engine:
         al = self.s["agent_live"].setdefault(p["cid"], [0, 0.0])
         al[0] += 1
         al[1] += r
-        word = {"target": "target hit", "stop": "stop-loss hit", "time": "96 hours up"}[reason]
+        word = {"target": "target hit", "stop": "stop-loss hit", "time": "time limit reached"}[reason]
         self.log("execs", {"t": now_ms(), "kind": "SELL", "coin": p["coin"], "agent": p["agent"], "px": px,
                            "text": f"sold @ {jv.px(px)} · {word} · {pnl:+,.2f} ({r:+.2f}R)"})
         self.notify("sell", f"SELL {p['coin']}", f"{word} · {pnl:+,.2f} ({r:+.2f}R)")
@@ -429,53 +417,7 @@ class Engine:
 
     # ------------------------------------------------------------ learning from every signal
     def resolve_shadows(self):
-        with self.lock:
-            pend = list(self.s["shadows"])
-        if not pend:
-            return
-        by_coin = {}
-        for x in pend:
-            by_coin.setdefault(x["coin"], []).append(x)
-        done = []
-        for coin, xs in by_coin.items():
-            oldest = min(x["bar_t"] for x in xs)
-            if now_ms() - oldest < 4 * HOUR:
-                continue
-            try:
-                rows = self.fetch(coin, "USD", "1h", min(300, int((now_ms() - oldest) / HOUR) + 5))
-            except Exception:                                         # noqa: BLE001
-                continue
-            if rows and rows[-1][0] + HOUR > now_ms():
-                rows = rows[:-1]
-            if not rows:
-                continue
-            p = {"coin": coin, "t": [r[0] for r in rows], "o": [r[1] for r in rows], "h": [r[2] for r in rows],
-                 "l": [r[3] for r in rows], "c": [r[4] for r in rows]}
-            idx = {r[0]: k for k, r in enumerate(rows)}
-            kind = "major" if coin in MAJORS else "meme"
-            for x in xs:
-                i = idx.get(x["bar_t"])
-                if i is None:
-                    if now_ms() - x["bar_t"] > 200 * HOUR:
-                        done.append(x)                                # too old to resolve: drop it
-                    continue
-                pa = dict(p, atr=[x["stop_dist"]] * len(rows))                # the exact stop the live decision used
-                tr = st.trade_path(pa, i, "x", FEES[self.s["fees"]], kind, entry="maker", stop_atr=1.0, rung=None,
-                                   target_r=2.0, tp1_bars=0, horizon=HOLD_H)
-                if tr is None:
-                    if len(rows) - 1 - i > ORDER_BARS:
-                        done.append(x)                                # never filled: nothing to learn
-                    continue
-                finished = tr["reason"] in ("stop", "target") or (tr["t_exit"] - tr["t_fill"]) >= HOLD_H * HOUR
-                if finished:
-                    self.brain.learn(x["ev"], tr["r"])
-                    with self.lock:
-                        self.s["counts"]["learned"] += 1
-                    done.append(x)
-        if done:
-            with self.lock:
-                ids = {id(x) for x in done}
-                self.s["shadows"] = [x for x in self.s["shadows"] if id(x) not in ids]
+        """The councils are frozen snapshots of training (as in the TradingView indicator): nothing to re-learn live."""
 
     # ------------------------------------------------------------ what the UI reads
     def snapshot(self):
@@ -488,4 +430,4 @@ class Engine:
                     "history": hist[-200:], "decisions": s["decisions"][-60:], "execs": s["execs"][-60:],
                     "curve": list(s["equity"]), "counts": dict(s["counts"]), "win": (wins / len(hist) * 100) if hist else None,
                     "closed": len(hist), "status": dict(self.status), "market": {k: dict(v) for k, v in self.market.items()},
-                    "agent_live": dict(s["agent_live"]), "started": s["started"], "shadows": len(s["shadows"])}
+                    "agent_live": dict(s["agent_live"]), "started": s["started"], "shadows": 0, "views": dict(s["views"])}
