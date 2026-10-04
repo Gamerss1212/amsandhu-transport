@@ -37,7 +37,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import config                      # noqa: E402
 from engine import library         # noqa: E402  (also puts market_analysis_bots on sys.path)
 from engine.auth import Auth       # noqa: E402
-from engine.supervisor import Supervisor  # noqa: E402
+from engine.supervisor import DEFAULT_FEE_PROFILE, Supervisor  # noqa: E402
 
 from mab import news, stream, views  # noqa: E402
 from mab.assistant import Assistant, AssistantUnavailable, BudgetExceeded  # noqa: E402
@@ -771,7 +771,8 @@ GET_ROUTES = {
     "/api/user_bots": lambda ctx: fleet_json(ctx["wid"], "/api/user_bots", []),
     "/api/strategies": strategies,
     "/api/results": lambda ctx: library.results(),
-    "/api/backtest": lambda ctx: library.backtest_summary(ctx["q"]("strategy"), ctx["q"]("symbol"), ctx["q"]("venue")),
+    "/api/backtest": lambda ctx: library.backtest_summary(ctx["q"]("strategy"), ctx["q"]("symbol"), ctx["q"]("venue"),
+                                                          ctx["st"].kv_get("fee_profile") or DEFAULT_FEE_PROFILE),
     "/api/markets": markets,
     "/api/candles": candles,
     "/api/markers": markers,

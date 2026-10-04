@@ -198,14 +198,23 @@ def evaluation(sid: str) -> list:
             if os.path.exists(sw):
                 with open(sw, encoding="utf-8") as fh:
                     _evaluation.update(json.load(fh).get("strategies", {}))
+            import mab                                  # the ULTRON councils' walk-forward, next to the mab package
+            ul = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(mab.__file__))), "results", "ultron_priors.json")
+            if os.path.exists(ul):
+                with open(ul, encoding="utf-8") as fh:
+                    _evaluation.update(json.load(fh).get("strategies", {}))
         except (OSError, ValueError):
             _evaluation = {}
     return (_evaluation.get(sid) or {}).get("runs", [])
 
 
-def backtest_summary(sid: str, instrument: str = None, venue: str = None) -> dict:
-    """The measured (backtest) result for a strategy on a market at the matching cost level, clearly labelled."""
+def backtest_summary(sid: str, instrument: str = None, venue: str = None, fee_profile: str = None) -> dict:
+    """The measured (backtest) result for a strategy on a market at the matching cost level, clearly labelled: the
+    owner's exchange fees when the strategy was measured at them (as the live check judges it), else the venue's."""
     cost = "base" if venue == "yahoo" else ("low_fee_venue" if venue in ("okx", "demo") else "retail_kraken")
+    alt = {"ndax": "ndax", "low_fee": "low_fee_venue"}.get(fee_profile or "")
+    if venue != "yahoo" and alt and any(r.get("cost") == alt for r in evaluation(sid)):
+        cost = alt
     runs = [r for r in evaluation(sid) if r.get("cost") == cost]
     same = [r for r in runs if r.get("instrument") == instrument] if instrument else []
     use = same or runs

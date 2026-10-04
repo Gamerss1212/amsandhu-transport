@@ -624,8 +624,10 @@ function renderBuilder() {
   const strat = h('select', { 'aria-label': 'Strategy' });
   const fams = {};
   for (const s of st.strategies.runnable) (fams[s.family] = fams[s.family] || []).push(s);
-  for (const [f, rows] of Object.entries(fams).sort()) strat.append(h('optgroup', { label: f.replace(/_/g, ' ') },
-    rows.map(s => h('option', { value: s.id }, `${s.name} (${s.tf})`))));
+  // the trained ULTRON councils first, its 1h majors council (best untouched-test result at retail fees) selected
+  const famOrder = ([a], [b]) => (a === 'ultron' ? -1 : b === 'ultron' ? 1 : a.localeCompare(b));
+  for (const [f, rows] of Object.entries(fams).sort(famOrder)) strat.append(h('optgroup', { label: f === 'ultron' ? 'ULTRON (trained councils)' : f.replace(/_/g, ' ') },
+    rows.map(s => h('option', { value: s.id, selected: s.id === 'STRAT-U01' }, `${s.name} (${s.tf})`))));
   const market = h('select', { 'aria-label': 'Market' });
   const fillMarkets = () => replace(market, (st.markets || []).map(m => h('option', { value: `${m.venue}|${m.symbol}`, selected: st.market && m.symbol === st.market.symbol && m.venue === st.market.venue }, `${m.symbol} · ${m.venue}`)));
   fillMarkets();
