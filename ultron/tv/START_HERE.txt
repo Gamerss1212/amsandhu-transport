@@ -1,0 +1,56 @@
+ULTRON - AI trade council for TradingView
+==========================================
+
+WHAT YOU NEED
+  1. A free TradingView account (tradingview.com, or the TradingView Desktop app).
+  2. ULTRON_indicator.pine  <- the software (required)
+  3. ULTRON_strategy.pine   <- optional: shows how ULTRON's rules did in the past on any chart
+  4. The free TradingView phone app, if you want buy/sell alerts on your phone.
+
+
+INSTALL (2 minutes, one time)
+  1. Open TradingView and open a chart. Use one of these:
+       CRYPTO, any timeframe (best on 1h and 4h):
+         COINBASE:BTCUSD  ETHUSD  SOLUSD  DOGEUSD  SHIBUSD  PEPEUSD  BONKUSD  WIFUSD  FLOKIUSD
+       STOCKS / ETFs / FOREX / GOLD / OIL, DAILY (1D) chart only:
+         SPY QQQ IWM DIA AAPL MSFT NVDA AMZN GOOGL META TSLA JPM AMD NFLX
+         XIU RY TD ENB SHOP CNQ  EURUSD GBPUSD USDJPY USDCAD AUDUSD  GLD SLV USO
+  2. At the bottom of the chart, click "Pine Editor".
+  3. Delete everything in the editor.
+  4. Open ULTRON_indicator.pine with Notepad, press Ctrl+A then Ctrl+C, and paste it into the editor (Ctrl+V).
+  5. Click "Save" (name it ULTRON), then click "Add to chart".
+  Done. The ULTRON table appears in the top-right corner of the chart.
+
+
+HOW TO READ IT
+  "WAIT · no setup now"        -> do nothing.
+  "BUY · limit order waiting"  -> place a LIMIT BUY at the "Buy at" price, with the "Stop-loss" and the
+                                  "Sell (target)" prices shown, for the "Size" shown.
+  "IN TRADE"                   -> your order filled; leave the stop and target in place.
+  "Flat: ..."                  -> this chart or timeframe had no reliable edge in testing, so ULTRON stays out.
+  Blue background              -> LOUD: a big move is likely soon (direction unknown).
+  On the chart: BUY label with blue (buy), red (stop) and green (target) lines; SELL label when it ends.
+
+
+GET ALERTS ON YOUR PHONE (so you don't have to watch)
+  1. Click the "Alert" button (clock icon) at the top of TradingView.
+  2. Condition: ULTRON  ->  "Any alert() function call".
+  3. Tick "Notify in app", click Create.
+  4. Install the TradingView app on your phone and log in. ULTRON's BUY and SELL alerts arrive there.
+  Make one alert per chart you want watched (for example BTC 1h, ETH 1h, SPY 1D).
+
+
+SET IT UP FOR YOU (gear icon on the ULTRON indicator -> Inputs)
+  Account size ($), risk per trade (%), and your exchange's fees. Everything else can stay as it is.
+  "Simple view" off = the full table (backtest, trend, agents, regime).
+
+
+OPTIONAL: SEE PAST RESULTS ON ANY CHART
+  Paste ULTRON_strategy.pine into a new Pine Editor tab the same way, Add to chart, and open "Strategy Tester"
+  at the bottom.
+
+
+RULES
+  - ULTRON never places orders. You place them on your exchange or broker.
+  - Paper-trade first (TradingView has a free Paper Trading account under "Trading Panel").
+  - Past results are not a forecast. Not financial advice.
