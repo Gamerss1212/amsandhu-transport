@@ -74,10 +74,11 @@ class InstrumentRegistry:
                     self.errors[f"yahoo:{s}"] = str(e)
                     continue
             ca = s.endswith(".TO") or s.endswith(".V") or s.endswith(".NE")
+            fx = s.endswith("=X")                                   # Yahoo forex pairs: 24/5, UTC days
             row = yh.instruments([s])[0]
-            row["asset_type"] = "stock_ca" if ca else "stock"
-            row["calendar"] = "XTSE" if ca else "XNYS"
-            row["quote"] = "CAD" if ca else "USD"
+            row["asset_type"] = "forex" if fx else "stock_ca" if ca else "stock"
+            row["calendar"] = "CRYPTO-UTC" if fx else "XTSE" if ca else "XNYS"
+            row["quote"] = s[3:6] if fx and len(s) >= 8 else "CAD" if ca else "USD"
             row["tier"] = tier_for(s, row["asset_type"])
             self.items[("yahoo", s)] = row
             added.append(s)

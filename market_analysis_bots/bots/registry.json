@@ -3508,6 +3508,650 @@
    "stages": [
     "250"
    ]
+  },
+  {
+   "bot_id": "BOT-U001",
+   "name": "ULTRON council 1h | BTC-USD",
+   "strategy_id": "STRAT-U01",
+   "venue": "coinbase",
+   "instrument": "BTC-USD",
+   "enabled": true,
+   "stages": [
+    "1",
+    "10",
+    "50",
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-U002",
+   "name": "ULTRON council 1h | ETH-USD",
+   "strategy_id": "STRAT-U01",
+   "venue": "coinbase",
+   "instrument": "ETH-USD",
+   "enabled": true,
+   "stages": [
+    "1",
+    "10",
+    "50",
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-U003",
+   "name": "ULTRON council 1h | SOL-USD",
+   "strategy_id": "STRAT-U01",
+   "venue": "coinbase",
+   "instrument": "SOL-USD",
+   "enabled": true,
+   "stages": [
+    "1",
+    "10",
+    "50",
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-U004",
+   "name": "ULTRON council 1h | DOGE-USD",
+   "strategy_id": "STRAT-U02",
+   "venue": "coinbase",
+   "instrument": "DOGE-USD",
+   "enabled": true,
+   "stages": [
+    "1",
+    "10",
+    "50",
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-U005",
+   "name": "ULTRON council 1h | SHIB-USD",
+   "strategy_id": "STRAT-U02",
+   "venue": "coinbase",
+   "instrument": "SHIB-USD",
+   "enabled": true,
+   "stages": [
+    "1",
+    "10",
+    "50",
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-U006",
+   "name": "ULTRON council 1h | PEPE-USD",
+   "strategy_id": "STRAT-U02",
+   "venue": "coinbase",
+   "instrument": "PEPE-USD",
+   "enabled": true,
+   "stages": [
+    "1",
+    "10",
+    "50",
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-U007",
+   "name": "ULTRON council 1h | BONK-USD",
+   "strategy_id": "STRAT-U02",
+   "venue": "coinbase",
+   "instrument": "BONK-USD",
+   "enabled": true,
+   "stages": [
+    "1",
+    "10",
+    "50",
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-U008",
+   "name": "ULTRON council 1h | WIF-USD",
+   "strategy_id": "STRAT-U02",
+   "venue": "coinbase",
+   "instrument": "WIF-USD",
+   "enabled": true,
+   "stages": [
+    "1",
+    "10",
+    "50",
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-U009",
+   "name": "ULTRON council 1h | FLOKI-USD",
+   "strategy_id": "STRAT-U02",
+   "venue": "coinbase",
+   "instrument": "FLOKI-USD",
+   "enabled": true,
+   "stages": [
+    "1",
+    "10",
+    "50",
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-U010",
+   "name": "ULTRON council 4h | BTC-USD",
+   "strategy_id": "STRAT-U03",
+   "venue": "coinbase",
+   "instrument": "BTC-USD",
+   "enabled": true,
+   "stages": [
+    "1",
+    "10",
+    "50",
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-U011",
+   "name": "ULTRON council 4h | ETH-USD",
+   "strategy_id": "STRAT-U03",
+   "venue": "coinbase",
+   "instrument": "ETH-USD",
+   "enabled": true,
+   "stages": [
+    "1",
+    "10",
+    "50",
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-U012",
+   "name": "ULTRON council 4h | SOL-USD",
+   "strategy_id": "STRAT-U03",
+   "venue": "coinbase",
+   "instrument": "SOL-USD",
+   "enabled": true,
+   "stages": [
+    "1",
+    "10",
+    "50",
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-U013",
+   "name": "ULTRON council 4h | DOGE-USD",
+   "strategy_id": "STRAT-U04",
+   "venue": "coinbase",
+   "instrument": "DOGE-USD",
+   "enabled": true,
+   "stages": [
+    "1",
+    "10",
+    "50",
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-U014",
+   "name": "ULTRON council 4h | SHIB-USD",
+   "strategy_id": "STRAT-U04",
+   "venue": "coinbase",
+   "instrument": "SHIB-USD",
+   "enabled": true,
+   "stages": [
+    "1",
+    "10",
+    "50",
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-U015",
+   "name": "ULTRON council 4h | PEPE-USD",
+   "strategy_id": "STRAT-U04",
+   "venue": "coinbase",
+   "instrument": "PEPE-USD",
+   "enabled": true,
+   "stages": [
+    "1",
+    "10",
+    "50",
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-U016",
+   "name": "ULTRON council 4h | BONK-USD",
+   "strategy_id": "STRAT-U04",
+   "venue": "coinbase",
+   "instrument": "BONK-USD",
+   "enabled": true,
+   "stages": [
+    "1",
+    "10",
+    "50",
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-U017",
+   "name": "ULTRON council 4h | WIF-USD",
+   "strategy_id": "STRAT-U04",
+   "venue": "coinbase",
+   "instrument": "WIF-USD",
+   "enabled": true,
+   "stages": [
+    "1",
+    "10",
+    "50",
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-U018",
+   "name": "ULTRON council 4h | FLOKI-USD",
+   "strategy_id": "STRAT-U04",
+   "venue": "coinbase",
+   "instrument": "FLOKI-USD",
+   "enabled": true,
+   "stages": [
+    "1",
+    "10",
+    "50",
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-U019",
+   "name": "ULTRON daily markets council | SPY",
+   "strategy_id": "STRAT-U05",
+   "venue": "yahoo",
+   "instrument": "SPY",
+   "enabled": true,
+   "stages": [
+    "1",
+    "10",
+    "50",
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-U020",
+   "name": "ULTRON daily markets council | QQQ",
+   "strategy_id": "STRAT-U05",
+   "venue": "yahoo",
+   "instrument": "QQQ",
+   "enabled": true,
+   "stages": [
+    "1",
+    "10",
+    "50",
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-U021",
+   "name": "ULTRON daily markets council | IWM",
+   "strategy_id": "STRAT-U05",
+   "venue": "yahoo",
+   "instrument": "IWM",
+   "enabled": true,
+   "stages": [
+    "1",
+    "10",
+    "50",
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-U022",
+   "name": "ULTRON daily markets council | DIA",
+   "strategy_id": "STRAT-U05",
+   "venue": "yahoo",
+   "instrument": "DIA",
+   "enabled": true,
+   "stages": [
+    "1",
+    "10",
+    "50",
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-U023",
+   "name": "ULTRON daily markets council | AAPL",
+   "strategy_id": "STRAT-U05",
+   "venue": "yahoo",
+   "instrument": "AAPL",
+   "enabled": true,
+   "stages": [
+    "1",
+    "10",
+    "50",
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-U024",
+   "name": "ULTRON daily markets council | MSFT",
+   "strategy_id": "STRAT-U05",
+   "venue": "yahoo",
+   "instrument": "MSFT",
+   "enabled": true,
+   "stages": [
+    "1",
+    "10",
+    "50",
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-U025",
+   "name": "ULTRON daily markets council | NVDA",
+   "strategy_id": "STRAT-U05",
+   "venue": "yahoo",
+   "instrument": "NVDA",
+   "enabled": true,
+   "stages": [
+    "1",
+    "10",
+    "50",
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-U026",
+   "name": "ULTRON daily markets council | AMZN",
+   "strategy_id": "STRAT-U05",
+   "venue": "yahoo",
+   "instrument": "AMZN",
+   "enabled": true,
+   "stages": [
+    "1",
+    "10",
+    "50",
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-U027",
+   "name": "ULTRON daily markets council | GOOGL",
+   "strategy_id": "STRAT-U05",
+   "venue": "yahoo",
+   "instrument": "GOOGL",
+   "enabled": true,
+   "stages": [
+    "1",
+    "10",
+    "50",
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-U028",
+   "name": "ULTRON daily markets council | META",
+   "strategy_id": "STRAT-U05",
+   "venue": "yahoo",
+   "instrument": "META",
+   "enabled": true,
+   "stages": [
+    "1",
+    "10",
+    "50",
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-U029",
+   "name": "ULTRON daily markets council | TSLA",
+   "strategy_id": "STRAT-U05",
+   "venue": "yahoo",
+   "instrument": "TSLA",
+   "enabled": true,
+   "stages": [
+    "1",
+    "10",
+    "50",
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-U030",
+   "name": "ULTRON daily markets council | JPM",
+   "strategy_id": "STRAT-U05",
+   "venue": "yahoo",
+   "instrument": "JPM",
+   "enabled": true,
+   "stages": [
+    "1",
+    "10",
+    "50",
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-U031",
+   "name": "ULTRON daily markets council | AMD",
+   "strategy_id": "STRAT-U05",
+   "venue": "yahoo",
+   "instrument": "AMD",
+   "enabled": true,
+   "stages": [
+    "1",
+    "10",
+    "50",
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-U032",
+   "name": "ULTRON daily markets council | NFLX",
+   "strategy_id": "STRAT-U05",
+   "venue": "yahoo",
+   "instrument": "NFLX",
+   "enabled": true,
+   "stages": [
+    "1",
+    "10",
+    "50",
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-U033",
+   "name": "ULTRON daily markets council | XIU.TO",
+   "strategy_id": "STRAT-U05",
+   "venue": "yahoo",
+   "instrument": "XIU.TO",
+   "enabled": true,
+   "stages": [
+    "1",
+    "10",
+    "50",
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-U034",
+   "name": "ULTRON daily markets council | RY.TO",
+   "strategy_id": "STRAT-U05",
+   "venue": "yahoo",
+   "instrument": "RY.TO",
+   "enabled": true,
+   "stages": [
+    "1",
+    "10",
+    "50",
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-U035",
+   "name": "ULTRON daily markets council | TD.TO",
+   "strategy_id": "STRAT-U05",
+   "venue": "yahoo",
+   "instrument": "TD.TO",
+   "enabled": true,
+   "stages": [
+    "1",
+    "10",
+    "50",
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-U036",
+   "name": "ULTRON daily markets council | ENB.TO",
+   "strategy_id": "STRAT-U05",
+   "venue": "yahoo",
+   "instrument": "ENB.TO",
+   "enabled": true,
+   "stages": [
+    "1",
+    "10",
+    "50",
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-U037",
+   "name": "ULTRON daily markets council | SHOP.TO",
+   "strategy_id": "STRAT-U05",
+   "venue": "yahoo",
+   "instrument": "SHOP.TO",
+   "enabled": true,
+   "stages": [
+    "1",
+    "10",
+    "50",
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-U038",
+   "name": "ULTRON daily markets council | CNQ.TO",
+   "strategy_id": "STRAT-U05",
+   "venue": "yahoo",
+   "instrument": "CNQ.TO",
+   "enabled": true,
+   "stages": [
+    "1",
+    "10",
+    "50",
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-U039",
+   "name": "ULTRON daily markets council | EURUSD=X",
+   "strategy_id": "STRAT-U05",
+   "venue": "yahoo",
+   "instrument": "EURUSD=X",
+   "enabled": true,
+   "stages": [
+    "1",
+    "10",
+    "50",
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-U040",
+   "name": "ULTRON daily markets council | GBPUSD=X",
+   "strategy_id": "STRAT-U05",
+   "venue": "yahoo",
+   "instrument": "GBPUSD=X",
+   "enabled": true,
+   "stages": [
+    "1",
+    "10",
+    "50",
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-U041",
+   "name": "ULTRON daily markets council | USDJPY=X",
+   "strategy_id": "STRAT-U05",
+   "venue": "yahoo",
+   "instrument": "USDJPY=X",
+   "enabled": true,
+   "stages": [
+    "1",
+    "10",
+    "50",
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-U042",
+   "name": "ULTRON daily markets council | USDCAD=X",
+   "strategy_id": "STRAT-U05",
+   "venue": "yahoo",
+   "instrument": "USDCAD=X",
+   "enabled": true,
+   "stages": [
+    "1",
+    "10",
+    "50",
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-U043",
+   "name": "ULTRON daily markets council | AUDUSD=X",
+   "strategy_id": "STRAT-U05",
+   "venue": "yahoo",
+   "instrument": "AUDUSD=X",
+   "enabled": true,
+   "stages": [
+    "1",
+    "10",
+    "50",
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-U044",
+   "name": "ULTRON daily markets council | GLD",
+   "strategy_id": "STRAT-U05",
+   "venue": "yahoo",
+   "instrument": "GLD",
+   "enabled": true,
+   "stages": [
+    "1",
+    "10",
+    "50",
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-U045",
+   "name": "ULTRON daily markets council | SLV",
+   "strategy_id": "STRAT-U05",
+   "venue": "yahoo",
+   "instrument": "SLV",
+   "enabled": true,
+   "stages": [
+    "1",
+    "10",
+    "50",
+    "250"
+   ]
+  },
+  {
+   "bot_id": "BOT-U046",
+   "name": "ULTRON daily markets council | USO",
+   "strategy_id": "STRAT-U05",
+   "venue": "yahoo",
+   "instrument": "USO",
+   "enabled": true,
+   "stages": [
+    "1",
+    "10",
+    "50",
+    "250"
+   ]
   }
  ]
 }

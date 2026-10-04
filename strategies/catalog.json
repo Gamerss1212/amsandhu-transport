@@ -1,20 +1,20 @@
 {
  "generated": "2026-09-29",
  "counts": {
-  "counted_strategies": 409,
+  "counted_strategies": 414,
   "variants_not_counted": 66,
-  "implemented": 150,
+  "implemented": 155,
   "blocked": 259,
   "specified_only": 0,
   "research_status": {
-   "sourced": 3,
+   "sourced": 8,
    "incompletely sourced": 67,
    "hypothesis": 339
   },
   "evaluation_status": {
    "untested": 263,
    "backtested": 112,
-   "out-of-sample tested": 34,
+   "out-of-sample tested": 39,
    "paper observed": 0
   },
   "families": {
@@ -42,10 +42,12 @@
    "memecoin": 197,
    "equity_events": 10,
    "equity_breadth": 10,
-   "swing": 3
+   "swing": 3,
+   "ultron": 5
   },
   "target": 300,
-  "sources": 147
+  "sources": 147,
+  "ultron_strategies": 5
  },
  "status_definitions": {
   "research": [
@@ -139821,6 +139823,1234 @@
      }
     ]
    }
+  },
+  {
+   "id": "STRAT-U01",
+   "key": "ultron_1h_majors",
+   "name": "ULTRON council 1h: BTC, ETH, SOL",
+   "family": "ultron",
+   "subfamily": "trained council",
+   "mechanism": "25 trained agents (candle and indicator signals with volatility and trend conditions) chosen by a quarterly walk-forward; a learned brain approves only signals whose edge minus caution clears its threshold, after fees",
+   "logic": "continuation",
+   "anchor": "volatility gate + trend + learned agent edges",
+   "hypothesis": "volatility clusters and is forecastable; trend-aligned signals in LOUD periods pay after costs",
+   "markets": [
+    "crypto"
+   ],
+   "timeframe": "1h",
+   "definition": {
+    "id": "STRAT-U01",
+    "name": "ULTRON council 1h: BTC, ETH, SOL",
+    "family": "ultron",
+    "timeframe": "1h",
+    "direction": "long",
+    "version": "1.0.0",
+    "params": {},
+    "entry": {
+     "long": "ultron(\"1h\") > 0"
+    },
+    "filters": [],
+    "order": {
+     "type": "market"
+    },
+    "stop": {
+     "type": "level",
+     "long": "ultron_stop(\"1h\")"
+    },
+    "target": {
+     "type": "r",
+     "r": 2.0
+    },
+    "trail": {
+     "type": "none"
+    },
+    "exit": {},
+    "max_bars": 96,
+    "session": {
+     "hold_overnight": true
+    },
+    "max_trades_per_day": 3,
+    "cooldown_bars": 0,
+    "sizing": {
+     "risk_pct": 0.6,
+     "max_notional_pct": 100.0
+    },
+    "data": [
+     "bars"
+    ],
+    "engine": "rules"
+   },
+   "data": [
+    "bars"
+   ],
+   "evidence": [],
+   "references": [],
+   "failure_modes": [
+    "regime change after the training period",
+    "fees above the trained level"
+   ],
+   "implementation_status": "implemented",
+   "research_status": "sourced",
+   "evaluation_status": "out-of-sample tested",
+   "evaluation": {
+    "status": "out-of-sample tested",
+    "best_realistic": {
+     "instrument": "all council markets",
+     "expectancy_r": 0.387,
+     "trades": 75,
+     "net_return": null,
+     "test_expectancy_r": 0.5627,
+     "gross_expectancy_r": null
+    },
+    "candidates": [],
+    "results": [
+     {
+      "period": "train",
+      "instrument": "all council markets",
+      "tf": "1h",
+      "cost_mult": "ndax",
+      "dataset": "ULTRON walk-forward, market entries, ndax costs",
+      "p_value": null,
+      "note": "",
+      "metrics": {
+       "trades": 51,
+       "win_rate": 0.6275,
+       "expectancy_r": 0.3421,
+       "profit_factor": 2.091,
+       "net_return": null,
+       "sharpe": null,
+       "max_drawdown": null
+      }
+     },
+     {
+      "period": "validation",
+      "instrument": "all council markets",
+      "tf": "1h",
+      "cost_mult": "ndax",
+      "dataset": "ULTRON walk-forward, market entries, ndax costs",
+      "p_value": null,
+      "note": "",
+      "metrics": {
+       "trades": 9,
+       "win_rate": 0.4444,
+       "expectancy_r": 0.3485,
+       "profit_factor": 2.131,
+       "net_return": null,
+       "sharpe": null,
+       "max_drawdown": null
+      }
+     },
+     {
+      "period": "test",
+      "instrument": "all council markets",
+      "tf": "1h",
+      "cost_mult": "ndax",
+      "dataset": "ULTRON walk-forward, market entries, ndax costs",
+      "p_value": null,
+      "note": "",
+      "metrics": {
+       "trades": 15,
+       "win_rate": 0.6,
+       "expectancy_r": 0.5627,
+       "profit_factor": 2.664,
+       "net_return": null,
+       "sharpe": null,
+       "max_drawdown": null
+      }
+     },
+     {
+      "period": "train",
+      "instrument": "all council markets",
+      "tf": "1h",
+      "cost_mult": "retail_kraken",
+      "dataset": "ULTRON walk-forward, market entries, retail_kraken costs",
+      "p_value": null,
+      "note": "",
+      "metrics": {
+       "trades": 51,
+       "win_rate": 0.4902,
+       "expectancy_r": 0.1138,
+       "profit_factor": 1.26,
+       "net_return": null,
+       "sharpe": null,
+       "max_drawdown": null
+      }
+     },
+     {
+      "period": "validation",
+      "instrument": "all council markets",
+      "tf": "1h",
+      "cost_mult": "retail_kraken",
+      "dataset": "ULTRON walk-forward, market entries, retail_kraken costs",
+      "p_value": null,
+      "note": "",
+      "metrics": {
+       "trades": 9,
+       "win_rate": 0.4444,
+       "expectancy_r": 0.1461,
+       "profit_factor": 1.357,
+       "net_return": null,
+       "sharpe": null,
+       "max_drawdown": null
+      }
+     },
+     {
+      "period": "test",
+      "instrument": "all council markets",
+      "tf": "1h",
+      "cost_mult": "retail_kraken",
+      "dataset": "ULTRON walk-forward, market entries, retail_kraken costs",
+      "p_value": null,
+      "note": "",
+      "metrics": {
+       "trades": 15,
+       "win_rate": 0.6,
+       "expectancy_r": 0.321,
+       "profit_factor": 1.72,
+       "net_return": null,
+       "sharpe": null,
+       "max_drawdown": null
+      }
+     },
+     {
+      "period": "train",
+      "instrument": "all council markets",
+      "tf": "1h",
+      "cost_mult": "low_fee_venue",
+      "dataset": "ULTRON walk-forward, market entries, low_fee_venue costs",
+      "p_value": null,
+      "note": "",
+      "metrics": {
+       "trades": 51,
+       "win_rate": 0.6471,
+       "expectancy_r": 0.3851,
+       "profit_factor": 2.291,
+       "net_return": null,
+       "sharpe": null,
+       "max_drawdown": null
+      }
+     },
+     {
+      "period": "validation",
+      "instrument": "all council markets",
+      "tf": "1h",
+      "cost_mult": "low_fee_venue",
+      "dataset": "ULTRON walk-forward, market entries, low_fee_venue costs",
+      "p_value": null,
+      "note": "",
+      "metrics": {
+       "trades": 9,
+       "win_rate": 0.4444,
+       "expectancy_r": 0.3868,
+       "profit_factor": 2.328,
+       "net_return": null,
+       "sharpe": null,
+       "max_drawdown": null
+      }
+     },
+     {
+      "period": "test",
+      "instrument": "all council markets",
+      "tf": "1h",
+      "cost_mult": "low_fee_venue",
+      "dataset": "ULTRON walk-forward, market entries, low_fee_venue costs",
+      "p_value": null,
+      "note": "",
+      "metrics": {
+       "trades": 15,
+       "win_rate": 0.6,
+       "expectancy_r": 0.614,
+       "profit_factor": 2.919,
+       "net_return": null,
+       "sharpe": null,
+       "max_drawdown": null
+      }
+     }
+    ],
+    "summary": "walk-forward 2022-2026 with market entries: see results by fee level"
+   },
+   "live_evidence": null,
+   "blocked": null,
+   "distinct": true,
+   "notes": "ULTRON (see ultron/tv/BACKTEST_ALL.md)",
+   "instruments": [
+    "BTC-USD",
+    "ETH-USD",
+    "SOL-USD"
+   ],
+   "variants": [],
+   "warmup_bars": 1700,
+   "spec": {},
+   "pack_refs": [],
+   "parent": null,
+   "subfamily_note": null
+  },
+  {
+   "id": "STRAT-U02",
+   "key": "ultron_1h_memes",
+   "name": "ULTRON council 1h: meme coins",
+   "family": "ultron",
+   "subfamily": "trained council",
+   "mechanism": "25 trained agents (candle and indicator signals with volatility and trend conditions) chosen by a quarterly walk-forward; a learned brain approves only signals whose edge minus caution clears its threshold, after fees",
+   "logic": "continuation",
+   "anchor": "volatility gate + trend + learned agent edges",
+   "hypothesis": "volatility clusters and is forecastable; trend-aligned signals in LOUD periods pay after costs",
+   "markets": [
+    "crypto"
+   ],
+   "timeframe": "1h",
+   "definition": {
+    "id": "STRAT-U02",
+    "name": "ULTRON council 1h: meme coins",
+    "family": "ultron",
+    "timeframe": "1h",
+    "direction": "long",
+    "version": "1.0.0",
+    "params": {},
+    "entry": {
+     "long": "ultron(\"1h\") > 0"
+    },
+    "filters": [],
+    "order": {
+     "type": "market"
+    },
+    "stop": {
+     "type": "level",
+     "long": "ultron_stop(\"1h\")"
+    },
+    "target": {
+     "type": "r",
+     "r": 2.0
+    },
+    "trail": {
+     "type": "none"
+    },
+    "exit": {},
+    "max_bars": 96,
+    "session": {
+     "hold_overnight": true
+    },
+    "max_trades_per_day": 3,
+    "cooldown_bars": 0,
+    "sizing": {
+     "risk_pct": 0.3,
+     "max_notional_pct": 100.0
+    },
+    "data": [
+     "bars"
+    ],
+    "engine": "rules"
+   },
+   "data": [
+    "bars"
+   ],
+   "evidence": [],
+   "references": [],
+   "failure_modes": [
+    "regime change after the training period",
+    "fees above the trained level"
+   ],
+   "implementation_status": "implemented",
+   "research_status": "sourced",
+   "evaluation_status": "out-of-sample tested",
+   "evaluation": {
+    "status": "out-of-sample tested",
+    "best_realistic": {
+     "instrument": "all council markets",
+     "expectancy_r": 0.078,
+     "trades": 194,
+     "net_return": null,
+     "test_expectancy_r": -0.0107,
+     "gross_expectancy_r": null
+    },
+    "candidates": [],
+    "results": [
+     {
+      "period": "train",
+      "instrument": "all council markets",
+      "tf": "1h",
+      "cost_mult": "ndax",
+      "dataset": "ULTRON walk-forward, market entries, ndax costs",
+      "p_value": null,
+      "note": "",
+      "metrics": {
+       "trades": 107,
+       "win_rate": 0.4673,
+       "expectancy_r": 0.0789,
+       "profit_factor": 1.186,
+       "net_return": null,
+       "sharpe": null,
+       "max_drawdown": null
+      }
+     },
+     {
+      "period": "validation",
+      "instrument": "all council markets",
+      "tf": "1h",
+      "cost_mult": "ndax",
+      "dataset": "ULTRON walk-forward, market entries, ndax costs",
+      "p_value": null,
+      "note": "",
+      "metrics": {
+       "trades": 46,
+       "win_rate": 0.413,
+       "expectancy_r": 0.1547,
+       "profit_factor": 1.311,
+       "net_return": null,
+       "sharpe": null,
+       "max_drawdown": null
+      }
+     },
+     {
+      "period": "test",
+      "instrument": "all council markets",
+      "tf": "1h",
+      "cost_mult": "ndax",
+      "dataset": "ULTRON walk-forward, market entries, ndax costs",
+      "p_value": null,
+      "note": "",
+      "metrics": {
+       "trades": 41,
+       "win_rate": 0.3902,
+       "expectancy_r": -0.0107,
+       "profit_factor": 0.978,
+       "net_return": null,
+       "sharpe": null,
+       "max_drawdown": null
+      }
+     },
+     {
+      "period": "train",
+      "instrument": "all council markets",
+      "tf": "1h",
+      "cost_mult": "retail_kraken",
+      "dataset": "ULTRON walk-forward, market entries, retail_kraken costs",
+      "p_value": null,
+      "note": "",
+      "metrics": {
+       "trades": 107,
+       "win_rate": 0.3925,
+       "expectancy_r": -0.0385,
+       "profit_factor": 0.923,
+       "net_return": null,
+       "sharpe": null,
+       "max_drawdown": null
+      }
+     },
+     {
+      "period": "validation",
+      "instrument": "all council markets",
+      "tf": "1h",
+      "cost_mult": "retail_kraken",
+      "dataset": "ULTRON walk-forward, market entries, retail_kraken costs",
+      "p_value": null,
+      "note": "",
+      "metrics": {
+       "trades": 46,
+       "win_rate": 0.413,
+       "expectancy_r": 0.0348,
+       "profit_factor": 1.061,
+       "net_return": null,
+       "sharpe": null,
+       "max_drawdown": null
+      }
+     },
+     {
+      "period": "test",
+      "instrument": "all council markets",
+      "tf": "1h",
+      "cost_mult": "retail_kraken",
+      "dataset": "ULTRON walk-forward, market entries, retail_kraken costs",
+      "p_value": null,
+      "note": "",
+      "metrics": {
+       "trades": 41,
+       "win_rate": 0.3659,
+       "expectancy_r": -0.1493,
+       "profit_factor": 0.733,
+       "net_return": null,
+       "sharpe": null,
+       "max_drawdown": null
+      }
+     },
+     {
+      "period": "train",
+      "instrument": "all council markets",
+      "tf": "1h",
+      "cost_mult": "low_fee_venue",
+      "dataset": "ULTRON walk-forward, market entries, low_fee_venue costs",
+      "p_value": null,
+      "note": "",
+      "metrics": {
+       "trades": 107,
+       "win_rate": 0.4673,
+       "expectancy_r": 0.1002,
+       "profit_factor": 1.242,
+       "net_return": null,
+       "sharpe": null,
+       "max_drawdown": null
+      }
+     },
+     {
+      "period": "validation",
+      "instrument": "all council markets",
+      "tf": "1h",
+      "cost_mult": "low_fee_venue",
+      "dataset": "ULTRON walk-forward, market entries, low_fee_venue costs",
+      "p_value": null,
+      "note": "",
+      "metrics": {
+       "trades": 46,
+       "win_rate": 0.413,
+       "expectancy_r": 0.1781,
+       "profit_factor": 1.368,
+       "net_return": null,
+       "sharpe": null,
+       "max_drawdown": null
+      }
+     },
+     {
+      "period": "test",
+      "instrument": "all council markets",
+      "tf": "1h",
+      "cost_mult": "low_fee_venue",
+      "dataset": "ULTRON walk-forward, market entries, low_fee_venue costs",
+      "p_value": null,
+      "note": "",
+      "metrics": {
+       "trades": 41,
+       "win_rate": 0.4146,
+       "expectancy_r": 0.0149,
+       "profit_factor": 1.032,
+       "net_return": null,
+       "sharpe": null,
+       "max_drawdown": null
+      }
+     }
+    ],
+    "summary": "walk-forward 2022-2026 with market entries: see results by fee level"
+   },
+   "live_evidence": null,
+   "blocked": null,
+   "distinct": true,
+   "notes": "ULTRON (see ultron/tv/BACKTEST_ALL.md)",
+   "instruments": [
+    "DOGE-USD",
+    "SHIB-USD",
+    "PEPE-USD",
+    "BONK-USD",
+    "WIF-USD",
+    "FLOKI-USD"
+   ],
+   "variants": [],
+   "warmup_bars": 1700,
+   "spec": {},
+   "pack_refs": [],
+   "parent": null,
+   "subfamily_note": null
+  },
+  {
+   "id": "STRAT-U03",
+   "key": "ultron_4h_majors",
+   "name": "ULTRON council 4h: BTC, ETH, SOL",
+   "family": "ultron",
+   "subfamily": "trained council",
+   "mechanism": "25 trained agents (candle and indicator signals with volatility and trend conditions) chosen by a quarterly walk-forward; a learned brain approves only signals whose edge minus caution clears its threshold, after fees",
+   "logic": "continuation",
+   "anchor": "volatility gate + trend + learned agent edges",
+   "hypothesis": "volatility clusters and is forecastable; trend-aligned signals in LOUD periods pay after costs",
+   "markets": [
+    "crypto"
+   ],
+   "timeframe": "1h",
+   "definition": {
+    "id": "STRAT-U03",
+    "name": "ULTRON council 4h: BTC, ETH, SOL",
+    "family": "ultron",
+    "timeframe": "1h",
+    "direction": "long",
+    "version": "1.0.0",
+    "params": {},
+    "entry": {
+     "long": "ultron(\"4h\") > 0"
+    },
+    "filters": [],
+    "order": {
+     "type": "market"
+    },
+    "stop": {
+     "type": "level",
+     "long": "ultron_stop(\"4h\")"
+    },
+    "target": {
+     "type": "r",
+     "r": 2.0
+    },
+    "trail": {
+     "type": "none"
+    },
+    "exit": {},
+    "max_bars": 384,
+    "session": {
+     "hold_overnight": true
+    },
+    "max_trades_per_day": 3,
+    "cooldown_bars": 0,
+    "sizing": {
+     "risk_pct": 0.6,
+     "max_notional_pct": 100.0
+    },
+    "data": [
+     "bars"
+    ],
+    "engine": "rules"
+   },
+   "data": [
+    "bars"
+   ],
+   "evidence": [],
+   "references": [],
+   "failure_modes": [
+    "regime change after the training period",
+    "fees above the trained level"
+   ],
+   "implementation_status": "implemented",
+   "research_status": "sourced",
+   "evaluation_status": "out-of-sample tested",
+   "evaluation": {
+    "status": "out-of-sample tested",
+    "best_realistic": {
+     "instrument": "all council markets",
+     "expectancy_r": 0.4911,
+     "trades": 50,
+     "net_return": null,
+     "test_expectancy_r": 0.0186,
+     "gross_expectancy_r": null
+    },
+    "candidates": [],
+    "results": [
+     {
+      "period": "train",
+      "instrument": "all council markets",
+      "tf": "4h",
+      "cost_mult": "ndax",
+      "dataset": "ULTRON walk-forward, market entries, ndax costs",
+      "p_value": null,
+      "note": "",
+      "metrics": {
+       "trades": 40,
+       "win_rate": 0.575,
+       "expectancy_r": 0.5558,
+       "profit_factor": 2.861,
+       "net_return": null,
+       "sharpe": null,
+       "max_drawdown": null
+      }
+     },
+     {
+      "period": "validation",
+      "instrument": "all council markets",
+      "tf": "4h",
+      "cost_mult": "ndax",
+      "dataset": "ULTRON walk-forward, market entries, ndax costs",
+      "p_value": null,
+      "note": "",
+      "metrics": {
+       "trades": 3,
+       "win_rate": 0.6667,
+       "expectancy_r": 0.7312,
+       "profit_factor": 5.905,
+       "net_return": null,
+       "sharpe": null,
+       "max_drawdown": null
+      }
+     },
+     {
+      "period": "test",
+      "instrument": "all council markets",
+      "tf": "4h",
+      "cost_mult": "ndax",
+      "dataset": "ULTRON walk-forward, market entries, ndax costs",
+      "p_value": null,
+      "note": "",
+      "metrics": {
+       "trades": 7,
+       "win_rate": 0.4286,
+       "expectancy_r": 0.0186,
+       "profit_factor": 1.031,
+       "net_return": null,
+       "sharpe": null,
+       "max_drawdown": null
+      }
+     },
+     {
+      "period": "train",
+      "instrument": "all council markets",
+      "tf": "4h",
+      "cost_mult": "retail_kraken",
+      "dataset": "ULTRON walk-forward, market entries, retail_kraken costs",
+      "p_value": null,
+      "note": "",
+      "metrics": {
+       "trades": 40,
+       "win_rate": 0.55,
+       "expectancy_r": 0.4515,
+       "profit_factor": 2.272,
+       "net_return": null,
+       "sharpe": null,
+       "max_drawdown": null
+      }
+     },
+     {
+      "period": "validation",
+      "instrument": "all council markets",
+      "tf": "4h",
+      "cost_mult": "retail_kraken",
+      "dataset": "ULTRON walk-forward, market entries, retail_kraken costs",
+      "p_value": null,
+      "note": "",
+      "metrics": {
+       "trades": 3,
+       "win_rate": 0.6667,
+       "expectancy_r": 0.6335,
+       "profit_factor": 4.356,
+       "net_return": null,
+       "sharpe": null,
+       "max_drawdown": null
+      }
+     },
+     {
+      "period": "test",
+      "instrument": "all council markets",
+      "tf": "4h",
+      "cost_mult": "retail_kraken",
+      "dataset": "ULTRON walk-forward, market entries, retail_kraken costs",
+      "p_value": null,
+      "note": "",
+      "metrics": {
+       "trades": 7,
+       "win_rate": 0.4286,
+       "expectancy_r": -0.1006,
+       "profit_factor": 0.848,
+       "net_return": null,
+       "sharpe": null,
+       "max_drawdown": null
+      }
+     },
+     {
+      "period": "train",
+      "instrument": "all council markets",
+      "tf": "4h",
+      "cost_mult": "low_fee_venue",
+      "dataset": "ULTRON walk-forward, market entries, low_fee_venue costs",
+      "p_value": null,
+      "note": "",
+      "metrics": {
+       "trades": 40,
+       "win_rate": 0.575,
+       "expectancy_r": 0.5772,
+       "profit_factor": 2.991,
+       "net_return": null,
+       "sharpe": null,
+       "max_drawdown": null
+      }
+     },
+     {
+      "period": "validation",
+      "instrument": "all council markets",
+      "tf": "4h",
+      "cost_mult": "low_fee_venue",
+      "dataset": "ULTRON walk-forward, market entries, low_fee_venue costs",
+      "p_value": null,
+      "note": "",
+      "metrics": {
+       "trades": 3,
+       "win_rate": 0.6667,
+       "expectancy_r": 0.7519,
+       "profit_factor": 6.277,
+       "net_return": null,
+       "sharpe": null,
+       "max_drawdown": null
+      }
+     },
+     {
+      "period": "test",
+      "instrument": "all council markets",
+      "tf": "4h",
+      "cost_mult": "low_fee_venue",
+      "dataset": "ULTRON walk-forward, market entries, low_fee_venue costs",
+      "p_value": null,
+      "note": "",
+      "metrics": {
+       "trades": 7,
+       "win_rate": 0.4286,
+       "expectancy_r": 0.0426,
+       "profit_factor": 1.073,
+       "net_return": null,
+       "sharpe": null,
+       "max_drawdown": null
+      }
+     }
+    ],
+    "summary": "walk-forward 2022-2026 with market entries: see results by fee level"
+   },
+   "live_evidence": null,
+   "blocked": null,
+   "distinct": true,
+   "notes": "ULTRON (see ultron/tv/BACKTEST_ALL.md)",
+   "instruments": [
+    "BTC-USD",
+    "ETH-USD",
+    "SOL-USD"
+   ],
+   "variants": [],
+   "warmup_bars": 1700,
+   "spec": {},
+   "pack_refs": [],
+   "parent": null,
+   "subfamily_note": null
+  },
+  {
+   "id": "STRAT-U04",
+   "key": "ultron_4h_memes",
+   "name": "ULTRON council 4h: meme coins",
+   "family": "ultron",
+   "subfamily": "trained council",
+   "mechanism": "25 trained agents (candle and indicator signals with volatility and trend conditions) chosen by a quarterly walk-forward; a learned brain approves only signals whose edge minus caution clears its threshold, after fees",
+   "logic": "continuation",
+   "anchor": "volatility gate + trend + learned agent edges",
+   "hypothesis": "volatility clusters and is forecastable; trend-aligned signals in LOUD periods pay after costs",
+   "markets": [
+    "crypto"
+   ],
+   "timeframe": "1h",
+   "definition": {
+    "id": "STRAT-U04",
+    "name": "ULTRON council 4h: meme coins",
+    "family": "ultron",
+    "timeframe": "1h",
+    "direction": "long",
+    "version": "1.0.0",
+    "params": {},
+    "entry": {
+     "long": "ultron(\"4h\") > 0"
+    },
+    "filters": [],
+    "order": {
+     "type": "market"
+    },
+    "stop": {
+     "type": "level",
+     "long": "ultron_stop(\"4h\")"
+    },
+    "target": {
+     "type": "r",
+     "r": 2.0
+    },
+    "trail": {
+     "type": "none"
+    },
+    "exit": {},
+    "max_bars": 384,
+    "session": {
+     "hold_overnight": true
+    },
+    "max_trades_per_day": 3,
+    "cooldown_bars": 0,
+    "sizing": {
+     "risk_pct": 0.3,
+     "max_notional_pct": 100.0
+    },
+    "data": [
+     "bars"
+    ],
+    "engine": "rules"
+   },
+   "data": [
+    "bars"
+   ],
+   "evidence": [],
+   "references": [],
+   "failure_modes": [
+    "regime change after the training period",
+    "fees above the trained level"
+   ],
+   "implementation_status": "implemented",
+   "research_status": "sourced",
+   "evaluation_status": "out-of-sample tested",
+   "evaluation": {
+    "status": "out-of-sample tested",
+    "best_realistic": {
+     "instrument": "all council markets",
+     "expectancy_r": 0.3533,
+     "trades": 72,
+     "net_return": null,
+     "test_expectancy_r": 0.082,
+     "gross_expectancy_r": null
+    },
+    "candidates": [],
+    "results": [
+     {
+      "period": "train",
+      "instrument": "all council markets",
+      "tf": "4h",
+      "cost_mult": "ndax",
+      "dataset": "ULTRON walk-forward, market entries, ndax costs",
+      "p_value": null,
+      "note": "",
+      "metrics": {
+       "trades": 41,
+       "win_rate": 0.5122,
+       "expectancy_r": 0.4922,
+       "profit_factor": 2.247,
+       "net_return": null,
+       "sharpe": null,
+       "max_drawdown": null
+      }
+     },
+     {
+      "period": "validation",
+      "instrument": "all council markets",
+      "tf": "4h",
+      "cost_mult": "ndax",
+      "dataset": "ULTRON walk-forward, market entries, ndax costs",
+      "p_value": null,
+      "note": "",
+      "metrics": {
+       "trades": 16,
+       "win_rate": 0.5,
+       "expectancy_r": 0.2516,
+       "profit_factor": 1.603,
+       "net_return": null,
+       "sharpe": null,
+       "max_drawdown": null
+      }
+     },
+     {
+      "period": "test",
+      "instrument": "all council markets",
+      "tf": "4h",
+      "cost_mult": "ndax",
+      "dataset": "ULTRON walk-forward, market entries, ndax costs",
+      "p_value": null,
+      "note": "",
+      "metrics": {
+       "trades": 15,
+       "win_rate": 0.4667,
+       "expectancy_r": 0.082,
+       "profit_factor": 1.306,
+       "net_return": null,
+       "sharpe": null,
+       "max_drawdown": null
+      }
+     },
+     {
+      "period": "train",
+      "instrument": "all council markets",
+      "tf": "4h",
+      "cost_mult": "retail_kraken",
+      "dataset": "ULTRON walk-forward, market entries, retail_kraken costs",
+      "p_value": null,
+      "note": "",
+      "metrics": {
+       "trades": 41,
+       "win_rate": 0.5122,
+       "expectancy_r": 0.4228,
+       "profit_factor": 1.987,
+       "net_return": null,
+       "sharpe": null,
+       "max_drawdown": null
+      }
+     },
+     {
+      "period": "validation",
+      "instrument": "all council markets",
+      "tf": "4h",
+      "cost_mult": "retail_kraken",
+      "dataset": "ULTRON walk-forward, market entries, retail_kraken costs",
+      "p_value": null,
+      "note": "",
+      "metrics": {
+       "trades": 16,
+       "win_rate": 0.5,
+       "expectancy_r": 0.1822,
+       "profit_factor": 1.398,
+       "net_return": null,
+       "sharpe": null,
+       "max_drawdown": null
+      }
+     },
+     {
+      "period": "test",
+      "instrument": "all council markets",
+      "tf": "4h",
+      "cost_mult": "retail_kraken",
+      "dataset": "ULTRON walk-forward, market entries, retail_kraken costs",
+      "p_value": null,
+      "note": "",
+      "metrics": {
+       "trades": 15,
+       "win_rate": 0.4,
+       "expectancy_r": 0.0092,
+       "profit_factor": 1.03,
+       "net_return": null,
+       "sharpe": null,
+       "max_drawdown": null
+      }
+     },
+     {
+      "period": "train",
+      "instrument": "all council markets",
+      "tf": "4h",
+      "cost_mult": "low_fee_venue",
+      "dataset": "ULTRON walk-forward, market entries, low_fee_venue costs",
+      "p_value": null,
+      "note": "",
+      "metrics": {
+       "trades": 41,
+       "win_rate": 0.5122,
+       "expectancy_r": 0.5073,
+       "profit_factor": 2.303,
+       "net_return": null,
+       "sharpe": null,
+       "max_drawdown": null
+      }
+     },
+     {
+      "period": "validation",
+      "instrument": "all council markets",
+      "tf": "4h",
+      "cost_mult": "low_fee_venue",
+      "dataset": "ULTRON walk-forward, market entries, low_fee_venue costs",
+      "p_value": null,
+      "note": "",
+      "metrics": {
+       "trades": 16,
+       "win_rate": 0.5,
+       "expectancy_r": 0.2658,
+       "profit_factor": 1.648,
+       "net_return": null,
+       "sharpe": null,
+       "max_drawdown": null
+      }
+     },
+     {
+      "period": "test",
+      "instrument": "all council markets",
+      "tf": "4h",
+      "cost_mult": "low_fee_venue",
+      "dataset": "ULTRON walk-forward, market entries, low_fee_venue costs",
+      "p_value": null,
+      "note": "",
+      "metrics": {
+       "trades": 15,
+       "win_rate": 0.4667,
+       "expectancy_r": 0.0955,
+       "profit_factor": 1.365,
+       "net_return": null,
+       "sharpe": null,
+       "max_drawdown": null
+      }
+     }
+    ],
+    "summary": "walk-forward 2022-2026 with market entries: see results by fee level"
+   },
+   "live_evidence": null,
+   "blocked": null,
+   "distinct": true,
+   "notes": "ULTRON (see ultron/tv/BACKTEST_ALL.md)",
+   "instruments": [
+    "DOGE-USD",
+    "SHIB-USD",
+    "PEPE-USD",
+    "BONK-USD",
+    "WIF-USD",
+    "FLOKI-USD"
+   ],
+   "variants": [],
+   "warmup_bars": 1700,
+   "spec": {},
+   "pack_refs": [],
+   "parent": null,
+   "subfamily_note": null
+  },
+  {
+   "id": "STRAT-U05",
+   "key": "ultron_1d_markets",
+   "name": "ULTRON daily markets council: stocks, ETFs, forex, gold, silver, oil",
+   "family": "ultron",
+   "subfamily": "trained council",
+   "mechanism": "25 trained agents (candle and indicator signals with volatility and trend conditions) chosen by a quarterly walk-forward; a learned brain approves only signals whose edge minus caution clears its threshold, after fees",
+   "logic": "continuation",
+   "anchor": "volatility gate + trend + learned agent edges",
+   "hypothesis": "volatility clusters and is forecastable; trend-aligned signals in LOUD periods pay after costs",
+   "markets": [
+    "stock"
+   ],
+   "timeframe": "1d",
+   "definition": {
+    "id": "STRAT-U05",
+    "name": "ULTRON daily markets council: stocks, ETFs, forex, gold, silver, oil",
+    "family": "ultron",
+    "timeframe": "1d",
+    "direction": "long",
+    "version": "1.0.0",
+    "params": {},
+    "entry": {
+     "long": "ultron(\"1D\") > 0"
+    },
+    "filters": [],
+    "order": {
+     "type": "market"
+    },
+    "stop": {
+     "type": "level",
+     "long": "ultron_stop(\"1D\")"
+    },
+    "target": {
+     "type": "r",
+     "r": 2.0
+    },
+    "trail": {
+     "type": "none"
+    },
+    "exit": {},
+    "max_bars": 96,
+    "session": {
+     "hold_overnight": true
+    },
+    "max_trades_per_day": 3,
+    "cooldown_bars": 0,
+    "sizing": {
+     "risk_pct": 0.6,
+     "max_notional_pct": 100.0
+    },
+    "data": [
+     "bars"
+    ],
+    "engine": "rules"
+   },
+   "data": [
+    "bars"
+   ],
+   "evidence": [],
+   "references": [],
+   "failure_modes": [
+    "regime change after the training period",
+    "fees above the trained level"
+   ],
+   "implementation_status": "implemented",
+   "research_status": "sourced",
+   "evaluation_status": "out-of-sample tested",
+   "evaluation": {
+    "status": "out-of-sample tested",
+    "best_realistic": {
+     "instrument": "all council markets",
+     "expectancy_r": 0.3153,
+     "trades": 181,
+     "net_return": null,
+     "test_expectancy_r": 0.3431,
+     "gross_expectancy_r": null
+    },
+    "candidates": [],
+    "results": [
+     {
+      "period": "train",
+      "instrument": "all council markets",
+      "tf": "1D",
+      "cost_mult": "base",
+      "dataset": "ULTRON walk-forward, market entries, base costs",
+      "p_value": null,
+      "note": "",
+      "metrics": {
+       "trades": 134,
+       "win_rate": 0.4701,
+       "expectancy_r": 0.2277,
+       "profit_factor": 1.424,
+       "net_return": null,
+       "sharpe": null,
+       "max_drawdown": null
+      }
+     },
+     {
+      "period": "validation",
+      "instrument": "all council markets",
+      "tf": "1D",
+      "cost_mult": "base",
+      "dataset": "ULTRON walk-forward, market entries, base costs",
+      "p_value": null,
+      "note": "",
+      "metrics": {
+       "trades": 25,
+       "win_rate": 0.64,
+       "expectancy_r": 0.7601,
+       "profit_factor": 3.015,
+       "net_return": null,
+       "sharpe": null,
+       "max_drawdown": null
+      }
+     },
+     {
+      "period": "test",
+      "instrument": "all council markets",
+      "tf": "1D",
+      "cost_mult": "base",
+      "dataset": "ULTRON walk-forward, market entries, base costs",
+      "p_value": null,
+      "note": "",
+      "metrics": {
+       "trades": 22,
+       "win_rate": 0.5,
+       "expectancy_r": 0.3431,
+       "profit_factor": 1.901,
+       "net_return": null,
+       "sharpe": null,
+       "max_drawdown": null
+      }
+     }
+    ],
+    "summary": "walk-forward 2022-2026 with market entries: see results by fee level"
+   },
+   "live_evidence": null,
+   "blocked": null,
+   "distinct": true,
+   "notes": "ULTRON (see ultron/tv/BACKTEST_ALL.md)",
+   "instruments": [
+    "SPY",
+    "QQQ",
+    "IWM",
+    "DIA",
+    "AAPL",
+    "MSFT",
+    "NVDA",
+    "AMZN",
+    "GOOGL",
+    "META",
+    "TSLA",
+    "JPM",
+    "AMD",
+    "NFLX",
+    "XIU.TO",
+    "RY.TO",
+    "TD.TO",
+    "ENB.TO",
+    "SHOP.TO",
+    "CNQ.TO",
+    "EURUSD=X",
+    "GBPUSD=X",
+    "USDJPY=X",
+    "USDCAD=X",
+    "AUDUSD=X",
+    "GLD",
+    "SLV",
+    "USO"
+   ],
+   "variants": [],
+   "warmup_bars": 1700,
+   "spec": {},
+   "pack_refs": [],
+   "parent": null,
+   "subfamily_note": null
   }
  ],
  "variants": [

@@ -469,6 +469,7 @@ def align(base: Frame, other: Frame, vals: Sequence) -> List:
 # ============================================================================ functions
 
 FUNCS: Dict[str, Callable] = {}
+WARMUP_HOOKS: Dict[str, Callable] = {}        # name -> fn(node, ctx, asset_type) -> [((instrument, tf), bars), ...]
 
 
 def fn(name, arity=None, doc=""):
@@ -981,6 +982,14 @@ def warmup_by_series(node: Node, base_tf: str, asset_type: str = "crypto") -> Di
                 if spec.sessions is not None:
                     bars = max(bars, (spec.sessions(params) + 1) * session_bars(ctx[1], asset_type))
                 return bars + inner
+            if n.name in WARMUP_HOOKS:                     # functions that read their own history (ULTRON councils)
+                own = 1
+                for (sym_, tf_), bars in WARMUP_HOOKS[n.name](n, ctx, asset_type):
+                    if sym_ is None and tf_ == ctx[1]:
+                        own = max(own, bars)
+                    else:
+                        bump((sym_ if sym_ is not None else ctx[0], tf_), bars)
+                return own
             if n.name in ("tf", "sym", "on"):
                 a = n.args
                 if n.name == "tf":
@@ -1083,3 +1092,9 @@ def feature_values(ev: Evaluator, node: Node, i: int, limit: int = 12) -> Dict[s
             walk(n.x)
     walk(node)
     return {k: (round(v, 8) if isinstance(v, float) else v) for k, v in out.items()}
+
+
+try:                                                   # ULTRON councils as rule functions (needs numpy)
+    from mab import ultron_rules  # noqa: E402,F401
+except Exception:                                      # noqa: BLE001 - the rule language works without them
+    pass

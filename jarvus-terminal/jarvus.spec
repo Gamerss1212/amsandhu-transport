@@ -11,6 +11,9 @@ block_cipher = None
 # the bot platform and the strategy library: beside this folder in the repository, or copied in for a build
 MAB = os.path.abspath("market_analysis_bots") if os.path.isdir("market_analysis_bots") else os.path.abspath("../market_analysis_bots")
 STRAT = os.path.abspath("strategies") if os.path.isdir("strategies") else os.path.abspath("../strategies")
+# the ULTRON councils (trained models + their numpy code), beside this folder in the repository
+ULTRON = os.path.abspath("ultron") if os.path.isdir("ultron") else os.path.abspath("../ultron")
+JSCRIPTS = os.path.abspath("jarvus/scripts") if os.path.isdir("jarvus/scripts") else os.path.abspath("../jarvus/scripts")
 
 datas = [
     ("web", "web"),
@@ -27,6 +30,8 @@ datas = [
     (os.path.join(STRAT, "results", "evaluation_summary.json.gz"), "strategies/results"),   # the brain's starting knowledge
     (os.path.join(STRAT, "results", "swing_eval.json"), "strategies/results"),              # ... for the swing strategies
     (os.path.join(STRAT, "results", "swing_lab.json.gz"), "strategies/results"),
+    (os.path.join(ULTRON, "assets", "councils"), "ultron_councils"),                        # the ULTRON councils
+    (os.path.join(MAB, "results", "ultron_priors.json"), "results"),                       # ... and their measured evidence
 ]
 
 # named explicitly: the bot engines and research workers run in spawned processes and import modules by name
@@ -46,7 +51,7 @@ def _modules(root, pkg):
 
 
 hiddenimports = ["config", "server", "selftest", "engine", "engine.auth", "engine.supervisor", "engine.library"] \
-    + _modules(MAB, "mab")
+    + _modules(MAB, "mab") + ["council", "pine_gate", "signals", "events", "numpy"]
 try:                                   # the AI research assistant (optional: the app runs without it)
     hiddenimports += collect_submodules("anthropic")
 except Exception:                      # noqa: BLE001
@@ -54,7 +59,7 @@ except Exception:                      # noqa: BLE001
 
 a = Analysis(
     ["desktop.py"],
-    pathex=[os.path.abspath("."), MAB],
+    pathex=[os.path.abspath("."), MAB, os.path.join(ULTRON, "core"), os.path.join(ULTRON, "tv"), JSCRIPTS],
     binaries=[],
     datas=datas,
     hiddenimports=hiddenimports,

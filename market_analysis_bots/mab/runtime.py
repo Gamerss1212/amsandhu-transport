@@ -170,6 +170,9 @@ class Fleet(DeploymentMixin):
             self.brain.load_priors(pri)
             if pri and not bcfg.get("priors"):                # the swing strategies' own evaluation, same format
                 self.brain.load_priors(os.path.join(os.path.dirname(pri), "swing_eval.json"), add=True)
+            if not bcfg.get("priors"):                        # the ULTRON councils' measured walk-forward, per market
+                self.brain.load_priors(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                                                    "results", "ultron_priors.json"), add=True)
         except Exception as e:                      # a missing or unreadable priors file only means "start blank"
             log.warning("brain priors not loaded: %s", e)
         n_priors = self.brain.stats.get("prior_strategies", 0)
@@ -630,6 +633,10 @@ class Fleet(DeploymentMixin):
             if sw and os.path.exists(sw):
                 with open(sw) as fh:
                     self._evaluation.update(json.load(fh).get("strategies", {}))
+            ul = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "results", "ultron_priors.json")
+            if os.path.exists(ul):                       # the ULTRON councils' walk-forward, per fee level
+                with open(ul) as fh:
+                    self._evaluation.update(json.load(fh).get("strategies", {}))
         return (self._evaluation.get(sid) or {}).get("runs", [])
 
     def _live_eligible(self, bot_id: str) -> tuple:
@@ -643,6 +650,10 @@ class Fleet(DeploymentMixin):
         if br.id in self.brain.bench:
             return False, "benched by the brain"
         cost = "base" if br.venue == "yahoo" else ("low_fee_venue" if br.venue == "okx" else "retail_kraken")
+        if br.venue != "yahoo" and self.fee_profile in ("ndax", "low_fee"):   # judged at the fees actually paid
+            alt = {"ndax": "ndax", "low_fee": "low_fee_venue"}[self.fee_profile]
+            if any(x.get("cost") == alt for x in self._evaluation_rows(br.c.id)):
+                cost = alt
         rows = [x for x in self._evaluation_rows(br.c.id) if x.get("cost") == cost]
         good = [x for x in rows if x.get("candidate") and (x["test"].get("expectancy_r") or -1) > 0 and (x["test"].get("trades") or 0) >= 10]
         if not good:

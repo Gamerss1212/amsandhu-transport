@@ -158,3 +158,127 @@ def evaluate(model, coin, rows, htf_rows, bull, weekend, fees, slip, last_fire, 
             "why": "approved" if best else why,
             "price": float(c[i]), "atr": atr, "fired_agents": fired_agents}
     return best, info
+
+
+# ---------------------------------------------------------------------------------------------- whole-chart series
+def _buckets(t, hsize, weekly):
+    return (t // DAY + 3) // 7 if weekly else t // hsize
+
+
+def series(model, t, o, h, l, c, v, bull_of_bar, weekend_of_bar, fees, slip, group, market=False, fired_log=None):
+    """The council over every bar of a chart, exactly as the trainer built its signals (train_tf.build_coin): returns
+    (approve, stop_dist, edge, agent_name) lists, one entry per bar. approve[i] = 1 where the council's brain approves a
+    long entry at the close of bar i. Used by the Jarvus Terminal's rule function ultron(...)."""
+    tf = model["tf"]
+    size, hsize = SIZE[tf], HTF_SIZE[tf]
+    t = np.asarray(t, dtype=np.int64)
+    o, h, l, c, v = (np.asarray(x, float) for x in (o, h, l, c, v))
+    n = len(c)
+    out_ok, out_stop, out_m, out_name = [0.0] * n, [None] * n, [None] * n, [None] * n
+    if n < 300:
+        return out_ok, out_stop, out_m, out_name
+    gm = model["gate"]
+    gate = pg.states(t, o, h, l, c, v, gm)
+    e21, e50, e200 = ema_first(c, 21), ema_first(c, 50), ema_first(c, 200)
+    up1 = (e21 > e50) & (c > e200)
+    # higher-timeframe bars built from the chart's own bars (complete buckets only)
+    weekly = market
+    k = _buckets(t, hsize, weekly)
+    starts = np.flatnonzero(np.r_[True, k[1:] != k[:-1]])
+    ends = np.r_[starts[1:], n] - 1
+    per = hsize // size if not weekly else None
+    keep = [j for j, (s_, e_) in enumerate(zip(starts, ends)) if weekly or e_ - s_ + 1 == per]
+    if weekly and keep and keep[-1] == len(starts) - 1 and (int(t[-1]) // DAY + 3) % 7 != 4:
+        keep = keep[:-1]                                                   # the current week is not complete yet
+    s_k, e_k = starts[keep], ends[keep]
+    ht = (k[s_k] * 7 - 3) * DAY if weekly else k[s_k] * hsize
+    ho, hc = o[s_k], c[e_k]
+    hh = np.array([h[a:b + 1].max() for a, b in zip(s_k, e_k)])
+    hl = np.array([l[a:b + 1].min() for a, b in zip(s_k, e_k)])
+    hv = np.array([v[a:b + 1].sum() for a, b in zip(s_k, e_k)])
+    hup = np.zeros(len(hc), bool)
+    if len(hc):
+        h21, h50 = ema_first(hc, 21), ema_first(hc, 50)
+        hup = (hc > h50) & (h21 > h50)
+    # trend of the last completed HTF bar at each chart bar
+    upH = np.zeros(n, bool)
+    j = -1
+    for i in range(n):
+        while j + 1 < len(e_k) and e_k[j + 1] <= i:
+            j += 1
+        upH[i] = bool(hup[j]) if j >= 0 else False
+    A = pg.atr(h, l, c)
+    bars_day = max(1, DAY // size)
+    S, _, _ = sg.vector_signals(t, o, h, l, c, v, bars_day)
+    agents = [a for a in model["agents"] if a["group"] == group]
+    sigs = {a["signal"] for a in agents}
+    fired_c = {}
+    for sid in sigs:
+        m = S.get(sid)
+        if m is None or (sid in ("rally_24h", "drop_24h") and 30 * bars_day > 4500):
+            continue
+        last = -10 ** 9
+        for jj in np.flatnonzero(m):
+            if jj < 250 or jj - last < 12:
+                continue
+            last = jj
+            fired_c.setdefault(int(jj), set()).add(sid)
+    fired_h = {}
+    if len(hc) >= 60:
+        SH, _, _ = sg.vector_signals(ht, ho, hh, hl, hc, hv, max(1, DAY // hsize))
+        AH = pg.atr(hh, hl, hc)
+        for sid in sigs:
+            m = SH.get(sid)
+            if m is None or (sid in ("rally_24h", "drop_24h") and 30 * max(1, DAY // hsize) > 4500):
+                continue
+            last = -10 ** 9
+            for jh in np.flatnonzero(m):
+                if jh < 60 or jh - last < 3 or AH[jh] != AH[jh]:
+                    continue
+                last = jh
+                i = int(e_k[jh])                                        # the chart bar that closes HTF bar jh
+                if i >= 250:
+                    fired_h.setdefault(i, {})[sid] = float(AH[jh])
+    p = model["params"]
+    ex = model.get("exit", {"stop_chart": 4.0, "stop_htf": 4.0, "hold": 96})
+    for i in sorted(set(fired_c) | set(fired_h)):
+        g = str(gate[i])
+        if g == "U" or not A[i] == A[i]:
+            continue
+        loud, upj = g == "L", bool(up1[i] and upH[i])
+        bull = bull_of_bar[i] if bull_of_bar is not None else None
+        regime = "na" if bull is None else "bull" if bull else "bear"
+        entry = float(c[i]) * 0.999
+        best = None
+        for a in agents:
+            if a["htf"]:
+                if a["signal"] not in fired_h.get(i, {}):
+                    continue
+                stop = ex["stop_htf"] * fired_h[i][a["signal"]]
+            else:
+                if a["signal"] not in fired_c.get(i, ()):
+                    continue
+                stop = ex["stop_chart"] * float(A[i])
+            var = a["variant"]
+            if not (var == "any" or (var == "loud" and loud) or (var == "trend" and upj) or (var == "loudtrend" and loud and upj)):
+                continue
+            if not stop > 0:
+                continue
+            if fired_log is not None:
+                fired_log.setdefault(i, []).append(a["id"])
+            cost = (fees[0] + fees[1] + 2 * slip) / (stop / entry)
+            if cost > 0.33:
+                continue
+            if (p["gate_rule"] == "loud_only" and g != "L") or (p["gate_rule"] == "no_quiet" and g == "Q"):
+                continue
+            if p["weekend_off"] and group == "majors" and weekend_of_bar is not None and weekend_of_bar[i]:
+                continue
+            if p["regime_rule"] == "memes_off_in_bear" and group == "memes" and bull is False:
+                continue
+            m_, se = a["edges"][regime]
+            score = m_ - p["z"] * se
+            if score >= p["theta"] and (best is None or score > best[0]):
+                best = (score, m_, stop, a["name"])
+        if best:
+            out_ok[i], out_m[i], out_stop[i], out_name[i] = 1.0, best[1], best[2], best[3]
+    return out_ok, out_stop, out_m, out_name

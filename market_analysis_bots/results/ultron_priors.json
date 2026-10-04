@@ -1,0 +1,2752 @@
+{
+ "generated": "2026-10-04",
+ "source": "ULTRON council walk-forward",
+ "strategies": {
+  "STRAT-U01": {
+   "runs": [
+    {
+     "instrument": "ETH-USD",
+     "cost": "ndax",
+     "candidate": false,
+     "full": {
+      "trades": 17,
+      "expectancy_r": 0.4578,
+      "win_rate": 0.6471,
+      "profit_factor": 2.733
+     },
+     "train": {
+      "trades": 8,
+      "expectancy_r": 0.6329,
+      "win_rate": 0.875,
+      "profit_factor": 9.515
+     },
+     "validation": {
+      "trades": 3,
+      "expectancy_r": 0.6293,
+      "win_rate": 0.6667,
+      "profit_factor": 2.785
+     },
+     "test": {
+      "trades": 6,
+      "expectancy_r": 0.1386,
+      "win_rate": 0.3333,
+      "profit_factor": 1.293
+     }
+    },
+    {
+     "instrument": "BTC-USD",
+     "cost": "ndax",
+     "candidate": false,
+     "full": {
+      "trades": 33,
+      "expectancy_r": 0.2083,
+      "win_rate": 0.5758,
+      "profit_factor": 1.531
+     },
+     "train": {
+      "trades": 25,
+      "expectancy_r": 0.1816,
+      "win_rate": 0.6,
+      "profit_factor": 1.445
+     },
+     "validation": {
+      "trades": 4,
+      "expectancy_r": 0.6141,
+      "win_rate": 0.5,
+      "profit_factor": 5.833
+     },
+     "test": {
+      "trades": 4,
+      "expectancy_r": -0.0303,
+      "win_rate": 0.5,
+      "profit_factor": 0.946
+     }
+    },
+    {
+     "instrument": "SOL-USD",
+     "cost": "ndax",
+     "candidate": false,
+     "full": {
+      "trades": 25,
+      "expectancy_r": 0.5747,
+      "win_rate": 0.6,
+      "profit_factor": 3.243
+     },
+     "train": {
+      "trades": 18,
+      "expectancy_r": 0.4359,
+      "win_rate": 0.5556,
+      "profit_factor": 2.509
+     },
+     "validation": {
+      "trades": 2,
+      "expectancy_r": -0.6039,
+      "win_rate": 0.0,
+      "profit_factor": 0.0
+     },
+     "test": {
+      "trades": 5,
+      "expectancy_r": 1.5459,
+      "win_rate": 1.0,
+      "profit_factor": null
+     }
+    },
+    {
+     "instrument": "*",
+     "cost": "ndax",
+     "candidate": true,
+     "full": {
+      "trades": 75,
+      "expectancy_r": 0.387,
+      "win_rate": 0.6,
+      "profit_factor": 2.217
+     },
+     "train": {
+      "trades": 51,
+      "expectancy_r": 0.3421,
+      "win_rate": 0.6275,
+      "profit_factor": 2.091
+     },
+     "validation": {
+      "trades": 9,
+      "expectancy_r": 0.3485,
+      "win_rate": 0.4444,
+      "profit_factor": 2.131
+     },
+     "test": {
+      "trades": 15,
+      "expectancy_r": 0.5627,
+      "win_rate": 0.6,
+      "profit_factor": 2.664
+     }
+    },
+    {
+     "instrument": "ETH-USD",
+     "cost": "retail_kraken",
+     "candidate": false,
+     "full": {
+      "trades": 17,
+      "expectancy_r": 0.2247,
+      "win_rate": 0.4706,
+      "profit_factor": 1.598
+     },
+     "train": {
+      "trades": 8,
+      "expectancy_r": 0.3942,
+      "win_rate": 0.5,
+      "profit_factor": 3.34
+     },
+     "validation": {
+      "trades": 3,
+      "expectancy_r": 0.492,
+      "win_rate": 0.6667,
+      "profit_factor": 2.215
+     },
+     "test": {
+      "trades": 6,
+      "expectancy_r": -0.1348,
+      "win_rate": 0.3333,
+      "profit_factor": 0.789
+     }
+    },
+    {
+     "instrument": "BTC-USD",
+     "cost": "retail_kraken",
+     "candidate": false,
+     "full": {
+      "trades": 33,
+      "expectancy_r": -0.0827,
+      "win_rate": 0.4848,
+      "profit_factor": 0.851
+     },
+     "train": {
+      "trades": 25,
+      "expectancy_r": -0.1153,
+      "win_rate": 0.48,
+      "profit_factor": 0.801
+     },
+     "validation": {
+      "trades": 4,
+      "expectancy_r": 0.3249,
+      "win_rate": 0.5,
+      "profit_factor": 2.286
+     },
+     "test": {
+      "trades": 4,
+      "expectancy_r": -0.2862,
+      "win_rate": 0.5,
+      "profit_factor": 0.6
+     }
+    },
+    {
+     "instrument": "SOL-USD",
+     "cost": "retail_kraken",
+     "candidate": false,
+     "full": {
+      "trades": 25,
+      "expectancy_r": 0.4336,
+      "win_rate": 0.56,
+      "profit_factor": 2.37
+     },
+     "train": {
+      "trades": 18,
+      "expectancy_r": 0.3073,
+      "win_rate": 0.5,
+      "profit_factor": 1.857
+     },
+     "validation": {
+      "trades": 2,
+      "expectancy_r": -0.73,
+      "win_rate": 0.0,
+      "profit_factor": 0.0
+     },
+     "test": {
+      "trades": 5,
+      "expectancy_r": 1.3537,
+      "win_rate": 1.0,
+      "profit_factor": null
+     }
+    },
+    {
+     "instrument": "*",
+     "cost": "retail_kraken",
+     "candidate": true,
+     "full": {
+      "trades": 75,
+      "expectancy_r": 0.1591,
+      "win_rate": 0.5067,
+      "profit_factor": 1.365
+     },
+     "train": {
+      "trades": 51,
+      "expectancy_r": 0.1138,
+      "win_rate": 0.4902,
+      "profit_factor": 1.26
+     },
+     "validation": {
+      "trades": 9,
+      "expectancy_r": 0.1461,
+      "win_rate": 0.4444,
+      "profit_factor": 1.357
+     },
+     "test": {
+      "trades": 15,
+      "expectancy_r": 0.321,
+      "win_rate": 0.6,
+      "profit_factor": 1.72
+     }
+    },
+    {
+     "instrument": "ETH-USD",
+     "cost": "low_fee_venue",
+     "candidate": false,
+     "full": {
+      "trades": 17,
+      "expectancy_r": 0.5047,
+      "win_rate": 0.6471,
+      "profit_factor": 3.009
+     },
+     "train": {
+      "trades": 8,
+      "expectancy_r": 0.6789,
+      "win_rate": 0.875,
+      "profit_factor": 10.616
+     },
+     "validation": {
+      "trades": 3,
+      "expectancy_r": 0.6568,
+      "win_rate": 0.6667,
+      "profit_factor": 2.911
+     },
+     "test": {
+      "trades": 6,
+      "expectancy_r": 0.1963,
+      "win_rate": 0.3333,
+      "profit_factor": 1.441
+     }
+    },
+    {
+     "instrument": "BTC-USD",
+     "cost": "low_fee_venue",
+     "candidate": false,
+     "full": {
+      "trades": 33,
+      "expectancy_r": 0.2622,
+      "win_rate": 0.6061,
+      "profit_factor": 1.709
+     },
+     "train": {
+      "trades": 25,
+      "expectancy_r": 0.2362,
+      "win_rate": 0.64,
+      "profit_factor": 1.611
+     },
+     "validation": {
+      "trades": 4,
+      "expectancy_r": 0.6691,
+      "win_rate": 0.5,
+      "profit_factor": 7.304
+     },
+     "test": {
+      "trades": 4,
+      "expectancy_r": 0.0178,
+      "win_rate": 0.5,
+      "profit_factor": 1.033
+     }
+    },
+    {
+     "instrument": "SOL-USD",
+     "cost": "low_fee_venue",
+     "candidate": false,
+     "full": {
+      "trades": 25,
+      "expectancy_r": 0.6039,
+      "win_rate": 0.6,
+      "profit_factor": 3.452
+     },
+     "train": {
+      "trades": 18,
+      "expectancy_r": 0.4612,
+      "win_rate": 0.5556,
+      "profit_factor": 2.664
+     },
+     "validation": {
+      "trades": 2,
+      "expectancy_r": -0.5829,
+      "win_rate": 0.0,
+      "profit_factor": 0.0
+     },
+     "test": {
+      "trades": 5,
+      "expectancy_r": 1.5923,
+      "win_rate": 1.0,
+      "profit_factor": null
+     }
+    },
+    {
+     "instrument": "*",
+     "cost": "low_fee_venue",
+     "candidate": true,
+     "full": {
+      "trades": 75,
+      "expectancy_r": 0.4311,
+      "win_rate": 0.6133,
+      "profit_factor": 2.428
+     },
+     "train": {
+      "trades": 51,
+      "expectancy_r": 0.3851,
+      "win_rate": 0.6471,
+      "profit_factor": 2.291
+     },
+     "validation": {
+      "trades": 9,
+      "expectancy_r": 0.3868,
+      "win_rate": 0.4444,
+      "profit_factor": 2.328
+     },
+     "test": {
+      "trades": 15,
+      "expectancy_r": 0.614,
+      "win_rate": 0.6,
+      "profit_factor": 2.919
+     }
+    }
+   ]
+  },
+  "STRAT-U02": {
+   "runs": [
+    {
+     "instrument": "SHIB-USD",
+     "cost": "ndax",
+     "candidate": false,
+     "full": {
+      "trades": 38,
+      "expectancy_r": 0.0272,
+      "win_rate": 0.4211,
+      "profit_factor": 1.057
+     },
+     "train": {
+      "trades": 30,
+      "expectancy_r": 0.1942,
+      "win_rate": 0.5,
+      "profit_factor": 1.486
+     },
+     "validation": {
+      "trades": 4,
+      "expectancy_r": -0.4658,
+      "win_rate": 0.25,
+      "profit_factor": 0.433
+     },
+     "test": {
+      "trades": 4,
+      "expectancy_r": -0.7321,
+      "win_rate": 0.0,
+      "profit_factor": 0.0
+     }
+    },
+    {
+     "instrument": "DOGE-USD",
+     "cost": "ndax",
+     "candidate": false,
+     "full": {
+      "trades": 64,
+      "expectancy_r": -0.0013,
+      "win_rate": 0.4531,
+      "profit_factor": 0.997
+     },
+     "train": {
+      "trades": 47,
+      "expectancy_r": -0.15,
+      "win_rate": 0.4043,
+      "profit_factor": 0.698
+     },
+     "validation": {
+      "trades": 8,
+      "expectancy_r": 0.4074,
+      "win_rate": 0.625,
+      "profit_factor": 2.121
+     },
+     "test": {
+      "trades": 9,
+      "expectancy_r": 0.4118,
+      "win_rate": 0.5556,
+      "profit_factor": 3.209
+     }
+    },
+    {
+     "instrument": "BONK-USD",
+     "cost": "ndax",
+     "candidate": false,
+     "full": {
+      "trades": 40,
+      "expectancy_r": 0.4423,
+      "win_rate": 0.55,
+      "profit_factor": 2.308
+     },
+     "train": {
+      "trades": 22,
+      "expectancy_r": 0.7029,
+      "win_rate": 0.6818,
+      "profit_factor": 4.593
+     },
+     "validation": {
+      "trades": 11,
+      "expectancy_r": 0.2449,
+      "win_rate": 0.4545,
+      "profit_factor": 1.506
+     },
+     "test": {
+      "trades": 7,
+      "expectancy_r": -0.0666,
+      "win_rate": 0.2857,
+      "profit_factor": 0.88
+     }
+    },
+    {
+     "instrument": "WIF-USD",
+     "cost": "ndax",
+     "candidate": false,
+     "full": {
+      "trades": 14,
+      "expectancy_r": -0.1385,
+      "win_rate": 0.2857,
+      "profit_factor": 0.757
+     },
+     "train": {
+      "trades": 4,
+      "expectancy_r": -1.0397,
+      "win_rate": 0.0,
+      "profit_factor": 0.0
+     },
+     "validation": {
+      "trades": 4,
+      "expectancy_r": 0.8514,
+      "win_rate": 0.5,
+      "profit_factor": 7.995
+     },
+     "test": {
+      "trades": 6,
+      "expectancy_r": -0.1977,
+      "win_rate": 0.3333,
+      "profit_factor": 0.644
+     }
+    },
+    {
+     "instrument": "PEPE-USD",
+     "cost": "ndax",
+     "candidate": false,
+     "full": {
+      "trades": 17,
+      "expectancy_r": -0.195,
+      "win_rate": 0.2941,
+      "profit_factor": 0.668
+     },
+     "train": {
+      "trades": 3,
+      "expectancy_r": -0.1969,
+      "win_rate": 0.3333,
+      "profit_factor": 0.016
+     },
+     "validation": {
+      "trades": 9,
+      "expectancy_r": -0.3177,
+      "win_rate": 0.2222,
+      "profit_factor": 0.578
+     },
+     "test": {
+      "trades": 5,
+      "expectancy_r": 0.027,
+      "win_rate": 0.4,
+      "profit_factor": 1.052
+     }
+    },
+    {
+     "instrument": "FLOKI-USD",
+     "cost": "ndax",
+     "candidate": false,
+     "full": {
+      "trades": 21,
+      "expectancy_r": 0.0826,
+      "win_rate": 0.4286,
+      "profit_factor": 1.171
+     },
+     "train": {
+      "trades": 1,
+      "expectancy_r": -1.0489,
+      "win_rate": 0.0,
+      "profit_factor": 0.0
+     },
+     "validation": {
+      "trades": 10,
+      "expectancy_r": 0.2481,
+      "win_rate": 0.4,
+      "profit_factor": 1.608
+     },
+     "test": {
+      "trades": 10,
+      "expectancy_r": 0.0302,
+      "win_rate": 0.5,
+      "profit_factor": 1.06
+     }
+    },
+    {
+     "instrument": "*",
+     "cost": "ndax",
+     "candidate": true,
+     "full": {
+      "trades": 194,
+      "expectancy_r": 0.078,
+      "win_rate": 0.4381,
+      "profit_factor": 1.172
+     },
+     "train": {
+      "trades": 107,
+      "expectancy_r": 0.0789,
+      "win_rate": 0.4673,
+      "profit_factor": 1.186
+     },
+     "validation": {
+      "trades": 46,
+      "expectancy_r": 0.1547,
+      "win_rate": 0.413,
+      "profit_factor": 1.311
+     },
+     "test": {
+      "trades": 41,
+      "expectancy_r": -0.0107,
+      "win_rate": 0.3902,
+      "profit_factor": 0.978
+     }
+    },
+    {
+     "instrument": "SHIB-USD",
+     "cost": "retail_kraken",
+     "candidate": false,
+     "full": {
+      "trades": 38,
+      "expectancy_r": -0.1005,
+      "win_rate": 0.3421,
+      "profit_factor": 0.822
+     },
+     "train": {
+      "trades": 30,
+      "expectancy_r": 0.0784,
+      "win_rate": 0.4,
+      "profit_factor": 1.168
+     },
+     "validation": {
+      "trades": 4,
+      "expectancy_r": -0.6438,
+      "win_rate": 0.25,
+      "profit_factor": 0.334
+     },
+     "test": {
+      "trades": 4,
+      "expectancy_r": -0.8992,
+      "win_rate": 0.0,
+      "profit_factor": 0.0
+     }
+    },
+    {
+     "instrument": "DOGE-USD",
+     "cost": "retail_kraken",
+     "candidate": false,
+     "full": {
+      "trades": 64,
+      "expectancy_r": -0.1534,
+      "win_rate": 0.3906,
+      "profit_factor": 0.711
+     },
+     "train": {
+      "trades": 47,
+      "expectancy_r": -0.2974,
+      "win_rate": 0.3404,
+      "profit_factor": 0.501
+     },
+     "validation": {
+      "trades": 8,
+      "expectancy_r": 0.2607,
+      "win_rate": 0.625,
+      "profit_factor": 1.595
+     },
+     "test": {
+      "trades": 9,
+      "expectancy_r": 0.2306,
+      "win_rate": 0.4444,
+      "profit_factor": 1.854
+     }
+    },
+    {
+     "instrument": "BONK-USD",
+     "cost": "retail_kraken",
+     "candidate": false,
+     "full": {
+      "trades": 40,
+      "expectancy_r": 0.3593,
+      "win_rate": 0.525,
+      "profit_factor": 1.942
+     },
+     "train": {
+      "trades": 22,
+      "expectancy_r": 0.635,
+      "win_rate": 0.6364,
+      "profit_factor": 3.878
+     },
+     "validation": {
+      "trades": 11,
+      "expectancy_r": 0.1463,
+      "win_rate": 0.4545,
+      "profit_factor": 1.268
+     },
+     "test": {
+      "trades": 7,
+      "expectancy_r": -0.1722,
+      "win_rate": 0.2857,
+      "profit_factor": 0.727
+     }
+    },
+    {
+     "instrument": "WIF-USD",
+     "cost": "retail_kraken",
+     "candidate": false,
+     "full": {
+      "trades": 14,
+      "expectancy_r": -0.2341,
+      "win_rate": 0.2857,
+      "profit_factor": 0.632
+     },
+     "train": {
+      "trades": 4,
+      "expectancy_r": -1.1211,
+      "win_rate": 0.0,
+      "profit_factor": 0.0
+     },
+     "validation": {
+      "trades": 4,
+      "expectancy_r": 0.7734,
+      "win_rate": 0.5,
+      "profit_factor": 6.227
+     },
+     "test": {
+      "trades": 6,
+      "expectancy_r": -0.3145,
+      "win_rate": 0.3333,
+      "profit_factor": 0.508
+     }
+    },
+    {
+     "instrument": "PEPE-USD",
+     "cost": "retail_kraken",
+     "candidate": false,
+     "full": {
+      "trades": 17,
+      "expectancy_r": -0.3043,
+      "win_rate": 0.2353,
+      "profit_factor": 0.551
+     },
+     "train": {
+      "trades": 3,
+      "expectancy_r": -0.2753,
+      "win_rate": 0.0,
+      "profit_factor": 0.0
+     },
+     "validation": {
+      "trades": 9,
+      "expectancy_r": -0.4396,
+      "win_rate": 0.2222,
+      "profit_factor": 0.487
+     },
+     "test": {
+      "trades": 5,
+      "expectancy_r": -0.078,
+      "win_rate": 0.4,
+      "profit_factor": 0.869
+     }
+    },
+    {
+     "instrument": "FLOKI-USD",
+     "cost": "retail_kraken",
+     "candidate": false,
+     "full": {
+      "trades": 21,
+      "expectancy_r": -0.0439,
+      "win_rate": 0.4286,
+      "profit_factor": 0.92
+     },
+     "train": {
+      "trades": 1,
+      "expectancy_r": -1.1485,
+      "win_rate": 0.0,
+      "profit_factor": 0.0
+     },
+     "validation": {
+      "trades": 10,
+      "expectancy_r": 0.1343,
+      "win_rate": 0.4,
+      "profit_factor": 1.283
+     },
+     "test": {
+      "trades": 10,
+      "expectancy_r": -0.1116,
+      "win_rate": 0.5,
+      "profit_factor": 0.803
+     }
+    },
+    {
+     "instrument": "*",
+     "cost": "retail_kraken",
+     "candidate": true,
+     "full": {
+      "trades": 194,
+      "expectancy_r": -0.0445,
+      "win_rate": 0.3918,
+      "profit_factor": 0.916
+     },
+     "train": {
+      "trades": 107,
+      "expectancy_r": -0.0385,
+      "win_rate": 0.3925,
+      "profit_factor": 0.923
+     },
+     "validation": {
+      "trades": 46,
+      "expectancy_r": 0.0348,
+      "win_rate": 0.413,
+      "profit_factor": 1.061
+     },
+     "test": {
+      "trades": 41,
+      "expectancy_r": -0.1493,
+      "win_rate": 0.3659,
+      "profit_factor": 0.733
+     }
+    },
+    {
+     "instrument": "SHIB-USD",
+     "cost": "low_fee_venue",
+     "candidate": false,
+     "full": {
+      "trades": 38,
+      "expectancy_r": 0.0501,
+      "win_rate": 0.4211,
+      "profit_factor": 1.107
+     },
+     "train": {
+      "trades": 30,
+      "expectancy_r": 0.2155,
+      "win_rate": 0.5,
+      "profit_factor": 1.553
+     },
+     "validation": {
+      "trades": 4,
+      "expectancy_r": -0.4361,
+      "win_rate": 0.25,
+      "profit_factor": 0.453
+     },
+     "test": {
+      "trades": 4,
+      "expectancy_r": -0.7042,
+      "win_rate": 0.0,
+      "profit_factor": 0.0
+     }
+    },
+    {
+     "instrument": "DOGE-USD",
+     "cost": "low_fee_venue",
+     "candidate": false,
+     "full": {
+      "trades": 64,
+      "expectancy_r": 0.0262,
+      "win_rate": 0.4688,
+      "profit_factor": 1.062
+     },
+     "train": {
+      "trades": 47,
+      "expectancy_r": -0.1238,
+      "win_rate": 0.4043,
+      "profit_factor": 0.742
+     },
+     "validation": {
+      "trades": 8,
+      "expectancy_r": 0.4354,
+      "win_rate": 0.625,
+      "profit_factor": 2.241
+     },
+     "test": {
+      "trades": 9,
+      "expectancy_r": 0.4462,
+      "win_rate": 0.6667,
+      "profit_factor": 3.543
+     }
+    },
+    {
+     "instrument": "BONK-USD",
+     "cost": "low_fee_venue",
+     "candidate": false,
+     "full": {
+      "trades": 40,
+      "expectancy_r": 0.4587,
+      "win_rate": 0.55,
+      "profit_factor": 2.384
+     },
+     "train": {
+      "trades": 22,
+      "expectancy_r": 0.7167,
+      "win_rate": 0.6818,
+      "profit_factor": 4.733
+     },
+     "validation": {
+      "trades": 11,
+      "expectancy_r": 0.2649,
+      "win_rate": 0.4545,
+      "profit_factor": 1.559
+     },
+     "test": {
+      "trades": 7,
+      "expectancy_r": -0.0475,
+      "win_rate": 0.2857,
+      "profit_factor": 0.913
+     }
+    },
+    {
+     "instrument": "WIF-USD",
+     "cost": "low_fee_venue",
+     "candidate": false,
+     "full": {
+      "trades": 14,
+      "expectancy_r": -0.12,
+      "win_rate": 0.2857,
+      "profit_factor": 0.785
+     },
+     "train": {
+      "trades": 4,
+      "expectancy_r": -1.0261,
+      "win_rate": 0.0,
+      "profit_factor": 0.0
+     },
+     "validation": {
+      "trades": 4,
+      "expectancy_r": 0.8707,
+      "win_rate": 0.5,
+      "profit_factor": 8.42
+     },
+     "test": {
+      "trades": 6,
+      "expectancy_r": -0.1764,
+      "win_rate": 0.3333,
+      "profit_factor": 0.674
+     }
+    },
+    {
+     "instrument": "PEPE-USD",
+     "cost": "low_fee_venue",
+     "candidate": false,
+     "full": {
+      "trades": 17,
+      "expectancy_r": -0.1751,
+      "win_rate": 0.2941,
+      "profit_factor": 0.695
+     },
+     "train": {
+      "trades": 3,
+      "expectancy_r": -0.1839,
+      "win_rate": 0.3333,
+      "profit_factor": 0.048
+     },
+     "validation": {
+      "trades": 9,
+      "expectancy_r": -0.2951,
+      "win_rate": 0.2222,
+      "profit_factor": 0.599
+     },
+     "test": {
+      "trades": 5,
+      "expectancy_r": 0.0461,
+      "win_rate": 0.4,
+      "profit_factor": 1.09
+     }
+    },
+    {
+     "instrument": "FLOKI-USD",
+     "cost": "low_fee_venue",
+     "candidate": false,
+     "full": {
+      "trades": 21,
+      "expectancy_r": 0.1072,
+      "win_rate": 0.4286,
+      "profit_factor": 1.228
+     },
+     "train": {
+      "trades": 1,
+      "expectancy_r": -1.0322,
+      "win_rate": 0.0,
+      "profit_factor": 0.0
+     },
+     "validation": {
+      "trades": 10,
+      "expectancy_r": 0.2712,
+      "win_rate": 0.4,
+      "profit_factor": 1.683
+     },
+     "test": {
+      "trades": 10,
+      "expectancy_r": 0.0572,
+      "win_rate": 0.5,
+      "profit_factor": 1.117
+     }
+    },
+    {
+     "instrument": "*",
+     "cost": "low_fee_venue",
+     "candidate": true,
+     "full": {
+      "trades": 194,
+      "expectancy_r": 0.1006,
+      "win_rate": 0.4433,
+      "profit_factor": 1.229
+     },
+     "train": {
+      "trades": 107,
+      "expectancy_r": 0.1002,
+      "win_rate": 0.4673,
+      "profit_factor": 1.242
+     },
+     "validation": {
+      "trades": 46,
+      "expectancy_r": 0.1781,
+      "win_rate": 0.413,
+      "profit_factor": 1.368
+     },
+     "test": {
+      "trades": 41,
+      "expectancy_r": 0.0149,
+      "win_rate": 0.4146,
+      "profit_factor": 1.032
+     }
+    }
+   ]
+  },
+  "STRAT-U03": {
+   "runs": [
+    {
+     "instrument": "BTC-USD",
+     "cost": "ndax",
+     "candidate": false,
+     "full": {
+      "trades": 16,
+      "expectancy_r": 0.2668,
+      "win_rate": 0.5,
+      "profit_factor": 1.706
+     },
+     "train": {
+      "trades": 13,
+      "expectancy_r": 0.2268,
+      "win_rate": 0.4615,
+      "profit_factor": 1.592
+     },
+     "validation": {
+      "trades": 0,
+      "expectancy_r": null,
+      "win_rate": null,
+      "profit_factor": null
+     },
+     "test": {
+      "trades": 3,
+      "expectancy_r": 0.4399,
+      "win_rate": 0.6667,
+      "profit_factor": 2.243
+     }
+    },
+    {
+     "instrument": "SOL-USD",
+     "cost": "ndax",
+     "candidate": false,
+     "full": {
+      "trades": 16,
+      "expectancy_r": 1.0681,
+      "win_rate": 0.75,
+      "profit_factor": 6.086
+     },
+     "train": {
+      "trades": 16,
+      "expectancy_r": 1.0681,
+      "win_rate": 0.75,
+      "profit_factor": 6.086
+     },
+     "validation": {
+      "trades": 0,
+      "expectancy_r": null,
+      "win_rate": null,
+      "profit_factor": null
+     },
+     "test": {
+      "trades": 0,
+      "expectancy_r": null,
+      "win_rate": null,
+      "profit_factor": null
+     }
+    },
+    {
+     "instrument": "ETH-USD",
+     "cost": "ndax",
+     "candidate": false,
+     "full": {
+      "trades": 18,
+      "expectancy_r": 0.1776,
+      "win_rate": 0.4444,
+      "profit_factor": 1.446
+     },
+     "train": {
+      "trades": 11,
+      "expectancy_r": 0.1994,
+      "win_rate": 0.4545,
+      "profit_factor": 1.609
+     },
+     "validation": {
+      "trades": 3,
+      "expectancy_r": 0.7312,
+      "win_rate": 0.6667,
+      "profit_factor": 5.905
+     },
+     "test": {
+      "trades": 4,
+      "expectancy_r": -0.2975,
+      "win_rate": 0.25,
+      "profit_factor": 0.617
+     }
+    },
+    {
+     "instrument": "*",
+     "cost": "ndax",
+     "candidate": true,
+     "full": {
+      "trades": 50,
+      "expectancy_r": 0.4911,
+      "win_rate": 0.56,
+      "profit_factor": 2.482
+     },
+     "train": {
+      "trades": 40,
+      "expectancy_r": 0.5558,
+      "win_rate": 0.575,
+      "profit_factor": 2.861
+     },
+     "validation": {
+      "trades": 3,
+      "expectancy_r": 0.7312,
+      "win_rate": 0.6667,
+      "profit_factor": 5.905
+     },
+     "test": {
+      "trades": 7,
+      "expectancy_r": 0.0186,
+      "win_rate": 0.4286,
+      "profit_factor": 1.031
+     }
+    },
+    {
+     "instrument": "BTC-USD",
+     "cost": "retail_kraken",
+     "candidate": false,
+     "full": {
+      "trades": 16,
+      "expectancy_r": 0.1195,
+      "win_rate": 0.4375,
+      "profit_factor": 1.252
+     },
+     "train": {
+      "trades": 13,
+      "expectancy_r": 0.0745,
+      "win_rate": 0.3846,
+      "profit_factor": 1.153
+     },
+     "validation": {
+      "trades": 0,
+      "expectancy_r": null,
+      "win_rate": null,
+      "profit_factor": null
+     },
+     "test": {
+      "trades": 3,
+      "expectancy_r": 0.3144,
+      "win_rate": 0.6667,
+      "profit_factor": 1.767
+     }
+    },
+    {
+     "instrument": "SOL-USD",
+     "cost": "retail_kraken",
+     "candidate": false,
+     "full": {
+      "trades": 16,
+      "expectancy_r": 1.0008,
+      "win_rate": 0.75,
+      "profit_factor": 5.391
+     },
+     "train": {
+      "trades": 16,
+      "expectancy_r": 1.0008,
+      "win_rate": 0.75,
+      "profit_factor": 5.391
+     },
+     "validation": {
+      "trades": 0,
+      "expectancy_r": null,
+      "win_rate": null,
+      "profit_factor": null
+     },
+     "test": {
+      "trades": 0,
+      "expectancy_r": null,
+      "win_rate": null,
+      "profit_factor": null
+     }
+    },
+    {
+     "instrument": "ETH-USD",
+     "cost": "retail_kraken",
+     "candidate": false,
+     "full": {
+      "trades": 18,
+      "expectancy_r": 0.0739,
+      "win_rate": 0.4444,
+      "profit_factor": 1.163
+     },
+     "train": {
+      "trades": 11,
+      "expectancy_r": 0.098,
+      "win_rate": 0.4545,
+      "profit_factor": 1.257
+     },
+     "validation": {
+      "trades": 3,
+      "expectancy_r": 0.6335,
+      "win_rate": 0.6667,
+      "profit_factor": 4.356
+     },
+     "test": {
+      "trades": 4,
+      "expectancy_r": -0.4119,
+      "win_rate": 0.25,
+      "profit_factor": 0.517
+     }
+    },
+    {
+     "instrument": "*",
+     "cost": "retail_kraken",
+     "candidate": true,
+     "full": {
+      "trades": 50,
+      "expectancy_r": 0.3851,
+      "win_rate": 0.54,
+      "profit_factor": 1.992
+     },
+     "train": {
+      "trades": 40,
+      "expectancy_r": 0.4515,
+      "win_rate": 0.55,
+      "profit_factor": 2.272
+     },
+     "validation": {
+      "trades": 3,
+      "expectancy_r": 0.6335,
+      "win_rate": 0.6667,
+      "profit_factor": 4.356
+     },
+     "test": {
+      "trades": 7,
+      "expectancy_r": -0.1006,
+      "win_rate": 0.4286,
+      "profit_factor": 0.848
+     }
+    },
+    {
+     "instrument": "BTC-USD",
+     "cost": "low_fee_venue",
+     "candidate": false,
+     "full": {
+      "trades": 16,
+      "expectancy_r": 0.2948,
+      "win_rate": 0.5,
+      "profit_factor": 1.811
+     },
+     "train": {
+      "trades": 13,
+      "expectancy_r": 0.2557,
+      "win_rate": 0.4615,
+      "profit_factor": 1.695
+     },
+     "validation": {
+      "trades": 0,
+      "expectancy_r": null,
+      "win_rate": null,
+      "profit_factor": null
+     },
+     "test": {
+      "trades": 3,
+      "expectancy_r": 0.4646,
+      "win_rate": 0.6667,
+      "profit_factor": 2.349
+     }
+    },
+    {
+     "instrument": "SOL-USD",
+     "cost": "low_fee_venue",
+     "candidate": false,
+     "full": {
+      "trades": 16,
+      "expectancy_r": 1.0848,
+      "win_rate": 0.75,
+      "profit_factor": 6.24
+     },
+     "train": {
+      "trades": 16,
+      "expectancy_r": 1.0848,
+      "win_rate": 0.75,
+      "profit_factor": 6.24
+     },
+     "validation": {
+      "trades": 0,
+      "expectancy_r": null,
+      "win_rate": null,
+      "profit_factor": null
+     },
+     "test": {
+      "trades": 0,
+      "expectancy_r": null,
+      "win_rate": null,
+      "profit_factor": null
+     }
+    },
+    {
+     "instrument": "ETH-USD",
+     "cost": "low_fee_venue",
+     "candidate": false,
+     "full": {
+      "trades": 18,
+      "expectancy_r": 0.1982,
+      "win_rate": 0.4444,
+      "profit_factor": 1.51
+     },
+     "train": {
+      "trades": 11,
+      "expectancy_r": 0.2189,
+      "win_rate": 0.4545,
+      "profit_factor": 1.687
+     },
+     "validation": {
+      "trades": 3,
+      "expectancy_r": 0.7519,
+      "win_rate": 0.6667,
+      "profit_factor": 6.277
+     },
+     "test": {
+      "trades": 4,
+      "expectancy_r": -0.2739,
+      "win_rate": 0.25,
+      "profit_factor": 0.642
+     }
+    },
+    {
+     "instrument": "*",
+     "cost": "low_fee_venue",
+     "candidate": true,
+     "full": {
+      "trades": 50,
+      "expectancy_r": 0.5128,
+      "win_rate": 0.56,
+      "profit_factor": 2.591
+     },
+     "train": {
+      "trades": 40,
+      "expectancy_r": 0.5772,
+      "win_rate": 0.575,
+      "profit_factor": 2.991
+     },
+     "validation": {
+      "trades": 3,
+      "expectancy_r": 0.7519,
+      "win_rate": 0.6667,
+      "profit_factor": 6.277
+     },
+     "test": {
+      "trades": 7,
+      "expectancy_r": 0.0426,
+      "win_rate": 0.4286,
+      "profit_factor": 1.073
+     }
+    }
+   ]
+  },
+  "STRAT-U04": {
+   "runs": [
+    {
+     "instrument": "SHIB-USD",
+     "cost": "ndax",
+     "candidate": false,
+     "full": {
+      "trades": 25,
+      "expectancy_r": 0.3426,
+      "win_rate": 0.48,
+      "profit_factor": 1.863
+     },
+     "train": {
+      "trades": 19,
+      "expectancy_r": 0.4713,
+      "win_rate": 0.5263,
+      "profit_factor": 2.205
+     },
+     "validation": {
+      "trades": 2,
+      "expectancy_r": 0.4403,
+      "win_rate": 0.5,
+      "profit_factor": 1.82
+     },
+     "test": {
+      "trades": 4,
+      "expectancy_r": -0.3174,
+      "win_rate": 0.25,
+      "profit_factor": 0.109
+     }
+    },
+    {
+     "instrument": "DOGE-USD",
+     "cost": "ndax",
+     "candidate": false,
+     "full": {
+      "trades": 24,
+      "expectancy_r": 0.3029,
+      "win_rate": 0.5,
+      "profit_factor": 1.773
+     },
+     "train": {
+      "trades": 15,
+      "expectancy_r": 0.308,
+      "win_rate": 0.4667,
+      "profit_factor": 1.62
+     },
+     "validation": {
+      "trades": 4,
+      "expectancy_r": 0.2285,
+      "win_rate": 0.5,
+      "profit_factor": 1.754
+     },
+     "test": {
+      "trades": 5,
+      "expectancy_r": 0.3471,
+      "win_rate": 0.6,
+      "profit_factor": 3.356
+     }
+    },
+    {
+     "instrument": "BONK-USD",
+     "cost": "ndax",
+     "candidate": false,
+     "full": {
+      "trades": 11,
+      "expectancy_r": 0.7083,
+      "win_rate": 0.5455,
+      "profit_factor": 3.961
+     },
+     "train": {
+      "trades": 7,
+      "expectancy_r": 0.9438,
+      "win_rate": 0.5714,
+      "profit_factor": 6.081
+     },
+     "validation": {
+      "trades": 3,
+      "expectancy_r": 0.4969,
+      "win_rate": 0.6667,
+      "profit_factor": 2.455
+     },
+     "test": {
+      "trades": 1,
+      "expectancy_r": -0.3065,
+      "win_rate": 0.0,
+      "profit_factor": 0.0
+     }
+    },
+    {
+     "instrument": "FLOKI-USD",
+     "cost": "ndax",
+     "candidate": false,
+     "full": {
+      "trades": 7,
+      "expectancy_r": 0.14,
+      "win_rate": 0.5714,
+      "profit_factor": 1.313
+     },
+     "train": {
+      "trades": 0,
+      "expectancy_r": null,
+      "win_rate": null,
+      "profit_factor": null
+     },
+     "validation": {
+      "trades": 5,
+      "expectancy_r": 0.4054,
+      "win_rate": 0.6,
+      "profit_factor": 1.975
+     },
+     "test": {
+      "trades": 2,
+      "expectancy_r": -0.5236,
+      "win_rate": 0.5,
+      "profit_factor": 0.003
+     }
+    },
+    {
+     "instrument": "WIF-USD",
+     "cost": "ndax",
+     "candidate": false,
+     "full": {
+      "trades": 2,
+      "expectancy_r": -0.3676,
+      "win_rate": 0.0,
+      "profit_factor": 0.0
+     },
+     "train": {
+      "trades": 0,
+      "expectancy_r": null,
+      "win_rate": null,
+      "profit_factor": null
+     },
+     "validation": {
+      "trades": 1,
+      "expectancy_r": -0.2274,
+      "win_rate": 0.0,
+      "profit_factor": 0.0
+     },
+     "test": {
+      "trades": 1,
+      "expectancy_r": -0.5078,
+      "win_rate": 0.0,
+      "profit_factor": 0.0
+     }
+    },
+    {
+     "instrument": "PEPE-USD",
+     "cost": "ndax",
+     "candidate": false,
+     "full": {
+      "trades": 3,
+      "expectancy_r": 0.5222,
+      "win_rate": 0.6667,
+      "profit_factor": 2.479
+     },
+     "train": {
+      "trades": 0,
+      "expectancy_r": null,
+      "win_rate": null,
+      "profit_factor": null
+     },
+     "validation": {
+      "trades": 1,
+      "expectancy_r": -1.0592,
+      "win_rate": 0.0,
+      "profit_factor": 0.0
+     },
+     "test": {
+      "trades": 2,
+      "expectancy_r": 1.3129,
+      "win_rate": 1.0,
+      "profit_factor": null
+     }
+    },
+    {
+     "instrument": "*",
+     "cost": "ndax",
+     "candidate": true,
+     "full": {
+      "trades": 72,
+      "expectancy_r": 0.3533,
+      "win_rate": 0.5,
+      "profit_factor": 1.946
+     },
+     "train": {
+      "trades": 41,
+      "expectancy_r": 0.4922,
+      "win_rate": 0.5122,
+      "profit_factor": 2.247
+     },
+     "validation": {
+      "trades": 16,
+      "expectancy_r": 0.2516,
+      "win_rate": 0.5,
+      "profit_factor": 1.603
+     },
+     "test": {
+      "trades": 15,
+      "expectancy_r": 0.082,
+      "win_rate": 0.4667,
+      "profit_factor": 1.306
+     }
+    },
+    {
+     "instrument": "SHIB-USD",
+     "cost": "retail_kraken",
+     "candidate": false,
+     "full": {
+      "trades": 25,
+      "expectancy_r": 0.2633,
+      "win_rate": 0.48,
+      "profit_factor": 1.599
+     },
+     "train": {
+      "trades": 19,
+      "expectancy_r": 0.3973,
+      "win_rate": 0.5263,
+      "profit_factor": 1.932
+     },
+     "validation": {
+      "trades": 2,
+      "expectancy_r": 0.322,
+      "win_rate": 0.5,
+      "profit_factor": 1.526
+     },
+     "test": {
+      "trades": 4,
+      "expectancy_r": -0.4026,
+      "win_rate": 0.25,
+      "profit_factor": 0.037
+     }
+    },
+    {
+     "instrument": "DOGE-USD",
+     "cost": "retail_kraken",
+     "candidate": false,
+     "full": {
+      "trades": 24,
+      "expectancy_r": 0.2282,
+      "win_rate": 0.5,
+      "profit_factor": 1.534
+     },
+     "train": {
+      "trades": 15,
+      "expectancy_r": 0.2309,
+      "win_rate": 0.4667,
+      "profit_factor": 1.43
+     },
+     "validation": {
+      "trades": 4,
+      "expectancy_r": 0.1652,
+      "win_rate": 0.5,
+      "profit_factor": 1.492
+     },
+     "test": {
+      "trades": 5,
+      "expectancy_r": 0.2703,
+      "win_rate": 0.6,
+      "profit_factor": 2.573
+     }
+    },
+    {
+     "instrument": "BONK-USD",
+     "cost": "retail_kraken",
+     "candidate": false,
+     "full": {
+      "trades": 11,
+      "expectancy_r": 0.6614,
+      "win_rate": 0.5455,
+      "profit_factor": 3.536
+     },
+     "train": {
+      "trades": 7,
+      "expectancy_r": 0.9031,
+      "win_rate": 0.5714,
+      "profit_factor": 5.467
+     },
+     "validation": {
+      "trades": 3,
+      "expectancy_r": 0.4441,
+      "win_rate": 0.6667,
+      "profit_factor": 2.239
+     },
+     "test": {
+      "trades": 1,
+      "expectancy_r": -0.3781,
+      "win_rate": 0.0,
+      "profit_factor": 0.0
+     }
+    },
+    {
+     "instrument": "FLOKI-USD",
+     "cost": "retail_kraken",
+     "candidate": false,
+     "full": {
+      "trades": 7,
+      "expectancy_r": 0.0739,
+      "win_rate": 0.4286,
+      "profit_factor": 1.15
+     },
+     "train": {
+      "trades": 0,
+      "expectancy_r": null,
+      "win_rate": null,
+      "profit_factor": null
+     },
+     "validation": {
+      "trades": 5,
+      "expectancy_r": 0.3448,
+      "win_rate": 0.6,
+      "profit_factor": 1.768
+     },
+     "test": {
+      "trades": 2,
+      "expectancy_r": -0.6034,
+      "win_rate": 0.0,
+      "profit_factor": 0.0
+     }
+    },
+    {
+     "instrument": "WIF-USD",
+     "cost": "retail_kraken",
+     "candidate": false,
+     "full": {
+      "trades": 2,
+      "expectancy_r": -0.4078,
+      "win_rate": 0.0,
+      "profit_factor": 0.0
+     },
+     "train": {
+      "trades": 0,
+      "expectancy_r": null,
+      "win_rate": null,
+      "profit_factor": null
+     },
+     "validation": {
+      "trades": 1,
+      "expectancy_r": -0.2664,
+      "win_rate": 0.0,
+      "profit_factor": 0.0
+     },
+     "test": {
+      "trades": 1,
+      "expectancy_r": -0.5492,
+      "win_rate": 0.0,
+      "profit_factor": 0.0
+     }
+    },
+    {
+     "instrument": "PEPE-USD",
+     "cost": "retail_kraken",
+     "candidate": false,
+     "full": {
+      "trades": 3,
+      "expectancy_r": 0.4503,
+      "win_rate": 0.6667,
+      "profit_factor": 2.145
+     },
+     "train": {
+      "trades": 0,
+      "expectancy_r": null,
+      "win_rate": null,
+      "profit_factor": null
+     },
+     "validation": {
+      "trades": 1,
+      "expectancy_r": -1.1795,
+      "win_rate": 0.0,
+      "profit_factor": 0.0
+     },
+     "test": {
+      "trades": 2,
+      "expectancy_r": 1.2652,
+      "win_rate": 1.0,
+      "profit_factor": null
+     }
+    },
+    {
+     "instrument": "*",
+     "cost": "retail_kraken",
+     "candidate": true,
+     "full": {
+      "trades": 72,
+      "expectancy_r": 0.2831,
+      "win_rate": 0.4861,
+      "profit_factor": 1.69
+     },
+     "train": {
+      "trades": 41,
+      "expectancy_r": 0.4228,
+      "win_rate": 0.5122,
+      "profit_factor": 1.987
+     },
+     "validation": {
+      "trades": 16,
+      "expectancy_r": 0.1822,
+      "win_rate": 0.5,
+      "profit_factor": 1.398
+     },
+     "test": {
+      "trades": 15,
+      "expectancy_r": 0.0092,
+      "win_rate": 0.4,
+      "profit_factor": 1.03
+     }
+    },
+    {
+     "instrument": "SHIB-USD",
+     "cost": "low_fee_venue",
+     "candidate": false,
+     "full": {
+      "trades": 25,
+      "expectancy_r": 0.3594,
+      "win_rate": 0.48,
+      "profit_factor": 1.921
+     },
+     "train": {
+      "trades": 19,
+      "expectancy_r": 0.4877,
+      "win_rate": 0.5263,
+      "profit_factor": 2.266
+     },
+     "validation": {
+      "trades": 2,
+      "expectancy_r": 0.4654,
+      "win_rate": 0.5,
+      "profit_factor": 1.887
+     },
+     "test": {
+      "trades": 4,
+      "expectancy_r": -0.3032,
+      "win_rate": 0.25,
+      "profit_factor": 0.123
+     }
+    },
+    {
+     "instrument": "DOGE-USD",
+     "cost": "low_fee_venue",
+     "candidate": false,
+     "full": {
+      "trades": 24,
+      "expectancy_r": 0.318,
+      "win_rate": 0.5,
+      "profit_factor": 1.824
+     },
+     "train": {
+      "trades": 15,
+      "expectancy_r": 0.3235,
+      "win_rate": 0.4667,
+      "profit_factor": 1.66
+     },
+     "validation": {
+      "trades": 4,
+      "expectancy_r": 0.2415,
+      "win_rate": 0.5,
+      "profit_factor": 1.812
+     },
+     "test": {
+      "trades": 5,
+      "expectancy_r": 0.3629,
+      "win_rate": 0.6,
+      "profit_factor": 3.533
+     }
+    },
+    {
+     "instrument": "BONK-USD",
+     "cost": "low_fee_venue",
+     "candidate": false,
+     "full": {
+      "trades": 11,
+      "expectancy_r": 0.7188,
+      "win_rate": 0.5455,
+      "profit_factor": 4.051
+     },
+     "train": {
+      "trades": 7,
+      "expectancy_r": 0.954,
+      "win_rate": 0.5714,
+      "profit_factor": 6.212
+     },
+     "validation": {
+      "trades": 3,
+      "expectancy_r": 0.508,
+      "win_rate": 0.6667,
+      "profit_factor": 2.5
+     },
+     "test": {
+      "trades": 1,
+      "expectancy_r": -0.2946,
+      "win_rate": 0.0,
+      "profit_factor": 0.0
+     }
+    },
+    {
+     "instrument": "FLOKI-USD",
+     "cost": "low_fee_venue",
+     "candidate": false,
+     "full": {
+      "trades": 7,
+      "expectancy_r": 0.1531,
+      "win_rate": 0.5714,
+      "profit_factor": 1.347
+     },
+     "train": {
+      "trades": 0,
+      "expectancy_r": null,
+      "win_rate": null,
+      "profit_factor": null
+     },
+     "validation": {
+      "trades": 5,
+      "expectancy_r": 0.4185,
+      "win_rate": 0.6,
+      "profit_factor": 2.019
+     },
+     "test": {
+      "trades": 2,
+      "expectancy_r": -0.5103,
+      "win_rate": 0.5,
+      "profit_factor": 0.013
+     }
+    },
+    {
+     "instrument": "WIF-USD",
+     "cost": "low_fee_venue",
+     "candidate": false,
+     "full": {
+      "trades": 2,
+      "expectancy_r": -0.3609,
+      "win_rate": 0.0,
+      "profit_factor": 0.0
+     },
+     "train": {
+      "trades": 0,
+      "expectancy_r": null,
+      "win_rate": null,
+      "profit_factor": null
+     },
+     "validation": {
+      "trades": 1,
+      "expectancy_r": -0.2208,
+      "win_rate": 0.0,
+      "profit_factor": 0.0
+     },
+     "test": {
+      "trades": 1,
+      "expectancy_r": -0.5009,
+      "win_rate": 0.0,
+      "profit_factor": 0.0
+     }
+    },
+    {
+     "instrument": "PEPE-USD",
+     "cost": "low_fee_venue",
+     "candidate": false,
+     "full": {
+      "trades": 3,
+      "expectancy_r": 0.5362,
+      "win_rate": 0.6667,
+      "profit_factor": 2.548
+     },
+     "train": {
+      "trades": 0,
+      "expectancy_r": null,
+      "win_rate": null,
+      "profit_factor": null
+     },
+     "validation": {
+      "trades": 1,
+      "expectancy_r": -1.0391,
+      "win_rate": 0.0,
+      "profit_factor": 0.0
+     },
+     "test": {
+      "trades": 2,
+      "expectancy_r": 1.3239,
+      "win_rate": 1.0,
+      "profit_factor": null
+     }
+    },
+    {
+     "instrument": "*",
+     "cost": "low_fee_venue",
+     "candidate": true,
+     "full": {
+      "trades": 72,
+      "expectancy_r": 0.3678,
+      "win_rate": 0.5,
+      "profit_factor": 2.001
+     },
+     "train": {
+      "trades": 41,
+      "expectancy_r": 0.5073,
+      "win_rate": 0.5122,
+      "profit_factor": 2.303
+     },
+     "validation": {
+      "trades": 16,
+      "expectancy_r": 0.2658,
+      "win_rate": 0.5,
+      "profit_factor": 1.648
+     },
+     "test": {
+      "trades": 15,
+      "expectancy_r": 0.0955,
+      "win_rate": 0.4667,
+      "profit_factor": 1.365
+     }
+    }
+   ]
+  },
+  "STRAT-U05": {
+   "runs": [
+    {
+     "instrument": "GOOGL",
+     "cost": "base",
+     "candidate": false,
+     "full": {
+      "trades": 8,
+      "expectancy_r": -0.1579,
+      "win_rate": 0.375,
+      "profit_factor": 0.761
+     },
+     "train": {
+      "trades": 7,
+      "expectancy_r": -0.465,
+      "win_rate": 0.2857,
+      "profit_factor": 0.385
+     },
+     "validation": {
+      "trades": 0,
+      "expectancy_r": null,
+      "win_rate": null,
+      "profit_factor": null
+     },
+     "test": {
+      "trades": 1,
+      "expectancy_r": 1.9914,
+      "win_rate": 1.0,
+      "profit_factor": null
+     }
+    },
+    {
+     "instrument": "NFLX",
+     "cost": "base",
+     "candidate": false,
+     "full": {
+      "trades": 9,
+      "expectancy_r": 0.8621,
+      "win_rate": 0.6667,
+      "profit_factor": 2.853
+     },
+     "train": {
+      "trades": 8,
+      "expectancy_r": 1.0963,
+      "win_rate": 0.75,
+      "profit_factor": 3.76
+     },
+     "validation": {
+      "trades": 0,
+      "expectancy_r": null,
+      "win_rate": null,
+      "profit_factor": null
+     },
+     "test": {
+      "trades": 1,
+      "expectancy_r": -1.0111,
+      "win_rate": 0.0,
+      "profit_factor": 0.0
+     }
+    },
+    {
+     "instrument": "AMD",
+     "cost": "base",
+     "candidate": false,
+     "full": {
+      "trades": 11,
+      "expectancy_r": 0.6441,
+      "win_rate": 0.6364,
+      "profit_factor": 2.759
+     },
+     "train": {
+      "trades": 7,
+      "expectancy_r": 0.4111,
+      "win_rate": 0.5714,
+      "profit_factor": 1.954
+     },
+     "validation": {
+      "trades": 2,
+      "expectancy_r": 0.4917,
+      "win_rate": 0.5,
+      "profit_factor": 1.974
+     },
+     "test": {
+      "trades": 2,
+      "expectancy_r": 1.6117,
+      "win_rate": 1.0,
+      "profit_factor": null
+     }
+    },
+    {
+     "instrument": "DIA",
+     "cost": "base",
+     "candidate": false,
+     "full": {
+      "trades": 6,
+      "expectancy_r": 0.0618,
+      "win_rate": 0.3333,
+      "profit_factor": 1.103
+     },
+     "train": {
+      "trades": 4,
+      "expectancy_r": -0.1441,
+      "win_rate": 0.25,
+      "profit_factor": 0.774
+     },
+     "validation": {
+      "trades": 2,
+      "expectancy_r": 0.4735,
+      "win_rate": 0.5,
+      "profit_factor": 1.918
+     },
+     "test": {
+      "trades": 0,
+      "expectancy_r": null,
+      "win_rate": null,
+      "profit_factor": null
+     }
+    },
+    {
+     "instrument": "MSFT",
+     "cost": "base",
+     "candidate": false,
+     "full": {
+      "trades": 10,
+      "expectancy_r": 0.3323,
+      "win_rate": 0.5,
+      "profit_factor": 1.655
+     },
+     "train": {
+      "trades": 5,
+      "expectancy_r": 0.4778,
+      "win_rate": 0.6,
+      "profit_factor": 2.179
+     },
+     "validation": {
+      "trades": 3,
+      "expectancy_r": -0.0157,
+      "win_rate": 0.3333,
+      "profit_factor": 0.977
+     },
+     "test": {
+      "trades": 2,
+      "expectancy_r": 0.4903,
+      "win_rate": 0.5,
+      "profit_factor": 1.97
+     }
+    },
+    {
+     "instrument": "SHOP.TO",
+     "cost": "base",
+     "candidate": false,
+     "full": {
+      "trades": 10,
+      "expectancy_r": 0.2933,
+      "win_rate": 0.5,
+      "profit_factor": 1.582
+     },
+     "train": {
+      "trades": 8,
+      "expectancy_r": 0.2436,
+      "win_rate": 0.5,
+      "profit_factor": 1.483
+     },
+     "validation": {
+      "trades": 2,
+      "expectancy_r": 0.4922,
+      "win_rate": 0.5,
+      "profit_factor": 1.976
+     },
+     "test": {
+      "trades": 0,
+      "expectancy_r": null,
+      "win_rate": null,
+      "profit_factor": null
+     }
+    },
+    {
+     "instrument": "XIU.TO",
+     "cost": "base",
+     "candidate": false,
+     "full": {
+      "trades": 8,
+      "expectancy_r": -0.2355,
+      "win_rate": 0.25,
+      "profit_factor": 0.678
+     },
+     "train": {
+      "trades": 7,
+      "expectancy_r": -0.553,
+      "win_rate": 0.1429,
+      "profit_factor": 0.338
+     },
+     "validation": {
+      "trades": 1,
+      "expectancy_r": 1.9865,
+      "win_rate": 1.0,
+      "profit_factor": null
+     },
+     "test": {
+      "trades": 0,
+      "expectancy_r": null,
+      "win_rate": null,
+      "profit_factor": null
+     }
+    },
+    {
+     "instrument": "QQQ",
+     "cost": "base",
+     "candidate": false,
+     "full": {
+      "trades": 4,
+      "expectancy_r": -0.2698,
+      "win_rate": 0.25,
+      "profit_factor": 0.647
+     },
+     "train": {
+      "trades": 3,
+      "expectancy_r": -0.0196,
+      "win_rate": 0.3333,
+      "profit_factor": 0.971
+     },
+     "validation": {
+      "trades": 0,
+      "expectancy_r": null,
+      "win_rate": null,
+      "profit_factor": null
+     },
+     "test": {
+      "trades": 1,
+      "expectancy_r": -1.0202,
+      "win_rate": 0.0,
+      "profit_factor": 0.0
+     }
+    },
+    {
+     "instrument": "CNQ.TO",
+     "cost": "base",
+     "candidate": false,
+     "full": {
+      "trades": 9,
+      "expectancy_r": 0.136,
+      "win_rate": 0.4444,
+      "profit_factor": 1.241
+     },
+     "train": {
+      "trades": 6,
+      "expectancy_r": 0.2104,
+      "win_rate": 0.5,
+      "profit_factor": 1.415
+     },
+     "validation": {
+      "trades": 1,
+      "expectancy_r": -1.016,
+      "win_rate": 0.0,
+      "profit_factor": 0.0
+     },
+     "test": {
+      "trades": 2,
+      "expectancy_r": 0.489,
+      "win_rate": 0.5,
+      "profit_factor": 1.966
+     }
+    },
+    {
+     "instrument": "TSLA",
+     "cost": "base",
+     "candidate": false,
+     "full": {
+      "trades": 9,
+      "expectancy_r": -0.9333,
+      "win_rate": 0.0,
+      "profit_factor": 0.0
+     },
+     "train": {
+      "trades": 7,
+      "expectancy_r": -1.0064,
+      "win_rate": 0.0,
+      "profit_factor": 0.0
+     },
+     "validation": {
+      "trades": 1,
+      "expectancy_r": -1.008,
+      "win_rate": 0.0,
+      "profit_factor": 0.0
+     },
+     "test": {
+      "trades": 1,
+      "expectancy_r": -0.3473,
+      "win_rate": 0.0,
+      "profit_factor": 0.0
+     }
+    },
+    {
+     "instrument": "SPY",
+     "cost": "base",
+     "candidate": false,
+     "full": {
+      "trades": 5,
+      "expectancy_r": 0.4562,
+      "win_rate": 0.6,
+      "profit_factor": 2.108
+     },
+     "train": {
+      "trades": 4,
+      "expectancy_r": 0.4738,
+      "win_rate": 0.5,
+      "profit_factor": 1.92
+     },
+     "validation": {
+      "trades": 0,
+      "expectancy_r": null,
+      "win_rate": null,
+      "profit_factor": null
+     },
+     "test": {
+      "trades": 1,
+      "expectancy_r": 0.3856,
+      "win_rate": 1.0,
+      "profit_factor": null
+     }
+    },
+    {
+     "instrument": "AAPL",
+     "cost": "base",
+     "candidate": false,
+     "full": {
+      "trades": 9,
+      "expectancy_r": 0.2704,
+      "win_rate": 0.5556,
+      "profit_factor": 1.576
+     },
+     "train": {
+      "trades": 7,
+      "expectancy_r": 0.0091,
+      "win_rate": 0.4286,
+      "profit_factor": 1.015
+     },
+     "validation": {
+      "trades": 1,
+      "expectancy_r": 1.991,
+      "win_rate": 1.0,
+      "profit_factor": null
+     },
+     "test": {
+      "trades": 1,
+      "expectancy_r": 0.379,
+      "win_rate": 1.0,
+      "profit_factor": null
+     }
+    },
+    {
+     "instrument": "JPM",
+     "cost": "base",
+     "candidate": false,
+     "full": {
+      "trades": 10,
+      "expectancy_r": 0.2453,
+      "win_rate": 0.4,
+      "profit_factor": 1.447
+     },
+     "train": {
+      "trades": 9,
+      "expectancy_r": 0.3182,
+      "win_rate": 0.4444,
+      "profit_factor": 1.564
+     },
+     "validation": {
+      "trades": 0,
+      "expectancy_r": null,
+      "win_rate": null,
+      "profit_factor": null
+     },
+     "test": {
+      "trades": 1,
+      "expectancy_r": -0.4108,
+      "win_rate": 0.0,
+      "profit_factor": 0.0
+     }
+    },
+    {
+     "instrument": "SLV",
+     "cost": "base",
+     "candidate": false,
+     "full": {
+      "trades": 4,
+      "expectancy_r": 1.4014,
+      "win_rate": 1.0,
+      "profit_factor": null
+     },
+     "train": {
+      "trades": 3,
+      "expectancy_r": 1.2048,
+      "win_rate": 1.0,
+      "profit_factor": null
+     },
+     "validation": {
+      "trades": 0,
+      "expectancy_r": null,
+      "win_rate": null,
+      "profit_factor": null
+     },
+     "test": {
+      "trades": 1,
+      "expectancy_r": 1.9914,
+      "win_rate": 1.0,
+      "profit_factor": null
+     }
+    },
+    {
+     "instrument": "META",
+     "cost": "base",
+     "candidate": false,
+     "full": {
+      "trades": 8,
+      "expectancy_r": 0.4992,
+      "win_rate": 0.5,
+      "profit_factor": 2.006
+     },
+     "train": {
+      "trades": 6,
+      "expectancy_r": 0.5043,
+      "win_rate": 0.5,
+      "profit_factor": 2.028
+     },
+     "validation": {
+      "trades": 1,
+      "expectancy_r": 1.9939,
+      "win_rate": 1.0,
+      "profit_factor": null
+     },
+     "test": {
+      "trades": 1,
+      "expectancy_r": -1.026,
+      "win_rate": 0.0,
+      "profit_factor": 0.0
+     }
+    },
+    {
+     "instrument": "TD.TO",
+     "cost": "base",
+     "candidate": false,
+     "full": {
+      "trades": 6,
+      "expectancy_r": 0.3136,
+      "win_rate": 0.5,
+      "profit_factor": 1.615
+     },
+     "train": {
+      "trades": 4,
+      "expectancy_r": -0.514,
+      "win_rate": 0.25,
+      "profit_factor": 0.328
+     },
+     "validation": {
+      "trades": 1,
+      "expectancy_r": 1.9826,
+      "win_rate": 1.0,
+      "profit_factor": null
+     },
+     "test": {
+      "trades": 1,
+      "expectancy_r": 1.9548,
+      "win_rate": 1.0,
+      "profit_factor": null
+     }
+    },
+    {
+     "instrument": "GLD",
+     "cost": "base",
+     "candidate": false,
+     "full": {
+      "trades": 10,
+      "expectancy_r": 0.7217,
+      "win_rate": 0.6,
+      "profit_factor": 2.7
+     },
+     "train": {
+      "trades": 8,
+      "expectancy_r": 0.8324,
+      "win_rate": 0.625,
+      "profit_factor": 3.059
+     },
+     "validation": {
+      "trades": 1,
+      "expectancy_r": 1.569,
+      "win_rate": 1.0,
+      "profit_factor": null
+     },
+     "test": {
+      "trades": 1,
+      "expectancy_r": -1.0109,
+      "win_rate": 0.0,
+      "profit_factor": 0.0
+     }
+    },
+    {
+     "instrument": "ENB.TO",
+     "cost": "base",
+     "candidate": false,
+     "full": {
+      "trades": 6,
+      "expectancy_r": 0.2251,
+      "win_rate": 0.5,
+      "profit_factor": 1.486
+     },
+     "train": {
+      "trades": 5,
+      "expectancy_r": -0.1258,
+      "win_rate": 0.4,
+      "profit_factor": 0.774
+     },
+     "validation": {
+      "trades": 1,
+      "expectancy_r": 1.9794,
+      "win_rate": 1.0,
+      "profit_factor": null
+     },
+     "test": {
+      "trades": 0,
+      "expectancy_r": null,
+      "win_rate": null,
+      "profit_factor": null
+     }
+    },
+    {
+     "instrument": "RY.TO",
+     "cost": "base",
+     "candidate": false,
+     "full": {
+      "trades": 7,
+      "expectancy_r": 1.044,
+      "win_rate": 0.7143,
+      "profit_factor": 7.258
+     },
+     "train": {
+      "trades": 4,
+      "expectancy_r": 1.0958,
+      "win_rate": 0.75,
+      "profit_factor": 31.556
+     },
+     "validation": {
+      "trades": 2,
+      "expectancy_r": 1.9745,
+      "win_rate": 1.0,
+      "profit_factor": null
+     },
+     "test": {
+      "trades": 1,
+      "expectancy_r": -1.0243,
+      "win_rate": 0.0,
+      "profit_factor": 0.0
+     }
+    },
+    {
+     "instrument": "USDJPY=X",
+     "cost": "base",
+     "candidate": false,
+     "full": {
+      "trades": 3,
+      "expectancy_r": 0.3283,
+      "win_rate": 0.6667,
+      "profit_factor": 1.966
+     },
+     "train": {
+      "trades": 2,
+      "expectancy_r": 0.4789,
+      "win_rate": 0.5,
+      "profit_factor": 1.94
+     },
+     "validation": {
+      "trades": 0,
+      "expectancy_r": null,
+      "win_rate": null,
+      "profit_factor": null
+     },
+     "test": {
+      "trades": 1,
+      "expectancy_r": 0.0271,
+      "win_rate": 1.0,
+      "profit_factor": null
+     }
+    },
+    {
+     "instrument": "USDCAD=X",
+     "cost": "base",
+     "candidate": false,
+     "full": {
+      "trades": 3,
+      "expectancy_r": 0.4466,
+      "win_rate": 0.6667,
+      "profit_factor": 2.245
+     },
+     "train": {
+      "trades": 3,
+      "expectancy_r": 0.4466,
+      "win_rate": 0.6667,
+      "profit_factor": 2.245
+     },
+     "validation": {
+      "trades": 0,
+      "expectancy_r": null,
+      "win_rate": null,
+      "profit_factor": null
+     },
+     "test": {
+      "trades": 0,
+      "expectancy_r": null,
+      "win_rate": null,
+      "profit_factor": null
+     }
+    },
+    {
+     "instrument": "NVDA",
+     "cost": "base",
+     "candidate": false,
+     "full": {
+      "trades": 7,
+      "expectancy_r": 1.4546,
+      "win_rate": 0.8571,
+      "profit_factor": 10.075
+     },
+     "train": {
+      "trades": 6,
+      "expectancy_r": 1.3653,
+      "win_rate": 0.8333,
+      "profit_factor": 8.301
+     },
+     "validation": {
+      "trades": 1,
+      "expectancy_r": 1.9906,
+      "win_rate": 1.0,
+      "profit_factor": null
+     },
+     "test": {
+      "trades": 0,
+      "expectancy_r": null,
+      "win_rate": null,
+      "profit_factor": null
+     }
+    },
+    {
+     "instrument": "GBPUSD=X",
+     "cost": "base",
+     "candidate": false,
+     "full": {
+      "trades": 3,
+      "expectancy_r": -0.6816,
+      "win_rate": 0.3333,
+      "profit_factor": 0.015
+     },
+     "train": {
+      "trades": 2,
+      "expectancy_r": -1.0384,
+      "win_rate": 0.0,
+      "profit_factor": 0.0
+     },
+     "validation": {
+      "trades": 1,
+      "expectancy_r": 0.0321,
+      "win_rate": 1.0,
+      "profit_factor": null
+     },
+     "test": {
+      "trades": 0,
+      "expectancy_r": null,
+      "win_rate": null,
+      "profit_factor": null
+     }
+    },
+    {
+     "instrument": "IWM",
+     "cost": "base",
+     "candidate": false,
+     "full": {
+      "trades": 6,
+      "expectancy_r": 0.5749,
+      "win_rate": 0.6667,
+      "profit_factor": 3.366
+     },
+     "train": {
+      "trades": 4,
+      "expectancy_r": 0.476,
+      "win_rate": 0.75,
+      "profit_factor": 2.863
+     },
+     "validation": {
+      "trades": 1,
+      "expectancy_r": 1.9818,
+      "win_rate": 1.0,
+      "profit_factor": null
+     },
+     "test": {
+      "trades": 1,
+      "expectancy_r": -0.4363,
+      "win_rate": 0.0,
+      "profit_factor": 0.0
+     }
+    },
+    {
+     "instrument": "AMZN",
+     "cost": "base",
+     "candidate": false,
+     "full": {
+      "trades": 5,
+      "expectancy_r": 0.1285,
+      "win_rate": 0.4,
+      "profit_factor": 1.193
+     },
+     "train": {
+      "trades": 3,
+      "expectancy_r": -0.013,
+      "win_rate": 0.3333,
+      "profit_factor": 0.981
+     },
+     "validation": {
+      "trades": 1,
+      "expectancy_r": -1.3105,
+      "win_rate": 0.0,
+      "profit_factor": 0.0
+     },
+     "test": {
+      "trades": 1,
+      "expectancy_r": 1.9922,
+      "win_rate": 1.0,
+      "profit_factor": null
+     }
+    },
+    {
+     "instrument": "USO",
+     "cost": "base",
+     "candidate": false,
+     "full": {
+      "trades": 4,
+      "expectancy_r": -0.7778,
+      "win_rate": 0.0,
+      "profit_factor": 0.0
+     },
+     "train": {
+      "trades": 2,
+      "expectancy_r": -1.0147,
+      "win_rate": 0.0,
+      "profit_factor": 0.0
+     },
+     "validation": {
+      "trades": 1,
+      "expectancy_r": -1.0125,
+      "win_rate": 0.0,
+      "profit_factor": 0.0
+     },
+     "test": {
+      "trades": 1,
+      "expectancy_r": -0.0694,
+      "win_rate": 0.0,
+      "profit_factor": 0.0
+     }
+    },
+    {
+     "instrument": "AUDUSD=X",
+     "cost": "base",
+     "candidate": false,
+     "full": {
+      "trades": 1,
+      "expectancy_r": 1.0268,
+      "win_rate": 1.0,
+      "profit_factor": null
+     },
+     "train": {
+      "trades": 0,
+      "expectancy_r": null,
+      "win_rate": null,
+      "profit_factor": null
+     },
+     "validation": {
+      "trades": 1,
+      "expectancy_r": 1.0268,
+      "win_rate": 1.0,
+      "profit_factor": null
+     },
+     "test": {
+      "trades": 0,
+      "expectancy_r": null,
+      "win_rate": null,
+      "profit_factor": null
+     }
+    },
+    {
+     "instrument": "*",
+     "cost": "base",
+     "candidate": true,
+     "full": {
+      "trades": 181,
+      "expectancy_r": 0.3153,
+      "win_rate": 0.4972,
+      "profit_factor": 1.636
+     },
+     "train": {
+      "trades": 134,
+      "expectancy_r": 0.2277,
+      "win_rate": 0.4701,
+      "profit_factor": 1.424
+     },
+     "validation": {
+      "trades": 25,
+      "expectancy_r": 0.7601,
+      "win_rate": 0.64,
+      "profit_factor": 3.015
+     },
+     "test": {
+      "trades": 22,
+      "expectancy_r": 0.3431,
+      "win_rate": 0.5,
+      "profit_factor": 1.901
+     }
+    }
+   ]
+  }
+ }
+}
