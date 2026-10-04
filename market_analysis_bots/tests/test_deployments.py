@@ -189,4 +189,4 @@ def test_bot_rechecked_when_a_series_it_reads_finishes_loading(fleet):
     fleet._on_event(own.key, fleet.hub.refresh(own), True)
     assert br.state == "warming"                                # its 5m bars are not loaded yet
     fleet._on_event(ref.key, fleet.hub.refresh(ref), True)
-    assert br.state == "idle_no_signal", br.message             # re-checked as soon as they are
+    assert br.state == "idle_no_signal" and br.message.startswith("data ready"), br.message   # re-checked at once

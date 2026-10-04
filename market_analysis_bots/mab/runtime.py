@@ -438,7 +438,8 @@ class Fleet(DeploymentMixin):
                 elif br.tm.pos is not None or any(d for d in decisions if d):
                     br.state, br.message = "running", ""
                 else:
-                    br.state, br.message = "idle_no_signal", br.last_decision or ""
+                    br.state = "idle_no_signal"
+                    br.message = (br.last_decision or "") if added else "data ready: decides at the next bar close"
             elif status == "market_closed":
                 br.state, br.message = "idle_no_signal", "market closed"
             elif status == "suspect":
