@@ -1,0 +1,66 @@
+JARVUS TERMINAL + ULTRON BRAIN  (Windows)
+
+RUN IT
+  1. Unzip this folder anywhere. Keep JarvusTerminal.exe in it.
+  2. Double-click JarvusTerminal.exe. If Windows says "Windows protected your PC": More info -> Run anyway (once).
+  3. A black window opens and your browser goes to http://127.0.0.1:8787 (paste it in if it doesn't).
+     Keep the black window open: closing it stops Jarvus and every bot.
+
+WHAT'S NEW: THE ULTRON BRAIN
+  The smartest part of the terminal is now the ULTRON councils: the trained AI that also powers the ULTRON TradingView
+  indicators and ULTRON Watch. 46 ULTRON bots join the fleet and start by themselves with autopilot:
+    ULTRON council 1h   BTC, ETH, SOL  +  DOGE, SHIB, PEPE, BONK, WIF, FLOKI
+    ULTRON council 4h   the same 9 coins (runs on the 1h chart, acts when a 4-hour candle closes)
+    ULTRON daily        SPY QQQ IWM DIA AAPL MSFT NVDA AMZN GOOGL META TSLA JPM AMD NFLX, XIU RY TD ENB SHOP CNQ,
+                        EURUSD GBPUSD USDJPY USDCAD AUDUSD, GLD SLV USO
+  Each bot buys only when its council's trained brain approves (25 agents, volatility gate, trend, learned edge,
+  fee check), then manages the trade: stop-loss at the council's level, target at 2R, time limit.
+  The Fleet Brain starts from ULTRON's measured walk-forward results for each market, priced at your fees.
+
+PAPER MONEY (the default)
+  "Your money" at the top of Command is the paper account, live: it moves with every trade and every price tick, and
+  open trades are valued at the market price. Change the balance any time (Change balance / Fleet tab).
+
+REAL MONEY (only when you switch it on yourself)
+  Real money stays OFF until you do all of this, on the Live money page:
+   1. Connections -> Connect an account:
+        NDAX or Kraken for crypto, Alpaca for US stocks and ETFs (Toronto stocks, forex and the ETFs of other
+        countries stay paper: none of these brokers trades them).
+      Create the API key on the exchange's website with TRADING permission only - never withdrawal or deposit.
+      Type the key into the app only: it is stored encrypted on your PC. Never send a key to anyone, including in chat.
+      The connection test must pass.
+   2. Live trading authorisation: tick the account, set the total amount the bots may use and a daily loss limit,
+      and type  I UNDERSTAND THIS TRADES REAL MONEY.
+   3. Command -> pick a bot -> LIVE mode -> readiness checks -> START LIVE.
+  Which ULTRON bots may go live: the terminal only allows a bot whose strategy was positive on the untouched test at
+  your fees, after at least 20 paper trades with a positive average on that bot. At NDAX fees that is currently
+  ULTRON 1h (BTC/ETH/SOL), ULTRON 4h (meme coins) and ULTRON daily (US stocks/ETFs through Alpaca). The others keep
+  paper trading until they earn it.
+  Back to paper at any time: "Revoke live authorisation" pauses every live bot; EMERGENCY STOP blocks all new orders.
+  Your live account's money, trades and P&L show on the Live money page and in Your money.
+
+  IMPORTANT: the NDAX and Kraken order connections were written to their published APIs but have never been run
+  against the real exchanges (no keys were ever available to test them). Start with the smallest amounts, keep the
+  daily loss limit low, and check the first orders on the exchange's own website.
+
+SETTINGS
+  Settings -> your exchange's fees: NDAX is the default. The cost check, the brain and paper results use it.
+
+TESTED RESULTS (ULTRON, walk-forward, after NDAX fees, market entries; untouched test = since Dec 2025)
+  ULTRON 1h BTC/ETH/SOL     all +0.39R per trade (75 trades)    test +0.56R (15 trades)
+  ULTRON 4h meme coins      all +0.35R (72)                     test +0.08R (15)
+  ULTRON daily markets      all +0.32R (181)                    test +0.34R (22)
+  ULTRON 1h meme coins      all +0.08R (194)                    test -0.01R (41): paper only
+  ULTRON 4h BTC/ETH/SOL     all +0.49R (50)                     test +0.02R (7, too few): paper only
+  R = the amount risked on a trade. Past results, not a promise. Most of the 300+ older strategies in the library
+  lose money after retail fees; the brain blocks them and follows them as shadow trades.
+
+WHERE YOUR STUFF IS SAVED
+  A "data" folder appears next to the exe: database, settings, paper accounts, what the brain learned, cached prices,
+  and the encrypted key vault. Move the exe and the data folder together.
+
+IF SOMETHING GOES WRONG
+  "Port 8787 is already in use": Jarvus is already running; open http://127.0.0.1:8787.
+  Antivirus deleted the exe: some antivirus programs flag unsigned programs; restore it or add an exception.
+
+Educational tool, not financial advice. Real-money trading is your decision and your responsibility.

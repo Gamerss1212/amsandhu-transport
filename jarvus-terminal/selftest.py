@@ -69,6 +69,22 @@ def main() -> int:
     check("full-system backtest results load", bool(res.get("system")) and res["system"]["runs"] >= 500)
     from mab.data.demo import MARKETS
     check("demo market generator available", len(MARKETS) >= 5)
+    try:                                                   # the ULTRON councils (numpy + the trained models)
+        from mab import ultron_rules
+        from mab.frame import Frame
+        from mab.strategy import compile_strategy, evaluate
+        with open(library.CATALOG, encoding="utf-8") as fh:
+            ud = next(x for x in json.load(fh)["strategies"] if x["id"] == "STRAT-U05")["definition"]
+        nd = 800
+        t0 = 1_700_000_000_000 // 86_400_000 * 86_400_000 + 48_600_000
+        cl = [100 * math.exp(0.01 * math.sin(i / 7) + 0.0005 * i) for i in range(nd)]
+        fr = Frame.from_columns("yahoo", "SPY", "1d", "stock", [t0 + i * 86_400_000 for i in range(nd)], cl,
+                                [x * 1.01 for x in cl], [x * 0.99 for x in cl], cl, [1e6] * nd)
+        rsu = evaluate(compile_strategy(ud, {}, "stock"), fr, lambda v, sy, tf: fr)
+        ok_u = ultron_rules.AVAILABLE and len(rsu.values["entry_long"]) == nd and ultron_rules.councils_dir() is not None
+        check("ULTRON councils load and evaluate", ok_u, str(ultron_rules.councils_dir()))
+    except Exception as e:                                 # noqa: BLE001
+        check("ULTRON councils load and evaluate", False, f"{type(e).__name__}: {e}")
 
     print("\n  Database and vault")
     from mab import migrations, secrets_store
