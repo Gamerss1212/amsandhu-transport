@@ -19,8 +19,8 @@ import signals as sg
 
 MIN = 60_000
 DAY = 86_400_000
-SIZE = {"1h": 60 * MIN, "4h": 240 * MIN}
-HTF_SIZE = {"1h": 240 * MIN, "4h": DAY}
+SIZE = {"1h": 60 * MIN, "4h": 240 * MIN, "1D": DAY}
+HTF_SIZE = {"1h": 240 * MIN, "4h": DAY, "1D": 7 * DAY}
 
 
 def ema_first(x, n):
@@ -51,12 +51,20 @@ def aggregate(rows, size_ms):
     return [b[:6] for b in out if b[6] == per]
 
 
+def bars_since(t, i, t_last):
+    """Bars between an earlier fire (by its bar time) and bar i: counts bars, not hours, so market charts that skip
+    weekends and holidays space signals exactly as the trainer did."""
+    if t_last is None or t_last < t[0]:
+        return 10 ** 9
+    return i - int(np.searchsorted(t, t_last))
+
+
 def arrays(rows):
     t = np.array([r[0] for r in rows], dtype=np.int64)
     return (t,) + tuple(np.array([r[k] for r in rows], float) for k in (1, 2, 3, 4, 5))
 
 
-def evaluate(model, coin, rows, htf_rows, bull, weekend, fees, slip, last_fire, group):
+def evaluate(model, coin, rows, htf_rows, bull, weekend, fees, slip, last_fire, group, htf_end=None):
     """rows / htf_rows: completed chart and higher-timeframe bars [t, o, h, l, c, v], oldest first.
     last_fire: dict the caller keeps between calls ({"c|sid": t, "h|sid": t}); updated here.
     Returns (decision dict or None, info dict for the screen)."""
@@ -71,7 +79,8 @@ def evaluate(model, coin, rows, htf_rows, bull, weekend, fees, slip, last_fire, 
     ht, ho, hh, hl, hc, hv = arrays(htf_rows)
     h21, h50 = ema_first(hc, 21), ema_first(hc, 50)
     upH = bool(hc[-1] > h50[-1] and h21[-1] > h50[-1])               # the last completed higher-timeframe bar
-    htf_end = (int(t[i]) + size) % hsize == 0 and int(ht[-1]) + hsize == int(t[i]) + size
+    if htf_end is None:                                                 # crypto: the higher bar ends with this one
+        htf_end = (int(t[i]) + size) % hsize == 0 and int(ht[-1]) + hsize == int(t[i]) + size
     A = pg.atr(h, l, c)
     atr = float(A[i])
     sigs = {a["signal"] for a in model["agents"]}
@@ -79,7 +88,7 @@ def evaluate(model, coin, rows, htf_rows, bull, weekend, fees, slip, last_fire, 
     fired_c = set()
     for sid in sigs:                                                    # chart signals, at most one per 12 bars
         m = S.get(sid)
-        if m is not None and m[i] and int(t[i]) - last_fire.get("c|" + sid, -10 ** 15) >= 12 * size:
+        if m is not None and m[i] and bars_since(t, i, last_fire.get("c|" + sid)) >= 12:
             fired_c.add(sid)
             last_fire["c|" + sid] = int(t[i])
     fired_h, AH = set(), float("nan")

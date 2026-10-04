@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """ULTRON — autonomous paper-trading terminal. 50 trained agents, one learned brain, runs 24/7.
 
-Double-click and leave it open. Every hour Ultron's 50 agents read 9 crypto markets; the brain approves or refuses
+Double-click and leave it open. Every hour Ultron's 50 crypto agents read 9 coins, and once a day a markets council
+reads 28 stocks, ETFs, forex pairs and commodities; the brains approve or refuse
 every signal; approved ones become paper trades that Ultron manages by itself (limit entry, stop-loss, target,
 time limit). It pops up when it buys or sells so you can copy the trade on your exchange if you choose.
 Paper money only: it does not connect to any exchange account.
@@ -672,9 +673,11 @@ class App:
     def draw_overlay(self, ov):
         if ov == "welcome":
             x, y = self.modal(620, 360, "Ultron is on autopilot")
-            lines = ["50 trained agents in two councils (1h and 4h) read 9 crypto markets every hour, day and night.",
+            lines = ["50 trained agents in two councils (1h and 4h) read 9 crypto markets every hour, day and night; a daily "
+                     "council reads 28 stocks, ETFs, forex pairs, gold, silver and oil after every close.",
                      "Each council's brain approves or refuses every signal, sizes the trade and manages it: limit entry, "
-                     "stop-loss, target and a time limit (4 days on 1h, 16 days on 4h). Same rules as the TradingView script.",
+                     "stop-loss, first target (sell half, stop to breakeven), final target and a time limit. Same rules as the "
+                     "TradingView indicator.",
                      "It trades a PAPER account (no real money). When it buys or sells it pops up with a sound, so you can "
                      "copy the trade on your exchange if you want to.",
                      "Leave this window open (minimise it). Settings: paper balance, fees, start with Windows, phone alerts."]

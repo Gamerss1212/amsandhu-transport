@@ -24,13 +24,11 @@ if not _ROOT:
     sys.path.insert(0, os.path.join(os.path.dirname(HERE), "tv"))
 sys.path.insert(0, HERE)
 
-import numpy as np  # noqa: E402
 
 import events as evmod  # noqa: E402
 import jarvus as jv  # noqa: E402
-import signals as sg  # noqa: E402
-import system_test as st  # noqa: E402
 import council as cn  # noqa: E402
+import markets as mk  # noqa: E402
 from brain import Book  # noqa: E402
 from fetch_ohlcv import fetch_coinbase  # noqa: E402
 
@@ -38,10 +36,15 @@ HOUR = 3_600_000
 COINS = ["BTC", "ETH", "SOL", "DOGE", "SHIB", "PEPE", "BONK", "WIF", "FLOKI"]
 MAJORS = {"BTC", "ETH", "SOL"}
 FEES = {"ndax": (0.002, 0.002), "kraken": (0.004, 0.008), "coinbase": (0.006, 0.012)}
-SLIP = {"majors": 0.0002, "memes": 0.001}
+SLIP = {"majors": 0.0002, "memes": 0.001, "markets": 0.0002}
+FEES_MKT = (0.0005, 0.0005)                    # stocks / ETFs / forex: 0.05% per side, as trained
+# Exit style per council: (sell-part level in R, part sold, final target in R). The high-win-rate "Auto" style where it
+# passed the untouched test (1h crypto, daily markets); the trained 2R where Auto did not (4h). See ultron/tv/BACKTEST_ALL.md.
+EXITS = {"1h": (0.5, 0.5, 2.0), "4h": (0.0, 0.0, 2.0), "1D_markets": (0.0, 0.0, 0.5)}
 ORDER_BARS = 3
 HOLD_H = 96
 COUNCILS = ("1h", "4h")                    # the crypto councils that passed the untouched test
+MARKETS_COUNCIL = "1D_markets"              # daily council for 28 stocks, ETFs, forex pairs, gold, silver, oil
 
 
 def now_ms():
@@ -61,6 +64,15 @@ def load_councils():
                 a["name"] = NAMES[25 * k + j] if 25 * k + j < len(NAMES) else f"{a['name']}-{tf}"
             agents.append(dict(a, id=a["uid"], tf=({"1h": "4h", "4h": "1D"}[tf] if a["htf"] else tf), council=tf))
         cs[tf] = m
+    try:
+        with open(os.path.join(base, "assets", "councils", f"{MARKETS_COUNCIL}.json"), encoding="utf-8") as fh:
+            m = json.load(fh)
+        for a in m["agents"]:
+            a["uid"] = f"{MARKETS_COUNCIL}:{a['id']}"
+            a["name"] = a["name"] + "-M"
+        cs[MARKETS_COUNCIL] = m
+    except OSError:
+        pass
     first = cs[COUNCILS[0]]
     combined = {"agents": agents, "params": first["params"], "trained": first["trained"],
                 "stats": {f"{a['id']}|{r}": v for a in agents for r, v in a["edges"].items()}, "councils": list(COUNCILS)}
@@ -107,6 +119,9 @@ class Engine:
         self.lock = threading.RLock()
         self.councils, self.model = load_councils()
         self.agents = {a["id"]: a for a in self.model["agents"]}
+        if MARKETS_COUNCIL in self.councils:
+            for a in self.councils[MARKETS_COUNCIL]["agents"]:
+                self.agents[a["uid"]] = dict(a, id=a["uid"], tf="1D", council=MARKETS_COUNCIL)
         self.params = self.model["params"]
         self.s = self._load()
         self.stop_flag = threading.Event()
@@ -135,6 +150,7 @@ class Engine:
         s.setdefault("last_bar", {})
         s.setdefault("last_fire", {})
         s.setdefault("views", {})
+        s.setdefault("mkt_day", "")
         s.setdefault("counts", {"signals": 0, "approved": 0, "refused": 0, "learned": 0})
         s.setdefault("agent_live", {})
         s.setdefault("started", now_ms())
@@ -212,7 +228,44 @@ class Engine:
             except Exception as e:                                  # noqa: BLE001
                 errors.append(coin)
                 print(f"scan {coin}: {type(e).__name__}: {e}", flush=True)
+        if MARKETS_COUNCIL in self.councils:
+            today = datetime.now(timezone.utc)
+            if today.hour >= 2 and self.s["mkt_day"] != today.strftime("%Y-%m-%d"):
+                for sym in self.councils[MARKETS_COUNCIL].get("symbols", []):
+                    if sym not in mk.YAHOO:
+                        continue
+                    try:
+                        self.scan_market(sym)
+                    except Exception as e:                          # noqa: BLE001
+                        errors.append(sym)
+                        print(f"scan {sym}: {type(e).__name__}: {e}", flush=True)
+                with self.lock:
+                    self.s["mkt_day"] = today.strftime("%Y-%m-%d")
         self.status["errors"] = [f"no data: {', '.join(errors)}"] if errors else []
+
+    def scan_market(self, sym):
+        """Once a day, after every exchange has closed: the daily markets council on the newest final daily bar."""
+        final, live = mk.fetch_daily(sym, 900)
+        if len(final) < 400:
+            raise ValueError("not enough daily candles")
+        last_t = final[-1][0]
+        self.market.setdefault(sym, {})["price"] = (live or final[-1])[4]
+        with self.lock:
+            if self.s["last_bar"].get("M|" + sym) == last_t:
+                return
+            self.s["last_bar"]["M|" + sym] = last_t
+        c = [r[4] for r in final]
+        bull = c[-2] > sum(c[-201:-1]) / 200                          # previous day's close vs its 200-day average
+        friday = (last_t // (24 * HOUR) + 3) % 7 == 4                 # the week's bar closed with this day
+        with self.lock:
+            lf = self.s["last_fire"].setdefault(f"{MARKETS_COUNCIL}|{sym}", {})
+        dec, info = cn.evaluate(self.councils[MARKETS_COUNCIL], sym, final, mk.weekly(final), bull, False, FEES_MKT,
+                                SLIP["markets"], lf, "markets", htf_end=friday)
+        with self.lock:
+            self.s["views"][f"{sym}|1D"] = dict(info, t=now_ms())
+            self.s["counts"]["signals"] += info["firing"]
+        if dec:
+            self.consider(dec, sym, "markets", MARKETS_COUNCIL)
 
     def scan_coin(self, coin, bull):
         rows = self.fetch(coin, "USD", "1h", 1600)
@@ -256,12 +309,16 @@ class Engine:
     def consider(self, dec, coin, group, tf):
         a = self.agents[f"{tf}:{dec['agent']['id']}"]
         take, why = True, f"approved: learned edge {dec['m']:+.2f}R"
-        book = Book(self.params)
+        params = self.councils[tf]["params"]
+        mkt = group == "markets"
+        book = Book(params)                                          # crypto and markets keep separate position limits
         with self.lock:
             for p in self.s["positions"] + self.s["orders"]:
-                book.opened(p["coin"], p["group"])
+                if (p["group"] == "markets") == mkt:
+                    book.opened(p["coin"], p["group"])
             day = (dec["t_dec"] - 6 * HOUR) // (24 * HOUR)
-            closed_today = [x for x in self.s["history"] if (x["closed"] - 6 * HOUR) // (24 * HOUR) == day]
+            closed_today = [x for x in self.s["history"] if (x["closed"] - 6 * HOUR) // (24 * HOUR) == day
+                            and (x["group"] == "markets") == mkt]
             book.day = day
             book.day_r = sum(x["r"] * x["size"] for x in closed_today)
             streak = 0
@@ -277,28 +334,37 @@ class Engine:
             self.s["counts"]["approved" if take else "refused"] += 1
         if not take:
             return
-        mk, tk = FEES[self.s["fees"]]
+        fmk, ftk = self.fees_for(group)
         eq = self.equity()
-        risk_pct = (self.params["risk_major"] if group == "majors" else self.params["risk_meme"]) * dec["size"]
+        risk_pct = (params["risk_major"] if group in ("majors", "markets") else params["risk_meme"]) * dec["size"]
         risk_amt = eq * risk_pct
         entry, stop_dist = dec["entry"], dec["stop_dist"]
-        stop, target = entry - stop_dist, entry + 2 * stop_dist
+        r1, frac, tgt = EXITS.get(tf, (0.0, 0.0, 2.0))
+        stop, target = entry - stop_dist, entry + tgt * stop_dist
+        tp1 = entry + r1 * stop_dist if r1 else None
         units = risk_amt / stop_dist
         if units * entry > self.s["cash"] * 0.98:
             units = self.s["cash"] * 0.98 / entry
         if units <= 0:
             return
-        reserved = units * entry * (1 + mk)
+        reserved = units * entry * (1 + fmk)
+        order_ms = 5 * 24 * HOUR if mkt else dec["order_ms"]          # markets: 3 trading days
+        hold_ms = int(96 * 7 / 5) * 24 * HOUR if mkt else dec["hold_ms"]  # markets: 96 trading days
         order = {"id": f"{coin}-{tf}-{dec['t_dec']}", "cid": a["id"], "agent": a["name"], "coin": coin, "group": group,
                  "limit": entry, "stop": stop, "target": target, "units": units, "size": dec["size"], "risk_amt": risk_amt,
-                 "reserved": reserved, "placed": now_ms(), "expires": dec["t_dec"] + dec["order_ms"],
-                 "hold_ms": dec["hold_ms"], "council": tf, "m": round(dec["m"], 3)}
+                 "reserved": reserved, "placed": now_ms(), "expires": dec["t_dec"] + order_ms, "hold_ms": hold_ms,
+                 "tp1": tp1, "frac": frac, "council": tf, "m": round(dec["m"], 3)}
         with self.lock:
             self.s["cash"] -= reserved
             self.s["orders"].append(order)
         self.log("execs", {"t": now_ms(), "kind": "ORDER", "coin": coin, "agent": a["name"], "px": entry,
-                           "text": f"{tf} council · limit buy {jv.px(entry)} · stop {jv.px(stop)} · target {jv.px(target)}"})
-        self.notify("buy", f"BUY {coin}", f"Limit {jv.px(entry)} · Sell {jv.px(target)} · Stop {jv.px(stop)} · {a['name']} ({tf})")
+                           "text": f"{tf} council · limit buy {jv.px(entry)} · stop {jv.px(stop)} · "
+                                   + (f"sell half {jv.px(tp1)}, rest " if tp1 else "") + f"target {jv.px(target)}"})
+        self.notify("buy", f"BUY {coin}", f"Limit {jv.px(entry)} · " + (f"Half at {jv.px(tp1)} · " if tp1 else "")
+                    + f"Sell {jv.px(target)} · Stop {jv.px(stop)} · {a['name']} ({tf})")
+
+    def fees_for(self, group):
+        return FEES_MKT if group == "markets" else FEES[self.s["fees"]]
 
     # ------------------------------------------------------------ every minute: the paper broker
     def tick(self):
@@ -318,7 +384,7 @@ class Engine:
             if rows:
                 quotes[coin] = rows
                 self.market.setdefault(coin, {})["price"] = rows[-1][4]
-        for coin in coins:
+        for coin in [x for x in coins if x in COINS]:
             rows = quotes.get(coin)
             gap_h = (now_ms() - since.get(coin, now_ms())) / HOUR
             if gap_h > 3:                                             # the app was off: catch up on hourly candles
@@ -328,6 +394,17 @@ class Engine:
                     pass
             if rows:
                 self.broker(coin, rows)
+        if now_ms() - getattr(self, "_mkt_tick", 0) >= 15 * 60_000:
+            self._mkt_tick = now_ms()
+            for sym in [x for x in coins if x in mk.YAHOO]:
+                try:
+                    final, live = mk.fetch_daily(sym, 30)
+                except Exception:                                     # noqa: BLE001
+                    continue
+                rows = final[-10:] + ([live] if live else [])
+                if rows:
+                    self.market.setdefault(sym, {})["price"] = rows[-1][4]
+                    self.broker(sym, rows)
         eq = self.equity()
         with self.lock:
             last = self.s["equity"][-1][0] if self.s["equity"] else 0
@@ -337,11 +414,11 @@ class Engine:
             self.save()
 
     def broker(self, coin, rows):
-        mk, tk = FEES[self.s["fees"]]
         with self.lock:
             for o in list(self.s["orders"]):
                 if o["coin"] != coin:
                     continue
+                mk_, tk_ = self.fees_for(o["group"])
                 fill = None
                 for r in rows:
                     if r[0] < o["placed"]:                         # only candles that began after the order existed
@@ -356,11 +433,13 @@ class Engine:
                         break
                 if fill:
                     px = fill[1]
-                    cost = o["units"] * px * (1 + mk)
+                    cost = o["units"] * px * (1 + mk_)
                     self.s["orders"].remove(o)
                     self.s["cash"] += o["reserved"] - cost
                     pos = {k: o[k] for k in ("id", "cid", "agent", "coin", "group", "stop", "target", "units", "size", "risk_amt", "m")}
-                    pos.update(entry=px, opened=fill[0], expires=fill[0] + o.get("hold_ms", HOLD_H * HOUR), cost=cost, checked=fill[0])
+                    pos.update(entry=px, opened=fill[0], expires=fill[0] + o.get("hold_ms", HOLD_H * HOUR), cost=cost, checked=fill[0],
+                               units0=o["units"], stop0=o["stop"], realized=0.0, moved=False, tp1=o.get("tp1"),
+                               frac=o.get("frac", 0.0), be=px * (1 + mk_ + tk_ + SLIP[o["group"]]))
                     self.s["positions"].append(pos)
                     self.log("execs", {"t": now_ms(), "kind": "FILL", "coin": coin, "agent": o["agent"], "px": px,
                                        "text": f"bought {o['units']:.6g} @ {jv.px(px)}"})
@@ -372,27 +451,44 @@ class Engine:
             for p in list(self.s["positions"]):
                 if p["coin"] != coin:
                     continue
+                mk_, tk_ = self.fees_for(p["group"])
+                sl = SLIP[p["group"]]
                 out = None
                 for r in rows:
                     if r[0] < p["checked"]:
                         continue
-                    if r[3] <= p["stop"]:
-                        out = ("stop", min(r[1], p["stop"]) * (1 - SLIP[p["group"]]), tk)
+                    if r[3] <= p["stop"]:                            # pessimistic: the stop first, as in the backtest
+                        out = ("breakeven" if p.get("moved") else "stop", min(r[1], p["stop"]) * (1 - 2 * sl), tk_)
                         break
+                    if p.get("tp1") and not p.get("moved") and r[2] >= p["tp1"]:
+                        self.partial(p, p["tp1"], mk_)
                     if r[2] >= p["target"]:
-                        out = ("target", p["target"], mk)
+                        out = ("target", p["target"], mk_)
                         break
                     if r[0] >= p["expires"]:
-                        out = ("time", r[1] * (1 - SLIP[p["group"]]), tk)
+                        out = ("time", r[1] * (1 - sl), tk_)
                         break
                 p["checked"] = rows[-1][0]
                 if out:
                     self.close(p, *out)
 
+    def partial(self, p, px, fee):
+        """First target hit: sell the planned part, move the stop to breakeven (entry + fees)."""
+        u = p["units"] * p["frac"]
+        proceeds = u * px * (1 - fee)
+        p["units"] -= u
+        p["realized"] = p.get("realized", 0.0) + proceeds
+        p["moved"] = True
+        p["stop"] = max(p["stop"], p["be"])
+        self.s["cash"] += proceeds
+        self.log("execs", {"t": now_ms(), "kind": "SELL", "coin": p["coin"], "agent": p["agent"], "px": px,
+                           "text": f"sold {p['frac'] * 100:.0f}% @ {jv.px(px)} · first target · stop moved to breakeven {jv.px(p['stop'])}"})
+        self.notify("sell", f"SELL HALF {p['coin']}", f"First target {jv.px(px)} hit · stop now at breakeven {jv.px(p['stop'])}")
+
     def close(self, p, reason, px, fee):
         proceeds = p["units"] * px * (1 - fee)
-        pnl = proceeds - p["cost"]
-        risk = p["units"] * (p["entry"] - p["stop"])
+        pnl = proceeds + p.get("realized", 0.0) - p["cost"]
+        risk = p.get("units0", p["units"]) * (p["entry"] - p.get("stop0", p["stop"]))
         r = pnl / risk if risk > 0 else 0.0
         self.s["positions"].remove(p)
         self.s["cash"] += proceeds
@@ -401,7 +497,8 @@ class Engine:
         al = self.s["agent_live"].setdefault(p["cid"], [0, 0.0])
         al[0] += 1
         al[1] += r
-        word = {"target": "target hit", "stop": "stop-loss hit", "time": "time limit reached"}[reason]
+        word = {"target": "target hit", "stop": "stop-loss hit", "time": "time limit reached",
+                "breakeven": "breakeven stop (part already sold)"}[reason]
         self.log("execs", {"t": now_ms(), "kind": "SELL", "coin": p["coin"], "agent": p["agent"], "px": px,
                            "text": f"sold @ {jv.px(px)} · {word} · {pnl:+,.2f} ({r:+.2f}R)"})
         self.notify("sell", f"SELL {p['coin']}", f"{word} · {pnl:+,.2f} ({r:+.2f}R)")
@@ -412,7 +509,7 @@ class Engine:
             for p in list(self.s["positions"]):
                 if p["id"] == pid:
                     px = (self.market.get(p["coin"]) or {}).get("price") or p["entry"]
-                    self.close(p, "time", px, FEES[self.s["fees"]][1])
+                    self.close(p, "time", px, self.fees_for(p["group"])[1])
         self.save()
 
     # ------------------------------------------------------------ learning from every signal
