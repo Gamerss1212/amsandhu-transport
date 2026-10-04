@@ -48,13 +48,15 @@ button, input, select, textarea { font: inherit; color: inherit; }
 /* ------------------------------------------------------------------ top bar */
 .topbar {
   position: sticky; top: 0; z-index: 30;
-  display: flex; align-items: center; gap: 14px;
+  display: flex; align-items: center; gap: 14px; row-gap: 8px;
+  flex-wrap: wrap;               /* never push EMERGENCY STOP off a narrower window: wrap to a second row instead */
   padding: 8px 16px;
   background: linear-gradient(180deg, rgba(10, 4, 20, 0.97), rgba(8, 3, 16, 0.90));
   border-bottom: 1px solid var(--line);
   box-shadow: 0 6px 28px rgba(0, 0, 0, 0.6);
   overflow: hidden;
 }
+.topbar .tools { display: flex; align-items: center; gap: 10px; row-gap: 8px; flex-wrap: wrap; justify-content: flex-end; margin-left: auto; }
 .topbar::after {
   content: ""; position: absolute; left: -30%; bottom: 0; height: 1px; width: 30%;
   background: linear-gradient(90deg, transparent, var(--magenta), transparent);

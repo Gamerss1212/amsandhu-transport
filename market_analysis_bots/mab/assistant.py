@@ -26,6 +26,7 @@ from __future__ import annotations
 
 import json
 import re
+import sys
 import time
 from datetime import datetime, timezone
 from typing import Callable, List, Optional
@@ -159,7 +160,9 @@ class Assistant:
         enabled = bool(self.st.kv_get("assistant_enabled", True))
         why = None
         if not sdk:
-            why = "the 'anthropic' Python package is not installed (pip install anthropic)"
+            why = ("this Windows download leaves out the optional AI research assistant (to keep it small); everything "
+                   "else works" if getattr(sys, "frozen", False) else
+                   "the 'anthropic' Python package is not installed (pip install anthropic)")
         elif not has_key:
             why = "add an Anthropic API key (Connections -> AI research assistant)"
         elif not enabled:

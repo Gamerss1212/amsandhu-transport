@@ -75,9 +75,9 @@ function shell() {
   replace($('#root'),
     h('header.topbar',
       h('div.brand', h('div.logo'), h('div', 'JARVUS', h('small', 'research · paper · live'))),
-      nav, h('div.spacer'),
-      h('span.row', ws.kind === 'demo' ? modeBadge('demo') : null, wsSel),
-      ap, streamPill, live, eng, emergency),
+      nav,
+      h('div.tools', h('span.row', ws.kind === 'demo' ? modeBadge('demo') : null, wsSel),
+        ap, streamPill, live, eng, emergency)),
     h('div#banners'),
     h('main#view'),
     bottom);
