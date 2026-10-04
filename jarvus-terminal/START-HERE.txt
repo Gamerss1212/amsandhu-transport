@@ -22,6 +22,8 @@ WHAT'S NEW: THE ULTRON BRAIN
   Each bot buys only when its council's trained brain approves (25 agents, volatility gate, trend, learned edge,
   fee check), then manages the trade: stop-loss at the council's level, target at 2R, time limit.
   The Fleet Brain starts from ULTRON's measured walk-forward results for each market, priced at your fees.
+  Command Center -> ULTRON brain shows each council: its markets, what its bots are doing, what it holds, its latest
+  buys and sells, and its tested result at your fees. Starting a bot yourself? The builder lists ULTRON first.
 
 PAPER MONEY (the default)
   "Your money" at the top of Command is the paper account, live: it moves with every trade and every price tick, and
