@@ -168,3 +168,36 @@ def test_live_record_judged_at_the_fees_paid():
     fleet.fee_profile = "kraken"
     assert Fleet._eval_cost_key(fleet, br) == "retail_kraken"
     assert Fleet._eval_cost_key(fleet, SimpleNamespace(venue="yahoo", c=br.c)) == "base"
+
+
+def test_yahoo_weekend_forex_snapshot_is_not_an_extra_day():
+    """Seen on EURUSD=X on a Sunday: Friday's session as 'Thu 23:00' plus a second row stamped with the last trade time
+    'Fri 21:29'. That is one day, not two: one bar at the session's time with the newest values (as in training)."""
+    from mab.data.adapters import Yahoo
+    wed, thu, fri_snap = 1790809200, 1790895600, 1790976540           # Wed 23:00, Thu 23:00, Fri 21:29 UTC
+
+    class Http:
+        def get_json(self, url, params=None):
+            return {"chart": {"result": [{"meta": {"gmtoffset": 3600}, "timestamp": [wed, thu, fri_snap],
+                                          "indicators": {"quote": [{"open": [1.1327, 1.12488, 1.12435],
+                                                                    "high": [1.134, 1.1251, 1.1265],
+                                                                    "low": [1.131, 1.1247, 1.1238],
+                                                                    "close": [1.1327, 1.12499, 1.12575],
+                                                                    "volume": [0, 0, 0]}]}}]}}
+
+    bars = Yahoo(Http()).bars("EURUSD=X", "1d", limit=10)
+    assert [b.event_time // 1000 for b in bars] == [wed, thu]
+    assert bars[-1].close == 1.12575 and bars[-1].open == 1.12435
+
+
+def test_forex_is_not_stale_over_the_weekend(monkeypatch):
+    from mab.data import quality
+    from mab.data.quality import SeriesQuality
+    day, hour = 86_400_000, 3_600_000
+    fri_session = 1790895600000                                     # Thu 23:00 UTC: Friday's forex session
+    sun_noon = fri_session + 2 * day + 13 * hour                    # Sunday 12:00 UTC, market shut
+    monkeypatch.setattr(quality, "now_ms", lambda: sun_noon)
+    assert SeriesQuality("forex", "1d").evaluate_status(fri_session, 800, 705) == "ok"
+    assert SeriesQuality("crypto", "1d").evaluate_status(fri_session, 800, 705) == "stale"
+    monkeypatch.setattr(quality, "now_ms", lambda: sun_noon + 3 * day)          # Wednesday: really stale
+    assert SeriesQuality("forex", "1d").evaluate_status(fri_session, 800, 705) == "stale"

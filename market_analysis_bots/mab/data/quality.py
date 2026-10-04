@@ -142,6 +142,8 @@ class SeriesQuality:
             return self.status
         grace = max(90_000, step // 2)
         due = last_time + 2 * step + grace          # the bar after the last one should have closed by now
+        if self.asset_type == "forex" and any((d + 3) % 7 == 5 for d in range(last_time // 86_400_000, now // 86_400_000 + 1)):
+            due += 2 * 86_400_000                   # forex shuts from Friday to Sunday evening (UTC): no bars due then
         if now > due:
             self.status = "stale"
         elif history < warmup:

@@ -299,6 +299,18 @@ class Yahoo(Adapter):
                 continue
             bars.append(Bar(self.venue, symbol, tf, int(t) * 1000, float(o[i]), float(h[i]), float(l[i]),
                             float(c[i]), float((v[i] if i < len(v) else 0) or 0), recv, "yahoo.chart.v8"))
+        if tf == "1d":
+            # Yahoo can add a second row for the latest session, stamped with its last trade time (forex at the
+            # weekend: Thu 23:00 and Fri 21:29 are both Friday). One bar per local trading day: the session's own
+            # time stamp with the newest values, the way the ULTRON councils' training data was built.
+            off = int((res.get("meta") or {}).get("gmtoffset") or 0) * 1000
+            day: Dict[int, Bar] = {}
+            for b in sorted(bars, key=lambda x: x.event_time):
+                d = (b.event_time + off) // 86_400_000
+                if d in day:
+                    b.event_time = day[d].event_time
+                day[d] = b
+            bars = list(day.values())
         return self._complete(bars, tf, now)[-limit:]
 
     def trades(self, symbol, limit=500):
