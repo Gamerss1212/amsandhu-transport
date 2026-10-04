@@ -15,6 +15,7 @@ export function mount(view) {
   const acctSel = h('select#acct-sel', { 'aria-label': 'Account', style: { width: 'auto', minWidth: '220px' }, onchange: (e) => { st.account = e.target.value; renderAccount(); loadEquity(); loadTrades(); } });
   view.append(
     moneyPanel(),
+    ultronPanel(),
     analysisPanel(),
     autopilotPanel(),
     goalPanel(),
@@ -47,6 +48,8 @@ export function mount(view) {
   st.anaAll = false;
   loadAnalysis();
   st.timers.push(setInterval(() => { if (!document.hidden) loadAnalysis(); }, 10000));
+  loadUltron();
+  st.timers.push(setInterval(() => { if (!document.hidden) loadUltron(); }, 15000));
   st.unsub.push(on('state', (d) => { if (d.money) renderMoney(d.money); }));
   loadBuilder();
   st.timers.push(setInterval(() => { loadEquity(); loadTrades(); }, 30000), setInterval(loadCandles, 20000));
@@ -188,6 +191,57 @@ function renderMoney(m) {
     { label: 'P&L', n: true, v: t => h('span', { class: `pnl-pill ${cls(t.pnl)}` }, signed(t.pnl)) },
     { label: 'Why', v: t => t.exit_reason },
   ], m.recent_trades || [], { empty: 'No closed trades yet.' }));
+}
+
+// ---------------------------------------------------------------- ULTRON: the trained councils inside the fleet
+function ultronPanel() {
+  return h('section.panel.ultron#ultron', { style: { marginTop: '12px' } },
+    h('h2', 'ULTRON brain', h('span.right', h('span.note#ul-sum'))),
+    h('p.note', 'The trained ULTRON councils (25 agents and a learned brain per timeframe, the same models as the ULTRON ',
+      'TradingView indicator) each run a bot per market. A bot buys only when its council approves, then the stop, the 2R ',
+      'target and the time limit manage the trade.'),
+    h('div#ul-table', h('div.empty', 'Loading ULTRON…')),
+    h('h3', { style: { marginTop: '10px' } }, 'Latest ULTRON buys and sells'), h('div#ul-recent'),
+    h('p.note#ul-note', { style: { marginTop: '8px' } }));
+}
+
+async function loadUltron() {
+  try { renderUltron(await api('/api/ultron')); } catch { /* next poll */ }
+}
+
+const UL_STATE = { idle_no_signal: 'ready', running: 'in a trade', warming: 'loading data', closed: 'market closed',
+                   data_unavailable: 'no data', degraded: 'data issue', paused: 'paused', disabled: 'off', stopped: 'stopped' };
+function ulStates(c) {
+  const parts = Object.entries(c.states || {}).sort((a, b) => b[1] - a[1]).map(([k, n]) => `${n} ${UL_STATE[k] || k}`);
+  return parts.length ? parts.join(' · ') : 'engine stopped';
+}
+function ulTested(t) {
+  if (!t) return h('span.note', 'not measured');
+  const x = t.test || {};
+  return h('span', h(`b.${cls(x.expectancy_r)}`, `${r(x.expectancy_r)} × ${x.trades}`),
+    h('div.note', `untouched test · all periods ${r(t.all.expectancy_r)} × ${t.all.trades}`));
+}
+
+function renderUltron(u) {
+  if (!$('#ultron')) return;
+  const cs = u.councils || [];
+  const tot = cs.reduce((a, c) => a + c.bots, 0), open = cs.reduce((a, c) => a + c.open.length, 0);
+  const ready = cs.reduce((a, c) => a + ((c.states || {}).idle_no_signal || 0) + ((c.states || {}).running || 0), 0);
+  replace($('#ul-sum'), u.engine ? `${tot} bots · ${ready} watching · ${open} in a trade` : 'engine stopped');
+  replace($('#ul-table'), table([
+    { label: 'Council', v: c => h('span', h('b', c.name.replace(/^ULTRON (\w)/, (m, a) => a.toUpperCase())), h('div.note', c.markets.length > 6
+      ? `${c.markets.slice(0, 6).map(m => m.replace(/-USD$|=X$/, '')).join(', ')} +${c.markets.length - 6} more`
+      : c.markets.map(m => m.replace(/-USD$|=X$/, '')).join(', '))) },
+    { label: 'Its bots now', v: c => h('span', ulStates(c), h('div.note', `${c.trades} paper trade${c.trades === 1 ? '' : 's'} so far`)) },
+    { label: 'Holding', v: c => c.open.length ? h('span', c.open.map(o => h('div', h('b', o.instrument), ' ', h('span.note', o.position)))) : h('span.dim', 'nothing') },
+    { label: 'Tested per trade (your fees)', n: true, v: c => ulTested(c.tested) },
+  ], cs, { empty: 'No ULTRON councils found.' }));
+  replace($('#ul-recent'), (u.recent || []).length
+    ? h('ul.fills', u.recent.map(x => h('li', h('span.t', time(x.decision_time)),
+        h(`b.${x.action === 'exit' ? 'down' : 'up'}`, x.action === 'exit' ? 'SELL' : 'BUY'), ' ', h('b', x.instrument), ' ',
+        h('span.note', x.reason || ''))))
+    : h('div.empty', 'No ULTRON trade yet. It is picky on purpose: about 50 buy signals a month across all its markets.'));
+  replace($('#ul-note'), u.note || '');
 }
 
 // ---------------------------------------------------------------- WHAT THE AI SEES: its own reading of every market

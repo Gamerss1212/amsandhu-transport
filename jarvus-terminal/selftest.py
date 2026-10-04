@@ -163,6 +163,8 @@ def main() -> int:
     check("backtest summary route", code == 200)
     code, mv = req("/api/money")
     check("Your money (the AI's account) route", code == 200 and mv.get("real_money") in (False, None) and "positions" in mv)
+    code, ul = req("/api/ultron")
+    check("ULTRON councils route", code == 200 and len(ul.get("councils", [])) == 5 and all(c["tested"] for c in ul["councils"]), str(ul)[:200])
     code, an = req("/api/analysis")
     check("What the AI sees route", code == 200 and isinstance(an.get("markets"), list))
     code, fe = req("/api/fees")

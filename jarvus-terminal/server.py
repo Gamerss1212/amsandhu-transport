@@ -210,6 +210,48 @@ def analysis_view(ctx):
             "note": "The AI's analysis appears while the bot engine runs (press START AUTOPILOT)."}
 
 
+ULTRON_FEES = {"ndax": "ndax", "kraken": "retail_kraken", "low_fee": "low_fee_venue"}
+
+
+def ultron_view(ctx):
+    """The ULTRON councils in the fleet: their bots right now, open trades, latest entries and exits, and each
+    council's measured walk-forward result (all its markets together) at the fees the owner pays."""
+    from collections import Counter
+    from engine.supervisor import DEFAULT_FEE_PROFILE
+    import mab
+    wid, st = ctx["wid"], ctx["st"]
+    fee = st.kv_get("fee_profile") or DEFAULT_FEE_PROFILE
+    try:
+        with open(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(mab.__file__))), "results",
+                               "ultron_priors.json"), encoding="utf-8") as fh:
+            runs = json.load(fh)["strategies"]
+    except (OSError, ValueError, KeyError):
+        runs = {}
+    with open(library.REGISTRY, encoding="utf-8") as fh:
+        registry = [b for b in json.load(fh)["bots"] if b["strategy_id"].startswith("STRAT-U")]
+    names = {s["id"]: s["name"] for s in library.library()["strategies"] if s["id"].startswith("STRAT-U")}
+    engine = APP.sup.running(wid)
+    live = {b["bot_id"]: b for b in (fleet_json(wid, "/api/bots", []) if engine else []) if b.get("family") == "ultron"}
+    councils = []
+    for sid in sorted(names):
+        rows = [x for x in runs.get(sid, {}).get("runs", []) if x.get("instrument") == "*"]
+        cost = ULTRON_FEES.get(fee, "ndax")
+        agg = next((x for x in rows if x.get("cost") == cost), None) or next((x for x in rows if x.get("cost") == "base"), None)
+        mine = [b for b in registry if b["strategy_id"] == sid]
+        now = [live[b["bot_id"]] for b in mine if b["bot_id"] in live]
+        states = Counter("closed" if (x.get("message") or "").startswith("market closed") else x.get("state") for x in now)
+        councils.append({
+            "strategy_id": sid, "name": names[sid], "markets": [b["instrument"] for b in mine],
+            "bots": len(mine), "states": dict(states), "trades": sum(x.get("trades") or 0 for x in now),
+            "open": [{"bot_id": x["bot_id"], "instrument": x["instrument"], "position": x["position"]} for x in now if x.get("position")],
+            "tested": None if agg is None else {"fees": agg["cost"], "test": agg["test"], "all": agg["full"]}})
+    recent = st.query("SELECT bot_id, instrument, bar_time, decision_time, action, reason FROM signals WHERE bot_id LIKE "
+                      "'BOT-U%' AND action NOT IN ('no_trade', 'hold') ORDER BY id DESC LIMIT 12")
+    return {"engine": engine, "fee_profile": fee, "councils": councils, "recent": recent,
+            "note": "Tested = every walk-forward trade of the council, entered at market, after your exchange's fees; "
+                    "the untouched test is the period since Dec 2025 that no choice was made on. Past results, not a promise."}
+
+
 def money_view(ctx):
     """The account the AI trades, right now. From the running engine (positions valued at live prices); with the
     engine stopped, from its saved state (valued at the last prices it saw)."""
@@ -749,6 +791,7 @@ GET_ROUTES = {
     "/api/autopilot": autopilot_view,
     "/api/money": money_view,
     "/api/analysis": analysis_view,
+    "/api/ultron": ultron_view,
     "/api/fees": fees_view,
     "/api/projection": projection_view,
     "/api/startup": lambda ctx: __import__("engine.startup", fromlist=["x"]).status(),
