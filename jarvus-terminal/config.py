@@ -22,6 +22,8 @@ WEB_DIR = os.path.join(BUNDLE_DIR, "web")
 # This computer only: the app controls the bots and receives broker keys, so it never listens on a network.
 HOST = "127.0.0.1"
 PORT = int(os.environ.get("JARVUS_PORT", "8787"))
+# Which build is running: a second launch reads it from /api/version to tell "already open" from "an older copy".
+VERSION = "2026.10.04-ultron"
 
 # Resource budgets (environment variables; see .env.example). Research jobs run in separate processes, each with a
 # wall-clock and memory limit, so heavy analysis never slows the bots or the page.

@@ -23,6 +23,7 @@ import io
 import json
 import mimetypes
 import os
+import socket
 import sys
 import threading
 import time
@@ -857,6 +858,9 @@ class Handler(BaseHTTPRequestHandler):
                 return self._file("index.html")
             if route in ("/app.css", "/favicon.svg") or route.startswith("/js/") or route.startswith("/vendor/"):
                 return self._file(route)
+            if route == "/api/version":                        # read by a second launch (see desktop.py)
+                return self._json({"app": "jarvus", "version": config.VERSION, "pid": os.getpid(),
+                                   "ready": APP is not None})
             if route == "/api/auth/state":
                 s = self._session()
                 extra = None
@@ -1001,6 +1005,14 @@ class Handler(BaseHTTPRequestHandler):
 
 class QuietServer(ThreadingHTTPServer):
     daemon_threads = True
+    # On Windows SO_REUSEADDR lets a second copy bind a port another copy is listening on (two sets of bots, and the
+    # browser reaching either). The port must be ours alone: exclusive there, plain reuse elsewhere.
+    allow_reuse_address = sys.platform != "win32"
+
+    def server_bind(self):
+        if sys.platform == "win32" and hasattr(socket, "SO_EXCLUSIVEADDRUSE"):
+            self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_EXCLUSIVEADDRUSE, 1)
+        super().server_bind()
 
     def handle_error(self, request, client_address):
         if isinstance(sys.exc_info()[1], (ConnectionResetError, ConnectionAbortedError, BrokenPipeError)):

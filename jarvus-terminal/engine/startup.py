@@ -70,3 +70,16 @@ def set_enabled(on: bool, reg=None, force: bool = False) -> dict:
     finally:
         reg.CloseKey(key)
     return status(reg, force)
+
+
+def adopt(reg=None) -> bool:
+    """Start-with-Windows was turned on from another copy of Jarvus (an older version in another folder): point it at
+    this copy, so the old one stops starting in the background and holding the port. True when it changed."""
+    reg = reg or _winreg()
+    if reg is None or not supported(reg):
+        return False
+    cur = _read(reg)
+    if not cur or "--background" not in cur or cur.strip().lower() == command().lower():
+        return False
+    set_enabled(True, reg)
+    return True
