@@ -7,7 +7,8 @@ For each timeframe, on that timeframe's own bars (Coinbase, UTC-aligned, built f
   trend    EMA21 > EMA50 and close > EMA200 on the chart, and the previous completed higher-timeframe bar
            (close > EMA50 and EMA21 > EMA50); Bitcoin regime = previous completed UTC day above its 200-day average
   agents   every Pine-portable signal x {majors, memes} x {LOUD, LOUD + uptrend}; exits: limit 0.1% under the close
-           (3 bars), stop 4x ATR(14), one exit at 2R, 96 bars, NDAX fees + slippage
+           (3 bars), stop 4x ATR(14), one exit at 2R, 96 bars (charts faster than 1h: scaled, see exit_profile),
+           NDAX fees + slippage
   brain    train.py's walk-forward (quarterly re-selection of up to 25 agents from finished signals only, learning
            as signals finish) + an improvement loop; development / validation / untouched test as in train.py
 These are exactly the formulas build_pine.py writes into Pine (request.security(..., [1], lookahead_on) for the
@@ -50,6 +51,18 @@ TFS = {"5m": (5 * MIN, "5m", "15"), "15m": (15 * MIN, "5m", "60"), "30m": (30 * 
        "1h": (60 * MIN, "1h", "240"), "2h": (120 * MIN, "1h", "480"), "4h": (240 * MIN, "1h", "D"), "1D": (DAY, "1h", "W")}
 HTF_MS = {"15": 15 * MIN, "60": 60 * MIN, "120": 120 * MIN, "240": 240 * MIN, "480": 480 * MIN, "D": DAY, "W": 7 * DAY}
 SIGNALS = sorted(s for s in T.TV_SIGNALS if s not in sg.PLAYBOOK)
+EXITS = "scaled"                                                       # --exits: "scaled" or "fixed" (4x ATR, 96 bars)
+
+
+def exit_profile(tf):
+    """Charts faster than 1h: stop and hold scaled to the 1-hour structure, so the fee stays a small share of the stop.
+    ATR grows roughly with the square root of time, so stop x sqrt(1h / tf) and hold x (1h / tf) bars."""
+    size, _, htf = TFS[tf]
+    if EXITS == "fixed":
+        return 4.0, 4.0, 96
+    sc = max(1.0, math.sqrt(3_600_000 / size))
+    sh = max(1.0, math.sqrt(3_600_000 / HTF_MS[htf]))
+    return round(4.0 * sc, 3), round(4.0 * sh, 3), int(round(96 * sc * sc))
 COINS = T.MAJORS + T.MEMES
 
 
@@ -95,8 +108,11 @@ def btc_bull_by_day(h1_dir):
 
 
 def build_coin(job):
-    tf, coin, h1_dir, m5_dir, gate_model, bull_day = job
+    tf, coin, h1_dir, m5_dir, gate_model, bull_day, exits = job
+    global EXITS
+    EXITS = exits
     size, src, htf = TFS[tf]
+    stop_c, stop_h, hold = exit_profile(tf)
     path = os.path.join(m5_dir if src == "5m" else h1_dir, f"{coin}_{src}.csv")
     if not os.path.exists(path):
         return coin, [], None
@@ -136,13 +152,13 @@ def build_coin(job):
 
     def emit(j, i, sid, key, stop_atr):
         """signal at bar j (chart bar i decides) -> one event per matching condition."""
-        if not p["atr"][i] or not (0.5 <= stop_atr <= 40):
+        if not p["atr"][i] or not (0.5 <= stop_atr <= 60):
             return
         g = gate[i]
         if g == "U" or (not allvars and g != "L"):
             return
         tr = st.trade_path(p, int(i), "x", st.FEES["ndax"], kind, entry="maker", stop_atr=stop_atr, rung=None, target_r=2.0,
-                           tp1_bars=0, horizon=96)
+                           tp1_bars=0, horizon=hold)
         if tr is None:
             return
         t_dec = int(t[i]) + size
@@ -163,7 +179,7 @@ def build_coin(job):
             if j < 250 or j - last < 12 or j >= n - 3:
                 continue
             last = j
-            emit(j, j, sid, tf, 4.0)
+            emit(j, j, sid, tf, stop_c)
     # signals on the higher timeframe's bars, acted on at the chart bar that closes that bar
     hv = aggregate(t, o, h, l, c, v, HTF_MS[htf], weekly)[5]
     _, ho, hh, hl, _, _ = aggregate(t, o, h, l, c, v, HTF_MS[htf], weekly)
@@ -183,25 +199,27 @@ def build_coin(job):
             i = end_of.get(int(hk[jh]))                                # decide when the higher-timeframe bar closes
             if i is None or i < 250 or i >= n - 3 or not p["atr"][i]:
                 continue
-            emit(jh, i, sid, tf + "+", round(4.0 * float(AH[jh]) / p["atr"][i], 3))
+            emit(jh, i, sid, tf + "+", round(stop_h * float(AH[jh]) / p["atr"][i], 3))
     return coin, out, None
 
 
 def train_tf(tf, a, bull_day, base_params, log):
     t0 = time.time()
-    cache = os.path.join(a.cache, f"ultron_tf_{tf}.pkl")
+    stop_c, stop_h, hold = exit_profile(tf)
+    tag = "" if (stop_c, stop_h, hold) == (4.0, 4.0, 96) else f"_x{stop_c:g}_{hold}"
+    cache = os.path.join(a.cache, f"ultron_tf_{tf}{tag}.pkl")
     if os.path.exists(cache):
         with open(cache, "rb") as fh:
             events, defs, gate_model, first_t = pickle.load(fh)
     else:
         with Pool(a.workers) as pool:
-            raw = pool.map(build_coin, [(tf, c, a.h1, a.m5, None, None) for c in COINS])
+            raw = pool.map(build_coin, [(tf, c, a.h1, a.m5, None, None, EXITS) for c in COINS])
         data = [x[2] for x in raw if x[2] is not None]
         first_t = min(int(d[0][0]) for d in data)
         bd = max(1, int(DAY // TFS[tf][0]))
         gate_model = pg.fit(data, T.B_START, T.C_START, window=min(720, max(120, 30 * bd)))
         with Pool(a.workers) as pool:
-            got = pool.map(build_coin, [(tf, c, a.h1, a.m5, gate_model, bull_day) for c in COINS])
+            got = pool.map(build_coin, [(tf, c, a.h1, a.m5, gate_model, bull_day, EXITS) for c in COINS])
         events = sorted((e for _, evs, _ in got for e in evs), key=lambda e: (e[0], e[1], e[2]))
         defs = {}
         for e in events:
@@ -244,12 +262,14 @@ def train_tf(tf, a, bull_day, base_params, log):
              "data_from": datetime.fromtimestamp(first_t / 1000, timezone.utc).strftime("%Y-%m-%d"),
              "data_end": datetime.fromtimestamp(events[-1][0] / 1000, timezone.utc).strftime("%Y-%m-%d") if events else None,
              "walk_forward_from": datetime.fromtimestamp(T.WF_START / 1000, timezone.utc).strftime("%Y-%m-%d"),
+             "exit": {"stop_chart": stop_c, "stop_htf": stop_h, "hold": hold},
              "params": params, "gate": gate_model, "agents": agents,
              "backtest": {"metrics": final["metrics"], "decisions": final["decisions"], "stress": {k: v["all"] for k, v in stress.items()},
                           "windows": win, "bootstrap": boot, "iterations": len(it_log) - 1,
                           "kept": sum(1 for x in it_log if x["kept"]) - 1}}
-    os.makedirs(os.path.join(ROOT, "tv", "models"), exist_ok=True)
-    with open(os.path.join(ROOT, "tv", "models", f"{tf}.json"), "w") as fh:
+    out_dir = a.out or os.path.join(ROOT, "tv", "models")
+    os.makedirs(out_dir, exist_ok=True)
+    with open(os.path.join(out_dir, f"{tf}.json"), "w") as fh:
         json.dump(model, fh, separators=(",", ":"))
     m = final["metrics"]
     log(f"[{tf}] agents {len(agents)} · dev {T.fmt(m['dev'])} | B {T.fmt(m['B'])} | C {T.fmt(m['C'])} | all {T.fmt(m['all'])} "
@@ -262,11 +282,15 @@ def main():
     ap.add_argument("--h1", required=True)
     ap.add_argument("--m5", required=True)
     ap.add_argument("--tfs", default="1h,2h,4h,1D,5m,15m,30m")
-    ap.add_argument("--iters", type=int, default=100)
+    ap.add_argument("--iters", type=int, default=150)
+    ap.add_argument("--exits", choices=["scaled", "fixed"], default="scaled")
+    ap.add_argument("--out", default=None, help="write models here instead of ultron/tv/models")
     ap.add_argument("--workers", type=int, default=4)
     ap.add_argument("--cache", default=None)
     a = ap.parse_args()
     a.cache = a.cache or a.h1
+    global EXITS
+    EXITS = a.exits
     with open(os.path.join(ROOT, "tv", "tv_model.json")) as fh:
         base = dict(json.load(fh)["params"], gate_rule="loud_only", variants="all")
     base["n_agents"] = 25
