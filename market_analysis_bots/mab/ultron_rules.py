@@ -136,7 +136,13 @@ def compute(ev, name):
         if name == "4h" and ev.resolver is not None:          # the real daily bars: the HTF history the council trained with
             g = ev.resolver(f.venue, f.instrument, "1d")
             if g is not None and g.n >= 60:
-                htf = (g.t, g.o, g.h, g.l, g.c, g.v)
+                htf = [list(x) for x in (g.t, g.o, g.h, g.l, g.c, g.v)]
+                # a day the hourly chart has closed but the exchange has not published as a daily bar yet (just after
+                # midnight UTC): built from the hourly bars, so the 4h bar closing at midnight sees it as training did
+                late = [[f.t[i], f.o[i], f.h[i], f.l[i], f.c[i], f.v[i]] for i in range(n) if f.t[i] >= htf[0][-1] + DAY]
+                for row in cn.aggregate(late, DAY):
+                    for col, x in zip(htf, row):
+                        col.append(x)
         ok, dist, edge, _ = cn.series(m, t, o, h, l, c, v, bull, wk, FEES["crypto"], SLIP[group], group, htf=htf)
         ref = c
     for j, i in enumerate(idx):

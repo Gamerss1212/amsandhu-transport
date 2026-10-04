@@ -184,6 +184,7 @@ class Fleet(DeploymentMixin):
         self.live = self._make_live()
         self.bots: Dict[str, BotRunner] = {}
         self.by_series: Dict[Tuple[str, str, str], List[str]] = {}
+        self.refs_by_series: Dict[Tuple[str, str, str], List[str]] = {}   # bots that also read a series (not their chart)
         self.paused = bool(self.storage.kv_get("paused", False))
         self.emergency = self.storage.kv_get("emergency", None)
         self.running = False
@@ -290,6 +291,10 @@ class Fleet(DeploymentMixin):
                                    asset_type=inst["asset_type"], orderflow=br.orderflow)
             br.series_keys.append(s.key)
         self.by_series.setdefault(base, []).append(br.id)
+        for k in br.series_keys:
+            refs = self.refs_by_series.setdefault(k, [])
+            if k != base and br.id not in refs:
+                refs.append(br.id)
 
     # ================================================================== lifecycle
     def start(self):
@@ -345,19 +350,29 @@ class Fleet(DeploymentMixin):
                 key, added, initial = self.q.get(timeout=0.5)
             except queue.Empty:
                 continue
-            self.stats["events"] += 1
-            ids = self.by_series.get(key, [])
-            if not ids or not added:
-                continue
-            s = self.hub.get(*key)
-            frame = s.frame()
-            for bid in ids:
+            self._on_event(key, added, initial)
+
+    def _on_event(self, key, added, initial):
+        self.stats["events"] += 1
+        ids = self.by_series.get(key, [])
+        if initial and added:          # a series another bot reads has loaded: re-check that bot now, not at its next bar
+            for bid in self.refs_by_series.get(key, ()):
                 br = self.bots.get(bid)
-                if br is None or not br.enabled:
-                    continue
-                br.scheduled += 1
-                self._evaluate(br, frame, sorted(added), initial)
-            self._persist_states([bid for bid in ids])
+                base = self.hub.get(br.venue, br.symbol, br.tf) if br is not None and br.enabled else None
+                if base is not None and base.times:
+                    self._evaluate(br, base.frame(), [], True)
+                    self._persist_states([bid])
+        if not ids or not added:
+            return
+        s = self.hub.get(*key)
+        frame = s.frame()
+        for bid in ids:
+            br = self.bots.get(bid)
+            if br is None or not br.enabled:
+                continue
+            br.scheduled += 1
+            self._evaluate(br, frame, sorted(added), initial)
+        self._persist_states([bid for bid in ids])
 
     def _series_status(self, br: BotRunner) -> Tuple[str, str]:
         worst, msg = "ok", ""

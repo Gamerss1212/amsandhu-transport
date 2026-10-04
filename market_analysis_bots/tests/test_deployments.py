@@ -176,3 +176,17 @@ def test_live_needs_separate_authorisation_and_explicit_confirmation(fleet):
     rep = fleet.readiness({"bot_id": b["bot_id"], "mode": "live", "connection_id": "demo-main", "allocation": 100})
     assert any(c["id"] == "live_auth" and c["status"] == "fail" for c in rep["checks"])
     assert any(c["id"] == "demo_ws" and c["status"] == "fail" for c in rep["checks"])
+
+
+def test_bot_rechecked_when_a_series_it_reads_finishes_loading(fleet):
+    """A bot that also reads another series is re-checked when that series loads, instead of showing 'warming' until
+    the next bar of its own chart (an hour for the ULTRON crypto bots)."""
+    fleet.strategies["TEST-REF"] = dict(STRAT, id="TEST-REF", entry={"long": 'tf("5m", close) > 0'})
+    b = fleet.create_user_bot({"strategy_id": "TEST-REF", "venue": "demo", "instrument": "DEMO-BTC"})
+    br = fleet.bots[b["bot_id"]]
+    own, ref = fleet.hub.get("demo", "DEMO-BTC", "1m"), fleet.hub.get("demo", "DEMO-BTC", "5m")
+    assert br.id in fleet.refs_by_series[ref.key]
+    fleet._on_event(own.key, fleet.hub.refresh(own), True)
+    assert br.state == "warming"                                # its 5m bars are not loaded yet
+    fleet._on_event(ref.key, fleet.hub.refresh(ref), True)
+    assert br.state == "idle_no_signal", br.message             # re-checked as soon as they are

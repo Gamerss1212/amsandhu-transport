@@ -302,8 +302,8 @@ class Hub:
     def _backfill(self, s: Series) -> List[Bar]:
         ad = self.adapters[s.venue]
         need = s.need + 5
-        if s.venue == "yahoo":
-            return ad.bars(s.symbol, s.tf, limit=10 ** 6, prepost=s.quality.extended_hours)[-need:]
+        if s.venue == "yahoo":       # one request either way: keep the whole window, so bars dropped as invalid still leave `need`
+            return ad.bars(s.symbol, s.tf, limit=10 ** 6, prepost=s.quality.extended_hours)[-s.maxlen:]
         if s.venue == "kraken":
             return ad.bars(s.symbol, s.tf, limit=min(need, KRAKEN_MAX_BARS))
         out: Dict[int, Bar] = {}

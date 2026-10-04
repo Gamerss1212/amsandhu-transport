@@ -99,6 +99,59 @@ def test_research_job_feeds_the_council_its_other_history(monkeypatch, tmp_path)
     assert set(res["segments"]) >= {"train", "validation", "test"} and "checks" in res
 
 
+def test_4h_council_does_not_wait_for_the_exchange_to_publish_the_daily_bar(monkeypatch):
+    """Just after midnight UTC the hourly chart has closed the day before the daily feed shows it: the council builds
+    that day from the hourly bars, so it sees the same daily history as with the published bar."""
+    from mab import ultron_rules
+    import council as cn
+    day, hour = 86_400_000, 3_600_000
+    start = 1_700_000_000_000 // day * day
+    cols = _walk(24 * 95, hour, start, seed=3)
+    rows = cn.aggregate([list(r) for r in zip(*cols)], day)
+    early = _walk(300, day, start - 300 * day, seed=53)
+    full = [list(a) + [r[k] for r in rows] for k, a in enumerate(early)]
+    seen = {}
+    real = cn.series
+
+    def spy(*a, **kw):
+        seen[len(seen)] = [list(x) for x in kw["htf"]]
+        return real(*a, **kw)
+
+    monkeypatch.setattr(cn, "series", spy)
+    for daily in (full, [c[:-1] for c in full]):                 # published, and not published yet
+        g = Frame.from_columns("coinbase", "BTC-USD", "1d", "crypto", *daily)
+        f = Frame.from_columns("coinbase", "BTC-USD", "1h", "crypto", *cols)
+        ultron_rules.compute(expr.Evaluator(f, lambda v, s, t: g), "4h")
+    assert seen[0] == seen[1] and seen[1][0][-1] == rows[-1][0]
+
+
+def test_daily_backfill_still_warms_up_when_some_bars_are_invalid():
+    """Yahoo forex history has bad bars (high below low...); the back-fill keeps enough good ones for the council."""
+    from mab.data.hub import Hub
+    from mab.models import Bar, now_ms
+    from mab.net import Http
+    day = 86_400_000
+    end = now_ms() // day * day
+
+    class Yahoo:
+        def supports(self, tf):
+            return True
+
+        def bars(self, symbol, tf, limit=300, prepost=False, **kw):
+            out = []
+            for k in range(1200, 0, -1):
+                t, px = end - k * day, 1.1 + 0.001 * (k % 17)
+                hi, lo = (px * 0.99, px * 1.01) if k % 25 == 0 else (px * 1.01, px * 0.99)   # every 25th is impossible
+                out.append(Bar("yahoo", symbol, tf, t, px, hi, lo, px, 0.0))
+            return out
+
+    h = Hub(Http())
+    h.adapters["yahoo"] = Yahoo()
+    s = h.subscribe("yahoo", "EURUSD=X", "1d", 705, "bot", "forex")
+    h.refresh(s)
+    assert len(s.times) >= 705 and s.status() != "warming"
+
+
 class SimpleQueue:
     def cache_get(self, key):
         return None
