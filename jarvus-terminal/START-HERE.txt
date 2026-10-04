@@ -42,10 +42,13 @@ REAL MONEY (only when you switch it on yourself)
   is the many-market walk-forward below and in "ULTRON backtest.md".
 
   HOW OFTEN ULTRON TRADES (be patient - it is picky on purpose)
-  From the walk-forward tests, per year across all its markets:
-    ULTRON 1h BTC/ETH/SOL ~16 trades · 1h meme coins ~41 · 4h BTC/ETH/SOL ~10 · 4h meme coins ~15 · daily markets ~38
-  About 10 trades a month for all 46 bots together. Days with no trade are normal.
-  So 20 paper trades on ONE bot can take a long time. The Live trading authorisation has a box to waive the paper
+  Counted on the last 12 months of real prices (Oct 2025 - Oct 2026), buy signals per bot:
+    ULTRON 1h BTC/ETH/SOL   20-26 each        ULTRON 1h meme coins   14-26 each
+    ULTRON 4h BTC/ETH/SOL   8-13 each         ULTRON 4h meme coins   0-3 each
+    ULTRON daily            0-28 each (most stocks/ETFs 15-25; forex 2-3; META 0, NFLX 2)
+  About 50 a month for all 46 bots together, a bit fewer actual trades (a bot already in a trade waits).
+  These counts show how often it trades, not how much it makes. For results, see TESTED RESULTS below.
+  So 20 paper trades on ONE bot takes about a year. The Live trading authorisation has a box to waive the paper
   record. Ticking it skips your own proof - only do it with an amount you can afford to lose.
   Back to paper at any time: "Revoke live authorisation" pauses every live bot; EMERGENCY STOP blocks all new orders.
   Your live account's money, trades and P&L show on the Live money page and in Your money.
