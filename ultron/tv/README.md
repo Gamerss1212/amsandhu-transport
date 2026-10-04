@@ -103,19 +103,27 @@ The backtest below only applies to the trained defaults.
 | Chart | Agents | Test since Dec 2025 (untouched) | Validation 2025 | Development | All: trades · avg R · return · max DD | LOUD precision (test) | Status |
 |---|---|---|---|---|---|---|---|
 | 5m crypto | 25 | -0.029R × 33 | -0.015R × 182 | +0.013R × 37 | 252 · -0.013R · +0.6% · 2.3% | 81.2% | **flat by default** |
-| 15m crypto | 25 | -0.172R × 18 | -0.013R × 31 | -0.193R × 45 | 94 · -0.130R · -2.6% · 2.8% | 71.5% | **flat by default** |
-| 30m crypto | 25 | +0.005R × 128 | +0.119R × 105 | +0.116R × 80 | 313 · +0.072R · +13.1% · 12.1% | 74.4% | trades |
+| 15m crypto | 25 | -0.195R × 68 | -0.027R × 61 | -0.058R × 55 | 184 · -0.099R · -3.4% · 6.5% | 71.5% | **flat by default** |
+| 30m crypto | 25 | -0.090R × 75 | +0.073R × 73 | +0.344R × 61 | 209 · +0.093R · +10.4% · 11.9% | 74.4% | **flat by default** |
 | 1h crypto | 25 | +0.154R × 56 | +0.192R × 55 | +0.172R × 158 | 269 · +0.173R · +40.6% · 5.9% | 80.2% | trades |
-| 2h crypto | 25 | +0.030R × 67 | +0.264R × 63 | +0.157R × 286 | 416 · +0.153R · +43.6% · 9.7% | 83.1% | trades |
+| 2h crypto | 25 | -0.017R × 65 | +0.264R × 63 | +0.176R × 269 | 397 · +0.159R · +42.2% · 11.0% | 83.1% | **flat by default** |
 | 4h crypto | 25 | +0.069R × 22 | +0.330R × 19 | +0.527R × 81 | 122 · +0.414R · +36.5% · 3.4% | 87.3% | trades |
-| 1D crypto | 25 | +0.495R × 4 | -0.315R × 11 | +0.660R × 33 | 48 · +0.423R · +13.8% · 5.5% | 29.4% | **flat by default** |
+| 1D crypto | 25 | +0.495R × 4 | -0.357R × 14 | +0.532R × 40 | 58 · +0.315R · +14.4% · 6.8% | 29.4% | **flat by default** |
+| 1D markets | 25 | +0.431R × 22 | +0.794R × 25 | +0.355R × 134 | 181 · +0.425R · +91.4% · 14.5% | 79.9% | trades |
 <!-- /RESULTS -->
 
-- **What this means:** 1h is the strongest and steadiest council. 2h, 4h and 30m passed, but their untouched-test
-  edge is thin (30m and 2h are close to break-even since Dec 2025). 5m and 15m found no edge after fees: on fast
-  charts the fee is too large next to the stop. 1D had too few test trades to judge. Councils marked
-  **flat by default** show their backtest and "Flat: no reliable edge on this timeframe in testing" in the table and
-  do not signal buys, unless you switch off "Only trade timeframes that passed the untouched test".
+- **What this means:** three councils trade by default: **1h crypto** (the steadiest), **4h crypto**, and **1D
+  markets** (stocks, ETFs, forex, gold, silver, oil). The others stay flat by default because their untouched test
+  lost money or had too few trades. 2h was positive before the extra 50 improvement steps and slightly negative
+  after; it was not reverted, because choosing by the test result would make the test meaningless. 5m, 15m and 30m
+  found no lasting edge after fees, even with wider exits. Councils marked **flat by default** show their backtest
+  and "Flat: no reliable edge on this timeframe in testing" and do not signal buys, unless you switch off "Only
+  trade timeframes that passed the untouched test".
+- Markets council context: over the same walk-forward (Jan 2022 – Oct 2026), buying and holding SPY returned
+  +59.9% (max drawdown 25.4%) and QQQ +84.7% (35.2%). Not like-for-like: the council is long-only across 28 markets,
+  risks 0.6% per trade, holds up to 8 positions and does best when markets rise. On forex, tight % stops mean large
+  positions; the size is capped at your account size per trade, and your total exposure across charts is yours to
+  manage.
 - 5m, 15m and 30m only have 5-minute data from Oct 2023, so their walk-forward starts in Jul 2024 and their
   development period is shorter.
 - Per-timeframe stress tests (fees ×2, Kraken entry fees, slippage ×3), 200 random 90-day windows and 2,000
