@@ -101,6 +101,13 @@ def key_str(k):
     return "|".join(map(str, k))
 
 
+def mt_str(t_ms):
+    """'Sat 12:00 MT' (Mountain Time, the user's clock)."""
+    dt = datetime.fromtimestamp(t_ms / 1000, timezone.utc)
+    dt = dt - timedelta(hours=6 if evmod.us_dst(dt.date()) else 7)
+    return dt.strftime("%a %H:%M") + " MT"
+
+
 def weekend_mt(t_ms):
     dt = datetime.fromtimestamp(t_ms / 1000, timezone.utc)
     dt = dt - timedelta(hours=6 if evmod.us_dst(dt.date()) else 7)
@@ -360,8 +367,11 @@ class Engine:
         self.log("execs", {"t": now_ms(), "kind": "ORDER", "coin": coin, "agent": a["name"], "px": entry,
                            "text": f"{tf} council · limit buy {jv.px(entry)} · stop {jv.px(stop)} · "
                                    + (f"sell half {jv.px(tp1)}, rest " if tp1 else "") + f"target {jv.px(target)}"})
-        self.notify("buy", f"BUY {coin}", f"Limit {jv.px(entry)} · " + (f"Half at {jv.px(tp1)} · " if tp1 else "")
-                    + f"Sell {jv.px(target)} · Stop {jv.px(stop)} · {a['name']} ({tf})")
+        tf_txt = "daily markets" if mkt else f"{tf} crypto"
+        self.notify("buy", f"BUY {coin} ({tf_txt})",
+                    f"Buy (limit) {jv.px(entry)} · " + (f"sell half at {jv.px(tp1)}, rest at {jv.px(target)}" if tp1 else f"sell at {jv.px(target)}")
+                    + f" · stop {jv.px(stop)}\nSize ${units * entry:,.0f} ({units:.6g} {coin}) · cancel if not filled by "
+                    f"{mt_str(dec['t_dec'] + order_ms)} · agent {a['name']}, learned edge {dec['m']:+.2f}R")
 
     def fees_for(self, group):
         return FEES_MKT if group == "markets" else FEES[self.s["fees"]]

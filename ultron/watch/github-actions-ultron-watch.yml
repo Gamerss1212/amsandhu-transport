@@ -1,0 +1,35 @@
+# OPTIONAL: run ULTRON Watch in the free GitHub cloud (no PC needed). To use it:
+#  1. In your copy of this project's repository, save this file as .github/workflows/ultron-watch.yml on the DEFAULT
+#     branch (GitHub only runs schedules from the default branch).
+#  2. Repository Settings > Secrets and variables > Actions > New repository secret:
+#     name JARVUS_NTFY_TOPIC, value = the topic printed by SETUP-ALERTS (never put it in a file).
+#  3. Subscribe to the same topic in the ntfy app. Scheduled runs are best-effort and can be delayed 5-30 minutes.
+#  Change --account 1000 below to your account size.
+name: ultron-watch
+on:
+  schedule:
+    - cron: "7,22,37,52 * * * *"
+  workflow_dispatch: {}
+permissions:
+  contents: read
+concurrency:
+  group: ultron-watch
+  cancel-in-progress: false
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/cache@v4            # remembers the open plans between runs
+        with:
+          path: .ultron-state
+          key: ultron-state-${{ github.run_id }}
+          restore-keys: ultron-state-
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install numpy
+      - env:
+          JARVUS_NTFY_TOPIC: ${{ secrets.JARVUS_NTFY_TOPIC }}
+        run: python ultron/watch/ultron_watch.py once --state .ultron-state --no-desktop --account 1000

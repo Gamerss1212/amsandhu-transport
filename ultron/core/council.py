@@ -74,7 +74,13 @@ def evaluate(model, coin, rows, htf_rows, bull, weekend, fees, slip, last_fire, 
     n = len(c)
     i = n - 1
     bars_day = max(1, DAY // size)
-    gate = str(pg.states(t, o, h, l, c, v, model["gate"])[i])
+    gm = model["gate"]
+    gate = str(pg.states(t, o, h, l, c, v, gm)[i])
+    very_loud = False
+    if gate == "L" and gm.get("t_vloud"):                               # Radar's VERY LOUD tier (top 1% of scores)
+        X = pg.features(t[-400:], o[-400:], h[-400:], l[-400:], c[-400:], v[-400:])[-1]
+        z = (X - np.array(gm["mean"])) / np.array(gm["std"])
+        very_loud = bool(1 / (1 + np.exp(-(z @ np.array(gm["w_loud"])))) >= gm["t_vloud"])
     up1 = bool(ema_first(c, 21)[i] > ema_first(c, 50)[i] and c[i] > ema_first(c, 200)[i])
     ht, ho, hh, hl, hc, hv = arrays(htf_rows)
     h21, h50 = ema_first(hc, 21), ema_first(hc, 50)
@@ -148,6 +154,7 @@ def evaluate(model, coin, rows, htf_rows, bull, weekend, fees, slip, last_fire, 
             sz = max(0.5, min(1.5, 1 + p["size_a"] * m_)) * (0.5 if cost > 0.20 else 1.0) * (p["loud_mult"] if loud else 1.0)
             best = {"agent": a, "score": score, "m": m_, "size": sz, "stop_dist": stop, "entry": entry, "cost_r": cost,
                     "hold_ms": int(ex["hold"]) * size, "order_ms": 3 * size, "bar_t": int(t[i]), "t_dec": int(t[i]) + size}
-    info = {"tf": tf, "gate": gate, "up": up1, "upH": upH, "firing": firing, "why": "approved" if best else why,
+    info = {"tf": tf, "gate": gate, "very_loud": very_loud, "up": up1, "upH": upH, "firing": firing,
+            "why": "approved" if best else why,
             "price": float(c[i]), "atr": atr, "fired_agents": fired_agents}
     return best, info
