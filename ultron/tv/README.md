@@ -1,14 +1,18 @@
-# ULTRON for TradingView: AI trade council, all timeframes
+# ULTRON for TradingView: AI trade council, all timeframes, crypto and markets
 
-A semi-automatic AI trading council that lives inside TradingView. Each chart timeframe has its own trained
-council: up to 25 agents plus one learned brain. The council watches your chart and decides whether to buy. When
-it does, TradingView shows you (and alerts you) the limit buy, the stop and the target. You place the orders.
-Paper-test it first.
+A semi-automatic AI trading council that lives inside TradingView. Each crypto timeframe (5m to 1D) has its own
+trained council, and a separate council covers daily charts of 28 stocks, ETFs, forex pairs, gold, silver and oil.
+Each council is up to 25 agents plus one learned brain. It watches your chart and decides whether to buy. When it
+does, TradingView shows you (and alerts you) the limit buy, the stop and the target. You place the orders.
+Paper-test it first. `MARKETS.md` explains how each market behaves and what ULTRON covers.
 
 ## Install (2 minutes)
 
-1. In TradingView (website or Desktop app), open a Coinbase pair: `COINBASE:BTCUSD`, `ETHUSD`, `SOLUSD`, `DOGEUSD`,
-   `SHIBUSD`, `PEPEUSD`, `BONKUSD`, `WIFUSD` or `FLOKIUSD`. Any timeframe works.
+1. In TradingView (website or Desktop app), open either:
+   - a Coinbase crypto pair (`COINBASE:BTCUSD`, `ETHUSD`, `SOLUSD`, `DOGEUSD`, `SHIBUSD`, `PEPEUSD`, `BONKUSD`,
+     `WIFUSD`, `FLOKIUSD`) on any timeframe, or
+   - a **daily** chart of one of the trained markets: SPY, QQQ, IWM, DIA, AAPL, MSFT, NVDA, AMZN, GOOGL, META, TSLA,
+     JPM, AMD, NFLX, XIU, RY, TD, ENB, SHOP, CNQ, EURUSD, GBPUSD, USDJPY, USDCAD, AUDUSD, GLD, SLV, USO.
 2. Open **Pine Editor**, delete what is there, paste all of `ULTRON_indicator.pine`, then **Save** → **Add to chart**.
 3. Optional: paste `ULTRON_strategy.pine` as a second script and open **Strategy Tester** to see the same rules
    traded on that chart, after the fees you set.
@@ -28,11 +32,20 @@ timeframe only. Each council also reads one higher timeframe:
 | 4h | 4h | 1D |
 | 1D | 1D | 1W |
 | anything else (1m, 3m, 45m, 3h, 12h, 1W …) | the nearest trained council | (untested on that chart; switch off in settings) |
+| stocks, ETFs, forex, gold, silver, oil: 1D | 1D markets | 1W |
+| stocks, ETFs, forex: intraday | none (stays flat and says so) | |
+
+On charts faster than 1h, the trained stop is wider and the hold longer (scaled to the 1-hour structure), so the
+fee stays a small share of the stop.
 
 The top line of the table names the council in use and says whether it was trained on this timeframe or is the
 nearest one.
 
 ## What you see
+
+**Simple view (default):** a small table with the decision ("WAIT · no setup now", "BUY · limit order waiting",
+"IN TRADE", or why it is flat), then buy price, stop-loss, target, size, and volatility. Switch off "Simple view" in
+Settings → Display to see everything: backtest, trend, regime, agents firing, which agent proposed the trade.
 
 - **Blue background** = the volatility gate says LOUD: a big move is likely soon, direction unknown. The table
   shows how often LOUD calls were right on the untouched test.
@@ -52,7 +65,8 @@ nearest one.
 ## Customise everything (Settings → Inputs)
 
 - **Account & risk:** account size, risk per trade for majors and for memes.
-- **Fees:** your exchange's maker/taker fees (NDAX, Kraken, Coinbase values are in the tooltips).
+- **Fees:** your crypto exchange's maker/taker fees (NDAX, Kraken, Coinbase values are in the tooltips), and
+  your stock/forex cost per side.
 - **Brain:**
   - nearest council on untrained timeframes on/off
   - other markets on/off
@@ -68,13 +82,17 @@ The backtest below only applies to the trained defaults.
 
 ## How it was trained and tested (honest numbers)
 
-- **Data:** Coinbase candles. Hourly from Dec 2020 to Oct 2026 for 1h, 2h, 4h and 1D. 5-minute from Oct 2023 for
-  5m, 15m and 30m, so those have a shorter history and fewer quarters of walk-forward.
+- **Data:**
+  - Coinbase candles. Hourly from Dec 2020 to Oct 2026 for 1h, 2h, 4h and 1D. 5-minute from Oct 2023 for 5m, 15m
+    and 30m, so those have a shorter history and fewer quarters of walk-forward.
+  - Markets council: daily Yahoo Finance candles from 2005 (split-adjusted like TradingView), costed at 0.05% per
+    side plus 0.02% slippage.
 - **Candidates:** every Pine-portable candle and indicator signal × BTC/ETH/SOL or memes × chart or higher
   timeframe × condition (LOUD, uptrend, both, or any). Every candidate was traded with the same exits, after NDAX
-  fees and slippage: limit 0.1% under the close, stop 4×ATR, target 2R, max 96 bars.
+  fees and slippage: limit 0.1% under the close, stop 4×ATR, target 2R, max 96 bars (on 5m–30m: stop 5.7–13.9×ATR,
+  hold 192–1,152 bars, about 4 days).
 - **Walk-forward:** every quarter, each council re-chose its agents using only signals that had already finished,
-  then traded the next quarter. 100 one-at-a-time improvements were tried per timeframe. A change was kept only if
+  then traded the next quarter. 150 one-at-a-time improvements were tried per council. A change was kept only if
   it helped development without hurting validation (Mar–Dec 2025). The test period (since Dec 2025) was never
   used to choose anything.
 - **$10k paper account.** R = average result per trade in units of risk, after costs. A timeframe "passed" if
@@ -84,13 +102,13 @@ The backtest below only applies to the trained defaults.
 <!-- RESULTS -->
 | Chart | Agents | Test since Dec 2025 (untouched) | Validation 2025 | Development | All: trades · avg R · return · max DD | LOUD precision (test) | Status |
 |---|---|---|---|---|---|---|---|
-| 5m | 25 | -0.029R × 33 | -0.015R × 182 | +0.013R × 37 | 252 · -0.013R · +0.6% · 2.3% | 81.2% | **flat by default** |
-| 15m | 25 | -0.172R × 18 | -0.013R × 31 | -0.193R × 45 | 94 · -0.130R · -2.6% · 2.8% | 71.5% | **flat by default** |
-| 30m | 25 | +0.005R × 128 | +0.119R × 105 | +0.116R × 80 | 313 · +0.072R · +13.1% · 12.1% | 74.4% | trades |
-| 1h | 25 | +0.154R × 56 | +0.192R × 55 | +0.172R × 158 | 269 · +0.173R · +40.6% · 5.9% | 80.2% | trades |
-| 2h | 25 | +0.030R × 67 | +0.264R × 63 | +0.157R × 286 | 416 · +0.153R · +43.6% · 9.7% | 83.1% | trades |
-| 4h | 25 | +0.069R × 22 | +0.330R × 19 | +0.527R × 81 | 122 · +0.414R · +36.5% · 3.4% | 87.3% | trades |
-| 1D | 25 | +0.495R × 4 | -0.315R × 11 | +0.660R × 33 | 48 · +0.423R · +13.8% · 5.5% | 29.4% | **flat by default** |
+| 5m crypto | 25 | -0.029R × 33 | -0.015R × 182 | +0.013R × 37 | 252 · -0.013R · +0.6% · 2.3% | 81.2% | **flat by default** |
+| 15m crypto | 25 | -0.172R × 18 | -0.013R × 31 | -0.193R × 45 | 94 · -0.130R · -2.6% · 2.8% | 71.5% | **flat by default** |
+| 30m crypto | 25 | +0.005R × 128 | +0.119R × 105 | +0.116R × 80 | 313 · +0.072R · +13.1% · 12.1% | 74.4% | trades |
+| 1h crypto | 25 | +0.154R × 56 | +0.192R × 55 | +0.172R × 158 | 269 · +0.173R · +40.6% · 5.9% | 80.2% | trades |
+| 2h crypto | 25 | +0.030R × 67 | +0.264R × 63 | +0.157R × 286 | 416 · +0.153R · +43.6% · 9.7% | 83.1% | trades |
+| 4h crypto | 25 | +0.069R × 22 | +0.330R × 19 | +0.527R × 81 | 122 · +0.414R · +36.5% · 3.4% | 87.3% | trades |
+| 1D crypto | 25 | +0.495R × 4 | -0.315R × 11 | +0.660R × 33 | 48 · +0.423R · +13.8% · 5.5% | 29.4% | **flat by default** |
 <!-- /RESULTS -->
 
 - **What this means:** 1h is the strongest and steadiest council. 2h, 4h and 30m passed, but their untouched-test
@@ -107,9 +125,12 @@ The backtest below only applies to the trained defaults.
 
 ## Limits
 
-- Trained on nine Coinbase coins. Other markets run only if you allow it, untested.
+- Trained on nine Coinbase coins and 28 daily markets. Other symbols run only if you allow it, untested.
+- Intraday stock and forex charts have no trained council: free intraday history only goes back about 2 years, too
+  short for an honest walk-forward test.
 - The scripts hold a snapshot of what each council learned up to its training date. To refresh:
-  `python3 ultron/tools/train_tf.py --h1 <hourly data> --m5 <5-minute data>` then `python3 ultron/tv/build_pine.py`
+  `python3 ultron/tools/train_tf.py --h1 <hourly data> --m5 <5-minute data>` (add `--mkt <daily data> --tfs 1Dm` for
+  the markets council, data from `ultron/tools/download_markets.py`), then `python3 ultron/tv/build_pine.py`
   (it also refreshes the table above). Run `python3 ultron/tv/pine_check.py ultron/tv/*.pine` to compile-check.
 - One plan per chart. The cross-market limits of the backtest (one BTC/ETH/SOL trade at a time, daily loss stop)
   are yours to keep.

@@ -6,11 +6,12 @@ strategy("ULTRON · AI trade council · all timeframes (strategy)", shorttitle="
 // ═════════ settings (the trained values are the defaults)
 gA = "Account & risk"
 iAccount = strategy.equity
-iRiskMaj = input.float(0.60, "Risk per trade: BTC, ETH, SOL (%)", minval=0.05, maxval=5, step=0.05, group=gA)
+iRiskMaj = input.float(0.60, "Risk per trade: BTC, ETH, SOL, stocks, forex (%)", minval=0.05, maxval=5, step=0.05, group=gA)
 iRiskMem = input.float(0.30, "Risk per trade: meme coins (%)", minval=0.05, maxval=5, step=0.05, group=gA)
 gF = "Your exchange fees"
 iMaker = input.float(0.20, "Maker fee per side (%)", minval=0, step=0.01, group=gF, tooltip="NDAX 0.20 · Kraken Pro entry tier 0.40 · Coinbase Advanced 0.60")
 iTaker = input.float(0.20, "Taker fee per side (%)", minval=0, step=0.01, group=gF, tooltip="NDAX 0.20 · Kraken Pro entry tier 0.80 · Coinbase Advanced 1.20")
+iMkt = input.float(0.05, "Stocks, ETFs, forex: cost per side (%)", minval=0, step=0.01, group=gF, tooltip="Commission + half the spread. Trained at 0.05.")
 gB = "Brain"
 iNearest = input.bool(true, "On untrained timeframes, use the nearest trained council", group=gB)
 iOther = input.bool(false, "Also run on markets it was not trained on", group=gB)
@@ -80,6 +81,7 @@ u_vwap_lose = input.bool(true, "Loss of the 24h VWAP", group=gS)
 u_vwap_reclaim = input.bool(true, "Reclaim of the 24h VWAP", group=gS)
 u_willr_up = input.bool(true, "Williams %R leaves oversold", group=gS)
 gD = "Display"
+iSimple = input.bool(true, "Simple view: just the decision and the plan", group=gD)
 iTable = input.bool(true, "Show the council table", group=gD)
 iTablePos = input.string("Top right", "Table position", options=["Top right", "Top left", "Bottom right", "Bottom left"], group=gD)
 iTableSize = input.string("Small", "Table text", options=["Tiny", "Small", "Normal"], group=gD)
@@ -94,7 +96,8 @@ cLoud = input.color(color.new(#1F5BFF, 93), "LOUD tint", group=gD, inline="c")
 
 // ═════════ which council: the chart's timeframe, or the nearest trained one
 tfSec = timeframe.in_seconds()
-exact = tfSec == 300 or tfSec == 900 or tfSec == 1800 or tfSec == 3600 or tfSec == 7200 or tfSec == 14400 or tfSec == 86400
+isMarket = syminfo.type != "crypto"
+exact = isMarket ? tfSec == 86400 : tfSec == 300 or tfSec == 900 or tfSec == 1800 or tfSec == 3600 or tfSec == 7200 or tfSec == 14400 or tfSec == 86400
 mi = tfSec < 519 ? 0 : tfSec < 1272 ? 1 : tfSec < 2545 ? 2 : tfSec < 5091 ? 3 : tfSec < 10182 ? 4 : tfSec < 35272 ? 5 : 6
 htfStr = mi == 0 ? "15" : mi == 1 ? "60" : mi == 2 ? "120" : mi == 3 ? "240" : mi == 4 ? "480" : mi == 5 ? "D" : "W"
 bdChart = math.max(1, math.round(86400 / tfSec))
@@ -141,8 +144,10 @@ base = syminfo.basecurrency
 isMajor = base == "BTC" or base == "ETH" or base == "SOL"
 isMeme = base == "DOGE" or base == "SHIB" or base == "PEPE" or base == "BONK" or base == "WIF" or base == "FLOKI"
 useMajor = isMajor or (not isMeme and iOther)
-active = (isMajor or isMeme or iOther) and (exact or iNearest) and (mPassed or not iOnlyPassed)
-slip = useMajor ? 0.0002 : 0.001
+mktKnown = false
+hasMkt = false
+active = (isMarket ? hasMkt and (mktKnown or iOther) and exact : (isMajor or isMeme or iOther) and (exact or iNearest)) and (mPassed or not iOnlyPassed)
+slip = useMajor or isMarket ? 0.0002 : 0.001
 
 // ═════════ the 56 signals the councils use (same formulas on the chart and on the higher timeframe)
 f_dn(k) => close[k + 1] < close[k + 6]
@@ -309,6 +314,8 @@ f_btc() =>
     r = na(s200) ? na : close > s200 ? 1.0 : 0.0
     r[1]
 btcState = request.security("COINBASE:BTCUSD", "D", f_btc(), lookahead=barmerge.lookahead_on)
+ownState = request.security(syminfo.tickerid, "D", f_btc(), lookahead=barmerge.lookahead_on)
+regState = isMarket ? ownState : btcState
 dwMT = dayofweek(time_close, "America/Edmonton")
 weekendMT = dwMT == dayofweek.saturday or dwMT == dayofweek.sunday
 
@@ -372,15 +379,15 @@ for j = 0 to nA - 1
     fired = onH ? array.get(keepH, s) : array.get(keepC, s)
     v = array.get(A_VAR, k)
     cond = v == 0 or (v == 1 and loud) or (v == 2 and upTrend) or (v == 3 and loud and upTrend)
-    if active and bar_index >= 250 and array.get(useOn, s) and array.get(A_MAJ, k) == useMajor and fired and cond
+    if active and bar_index >= 250 and array.get(useOn, s) and (isMarket or array.get(A_MAJ, k) == useMajor) and fired and cond
         firing += 1
-        m = na(btcState) ? array.get(A_MN, k) : btcState == 1.0 ? array.get(A_MB, k) : array.get(A_MF, k)
-        se = na(btcState) ? array.get(A_SN, k) : btcState == 1.0 ? array.get(A_SB, k) : array.get(A_SF, k)
+        m = na(regState) ? array.get(A_MN, k) : regState == 1.0 ? array.get(A_MB, k) : array.get(A_MF, k)
+        se = na(regState) ? array.get(A_SN, k) : regState == 1.0 ? array.get(A_SB, k) : array.get(A_SF, k)
         a = onH ? atrH : atrC
         stopD = iStopMult * (onH ? array.get(P_SH, mi) : array.get(P_SC, mi)) * a
-        cost = ((iMaker + iTaker) / 100 + 2 * slip) / (stopD / entryPx)
+        cost = ((isMarket ? 2 * iMkt : iMaker + iTaker) / 100 + 2 * slip) / (stopD / entryPx)
         score = m - zc * se
-        ruleOk = not (array.get(P_WKND, mi) and useMajor and weekendMT) and not (array.get(P_BEARMEME, mi) and not useMajor and btcState == 0.0)
+        ruleOk = isMarket or (not (array.get(P_WKND, mi) and useMajor and weekendMT) and not (array.get(P_BEARMEME, mi) and not useMajor and btcState == 0.0))
         if gateOk and ruleOk and not na(a) and a > 0 and cost <= iCostMax and score >= theta and score > bestScore
             bestScore := score
             bestK := k
@@ -398,7 +405,7 @@ var string pAgent = ""
 var float pQty = 0.0
 buyNow = false
 sellMsg = ""
-riskPct = useMajor ? iRiskMaj : iRiskMem
+riskPct = useMajor or isMarket ? iRiskMaj : iRiskMem
 busy = not na(pEntry)
 holdBars = math.max(1, math.round(iHoldX * array.get(P_HOLD, mi)))
 if barstate.isconfirmed and bestK >= 0 and not busy
@@ -458,21 +465,34 @@ cell(r, a, b, col) =>
     table.cell(T, 0, r, a, text_color=color.new(#56657C, 0), text_size=tsz, text_halign=text.align_left)
     table.cell(T, 1, r, b, text_color=col, text_size=tsz, text_halign=text.align_left)
 ink = color.new(#0A1426, 0)
+statusTxt = not ((isMarket and hasMkt and (mktKnown or iOther)) or (not isMarket and (isMajor or isMeme or iOther))) ? "Not trained on " + syminfo.ticker : isMarket and not exact ? "Markets: trained on daily (1D) charts only" : not mPassed and iOnlyPassed ? "Flat: no reliable edge on this timeframe in testing" : "Untrained timeframe"
+unitTxt = isMarket ? "units" : base
+gTxt = gate == "L" ? "LOUD (big move likely)" : gate == "Q" ? "QUIET" : gate == "N" ? "NORMAL" : "warming up"
+verdict = not active ? statusTxt : not na(pEntry) ? (na(pFill) ? "BUY · limit order waiting" : "IN TRADE") : "WAIT · no setup now"
+px(x) => na(x) ? "—" : str.tostring(x, format.mintick)
 if barstate.islast and iTable
     table.cell(T, 0, 0, "ULTRON", text_color=color.white, bgcolor=cBuy, text_size=tsz)
     table.cell(T, 1, 0, "AI TRADE COUNCIL", text_color=color.white, bgcolor=cBuy, text_size=tsz)
     cell(1, "Council", mName + (exact ? " (trained)" : " (nearest, untested here)"), ink)
-    cell(2, "Backtest", mTest + (mPassed ? "" : " · caution"), mPassed ? ink : cStop)
-    if not active
-        cell(3, "Status", not (isMajor or isMeme or iOther) ? "Not trained on " + base : not mPassed and iOnlyPassed ? "Flat: no reliable edge on this timeframe in testing" : "Untrained timeframe", cStop)
+    vcol = not active ? cStop : not na(pEntry) ? cBuy : color.new(#56657C, 0)
+    if iSimple
+        cell(2, "Now", verdict, vcol)
+        cell(3, "Buy at", px(pEntry), cBuy)
+        cell(4, "Stop-loss", px(pStop), cStop)
+        cell(5, "Sell (target)", px(pTarget), cTarget)
+        cell(6, "Size", na(pEntry) ? "—" : str.tostring(pQty, "#.####") + " " + unitTxt, ink)
+        cell(7, "Volatility", active ? gTxt : "—", active and gate == "L" ? cBuy : ink)
+        cell(8, "Not advice", "paper-test first", color.new(#97A3B6, 0))
     else
-        gTxt = gate == "L" ? "LOUD (big move likely)" : gate == "Q" ? "QUIET" : gate == "N" ? "NORMAL" : "warming up"
-        cell(3, "Volatility", gTxt + " · LOUD right " + array.get(G_PREC, mi), gate == "L" ? cBuy : ink)
-        cell(4, "Trend chart / higher", (up1 ? "up" : "no") + " / " + (upH ? "up" : "no"), ink)
-        cell(5, "Bitcoin regime", na(btcState) ? "n/a" : btcState == 1.0 ? "above 200-day" : "below 200-day", ink)
-        cell(6, "Agents firing now", str.tostring(firing) + " of " + str.tostring(nA), ink)
-        verdict = not na(pEntry) ? (na(pFill) ? "BUY ORDER WAITING" : "IN TRADE") : "WAIT"
-        cell(7, "Decision", verdict, not na(pEntry) ? cBuy : color.new(#56657C, 0))
-        cell(8, "Plan", na(pEntry) ? "—" : "buy " + str.tostring(pEntry, format.mintick) + " · stop " + str.tostring(pStop, format.mintick) + " · sell " + str.tostring(pTarget, format.mintick), ink)
-        cell(9, "Agent / size", na(pEntry) ? "—" : pAgent + " · " + str.tostring(pQty, "#.####") + " " + base, ink)
-    cell(10, "Not advice", "paper-test before real money", color.new(#97A3B6, 0))
+        cell(2, "Backtest", mTest + (mPassed ? "" : " · caution"), mPassed ? ink : cStop)
+        if not active
+            cell(3, "Status", statusTxt, cStop)
+        else
+            cell(3, "Volatility", gTxt + " · LOUD right " + array.get(G_PREC, mi), gate == "L" ? cBuy : ink)
+            cell(4, "Trend chart / higher", (up1 ? "up" : "no") + " / " + (upH ? "up" : "no"), ink)
+            cell(5, isMarket ? "Regime" : "Bitcoin regime", na(regState) ? "n/a" : regState == 1.0 ? "above 200-day" : "below 200-day", ink)
+            cell(6, "Agents firing now", str.tostring(firing) + " of " + str.tostring(nA), ink)
+            cell(7, "Decision", verdict, vcol)
+            cell(8, "Plan", na(pEntry) ? "—" : "buy " + px(pEntry) + " · stop " + px(pStop) + " · sell " + px(pTarget), ink)
+            cell(9, "Agent / size", na(pEntry) ? "—" : pAgent + " · " + str.tostring(pQty, "#.####") + " " + unitTxt, ink)
+        cell(10, "Not advice", "paper-test before real money", color.new(#97A3B6, 0))

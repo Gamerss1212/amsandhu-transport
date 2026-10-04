@@ -48,7 +48,9 @@ MIN = 60_000
 DAY = 86_400_000
 # tf: (bar ms, source file, higher timeframe multiplier label for Pine, how to bucket the higher timeframe)
 TFS = {"5m": (5 * MIN, "5m", "15"), "15m": (15 * MIN, "5m", "60"), "30m": (30 * MIN, "5m", "120"),
-       "1h": (60 * MIN, "1h", "240"), "2h": (120 * MIN, "1h", "480"), "4h": (240 * MIN, "1h", "D"), "1D": (DAY, "1h", "W")}
+       "1h": (60 * MIN, "1h", "240"), "2h": (120 * MIN, "1h", "480"), "4h": (240 * MIN, "1h", "D"), "1D": (DAY, "1h", "W"),
+       "1Dm": (DAY, "mkt", "W")}                                       # 1Dm = daily council for stocks, ETFs, forex
+st.FEES.setdefault("markets", (0.0005, 0.0005))                         # stocks/ETFs/forex: 0.05% per side (spread + fees)
 HTF_MS = {"15": 15 * MIN, "60": 60 * MIN, "120": 120 * MIN, "240": 240 * MIN, "480": 480 * MIN, "D": DAY, "W": 7 * DAY}
 SIGNALS = sorted(s for s in T.TV_SIGNALS if s not in sg.PLAYBOOK)
 EXITS = "scaled"                                                       # --exits: "scaled" or "fixed" (4x ATR, 96 bars)
@@ -64,6 +66,13 @@ def exit_profile(tf):
     sh = max(1.0, math.sqrt(3_600_000 / HTF_MS[htf]))
     return round(4.0 * sc, 3), round(4.0 * sh, 3), int(round(96 * sc * sc))
 COINS = T.MAJORS + T.MEMES
+MKT_DIR = None                                                         # --mkt: <NAME>_1d.csv from download_markets.py
+
+
+def symbols(tf, mkt_dir):
+    if tf == "1Dm":
+        return sorted(f[:-7] for f in os.listdir(mkt_dir) if f.endswith("_1d.csv"))
+    return COINS
 
 
 def bucket(t_ms, size_ms, weekly=False):
@@ -108,16 +117,17 @@ def btc_bull_by_day(h1_dir):
 
 
 def build_coin(job):
-    tf, coin, h1_dir, m5_dir, gate_model, bull_day, exits = job
+    tf, coin, h1_dir, m5_dir, gate_model, bull_day, exits, mkt_dir = job
+    market = tf == "1Dm"
     global EXITS
     EXITS = exits
     size, src, htf = TFS[tf]
     stop_c, stop_h, hold = exit_profile(tf)
-    path = os.path.join(m5_dir if src == "5m" else h1_dir, f"{coin}_{src}.csv")
+    path = os.path.join(mkt_dir, f"{coin}_1d.csv") if market else os.path.join(m5_dir if src == "5m" else h1_dir, f"{coin}_{src}.csv")
     if not os.path.exists(path):
         return coin, [], None
     t, o, h, l, c, v = load(path)
-    if src == "5m" and tf != "5m" or src == "1h" and tf != "1h":
+    if not market and (src == "5m" and tf != "5m" or src == "1h" and tf != "1h"):
         t, o, h, l, c, v = aggregate(t, o, h, l, c, v, size)
     n = len(c)
     if n < 600:
@@ -137,14 +147,22 @@ def build_coin(job):
     # the chart bar that closes a higher-timeframe bar (TradingView: time_close == time_close(htf))
     nxt = (np.append(bk[1:], bk[-1] + 1) != bk)
     ends = np.array([(int(k) * 7 - 3 + 7) * DAY if weekly else (int(k) + 1) * HTF_MS[htf] for k in bk])
-    is_end = (t + size == ends) & nxt
+    is_end = nxt if market else (t + size == ends) & nxt                # markets: the week's last trading day
     # higher-timeframe trend: the bar that just closed (on its last chart bar), otherwise the previous completed one
     upH = np.array([hmap.get(int(k) if e else int(k) - 1, False) for k, e in zip(bk, is_end)])
-    bull = [bull_day.get(int(x // DAY) - 1) for x in t]                 # previous completed UTC day
+    if market:                                                         # markets: own close vs its 200-day average, previous day
+        sma = np.full(n, np.nan)
+        sma[199:] = np.convolve(c, np.ones(200) / 200, "valid")
+        prev = np.concatenate([[np.nan], (c > sma).astype(float)[:-1]])
+        prev[:200] = np.nan
+        bull = [None if x != x else bool(x) for x in prev]
+    else:
+        bull = [bull_day.get(int(x // DAY) - 1) for x in t]             # previous completed UTC day
     A = pg.atr(h, l, c)
     bars_day = max(1, int(DAY // size))
     S, _, _ = sg.vector_signals(t, o, h, l, c, v, bars_day)
-    group, kind = ("majors", "major") if coin in T.MAJORS else ("memes", "meme")
+    group, kind = ("markets", "major") if market else ("majors", "major") if coin in T.MAJORS else ("memes", "meme")
+    fees = st.FEES["markets" if market else "ndax"]
     p = {"coin": coin, "t": t.tolist(), "o": o.tolist(), "h": h.tolist(), "l": l.tolist(), "c": c.tolist(),
          "atr": [None if x != x else float(x) for x in A]}
     allvars = size >= 120 * MIN                                        # 2h and slower: NORMAL periods too
@@ -157,14 +175,14 @@ def build_coin(job):
         g = gate[i]
         if g == "U" or (not allvars and g != "L"):
             return
-        tr = st.trade_path(p, int(i), "x", st.FEES["ndax"], kind, entry="maker", stop_atr=stop_atr, rung=None, target_r=2.0,
+        tr = st.trade_path(p, int(i), "x", fees, kind, entry="maker", stop_atr=stop_atr, rung=None, target_r=2.0,
                            tp1_bars=0, horizon=hold)
         if tr is None:
             return
         t_dec = int(t[i]) + size
         upj = bool(up1[i] and upH[i])
         base = (t_dec, None, coin, tr["t_exit"] - T.HOUR + size, float(tr["r"]), float(tr["rt_cost_r"]), float(tr["stop_pct"]),
-                g, bull[i], upj, T.mt_weekend(t_dec), float(c[i]))
+                g, bull[i], upj, False if market else T.mt_weekend(t_dec), float(c[i]))
         loud = g == "L"
         for var, ok in (("any", allvars), ("loud", loud), ("trend", allvars and upj), ("loudtrend", loud and upj)):
             if ok:
@@ -213,13 +231,13 @@ def train_tf(tf, a, bull_day, base_params, log):
             events, defs, gate_model, first_t = pickle.load(fh)
     else:
         with Pool(a.workers) as pool:
-            raw = pool.map(build_coin, [(tf, c, a.h1, a.m5, None, None, EXITS) for c in COINS])
+            raw = pool.map(build_coin, [(tf, c, a.h1, a.m5, None, None, EXITS, a.mkt) for c in symbols(tf, a.mkt)])
         data = [x[2] for x in raw if x[2] is not None]
         first_t = min(int(d[0][0]) for d in data)
         bd = max(1, int(DAY // TFS[tf][0]))
         gate_model = pg.fit(data, T.B_START, T.C_START, window=min(720, max(120, 30 * bd)))
         with Pool(a.workers) as pool:
-            got = pool.map(build_coin, [(tf, c, a.h1, a.m5, gate_model, bull_day, EXITS) for c in COINS])
+            got = pool.map(build_coin, [(tf, c, a.h1, a.m5, gate_model, bull_day, EXITS, a.mkt) for c in symbols(tf, a.mkt)])
         events = sorted((e for _, evs, _ in got for e in evs), key=lambda e: (e[0], e[1], e[2]))
         defs = {}
         for e in events:
@@ -240,7 +258,11 @@ def train_tf(tf, a, bull_day, base_params, log):
     it_log = []
     params = T.improve(events, defs, a.iters, it_log, base_params)
     final = T.simulate(events, defs, params, record=True)
-    stress = T.stress(events, defs, params)
+    if tf == "1Dm":                                                    # market costs, not NDAX
+        stress = {"fees x2": T.simulate(events, defs, params, adj=lambda e: 0.1 / e[6])["metrics"],
+                  "slippage x3": T.simulate(events, defs, params, adj=lambda e: 0.08 / e[6])["metrics"]}
+    else:
+        stress = T.stress(events, defs, params)
     win = T.windows(final["trades"], T.WF_START, events[-1][0]) if final["trades"] else None
     boot = T.bootstrap(final["trades"]) if final["trades"] else {}
     brain = final["brain"]
@@ -258,7 +280,8 @@ def train_tf(tf, a, bull_day, base_params, log):
         agents.append({"id": cid, "name": T.NAMES[rank], "signal": d["signal"], "label": d["label"], "group": d["group"],
                        "htf": d["htf"], "variant": d["variant"], "family": d["family"], "signals": cst[cid][0],
                        "avg_r": round(cst[cid][1] / cst[cid][0], 4), "edges": edges})
-    model = {"tf": tf, "htf": TFS[tf][2], "trained": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
+    model = {"tf": "1D" if tf == "1Dm" else tf, "market": tf == "1Dm", "symbols": symbols(tf, a.mkt) if tf == "1Dm" else COINS,
+             "htf": TFS[tf][2], "trained": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
              "data_from": datetime.fromtimestamp(first_t / 1000, timezone.utc).strftime("%Y-%m-%d"),
              "data_end": datetime.fromtimestamp(events[-1][0] / 1000, timezone.utc).strftime("%Y-%m-%d") if events else None,
              "walk_forward_from": datetime.fromtimestamp(T.WF_START / 1000, timezone.utc).strftime("%Y-%m-%d"),
@@ -269,7 +292,7 @@ def train_tf(tf, a, bull_day, base_params, log):
                           "kept": sum(1 for x in it_log if x["kept"]) - 1}}
     out_dir = a.out or os.path.join(ROOT, "tv", "models")
     os.makedirs(out_dir, exist_ok=True)
-    with open(os.path.join(out_dir, f"{tf}.json"), "w") as fh:
+    with open(os.path.join(out_dir, f"{'1D_markets' if tf == '1Dm' else tf}.json"), "w") as fh:
         json.dump(model, fh, separators=(",", ":"))
     m = final["metrics"]
     log(f"[{tf}] agents {len(agents)} · dev {T.fmt(m['dev'])} | B {T.fmt(m['B'])} | C {T.fmt(m['C'])} | all {T.fmt(m['all'])} "
@@ -284,6 +307,7 @@ def main():
     ap.add_argument("--tfs", default="1h,2h,4h,1D,5m,15m,30m")
     ap.add_argument("--iters", type=int, default=150)
     ap.add_argument("--exits", choices=["scaled", "fixed"], default="scaled")
+    ap.add_argument("--mkt", default=None, help="dir with <NAME>_1d.csv (download_markets.py) for the 1Dm markets council")
     ap.add_argument("--out", default=None, help="write models here instead of ultron/tv/models")
     ap.add_argument("--workers", type=int, default=4)
     ap.add_argument("--cache", default=None)

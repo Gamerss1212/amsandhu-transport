@@ -274,7 +274,7 @@ def simulate(events, defs, params, adj=None, record=False, t_end=None):
                     decisions["refused"] += 1
                     continue
                 decisions["taken"] += 1
-                risk_pct = (P["risk_major"] if group == "majors" else P["risk_meme"]) * size
+                risk_pct = (P["risk_major"] if group in ("majors", "markets") else P["risk_meme"]) * size
                 risk_amt = eq * risk_pct
                 notional = risk_amt / (e[6] / 100)
                 if notional > eq:
