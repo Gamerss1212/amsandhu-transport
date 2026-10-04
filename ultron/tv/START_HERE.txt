@@ -7,7 +7,7 @@ WHAT YOU NEED
   3. ULTRON_Radar.pine      <- indicator 2, ULTRON Radar: forecasts big move / small move for the next 12 bars, plus
                                trend, stop, fee check and position size. Works on ANY chart and timeframe.
   4. ULTRON_strategy.pine   <- optional: shows how the Council's rules did in the past on any chart
-  4. The free TradingView phone app, if you want buy/sell alerts on your phone.
+  5. The free TradingView phone app, if you want buy/sell alerts on your phone.
 
 
 INSTALL (2 minutes, one time)
