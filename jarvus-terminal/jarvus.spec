@@ -65,7 +65,8 @@ a = Analysis(
     hiddenimports=hiddenimports,
     hookspath=[],
     runtime_hooks=[],
-    excludes=["tkinter", "test", "unittest", "pydoc_data", "lib2to3"],
+    excludes=["tkinter", "test", "unittest", "pydoc_data", "lib2to3", "setuptools", "pkg_resources", "distutils",
+              "_distutils_hack", "numpy.f2py", "numpy.distutils", "numpy.testing", "numpy.array_api"],   # never used
     cipher=block_cipher,
     noarchive=False,
 )
