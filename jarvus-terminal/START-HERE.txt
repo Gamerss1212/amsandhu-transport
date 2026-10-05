@@ -1,16 +1,20 @@
-JARVUS TERMINAL + ULTRON BRAIN  (Windows)
+JARVUS + ULTRON BRAIN: a website on your own computer (Windows)
 
 RUN IT
   1. Right-click the zip -> Extract All... (do not run it from inside the zip: Windows may delete that copy and
      your data with it). Keep JarvusTerminal.exe in its folder.
   2. Double-click JarvusTerminal.exe. If Windows says "Windows protected your PC": More info -> Run anyway (once).
-  3. A black window opens, and as soon as Jarvus is ready (a few seconds, up to a minute the first time) your
-     browser opens at http://127.0.0.1:8787. Keep the black window open: closing it stops Jarvus and every bot.
-  Later: double-click "Open Jarvus" (it appears next to the exe) to get back to the page, or start the exe again:
-  if Jarvus is already running it just opens it. If an OLDER Jarvus is still running (for example one that was set
-  to start with Windows), the black window says so and closes it when you press Enter.
-  This is the ULTRON website app. Ultron.exe from earlier was a separate desktop window (no website); you don't
-  need it for this.
+  3. That's it: no app window opens. Jarvus starts quietly and, as soon as it is ready (a few seconds, up to a minute
+     the first time), your browser opens the Jarvus website at  http://127.0.0.1:8787
+     (127.0.0.1 is "localhost": your own computer. Nothing is on the internet; only you can open it.)
+  The bots keep working while Jarvus runs, even with the browser tab closed.
+  Back to the website later: double-click "Open Jarvus" (appears next to the exe), or type the address above, or
+  double-click JarvusTerminal.exe again (if Jarvus is already running it just opens the website).
+  To stop everything: Shut down, top right of the website. (Or Task Manager -> JarvusTerminal -> End task.)
+  If an OLDER Jarvus is still running (for example one that was set to start with Windows), a small box asks
+  whether to close it.
+  Something wrong? Jarvus writes what it does to  data\jarvus.log  next to the exe.
+  Ultron.exe from earlier was a separate desktop window; you don't need it: ULTRON lives in this website now.
 
 WHAT'S NEW: THE ULTRON BRAIN
   The smartest part of the terminal is now the ULTRON councils: the trained AI that also powers the ULTRON TradingView

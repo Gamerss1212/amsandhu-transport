@@ -578,6 +578,11 @@ def post_action(ctx, route, b):
         return cmd(wid, "deploy_stop", {"deployment_id": b.get("deployment_id"), "positions": b.get("positions")}, wait=60)
     if route == "/api/deploy/limits":
         return cmd(wid, "update_limits", {"deployment_id": b.get("deployment_id"), "limits": b.get("limits") or {}})
+    if route == "/api/app/shutdown":                    # the website has no window to close: this stops Jarvus
+        if HTTPD is None:
+            raise ApiError(409, "this copy was not started as the Jarvus program")
+        threading.Thread(target=_shutdown_soon, daemon=True).start()
+        return {"stopping": True, "note": "Jarvus is shutting down: every bot stops, and this page stops answering."}
     if route == "/api/emergency":
         reason = str(b.get("reason") or "owner pressed EMERGENCY STOP")[:200]
         if APP.sup.running(wid):
@@ -1070,17 +1075,30 @@ def make_app(data_dir: str = None, start_engines: bool = True, research_workers=
     return APP
 
 
+HTTPD = None                                            # the running QuietServer, for /api/app/shutdown
+
+
+def _shutdown_soon():
+    time.sleep(0.6)                                      # let the answer reach the page first
+    if HTTPD is not None:
+        HTTPD.shutdown()                                 # serve() returns: bots stopped, port released, program ends
+
+
 def serve():
+    global HTTPD
     httpd = QuietServer((config.HOST, config.PORT), Handler)
+    HTTPD = httpd
     app = make_app()
     # engines start only once the port is ours, so a second copy of the app can never run a second set of bots
     app.boot()
-    print(f"\n  Jarvus is running at  http://{config.HOST}:{config.PORT}\n  Ctrl-C to stop.\n", flush=True)
+    print(f"\n  Jarvus is running at  http://{config.HOST}:{config.PORT}\n  Stop it with Shut down on the website "
+          f"(or Ctrl-C in a console).\n", flush=True)
     try:
         httpd.serve_forever()
     except KeyboardInterrupt:
         print("\n  stopped.\n")
     finally:
+        HTTPD = None
         app.sup.stop_all()
         httpd.server_close()
 

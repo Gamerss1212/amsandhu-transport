@@ -72,12 +72,13 @@ function shell() {
   const streamPill = h('span.pill.hide-sm#stream-pill', { title: 'Live event stream' }, h('span.dot'), 'stream');
   const emergency = h('button.btn.emergency#emergency-btn', { onclick: emergencyFlow, title: 'Block every new entry now' }, '⏻ EMERGENCY STOP');
   const userBtn = h('button.btn.ghost.small', { onclick: userMenu, 'aria-label': 'Account' }, S.user.username);
+  const offBtn = h('button.btn.ghost.small#shutdown-btn', { onclick: shutdownFlow, title: 'Stop Jarvus: the website and every bot' }, 'Shut down');
   replace($('#root'),
     h('header.topbar',
       h('div.brand', h('div.logo'), h('div', 'JARVUS', h('small', 'research · paper · live'))),
       nav,
       h('div.tools', h('span.row', ws.kind === 'demo' ? modeBadge('demo') : null, wsSel),
-        ap, streamPill, live, eng, emergency)),
+        ap, streamPill, live, eng, emergency, offBtn)),
     h('div#banners'),
     h('main#view'),
     bottom);
@@ -218,6 +219,20 @@ async function closeAllFlow() {
 }
 
 // ---------------------------------------------------------------- account menu
+// ---------------------------------------------------------------- shut down (the website has no window to close)
+async function shutdownFlow() {
+  const ok = await confirmBox('Shut down Jarvus?', 'The website and every bot stop until you start Jarvus again ' +
+    '(double-click JarvusTerminal.exe). Open trades stay recorded and are managed again when it restarts.', { okLabel: 'Shut down' });
+  if (!ok) return;
+  try { await api('/api/app/shutdown', {}); } catch (e) { errorToast(e); return; }
+  stopStream();
+  replace($('#root'), h('main.off', h('section.panel', { style: { maxWidth: '560px', margin: '12vh auto' } },
+    h('h2', 'Jarvus is off'),
+    h('p', 'The website and all bots have stopped. Nothing trades until you start it again.'),
+    h('p.note', 'To start again: double-click JarvusTerminal.exe (or the "Open Jarvus" shortcut once it runs). This page ' +
+      'can be closed.'))));
+}
+
 function userMenu() {
   const m = modal(`Signed in as ${S.user.username}`, h('div.stack',
     h('p.note', `Role: ${S.user.role}. Workspace: ${S.workspace}.`),

@@ -156,3 +156,37 @@ def test_running_from_the_temporary_folder_is_noticed(tmp_path):
     assert launcher.inside_temp(os.path.join(temp, "Temp1_Jarvus-Terminal-ULTRON.zip", "JarvusTerminal"), temp)
     assert not launcher.inside_temp(str(tmp_path / "Downloads" / "JarvusTerminal"), temp)
     assert not launcher.inside_temp(str(tmp_path / "TempFiles"), temp)              # a name that only starts alike
+
+
+def test_shut_down_from_the_website(jarvus, monkeypatch):
+    """No app window to close: the website's Shut down stops the server (with the page's CSRF token only)."""
+    import json
+    import urllib.error
+    import urllib.request
+    base = f"http://127.0.0.1:{jarvus}"
+    with urllib.request.urlopen(base + "/api/auth/state", timeout=10) as r:
+        cookie = r.headers["Set-Cookie"].split(";", 1)[0]
+        csrf = json.loads(r.read())["csrf"]
+
+    def post(headers):
+        rq = urllib.request.Request(base + "/api/app/shutdown", data=b"{}", method="POST",
+                                    headers=dict({"Cookie": cookie, "Content-Type": "application/json", "X-Jarvus": "1"}, **headers))
+        try:
+            with urllib.request.urlopen(rq, timeout=10) as r:
+                return r.status, json.loads(r.read())
+        except urllib.error.HTTPError as e:
+            return e.code, None
+
+    stopped = []
+    monkeypatch.setattr(server, "HTTPD", type("H", (), {"shutdown": lambda self: stopped.append(1)})())
+    monkeypatch.setattr(server.time, "sleep", lambda s: None)
+    assert post({})[0] == 403                                            # no CSRF token: refused
+    code, body = post({"X-CSRF-Token": csrf})
+    assert code == 200 and body["stopping"] is True
+    for _ in range(50):
+        if stopped:
+            break
+        threading.Event().wait(0.05)
+    assert stopped == [1]
+    monkeypatch.setattr(server, "HTTPD", None)                           # not started as the program: says so
+    assert post({"X-CSRF-Token": csrf})[0] == 409

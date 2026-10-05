@@ -90,6 +90,14 @@ def _run(cfg_path: str, token: str, port_file: str, home: str):
         sys.path.insert(0, MAB_DIR)
     import logging
     threading.Thread(target=_exit_with_parent, name="parent-watch", daemon=True).start()
+    if sys.stderr is None:                               # the windowless website build: the fleet logs to a file
+        try:
+            path = os.path.join(home, "fleet.log")
+            if os.path.exists(path) and os.path.getsize(path) > 5_000_000:
+                os.replace(path, path + ".old")
+            sys.stdout = sys.stderr = open(path, "a", encoding="utf-8", buffering=1)
+        except OSError:
+            pass
     logging.basicConfig(level=logging.INFO, format="[fleet] %(asctime)s %(levelname)s %(message)s")
     from mab.cli import run_fleet
     run_fleet(stage="250", dashboard=True, port=0, config_path=cfg_path, quiet=True, token=token, port_file=port_file)
