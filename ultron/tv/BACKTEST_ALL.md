@@ -97,6 +97,10 @@ trade the Council took was replayed with each exit style: same buys, same sizes,
 | half at 1R, rest 2R | 252 | 49.6% | -0.047R | 0.89 | -0.6% | 2.8% | 33 · 46% · -0.031R |
 | half at 0.5R, rest 2R | 252 | 60.7% | -0.100R | 0.71 | -2.3% | 3.9% | 33 · 64% · -0.031R |
 | half at 0.5R, rest 1R | 252 | 60.7% | -0.101R | 0.71 | -2.5% | 4.0% | 33 · 64% · -0.053R |
+| half at 0.33R, rest 2R | 252 | 68.3% | -0.116R | 0.57 | -2.7% | 3.4% | 33 · 61% · -0.148R |
+| half at 0.75R, rest 2R | 252 | 54.4% | -0.073R | 0.81 | -1.3% | 3.0% | 33 · 54% · -0.018R |
+| third at 0.5R, rest 2R | 252 | 60.3% | -0.094R | 0.73 | -1.9% | 3.8% | 33 · 64% · -0.011R |
+| 70% at 0.5R, rest 2R | 252 | 61.1% | -0.107R | 0.69 | -2.8% | 4.0% | 33 · 64% · -0.053R |
 
 ### 15m crypto  ·  reproduces the model: yes  ·  replay check 184/184
 
@@ -109,6 +113,10 @@ trade the Council took was replayed with each exit style: same buys, same sizes,
 | half at 1R, rest 2R | 184 | 47.3% | -0.112R | 0.76 | -3.7% | 7.0% | 68 · 37% · -0.247R |
 | half at 0.5R, rest 2R | 184 | 66.8% | -0.058R | 0.82 | -1.8% | 4.3% | 68 · 57% · -0.162R |
 | half at 0.5R, rest 1R | 184 | 66.8% | -0.015R | 0.95 | +0.5% | 3.4% | 68 · 57% · -0.134R |
+| half at 0.33R, rest 2R | 184 | 76.6% | -0.054R | 0.76 | -1.9% | 3.4% | 68 · 68% · -0.143R |
+| half at 0.75R, rest 2R | 184 | 55.4% | -0.106R | 0.75 | -3.8% | 6.8% | 68 · 44% · -0.233R |
+| third at 0.5R, rest 2R | 184 | 66.8% | -0.066R | 0.79 | -2.2% | 4.5% | 68 · 57% · -0.170R |
+| 70% at 0.5R, rest 2R | 184 | 67.4% | -0.048R | 0.85 | -1.3% | 4.2% | 68 · 57% · -0.151R |
 
 ### 30m crypto  ·  reproduces the model: yes  ·  replay check 209/209
 
@@ -121,6 +129,10 @@ trade the Council took was replayed with each exit style: same buys, same sizes,
 | half at 1R, rest 2R | 209 | 51.7% | +0.064R | 1.15 | +6.3% | 9.5% | 75 · 45% · -0.058R |
 | half at 0.5R, rest 2R | 209 | 66.5% | +0.010R | 1.03 | -1.1% | 9.9% | 75 · 60% · -0.098R |
 | half at 0.5R, rest 1R | 209 | 66.5% | -0.025R | 0.92 | -5.2% | 10.8% | 75 · 60% · -0.116R |
+| half at 0.33R, rest 2R | 209 | 75.1% | -0.032R | 0.87 | -5.9% | 9.7% | 75 · 73% · -0.074R |
+| half at 0.75R, rest 2R | 209 | 58.9% | +0.050R | 1.13 | +4.7% | 8.6% | 75 · 53% · -0.074R |
+| third at 0.5R, rest 2R | 209 | 66.5% | +0.025R | 1.08 | +0.7% | 9.6% | 75 · 60% · -0.088R |
+| 70% at 0.5R, rest 2R | 209 | 66.5% | -0.007R | 0.98 | -3.2% | 10.3% | 75 · 60% · -0.108R |
 
 ### 1h crypto  ·  reproduces the model: yes  ·  replay check 269/269
 
@@ -133,6 +145,10 @@ trade the Council took was replayed with each exit style: same buys, same sizes,
 | half at 1R, rest 2R | 269 | 56.1% | +0.106R | 1.29 | +23.1% | 5.4% | 56 · 55% · +0.127R |
 | half at 0.5R, rest 2R | 269 | 71.0% | +0.066R | 1.26 | +14.3% | 3.1% | 56 · 70% · +0.082R |
 | half at 0.5R, rest 1R | 269 | 71.0% | +0.050R | 1.20 | +10.3% | 3.6% | 56 · 70% · +0.024R |
+| half at 0.33R, rest 2R | 269 | 78.8% | +0.034R | 1.17 | +7.5% | 3.4% | 56 · 75% · +0.067R |
+| half at 0.75R, rest 2R | 269 | 62.1% | +0.111R | 1.35 | +24.3% | 4.3% | 56 · 61% · +0.107R |
+| third at 0.5R, rest 2R | 269 | 71.0% | +0.071R | 1.28 | +15.8% | 3.2% | 56 · 70% · +0.110R |
+| 70% at 0.5R, rest 2R | 269 | 71.0% | +0.059R | 1.23 | +12.6% | 3.1% | 56 · 70% · +0.048R |
 
 ### 2h crypto  ·  reproduces the model: yes  ·  replay check 397/397
 
@@ -145,6 +161,10 @@ trade the Council took was replayed with each exit style: same buys, same sizes,
 | half at 1R, rest 2R | 397 | 50.9% | +0.095R | 1.25 | +23.7% | 11.2% | 65 · 40% · -0.089R |
 | half at 0.5R, rest 2R | 397 | 65.5% | +0.050R | 1.17 | +11.6% | 9.4% | 65 · 55% · -0.068R |
 | half at 0.5R, rest 1R | 397 | 65.5% | +0.014R | 1.05 | +2.7% | 9.5% | 65 · 55% · -0.129R |
+| half at 0.33R, rest 2R | 397 | 73.6% | +0.012R | 1.05 | -1.0% | 10.7% | 65 · 66% · -0.017R |
+| half at 0.75R, rest 2R | 397 | 57.2% | +0.081R | 1.24 | +21.5% | 9.7% | 65 · 48% · -0.078R |
+| third at 0.5R, rest 2R | 397 | 65.5% | +0.068R | 1.23 | +16.1% | 9.6% | 65 · 55% · -0.041R |
+| 70% at 0.5R, rest 2R | 397 | 65.5% | +0.029R | 1.10 | +6.5% | 9.5% | 65 · 55% · -0.100R |
 
 ### 4h crypto  ·  reproduces the model: yes  ·  replay check 122/122
 
@@ -157,6 +177,10 @@ trade the Council took was replayed with each exit style: same buys, same sizes,
 | half at 1R, rest 2R | 122 | 60.7% | +0.311R | 2.07 | +27.5% | 2.1% | 22 · 50% · +0.102R |
 | half at 0.5R, rest 2R | 122 | 70.5% | +0.145R | 1.61 | +12.7% | 2.3% | 22 · 54% · -0.035R |
 | half at 0.5R, rest 1R | 122 | 70.5% | +0.115R | 1.48 | +9.3% | 2.1% | 22 · 54% · -0.024R |
+| half at 0.33R, rest 2R | 122 | 76.2% | +0.120R | 1.68 | +10.2% | 2.1% | 22 · 68% · -0.005R |
+| half at 0.75R, rest 2R | 122 | 64.8% | +0.236R | 1.86 | +20.1% | 2.2% | 22 · 50% · +0.051R |
+| third at 0.5R, rest 2R | 122 | 69.7% | +0.167R | 1.69 | +14.5% | 2.4% | 22 · 54% · -0.021R |
+| 70% at 0.5R, rest 2R | 122 | 70.5% | +0.120R | 1.50 | +10.5% | 2.2% | 22 · 54% · -0.053R |
 
 ### 1D crypto  ·  reproduces the model: yes  ·  replay check 58/58
 
@@ -169,6 +193,10 @@ trade the Council took was replayed with each exit style: same buys, same sizes,
 | half at 1R, rest 2R | 58 | 53.4% | +0.142R | 1.33 | +7.5% | 6.8% | 4 · 75% · +0.396R |
 | half at 0.5R, rest 2R | 58 | 65.5% | +0.100R | 1.31 | +4.3% | 4.1% | 4 · 75% · +0.024R |
 | half at 0.5R, rest 1R | 58 | 65.5% | +0.037R | 1.11 | +2.4% | 4.1% | 4 · 75% · +0.050R |
+| half at 0.33R, rest 2R | 58 | 74.1% | +0.131R | 1.60 | +5.5% | 2.8% | 4 · 75% · -0.044R |
+| half at 0.75R, rest 2R | 58 | 60.3% | +0.145R | 1.38 | +6.9% | 5.6% | 4 · 75% · +0.333R |
+| third at 0.5R, rest 2R | 58 | 65.5% | +0.139R | 1.43 | +5.6% | 4.3% | 4 · 75% · +0.017R |
+| 70% at 0.5R, rest 2R | 58 | 65.5% | +0.054R | 1.17 | +2.8% | 3.9% | 4 · 75% · +0.033R |
 
 ### 1D markets  ·  reproduces the model: yes  ·  replay check 181/181
 
@@ -181,4 +209,29 @@ trade the Council took was replayed with each exit style: same buys, same sizes,
 | half at 1R, rest 2R | 181 | 61.3% | +0.275R | 1.73 | +51.0% | 11.3% | 22 · 73% · +0.469R |
 | half at 0.5R, rest 2R | 181 | 74.0% | +0.191R | 1.74 | +34.4% | 9.4% | 22 · 82% · +0.338R |
 | half at 0.5R, rest 1R | 181 | 74.0% | +0.131R | 1.51 | +22.2% | 9.8% | 22 · 82% · +0.293R |
+| half at 0.33R, rest 2R | 181 | 76.2% | +0.086R | 1.39 | +13.5% | 8.5% | 22 · 86% · +0.193R |
+| half at 0.75R, rest 2R | 181 | 66.3% | +0.231R | 1.69 | +42.1% | 10.9% | 22 · 77% · +0.420R |
+| third at 0.5R, rest 2R | 181 | 72.9% | +0.219R | 1.84 | +40.4% | 9.2% | 22 · 82% · +0.367R |
+| 70% at 0.5R, rest 2R | 181 | 75.1% | +0.158R | 1.62 | +27.6% | 9.6% | 22 · 82% · +0.304R |
+
+## 3. High win rate mode (ULTRON v2 default)
+
+Made by `ultron/tools/optimize_wr.py`. Per timeframe the Council was re-run for every volatility filter (3), every
+stricter minimum edge (+0 to +0.30R, 7) and every exit style above (11): 231 combinations. The pick is the highest
+win rate among combinations that made at least +0.10R per trade with a profit factor of 1.2 in BOTH the fit and the
+validation period (30+ and 10+ trades). The untouched test was not used to choose. Honest note: the +0.10R / 1.2
+margin was added after a first run that only required a positive result picked thin edges that lost on the test on
+4 timeframes; that first test result was seen once, so the test column below is slightly optimistic. The indicator
+also stays flat by default where the pick lost on the test ("Only trade timeframes that passed the untouched test").
+
+| Chart | Pick (volatility · extra edge · exit) | Fit + validation: trades · win · avg R | Test: trades · win · avg R | Trained 2R test | Default |
+|---|---|---|---|---|---|
+| 5m crypto | none qualified | – | – | 33 · 36% · -0.029R | flat |
+| 15m crypto | none qualified | – | – | 68 · 26% · -0.195R | flat |
+| 30m crypto | none qualified | – | – | 75 · 33% · -0.090R | flat |
+| 1h crypto | any · +0.06R · third at 0.5R, rest 2R | 176 · 73% · +0.113R | 47 · 66% · +0.042R | 56 · 46% · +0.154R | trades |
+| 2h crypto | LOUD only · +0.00R · half at 0.75R, rest 2R | 136 · 61% · +0.188R | 42 · 57% · +0.017R | 65 · 35% · -0.017R | trades |
+| 4h crypto | LOUD only · +0.03R · half at 0.33R, rest 2R | 96 · 79% · +0.158R | 21 · 62% · -0.081R | 22 · 46% · +0.069R | flat (lost on test) |
+| 1D crypto | none qualified | – | – | 4 · 75% · +0.495R | flat |
+| 1D markets | any · +0.00R · 70% at 0.5R, rest 2R | 159 · 74% · +0.138R | 22 · 82% · +0.304R | 22 · 54% · +0.431R | trades |
 

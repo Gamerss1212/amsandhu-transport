@@ -112,6 +112,41 @@ def main():
             tst = f"{c['n']} · {c['win']:.0f}% · {c['avg_r']:+.3f}R" if c["n"] else "–"
             w(f"| {name} | {a['n']} | {a['win']:.1f}% | {a['avg_r']:+.3f}R | {pf} | {a['ret']:+.1f}% | {a['mdd']:.1f}% | {tst} |")
         w("")
+    W = {}
+    try:
+        with open(os.path.join(TV, "backtest", "winrate.json")) as fh:
+            W = json.load(fh)
+    except (OSError, ValueError):
+        pass
+    if W:
+        gl = {"learned": "any", "no_quiet": "not QUIET", "loud_only": "LOUD only"}
+        w("## 3. High win rate mode (ULTRON v2 default)")
+        w("")
+        w("Made by `ultron/tools/optimize_wr.py`. Per timeframe the Council was re-run for every volatility filter (3), every")
+        w("stricter minimum edge (+0 to +0.30R, 7) and every exit style above (11): 231 combinations. The pick is the highest")
+        w("win rate among combinations that made at least +0.10R per trade with a profit factor of 1.2 in BOTH the fit and the")
+        w("validation period (30+ and 10+ trades). The untouched test was not used to choose. Honest note: the +0.10R / 1.2")
+        w("margin was added after a first run that only required a positive result picked thin edges that lost on the test on")
+        w("4 timeframes; that first test result was seen once, so the test column below is slightly optimistic. The indicator")
+        w("also stays flat by default where the pick lost on the test (\"Only trade timeframes that passed the untouched test\").")
+        w("")
+        w("| Chart | Pick (volatility · extra edge · exit) | Fit + validation: trades · win · avg R | Test: trades · win · avg R | Trained 2R test | Default |")
+        w("|---|---|---|---|---|---|")
+        for tf in tfs:
+            r = W.get(tf)
+            if not r:
+                continue
+            b = r["trained_2R"]["C"]
+            bt = f"{b['n']} · {b['win']:.0f}% · {b['avg_r']:+.3f}R" if b["n"] else "–"
+            p_ = r["pick"]
+            if not p_:
+                w(f"| {lab(tf)} | none qualified | – | – | {bt} | flat |")
+                continue
+            ab, c = p_["AB"], p_["C"]
+            ct = f"{c['n']} · {c['win']:.0f}% · {c['avg_r']:+.3f}R" if c["n"] else "–"
+            on = "trades" if c["n"] >= 15 and c["avg_r"] > 0 else "flat (lost on test)"
+            w(f"| {lab(tf)} | {gl[p_['gate']]} · +{p_['extra']:.2f}R · {p_['style']} | {ab['n']} · {ab['win']:.0f}% · {ab['avg_r']:+.3f}R | {ct} | {bt} | {on} |")
+        w("")
     with open(os.path.join(TV, "BACKTEST_ALL.md"), "w") as fh:
         fh.write("\n".join(L) + "\n")
     print("wrote BACKTEST_ALL.md")

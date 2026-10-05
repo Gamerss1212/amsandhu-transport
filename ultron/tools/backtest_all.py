@@ -43,6 +43,10 @@ STYLES = [  # name, rung (sell fraction at R, then stop to breakeven), final tar
     ("half at 1R, rest 2R", (1.0, 0.5), 2.0),
     ("half at 0.5R, rest 2R", (0.5, 0.5), 2.0),
     ("half at 0.5R, rest 1R", (0.5, 0.5), 1.0),
+    ("half at 0.33R, rest 2R", (0.33, 0.5), 2.0),
+    ("half at 0.75R, rest 2R", (0.75, 0.5), 2.0),
+    ("third at 0.5R, rest 2R", (0.5, 0.33), 2.0),
+    ("70% at 0.5R, rest 2R", (0.5, 0.7), 2.0),
 ]
 
 

@@ -9,6 +9,19 @@
 Results for both on every timeframe are below. The full report is `BACKTEST_ALL.md`. `HOW_IT_WORKS.md` explains
 everything in plain words.
 
+**New in v2.**
+- **Council: Mode = High win rate (tested), the default.** Per timeframe it uses the volatility filter, minimum edge
+  and exit that won most often while still making at least +0.10R a trade in both the fit and the validation
+  period (231 combinations searched; `BACKTEST_ALL.md` section 3). On the untouched test: daily stocks/ETFs/forex
+  82% of trades won (+0.30R a trade, 22 trades), 1h crypto 66% (+0.04R, 47), 2h crypto 57% (+0.02R, 42). 4h crypto
+  lost on the test and 5m, 15m, 30m and daily crypto had no setup that passed, so those stay flat. Higher win
+  rates come from selling part early: they make less per trade than the trained 2R (Mode = Trained) on 1h.
+- **Radar: only calls that held up.** A call (LOUD, VERY LOUD, QUIET, VERY QUIET) shows on a timeframe only if it
+  was right at least 60% of the time and 15 points above chance in both the fit and the validation period. The
+  others are hidden (Calls -> Also show calls that failed). Calls -> Only the strongest shows just VERY LOUD /
+  VERY QUIET: fewer calls, right more often (VERY LOUD 82-99% on the untouched test on 5m to 4h crypto and daily
+  markets).
+
 ## Install (2 minutes each)
 
 1. Open TradingView (website or Desktop app) and any chart.
@@ -75,12 +88,12 @@ The Radar works on anything; outside its training it says "nearest model, untest
 |---|---|---|---|---|---|---|
 | 5m crypto | 2R (trained) | 44% · -0.013R | 36% · -0.029R (33) | 44% · -0.013R | 36% · -0.029R (33) | **flat** |
 | 15m crypto | Half at 0.5R, rest 1R | 67% · -0.015R | 57% · -0.134R (68) | 36% · -0.099R | 26% · -0.195R (68) | **flat** |
-| 30m crypto | Half at 1R, rest 2R | 52% · +0.064R | 45% · -0.058R (75) | 42% · +0.093R | 33% · -0.090R (75) | **flat** |
+| 30m crypto | Third at 0.5R, rest 2R | 66% · +0.025R | 60% · -0.088R (75) | 42% · +0.093R | 33% · -0.090R (75) | **flat** |
 | 1h crypto | Half at 0.5R, rest 2R | 71% · +0.066R | 70% · +0.082R (56) | 49% · +0.173R | 46% · +0.154R (56) | trades |
-| 2h crypto | Half at 0.5R, rest 2R | 66% · +0.050R | 55% · -0.068R (65) | 46% · +0.159R | 35% · -0.017R (65) | **flat** |
-| 4h crypto | Half at 0.5R, rest 2R | 70% · +0.145R | 54% · -0.035R (22) | 52% · +0.414R | 46% · +0.069R (22) | flat (2R passes: pick it to trade) |
+| 2h crypto | Third at 0.5R, rest 2R | 66% · +0.068R | 55% · -0.041R (65) | 46% · +0.159R | 35% · -0.017R (65) | **flat** |
+| 4h crypto | Half at 0.33R, rest 2R | 76% · +0.120R | 68% · -0.005R (22) | 52% · +0.414R | 46% · +0.069R (22) | flat (2R passes: pick it to trade) |
 | 1D crypto | 2R (trained) | 52% · +0.315R | 75% · +0.495R (4) | 52% · +0.315R | 75% · +0.495R (4) | **flat** |
-| 1D markets | 0.5R | 75% · +0.109R | 82% · +0.252R (22) | 54% · +0.425R | 54% · +0.431R (22) | trades |
+| 1D markets | Half at 0.33R, rest 2R | 76% · +0.086R | 86% · +0.193R (22) | 54% · +0.425R | 54% · +0.431R (22) | trades |
 
 **ULTRON Radar**: how often each call came true on the untouched test (number of calls), vs chance.
 
