@@ -167,6 +167,26 @@ class UniverseConfig(_Section):
     symbols: tuple[str, ...] = ("SYN_A", "SYN_B", "SYN_C", "SYN_D", "SYN_E", "SYN_F")
 
 
+class LiveConfig(_Section):
+    """Limits of the real-money mirror (Phase 8, ``execution/live.py``).
+
+    Amounts are in the pair's quote currency (CAD for ``BTC-CAD.KRAKEN``). A budget of 0 means
+    nothing real is ever bought. Only the owner raises these (spec section 2).
+    """
+
+    budget: float = Field(default=0.0, ge=0)  # the most the mirror may have invested
+    max_order_value: float = Field(default=50.0, gt=0)  # the largest single order
+    min_order_value: float = Field(default=10.0, ge=0)  # smaller differences are left alone
+    max_slippage_pct: float = Field(default=0.5, gt=0, le=5)  # limit price vs bid/ask
+    order_timeout_seconds: int = Field(default=60, ge=5, le=900)  # then the rest is cancelled
+
+    @model_validator(mode="after")
+    def _orders_fit(self) -> LiveConfig:
+        if self.min_order_value > self.max_order_value:
+            raise ValueError("live.min_order_value must be <= live.max_order_value")
+        return self
+
+
 class AppConfig(_Section):
     system: SystemConfig = Field(default_factory=SystemConfig)
     risk: RiskConfig = Field(default_factory=RiskConfig)
@@ -174,6 +194,7 @@ class AppConfig(_Section):
     aggregation: AggregationConfig = Field(default_factory=AggregationConfig)
     validation: ValidationConfig = Field(default_factory=ValidationConfig)
     universe: UniverseConfig = Field(default_factory=UniverseConfig)
+    live: LiveConfig = Field(default_factory=LiveConfig)
 
     @model_validator(mode="after")
     def _safety_rules(self) -> AppConfig:

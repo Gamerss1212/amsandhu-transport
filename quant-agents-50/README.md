@@ -1,25 +1,27 @@
 # QuantAgents-50
 
 A multi-agent trading research and **paper-trading** platform, built step by step with Claude Code.
+Real money (crypto on Kraken) is built in, switched off, and only the owner can switch it on.
 
 ## What it is
 
 - **A complete 25-agent core:** all 25 agents are built, tested and wired into one 15-step decision cycle.
 - **25 more agents parked:** the full 50-agent roster stays in the spec, as optional extras to build only when they earn it.
 - **Safety first:** a deterministic risk governor (A49) checks every order, and real money stays locked behind written owner approval.
+- **One file to run it:** `QuantAgents.bat` (Windows) or `bash QuantAgents.sh` installs on the first run, then opens a numbered menu.
 
 ## What it is not
 
 - Not a money printer. No system guarantees profit. "No edge found" is a normal, honest result.
-- Not live trading. The kit ships with a paper broker only.
+- Not live trading out of the box. Real money is optional, crypto-only (Kraken), and off until you complete the 8 steps in `docs/REAL_MONEY.md`. It was tested against a fake exchange, not a real account.
 - Not financial, legal or tax advice.
 
 ## Quick start (about 10 minutes)
 
 You need Python 3.11 or newer. **Beginners: read `START_HERE.md`.**
 
-- **Windows:** double-click `setup.bat`, then `daily.bat` once, then `status.bat`.
-- **macOS/Linux:** `bash setup.sh`, then `bash daily.sh`, then `bash status.sh`.
+- **Windows:** double-click `QuantAgents.bat`. The first run installs everything, then the menu opens: `1` runs today, `3` schedules the daily run, `2` shows the dashboard.
+- **macOS/Linux:** `bash QuantAgents.sh`, then the same menu.
 
 By hand, the same thing:
 
@@ -33,7 +35,7 @@ python -m quantagents demo
 ```
 
 - `demo` runs one full decision cycle of all 25 agents on **synthetic** data (fake symbols SYN_A to SYN_F).
-- `check.py` runs every quality gate: lint, formatting, strict types, 434 tests, and 100% coverage of the risk code.
+- `check.py` runs every quality gate: lint, formatting, strict types, 476 tests, and 100% coverage of the risk code.
 - `python -m quantagents simulate --days 120` runs the full cycle day after day on a fresh paper account.
 
 ### What to expect
@@ -87,6 +89,7 @@ New context and risk agents can only **reduce** risk. If one crashes, the system
 
 | Command | Purpose |
 |---|---|
+| `python -m quantagents --config config/my_universe.yaml menu` | The numbered menu (what `QuantAgents.bat` opens) |
 | `python -m quantagents demo` | One decision cycle on synthetic data |
 | `python -m quantagents data fetch --yahoo SPY QQQ --start 2000-01-01` | Download free daily bars (stocks/ETFs, with dividends and splits) into the append-only store |
 | `python -m quantagents data fetch --ccxt kraken:BTC/USD` | Free daily crypto candles (needs `pip install -e ".[data]"`) |
@@ -108,6 +111,10 @@ New context and risk agents can only **reduce** risk. If one crashes, the system
 | `python -m quantagents watchdog --data data/prices.csv` | Stop trading if cycles or data go stale (never resets) |
 | `python -m quantagents audit` | Verify the tamper-evident audit log |
 | `python -m quantagents acb` | Adjusted cost base report (Canada; not tax advice) |
+| `python -m quantagents live check` | Real money (Phase 8): every gate with ok or what is missing (reads only) |
+| `python -m quantagents live sync --dry-run` | Preview the real orders the mirror would send (sends nothing) |
+| `python -m quantagents live test-order` | One tiny real buy 20% under the market, cancelled at once (needs every gate) |
+| `python -m quantagents live sync` | Copy the paper portfolio onto Kraken (the daily run does this when armed) |
 
 ## Safety rails
 
@@ -119,6 +126,7 @@ New context and risk agents can only **reduce** risk. If one crashes, the system
 - **Stress before every entry.** A45 shrinks new trades whose bad-day loss would break the daily limit, then re-checks the book.
 - **Honest scoring.** A35 only scores a prediction after its horizon has passed and counts overlapping forecasts once. It can only make an agent less confident, never more.
 - **Audit trail.** Every cycle is logged in a hash chain, so edits are detectable.
+- **Real money is a mirror, not a second brain.** It copies the paper account's weights onto Kraken, scaled to `live.budget` (0 by default). It needs 11 gates open, including your dated approval row in `docs/STATUS.md` and the approval phrase in your `.env`. It reconciles with the exchange first, sells only what it bought, uses capped limit orders, and engages the kill switch on any error. It has no withdrawal code. Details: `docs/REAL_MONEY.md`.
 
 ## Project map
 
@@ -131,7 +139,7 @@ New context and risk agents can only **reduce** risk. If one crashes, the system
 | `config/default.yaml` | Every limit and setting |
 | `config/agents.yaml` | The roster: 25 core agents and 25 parked |
 | `src/quantagents/` | The code (one module per agent in `agents/`) |
-| `tests/` | 434 tests |
+| `tests/` | 476 tests |
 | `.claude/` | Settings, hooks, skills, subagents and rules for Claude Code |
 
 ## Canada notes
@@ -139,4 +147,4 @@ New context and risk agents can only **reduce** risk. If one crashes, the system
 - IBKR Canada blocks API orders on Canadian-listed products; US-listed products work.
 - Questrade's API trading is for partner developers; retail gets data only.
 - Crypto: Kraken and Coinbase are CSA restricted dealers in Canada; NDAX is an investment dealer.
-- Re-check these before Phase 8. Rules change.
+- Re-check these before Phase 8. Rules change. In this version real money supports Kraken only.

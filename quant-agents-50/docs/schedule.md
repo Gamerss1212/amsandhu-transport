@@ -1,7 +1,23 @@
 # Daily paper-trading schedule (Phase 3)
 
-Paper trading only. Nothing here can place a real order. The owner approves the schedule
-before it is switched on.
+In paper mode nothing here can place a real order. If you have armed real money yourself
+(`docs/REAL_MONEY.md`), each daily run ends with one more step, `live sync`.
+
+## The easy way
+
+Double-click `QuantAgents.bat` (or `bash QuantAgents.sh`):
+- choice **3** turns the automatic daily run on;
+- choice **4** turns it off.
+
+The menu picks the time for you:
+- **Stocks and ETFs:** Monday to Friday at 3:30 PM.
+- **Crypto:** every day at 7:00 PM.
+
+The times are on this computer's clock, so set it to Alberta time. On Windows the menu makes
+a Task Scheduler task named `QuantAgents daily (<folder name>)`; on macOS and Linux it adds one
+cron line.
+
+The rest of this page does the same by hand.
 
 ## What runs, and when
 
@@ -19,6 +35,9 @@ What each part does:
   - Runs the cycle only if there is a trading day the last cycle has not seen, so a holiday
     or a second run the same day is skipped.
   - Then runs the watchdog. Everything is also written to `runs/daily.log`.
+  - Only when your config's `execution_mode` is `live`: `live sync` copies the paper portfolio
+    to Kraken. It refuses unless every real-money gate is open, and it is skipped after any
+    failed step.
 - **watchdog:** engages the kill switch if a cycle has not run for more than 2 weekdays, if the
   newest bar is more than 3 weekdays old, or if a state file cannot be read. It never resets
   the switch.

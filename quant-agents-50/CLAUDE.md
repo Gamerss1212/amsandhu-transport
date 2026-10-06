@@ -9,7 +9,9 @@ Current phase, progress and human approvals (loaded every session):
 
 ## Non-negotiable rules (spec section 2)
 
-1. Paper trading only until the human approves Phase 8 in `docs/STATUS.md`. No live broker code before that.
+1. Paper trading only until the human approves Phase 8 in `docs/STATUS.md`. The real-money mirror
+   (`execution/live.py`) was built at the owner's request (2026-10-06). Never arm it, never run it
+   against a real account, and never weaken or skip one of its gates.
 2. Never read, write, print or commit secrets. Keys live in `.env`, which only the human edits. Use `os.environ`.
 3. A49 (`src/quantagents/risk/`) is deterministic code. No LLM or ML inside. Its checks may only shrink or reject orders.
 4. Never raise a risk limit, the autonomy level, the execution mode or `live_trading_approved`. Only the human changes those.
@@ -32,6 +34,7 @@ Current phase, progress and human approvals (loaded every session):
 - Real data (Phase 1): `python -m quantagents data fetch --yahoo SPY`, `data list`, `data benchmark --symbol SPY`, `data export --out data/us.csv`
 - Daily paper run (Phase 3): `python -m quantagents --config config/my_universe.yaml daily` (symbols from the config); watchdog: `python -m quantagents watchdog --data data/prices.csv`
 - Everyday: `python -m quantagents status` (dashboard), `python -m quantagents doctor` (install check); release zip: `python scripts/make_release.py`
+- Menu: `python -m quantagents --config config/my_universe.yaml menu`; real money gates: `python -m quantagents live check` (reads only)
 
 ## How to work
 
@@ -60,6 +63,9 @@ Current phase, progress and human approvals (loaded every session):
 - `src/quantagents/simulate.py`: day-by-day paper simulation of the full cycle.
 - `src/quantagents/risk/`: A49 governor and kill switch. Edits ask the human first.
 - `src/quantagents/execution/paper.py`: A05 ledger, A50 paper broker, reconciliation.
+- `src/quantagents/execution/live.py`: the real-money mirror (Phase 8). OFF until the owner opens every gate;
+  guide in `docs/REAL_MONEY.md`. Edits ask the human first, like risk code.
+- `src/quantagents/menu.py`: the numbered menu that `QuantAgents.bat` / `QuantAgents.sh` open.
 - `src/quantagents/backtest/`, `src/quantagents/validation/`: A43, A44, A39 (research only, never trade).
 - `tests/`: one test file per area. `tests/helpers.py` has builders for fake data and messages.
 

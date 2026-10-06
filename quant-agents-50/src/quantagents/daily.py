@@ -11,9 +11,12 @@ Each day downloads the last 5 years (enough for every agent), not the whole hist
 3. ``cycle``: one paper cycle, but only when the data has a trading day the last cycle has not
    seen. The same day is never run twice (it would re-process orders and stops).
 4. ``watchdog``: engages the kill switch if cycles or data have gone stale.
+5. ``live sync``: only when the config's ``execution_mode`` is ``live``. It copies the paper
+   portfolio onto the exchange, and it refuses unless the owner has opened every real-money
+   gate (see ``execution/live.py``). Skipped after any failed step.
 
-Everything printed is also appended to ``runs/daily.log``. Paper trading only: no step can
-send a real order.
+Everything printed is also appended to ``runs/daily.log``. In paper mode no step can send a
+real order.
 """
 
 from __future__ import annotations
@@ -26,8 +29,9 @@ from collections.abc import Callable
 from datetime import UTC, date, datetime
 from pathlib import Path
 
-from quantagents.config import load_config
+from quantagents.config import ExecutionMode, load_config
 from quantagents.data.sources import ccxt_symbol, split_universe
+from quantagents.runlock import RunLock
 from quantagents.watchdog import last_data_date
 
 LOG_FILE = Path("runs/daily.log")
@@ -100,6 +104,8 @@ def run_daily(args: argparse.Namespace, cli: Callable[[list[str]], int]) -> int:
             failed = True
     if call("watchdog", ["watchdog", "--data", args.out]) != 0:
         failed = True
+    if getattr(args, "live", False) and not failed and call("live sync", ["live", "sync"]) != 0:
+        failed = True
     LOG_FILE.parent.mkdir(parents=True, exist_ok=True)
     with LOG_FILE.open("a", encoding="utf-8") as handle:
         handle.write("\n".join(log) + "\n")
@@ -117,9 +123,11 @@ def add_parser(sub: argparse._SubParsersAction[argparse.ArgumentParser]) -> None
     def run(args: argparse.Namespace) -> int:
         from quantagents.cli import main  # late import: cli imports this module
 
+        path = Path(args.config) if args.config else Path("config/default.yaml")
+        cfg = load_config(path if path.exists() else None)
+        args.live = cfg.system.execution_mode is ExecutionMode.LIVE
         if not (args.yahoo or args.ccxt):
-            path = Path(args.config) if args.config else Path("config/default.yaml")
-            symbols = load_config(path if path.exists() else None).universe.symbols
+            symbols = cfg.universe.symbols
             if not symbols or all(s.startswith("SYN_") for s in symbols):
                 print(
                     "Nothing to do: the config's universe is empty or still the synthetic demo "
@@ -140,6 +148,13 @@ def add_parser(sub: argparse._SubParsersAction[argparse.ArgumentParser]) -> None
             args.start = today.replace(
                 year=today.year - HISTORY_YEARS, day=min(today.day, 28)
             ).isoformat()
-        return run_daily(args, main)
+        lock = RunLock(Path("state/daily.lock"))
+        if not lock.acquire():
+            print(f"Another daily run is still going ({lock.path}). This one did nothing.")
+            return 0
+        try:
+            return run_daily(args, main)
+        finally:
+            lock.release()
 
     p.set_defaults(func=run)

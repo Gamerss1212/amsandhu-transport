@@ -77,3 +77,10 @@ validation:                    # A44 promotion thresholds (spec section 64)
 universe:
   asset_class: US_equities
   symbols: [SYN_A, SYN_B, SYN_C, SYN_D, SYN_E, SYN_F]   # synthetic demo symbols, not real tickers
+
+live:                          # the real-money mirror (Phase 8). OFF: budget 0 buys nothing.
+  budget: 0                    # most the mirror may have invested, in the pair's quote currency
+  max_order_value: 50          # largest single real order
+  min_order_value: 10          # smaller differences are left alone (fees would eat them)
+  max_slippage_pct: 0.5        # limit price at most 0.5% past the bid/ask
+  order_timeout_seconds: 60    # unfilled remainder is cancelled after this

@@ -1,6 +1,8 @@
 """Command line: `quantagents <command>` (or `python -m quantagents <command>`).
 
-Run from the repo root. Everything is paper trading; no command can send a real order.
+Run from the project folder. Everything is paper trading, except `live`: the real-money mirror
+(Phase 8), which refuses to send anything until the owner has opened every gate by hand.
+Started from the command line, it first reads the owner's `.env` (values are never printed).
 """
 
 from __future__ import annotations
@@ -15,7 +17,7 @@ from pathlib import Path
 
 import numpy as np
 
-from quantagents import __version__, daily, ops, watchdog
+from quantagents import __version__, daily, envfile, menu, ops, watchdog
 from quantagents.agents.a35_scorekeeper import Scorekeeper
 from quantagents.agents.a45_stress import stress_returns
 from quantagents.audit import AuditLog, read_records, verify_chain
@@ -26,6 +28,7 @@ from quantagents.config import AppConfig, load_config
 from quantagents.data import commands as data_commands
 from quantagents.data.store import data_labels
 from quantagents.data.synthetic import DEMO_AS_OF, synthetic_market
+from quantagents.execution import live
 from quantagents.execution.paper import PaperAccount
 from quantagents.lots import acb_report
 from quantagents.market import MarketData, load_csv, periods_per_year, save_csv
@@ -439,7 +442,8 @@ def cmd_acb(args: argparse.Namespace) -> int:
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        prog="quantagents", description="QuantAgents-50 starter kit (paper trading only)."
+        prog="quantagents",
+        description="QuantAgents-50 (paper trading; real money only after the owner arms it).",
     )
     parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
     parser.add_argument("--config", help="config YAML (default: config/default.yaml)")
@@ -538,6 +542,8 @@ def build_parser() -> argparse.ArgumentParser:
 
     data_commands.add_parser(sub)
     daily.add_parser(sub)
+    live.add_parser(sub)
+    menu.add_parser(sub)
 
     p = sub.add_parser("acb", help="adjusted cost base report from paper fills (not tax advice)")
     p.add_argument("--state", default=str(ACCOUNT_FILE))
@@ -550,6 +556,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         reconfigure = getattr(stream, "reconfigure", None)
         if reconfigure is not None:  # never crash on a character the console cannot show
             reconfigure(errors="replace")
+    if argv is None:  # a real command line (tests pass argv and never read a .env)
+        envfile.load()
     args = build_parser().parse_args(argv)
     try:
         result: int = args.func(args)

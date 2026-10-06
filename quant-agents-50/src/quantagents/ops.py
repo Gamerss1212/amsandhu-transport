@@ -13,7 +13,8 @@ from datetime import UTC, date, datetime
 from pathlib import Path
 from typing import Any
 
-from quantagents.config import AppConfig, load_config
+from quantagents.config import AppConfig, ExecutionMode, load_config
+from quantagents.execution.live import mirror_summary
 from quantagents.execution.paper import PaperAccount
 from quantagents.risk.killswitch import RESET_PHRASE, KillSwitch
 from quantagents.validation.trials import TRIALS_FILE
@@ -153,7 +154,18 @@ def status_report(
         "",
         f"Research: {real} real-data trial rows in {TRIALS_FILE}. Strategies passing every check: none so far.",
     ]
-    lines += ["", "Paper trading only. Not financial advice."]
+    lines += ["", "Real money"]
+    if s.execution_mode is ExecutionMode.LIVE:
+        lines.append(
+            f"  Live mode is ON in the config (budget {cfg.live.budget:,.2f}); every daily run "
+            "tries a real-money sync. `quantagents live check` shows each gate."
+        )
+    else:
+        lines.append("  OFF: paper only. `quantagents live check` shows what turning it on needs.")
+    mirror = mirror_summary(state_file)
+    if mirror:
+        lines.append(f"  {mirror}")
+    lines += ["", "Not financial advice."]
     return lines
 
 

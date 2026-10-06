@@ -29,7 +29,8 @@ def test_the_zip_has_the_whole_program_and_nothing_private(tmp_path: Path) -> No
     assert count == len(names) and len(digest) == 64
     top = "QuantAgents-50/"
     for need in (
-        "START_HERE.md", "setup.bat", "daily.bat", "status.bat", "setup.sh", "pyproject.toml",
+        "START_HERE.md", "QuantAgents.bat", "QuantAgents.sh", "setup.bat", "daily.bat",
+        "status.bat", "setup.sh", "pyproject.toml", "docs/REAL_MONEY.md",
         "src/quantagents/data/store.py", "src/quantagents/cli.py", "tests/data/yahoo_spy_2024_03.json",
         "config/default.yaml", "config/us_etfs.example.yaml", ".env.example", "docs/STATUS.md",
     ):  # fmt: skip
@@ -51,5 +52,12 @@ def test_the_zip_has_the_whole_program_and_nothing_private(tmp_path: Path) -> No
         assert rel.split("/")[0] not in {".venv", "data", "state", "runs", "dist"}, name
         assert "__pycache__" not in name and not name.endswith((".pyc", ".zip"))
         assert rel != ".env" and ".egg-info" not in name
-    info = zipfile.ZipFile(out).getinfo(top + "setup.sh")
-    assert (info.external_attr >> 16) & 0o111  # shell scripts stay executable
+    for script in ("setup.sh", "QuantAgents.sh"):
+        info = zipfile.ZipFile(out).getinfo(top + script)
+        assert (info.external_attr >> 16) & 0o111  # shell scripts stay executable
+
+
+def test_windows_scripts_use_windows_line_endings() -> None:
+    for bat in ROOT.glob("*.bat"):
+        data = bat.read_bytes()
+        assert data.count(b"\r\n") == data.count(b"\n"), bat.name  # cmd.exe needs CRLF

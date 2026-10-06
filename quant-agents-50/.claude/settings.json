@@ -23,6 +23,7 @@
     ],
     "ask": [
       "Edit(/src/quantagents/risk/**)",
+      "Edit(/src/quantagents/execution/live.py)",
       "Edit(/src/quantagents/config.py)",
       "Edit(/config/default.yaml)",
       "Edit(/config/agents.yaml)",

@@ -1,9 +1,9 @@
 @echo off
-rem QuantAgents-50 one-time setup for Windows: double-click this file.
+rem QuantAgents-50 one-time setup for Windows. QuantAgents.bat runs it for you the first time.
 rem Creates a private Python environment in .venv, installs everything, checks it, runs a demo.
 cd /d "%~dp0"
 echo.
-echo === QuantAgents-50 setup (paper trading only) ===
+echo === QuantAgents-50 setup ===
 echo.
 if exist ".venv\Scripts\python.exe" goto have_venv
 rem try the Python launcher first, then python on the PATH
@@ -37,12 +37,11 @@ echo === Demo: one decision cycle on synthetic data ===
 ".venv\Scripts\python.exe" -m quantagents demo
 if not exist "config\my_universe.yaml" copy "config\us_etfs.example.yaml" "config\my_universe.yaml" >nul
 echo.
-echo Setup finished. Next: edit config\my_universe.yaml if you want other symbols,
-echo then double-click daily.bat once. See START_HERE.md.
-pause
+echo Setup finished. Next: double-click QuantAgents.bat for the menu. See START_HERE.md.
+if /i not "%~1"=="nopause" pause
 exit /b 0
 :fail
 echo.
 echo Setup stopped because a step failed. Read the messages above.
-pause
+if /i not "%~1"=="nopause" pause
 exit /b 1

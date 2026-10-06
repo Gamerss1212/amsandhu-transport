@@ -1,6 +1,6 @@
 # Build status
 
-Updated: 2026-10-06 (release 0.6.0: Phases 1-3 built, research grid run, clean-install tested; the 30-day paper run is next)
+Updated: 2026-10-06 (release 0.7.0: one-click launcher and menu; real-money mirror built and switched off; the 30-day paper run is next)
 
 ## Where things stand
 
@@ -8,7 +8,9 @@ Updated: 2026-10-06 (release 0.6.0: Phases 1-3 built, research grid run, clean-i
 - The other 25 roster agents are **parked** (`core: false` in `config/agents.yaml`): optional, built later only if they earn it.
 - New signal agents A13 and A15 are in **shadow**: sealed and scored by A35, no vote until the owner promotes them.
 - Mode: **paper**. Autonomy level: **1**. Live trading: **not approved**.
-- Tests: 434, all gates green, 99% line coverage overall, 100% branch coverage on risk.
+- **Real money: built, OFF.** The owner asked for it on 2026-10-06. It is a crypto-only mirror for Kraken (`docs/REAL_MONEY.md`). It sends nothing until the owner opens all 11 gates, including a dated approval row below. It was tested against a fake exchange and real Kraken prices, never a real account.
+- **Simple to run:** `QuantAgents.bat` (Windows) or `bash QuantAgents.sh` installs on the first run, then opens a numbered menu.
+- Tests: 476, all gates green, 97% coverage overall, 100% branch coverage on risk.
 - **Phase 1 passed** (2026-10-06): real data store, free data sources, split check, event-driven backtester, benchmark, leakage tests.
 - **Phase 2 done** (2026-10-06): five published strategies tested on real data, pre-registered, run once. **All five FAIL** the promotion bar. No edge strong enough to trade has been found yet.
 - **Phase 3 built** (2026-10-06): chaos tests, watchdog, daily run and schedule guide. The 30-day paper run needs calendar time on the owner's PC.
@@ -36,7 +38,7 @@ Updated: 2026-10-06 (release 0.6.0: Phases 1-3 built, research grid run, clean-i
 | 3 | Risk, execution, paper | Built and tested 2026-10-06; **30 paper days to run** (owner's PC, `docs/schedule.md`) |
 | 4 | Context, aggregation, scoring | Built (core complete); 60+ real paper days to score agents |
 | 5-7 | Parked agents (optional) | Not planned |
-| 8 | Micro-live (owner approval) | Locked |
+| 8 | Micro-live (owner approval) | Code built 2026-10-06 at the owner's request, **switched off**. Needs the owner's approval row and 10 more gates (`docs/REAL_MONEY.md`). Its preconditions are not met: no strategy has passed A44. |
 | 9 | Controlled scaling (owner approval) | Locked |
 
 ## Phase 1 results (2026-10-06, real data)
@@ -180,6 +182,73 @@ Windows under Wine), running it on live data, and reviewing the code.
 - `START_HERE.md`.
 - The release builder: `python scripts/make_release.py`.
 
+## Release 0.7.0 (2026-10-06): one-click menu, real money built but off
+
+**Simple to run**
+- `QuantAgents.bat` (Windows) and `QuantAgents.sh` (macOS/Linux):
+  - the first run installs everything (setup, all gates, a demo);
+  - after that, every double-click opens the menu.
+- The menu (`quantagents menu`) has 12 numbered choices:
+  - run today and show the dashboard;
+  - turn the automatic daily run on or off (Windows Task Scheduler or cron);
+  - stop all trading, and resume with the reset phrase;
+  - edit the symbols;
+  - three real-money choices (what is still needed, a preview, a test order);
+  - check the install.
+- The menu cannot raise a limit or switch on real money. Every choice runs an ordinary
+  command.
+
+**Real money (Phase 8), switched off.** `src/quantagents/execution/live.py`, `quantagents live check | sync [--dry-run] | test-order`.
+- **What it is:** a mirror. The paper cycle still decides; the mirror copies the paper
+  portfolio's weights to Kraken, scaled to `live.budget` (default 0).
+- **Gates, all 11 required:**
+  - the owner's dated "Approve Phase 8 micro-live" row in this file;
+  - in the config: `execution_mode` live, `autonomy_level` 3, `live_trading_approved`;
+  - in `.env`: the approval phrase and the exchange keys;
+  - a budget above 0;
+  - crypto on one exchange (Kraken), with ccxt installed;
+  - the kill switch armed;
+  - a paper cycle at most 4 days old that was not halted.
+- **Safety in code:**
+  - reconciles with the exchange first; a break engages the kill switch;
+  - sells first, and only what the mirror bought;
+  - limit orders at most 0.5% past the bid/ask and at most `max_order_value`; whatever is
+    unfilled is cancelled;
+  - buys need free cash and a price within A49's 5% band;
+  - any error engages the kill switch;
+  - one run at a time: a lock file stops a menu click and a scheduled run from both buying;
+  - keys are scrubbed from every message;
+  - there is no withdrawal or transfer code (a test checks).
+- **Alerts** (optional, Telegram): every fill, every halt, and any loss limit at 75% or more.
+- **Separate files:** paper and live state never mix. The live ledger is
+  `state/live_ledger.json`.
+- **`.env` is read at start-up** (values never printed). Tests never read it, and they clear
+  every live variable.
+
+**Tested**
+- 42 new automated tests (live mirror, menu, schedule, run locks) on a fake exchange.
+  - **Scenarios covered:** reconciliation breaks, partial fills, timeouts, crash recovery,
+    price band, cash cap, secret scrubbing, a failed test order, an unreachable exchange.
+- **Real Kraken market data** (public prices, minimum sizes, precision) with a fake account:
+  - the preview, a buy run and an idempotent second run all worked;
+  - the test order rested 20% under the bid and was cancelled.
+- **A clean install from the zip on Linux** (`bash QuantAgents.sh`, Python 3.11, numpy 2.x):
+  - setup and all gates passed (472 passed, 1 skipped by design);
+  - then, from the menu: a live-data daily run (fetch, export, cycle and watchdog, all exit 0),
+    the dashboard, the real-money check (8 of 11 gates closed, as expected), the preview
+    (refused, as expected), and stop then resume.
+- **Windows under Wine** (Python 3.11, numpy 1.26.4):
+  - every gate green (472 passed, 1 skipped by design), and again for the changed test files
+    after the run locks were added;
+  - `QuantAgents.bat` opened the menu; dashboard, real-money check, stop and resume worked;
+  - its first-run branch calls setup and stops cleanly on a failed or crashed setup.
+  - Wine's `schtasks` is a stub, so the automatic schedule could not be created there. The
+    menu now counts a task as ON only when Windows lists it by name.
+
+**Not tested** (said plainly):
+- a real exchange account, because no keys were shared;
+- Windows Task Scheduler on a real PC.
+
 ## Human approvals
 
 | Date | Decision | Owner |
@@ -197,10 +266,14 @@ Windows under Wine), running it on live data, and reviewing the code.
 
 ## Next step
 
-1. Owner: unzip `QuantAgents-50-v0.6.0.zip` and follow `START_HERE.md`. On Windows:
-   install Python 3.11+, double-click `setup.bat`, then `daily.bat` once, then `status.bat`.
-2. Owner: schedule `daily.bat` (`docs/schedule.md`) and let it run for 30 trading days. Check
-   `status.bat` now and then.
-3. Owner (optional): decide the PBO question in the Phase 2 results.
-4. After 30 clean paper days: Phase 4 scoring has real data to score. Phase 8 (real money)
-   stays locked until you approve it here.
+1. **Owner:** unzip `QuantAgents-50-v0.7.0.zip` and double-click `QuantAgents.bat`.
+   - Choose 1 (run today), then 3 (automatic daily run ON).
+   - Let it paper-trade for 30 trading days; choice 2 shows progress.
+2. **Owner (optional):** decide the PBO question in the Phase 2 results.
+3. **Real money is your decision.** It needs:
+   - a separate crypto folder;
+   - 30 paper days;
+   - the 8 steps in `docs/REAL_MONEY.md`, including your dated approval row above.
+
+   No strategy has passed validation yet, so the honest expectation is "no edge".
+4. After 30 clean paper days, Phase 4 scoring has real data to score.

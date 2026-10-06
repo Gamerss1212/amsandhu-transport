@@ -30,3 +30,17 @@ def market() -> MarketData:
 @pytest.fixture(scope="session")
 def registry() -> Registry:
     return Registry.load(REPO_ROOT / "config" / "agents.yaml")
+
+
+@pytest.fixture(autouse=True)
+def _no_owner_secrets(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Tests never see the owner's real-money approval, exchange keys or alert settings."""
+    for name in (
+        "QUANTAGENTS_LIVE_APPROVED",
+        "LIVE_API_KEY",
+        "LIVE_API_SECRET",
+        "LIVE_API_PASSWORD",
+        "TELEGRAM_BOT_TOKEN",
+        "TELEGRAM_CHAT_ID",
+    ):
+        monkeypatch.delenv(name, raising=False)

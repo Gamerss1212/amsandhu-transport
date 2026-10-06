@@ -15,4 +15,4 @@ PY=${PYTHON:-python3}
 .venv/bin/python -m quantagents demo
 [ -f config/my_universe.yaml ] || cp config/us_etfs.example.yaml config/my_universe.yaml
 echo
-echo "Setup finished. Next: edit config/my_universe.yaml, then run: bash daily.sh  (see START_HERE.md)"
+echo "Setup finished. Next: bash QuantAgents.sh for the menu (see START_HERE.md)"
