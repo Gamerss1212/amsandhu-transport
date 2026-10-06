@@ -25,6 +25,20 @@
 
 ## Acceptance (spec section 83)
 
-- [ ] Every strategy has a full A44 report with an honest PASS or FAIL
-- [ ] Every run is in the trial log
-- [ ] The A39 red team passes every strategy that is reported
+- [x] Every strategy has a full A44 report with an honest PASS or FAIL (all five: FAIL; see `docs/research/`)
+- [x] Every run is in the trial log (`docs/research/trials.md`; the CLI now logs every run itself)
+- [x] The A39 red team passes every strategy that is reported (no findings on any of the five)
+
+## Results (2026-10-06)
+
+Pre-registered in `docs/research/preregistration.md`, run once on real data, 0.15% one-way costs.
+
+| Family | Primary variant | Sharpe | Buy-and-hold Sharpe | Failing checks | Verdict |
+|---|---|---|---|---|---|
+| tsmom_blend | tsmom_blend_vt10 | 0.64 | 0.58 | PBO 0.92 | FAIL |
+| faber | faber_10m | 0.64 | 0.58 | PBO 0.91 | FAIL |
+| vol_target | vt10_hold | 0.57 | 0.58 | t 2.70, PBO 0.31 | FAIL |
+| xs_mom | xsmom_12_1 | 0.60 | 0.58 | PBO 0.93 | FAIL |
+| rsi2 | rsi2_10 | 0.20 | 0.58 | t, PSR, DSR, PBO, 2x costs, SPA | FAIL |
+
+A21 carry: not built (see STATUS).

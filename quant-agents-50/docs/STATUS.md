@@ -1,6 +1,6 @@
 # Build status
 
-Updated: 2026-10-06 (kit v0.5.0 + Phase 1: real data and the event-driven backtester)
+Updated: 2026-10-06 (kit v0.5.0 + Phase 1 and Phase 2 on real data)
 
 ## Where things stand
 
@@ -8,8 +8,9 @@ Updated: 2026-10-06 (kit v0.5.0 + Phase 1: real data and the event-driven backte
 - The other 25 roster agents are **parked** (`core: false` in `config/agents.yaml`): optional, built later only if they earn it.
 - New signal agents A13 and A15 are in **shadow**: sealed and scored by A35, no vote until the owner promotes them.
 - Mode: **paper**. Autonomy level: **1**. Live trading: **not approved**.
-- Tests: 369, all gates green, 99% line coverage overall, 100% branch coverage on risk.
+- Tests: 387, all gates green, 99% line coverage overall, 100% branch coverage on risk.
 - **Phase 1 passed** (2026-10-06): real data store, free data sources, split check, event-driven backtester, benchmark, leakage tests.
+- **Phase 2 done** (2026-10-06): five published strategies tested on real data, pre-registered, run once. **All five FAIL** the promotion bar. No edge strong enough to trade has been found yet.
 - An independent review found 8 defects in the new agents (1 high, 3 medium, 4 low). All are fixed and covered by regression tests.
 
 ## The 25-agent core
@@ -29,7 +30,7 @@ Updated: 2026-10-06 (kit v0.5.0 + Phase 1: real data and the event-driven backte
 |---|---|---|
 | 0 | Setup on the owner's PC | Checked in the build environment (all gates green); still to do on the owner's PC |
 | 1 | Data and backtester | **Passed** 2026-10-06 (see Phase 1 results below) |
-| 2 | First signals and validation | Built; strategy library and trial log to grow |
+| 2 | First signals and validation | **Done** 2026-10-06: 5 families, all FAIL (see Phase 2 results) |
 | 3 | Risk, execution, paper | Built; chaos tests, watchdog and 30 paper days to do |
 | 4 | Context, aggregation, scoring | Built (core complete); 60+ real paper days to score agents |
 | 5-7 | Parked agents (optional) | Not planned |
@@ -56,6 +57,34 @@ downloaded 2026-10-06). Pass = every route within 10 bp (0.1%) a year.
   event-driven +8.66%. Both logged in `docs/research/trials.md` as trials. Not validated: no A44 run.
 - All free data is labelled "survivorship-biased: upper bound only" and "not point-in-time".
 
+## Phase 2 results (2026-10-06, real data)
+
+| Family | Universe | Sharpe (buy-and-hold) | Max drawdown (buy-and-hold) | Failing checks | Verdict |
+|---|---|---|---|---|---|
+| tsmom_blend_vt10 | 8 multi-asset ETFs | 0.64 (0.58) | 7.8% (37.2%) | PBO 0.92 | FAIL |
+| faber_10m | 8 multi-asset ETFs | 0.64 (0.58) | 13.3% (37.2%) | PBO 0.91 | FAIL |
+| vt10_hold | 8 multi-asset ETFs | 0.57 (0.58) | 23.6% (37.2%) | t 2.70, PBO 0.31 | FAIL |
+| xsmom_12_1 | 9 sector SPDRs | 0.60 (0.58) | 44.9% (52.2%) | PBO 0.93 | FAIL |
+| rsi2_10 | SPY QQQ IWM DIA | 0.20 (0.58) | 16.0% (54.0%) | t, PSR, DSR, PBO, SPA, 2x costs | FAIL |
+
+**In plain words**
+- **No edge proven.** None of the five beats simply holding the same ETFs by a margin the
+  tests can trust.
+- **Lower drawdowns:** the two trend rules (tsmom_blend, faber) had far smaller drawdowns at a
+  similar Sharpe. They also earned less.
+- **RSI(2)** loses its edge to trading costs.
+- **Why three families fail only on PBO:** each was tested with 2-3 near-twin variants. With so
+  few, so similar variants, PBO mostly measures a coin flip between them. That is a
+  limitation of the rule, not proof of an edge.
+- **Owner decision:** whether PBO should only apply when a family has, say, 10+ variants. Any
+  change applies to future families only. These results stay FAIL.
+
+**A21 carry: not built.**
+- **Crypto funding rates** belong to perpetual futures, which this kit cannot trade (spot only,
+  Canada).
+- **FX carry** needs interest-rate data that the store does not have yet.
+- A21 stays registered and idle until a carry source exists.
+
 ## Human approvals
 
 | Date | Decision | Owner |
@@ -64,7 +93,7 @@ downloaded 2026-10-06). Pass = every route within 10 bp (0.1%) a year.
 
 ## Open issues
 
-- Most results so far are on synthetic data and prove nothing about real markets. Real-data runs so far are engine checks only.
+- Real-data research so far: 5 strategy families, all FAIL (Phase 2). Synthetic results prove nothing about real markets.
 - The default config universe is the synthetic SYN_A..SYN_F. To paper-trade real symbols, put them in `universe.symbols` (or `[]` for every symbol in the file). `cycle` now says so when nothing can trade.
 - Export stocks and crypto to separate CSVs: crypto trades on weekends, so a mixed file has gaps that make A02 block the stocks.
 - On the synthetic data the full chain rarely says GO: two teams must agree and the edge must beat 1.5x costs. That is by design.
@@ -74,4 +103,5 @@ downloaded 2026-10-06). Pass = every route within 10 bp (0.1%) a year.
 ## Next step
 
 - Owner: on your PC, install Python 3.11+, Git and Claude Code, then `python -m pip install -e ".[dev,data]"` and `python scripts/check.py`.
-- Build: Phase 2 (trial log, strategy library on real data, A44 additions) and Phase 3 (chaos tests, watchdog, daily schedule).
+- Owner: decide the PBO question above (optional).
+- Build: Phase 3 (chaos tests, watchdog, daily schedule). Paper days need calendar time.
