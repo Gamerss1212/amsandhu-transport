@@ -167,7 +167,7 @@ Windows under Wine), running it on live data, and reviewing the code.
 |---|---|---|---|
 | Linux | 3.11, 3.12, 3.13 | 2.4 and 2.5 (newest) | all gates green |
 | Linux | 3.11 | 1.26.4 (oldest supported) | all gates green |
-| Windows (Wine) | 3.11 | 1.26.4 | `setup.bat` through every gate (see the note below) |
+| Windows (Wine) | 3.11 | 1.26.4 | `setup.bat`: all gates green (433 passed, 1 skipped by design), demo OK; `daily.bat` with live data and `status.bat` OK |
 
 - Wine (the Windows layer used for testing here) cannot run numpy 2.x: it lacks one C library
   function (`crealf`) that real Windows has. So the Windows test used numpy 1.26.4.
