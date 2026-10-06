@@ -16,22 +16,22 @@ if not exist ".venv\Scripts\python.exe" (
 )
 :have_venv
 ".venv\Scripts\python.exe" -c "import sys; sys.exit(0 if sys.version_info >= (3, 11) else 1)"
-if errorlevel 1 (
+if %errorlevel% neq 0 (
     echo This Python is too old: QuantAgents needs 3.11 or newer.
     echo Install a newer Python from python.org, delete the .venv folder, and run setup.bat again.
     goto fail
 )
 ".venv\Scripts\python.exe" -m pip install --upgrade pip
 ".venv\Scripts\python.exe" -m pip install -e ".[dev,data]"
-if errorlevel 1 goto fail
+if %errorlevel% neq 0 goto fail
 echo.
 echo === Checking the install ===
 ".venv\Scripts\python.exe" -m quantagents doctor
-if errorlevel 1 goto fail
+if %errorlevel% neq 0 goto fail
 echo.
 echo === Running every quality gate (takes about a minute) ===
 ".venv\Scripts\python.exe" scripts\check.py
-if errorlevel 1 goto fail
+if %errorlevel% neq 0 goto fail
 echo.
 echo === Demo: one decision cycle on synthetic data ===
 ".venv\Scripts\python.exe" -m quantagents demo
