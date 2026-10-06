@@ -183,7 +183,8 @@ def _execute(
             if i % step == 0 or i == len(tasks):
                 progress(f"  {i}/{len(tasks)} backtests done")
         return out
-    with multiprocessing.Pool(jobs) as pool:
+    # "spawn" everywhere: the same as Windows, and no fork() of a multi-threaded process
+    with multiprocessing.get_context("spawn").Pool(jobs) as pool:
         chunk = max(1, min(32, len(tasks) // (jobs * 8) or 1))
         for i, (task, rets, metrics) in enumerate(pool.imap_unordered(_run, tasks, chunk), 1):
             out[task] = (rets, metrics)

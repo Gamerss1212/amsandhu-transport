@@ -1,0 +1,11 @@
+# Example config for paper trading crypto from Kraken (Phase 3).
+# Use it in a SEPARATE copy of the QuantAgents-50 folder: one folder holds one paper account,
+# and crypto trades on weekends while stocks do not.
+# Copy it to config/my_universe.yaml in that folder. Every setting not written here keeps its
+# default, so all risk limits stay exactly as they are. Only the universe and the unit size
+# change: crypto is bought in small fractions, not whole coins.
+universe:
+  asset_class: crypto_spot
+  symbols: [BTC-USD.KRAKEN, ETH-USD.KRAKEN]
+risk:
+  quantity_step: 0.0001

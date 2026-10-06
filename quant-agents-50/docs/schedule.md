@@ -58,6 +58,15 @@ What each part does:
 30 16 * * 1-5  cd ~/quant-agents-50 && .venv/bin/python scripts/watchdog.py --data data/prices.csv
 ```
 
+## A crypto folder
+
+- Use a second copy of the folder, with `config/crypto.example.yaml` copied to
+  `config/my_universe.yaml`.
+- Crypto trades every day, and its daily bar ends at midnight UTC (6:00 PM Mountain Time in
+  summer, 5:00 PM in winter). So schedule its `daily.bat` for **every day at 7:00 PM MT**,
+  not weekdays only.
+- Unfinished bars are never used: the downloader drops today's bar until the UTC day is over.
+
 ## The 30-day paper run (Phase 3 acceptance)
 
 - 30 trading days with zero A49 breaches and no reconciliation break. This needs real

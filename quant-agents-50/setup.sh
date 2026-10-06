@@ -4,6 +4,10 @@ set -euo pipefail
 cd "$(dirname "$0")"
 PY=${PYTHON:-python3}
 [ -x .venv/bin/python ] || "$PY" -m venv .venv
+.venv/bin/python -c "import sys; sys.exit(0 if sys.version_info >= (3, 11) else 1)" || {
+  echo "This Python is too old: QuantAgents needs 3.11 or newer. Install a newer one, delete .venv, run again."
+  exit 1
+}
 .venv/bin/python -m pip install --upgrade pip
 .venv/bin/python -m pip install -e ".[dev,data]"
 .venv/bin/python -m quantagents doctor

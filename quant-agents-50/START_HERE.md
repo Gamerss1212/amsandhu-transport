@@ -22,12 +22,14 @@ approve Phase 8 yourself in `docs/STATUS.md`.
    **"Add python.exe to PATH"**.
 2. **Unzip** this folder somewhere simple, for example `C:\QuantAgents-50`.
 3. **Double-click `setup.bat`.** It installs everything into a private `.venv` folder, checks
-   the install, runs all 433 tests and shows a demo. It ends with "Setup finished."
+   the install, runs all 434 tests and shows a demo. It ends with "Setup finished."
 4. **Optional:** open `config\my_universe.yaml` in Notepad and change the symbols. The
    default is 8 US-listed ETFs.
    - Toronto listings end in `.TO` (for example `XIC.TO`).
    - Crypto from Kraken is written `BTC-USD.KRAKEN`.
-   - Keep stocks and crypto in separate configs: crypto trades on weekends.
+   - **One folder holds one paper account.** For crypto, unzip a second copy into another
+     folder (for example `C:\QuantAgents-Crypto`) and copy `config\crypto.example.yaml` to
+     `config\my_universe.yaml` there. Crypto trades on weekends; stocks do not.
 5. **Double-click `daily.bat` once.** You should see `--- cycle (exit 0)` and
    `Watchdog: all clear.`
 6. **Double-click `status.bat`** any time to see the account, the kill switch, the last

@@ -122,6 +122,14 @@ def cmd_cycle(args: argparse.Namespace) -> int:
     state = Path(args.state)
     scores_path = state.with_name(SCORES_FILE.name)
     account = PaperAccount.load_or_new(state, cfg.system.capital, cfg.costs)
+    held = {s for s, q in account.ledger.book.quantities().items() if q}
+    missing = held - set(market.symbols)
+    if missing:  # a position with no price would make the account value wrong
+        raise ValueError(
+            f"the paper account in {state} holds {', '.join(sorted(missing))}, which "
+            f"{args.data} does not have. One folder holds one paper account: use a second "
+            "copy of QuantAgents-50 for another universe."
+        )
     scorekeeper = Scorekeeper.load_or_new(scores_path)
     orchestrator = Orchestrator(
         cfg,

@@ -42,6 +42,17 @@ def last_cycle_as_of(runs_dir: Path) -> date | None:
     return max(days) if days else None
 
 
+def last_cycle_symbols(runs_dir: Path) -> set[str]:
+    """The symbols of the newest cycle in this folder (from its market snapshot)."""
+    newest: tuple[str, set[str]] | None = None
+    for p in (runs_dir / "cycles").glob("*.json"):
+        data = json.loads(p.read_text(encoding="utf-8"))
+        key = str(data["as_of"])
+        if newest is None or key > newest[0]:
+            newest = (key, set(data.get("snapshot", {}).get("last_close", {})))
+    return newest[1] if newest else set()
+
+
 def run_daily(args: argparse.Namespace, cli: Callable[[list[str]], int]) -> int:
     runs = Path("runs")
     log: list[str] = [f"=== daily run {datetime.now(UTC).isoformat(timespec='seconds')}"]
@@ -71,7 +82,17 @@ def run_daily(args: argparse.Namespace, cli: Callable[[list[str]], int]) -> int:
     else:
         newest = last_data_date(Path(args.out))
         done = last_cycle_as_of(runs)
-        if done is not None and newest <= done:
+        before = last_cycle_symbols(runs)
+        if before and not before & set(args.symbols):
+            msg = (
+                f"REFUSED: this folder's paper account trades {', '.join(sorted(before))}, but "
+                f"this run is for {', '.join(args.symbols)}. One folder holds one paper account: "
+                "unzip a second copy of QuantAgents-50 for another universe."
+            )
+            log.append(f"--- cycle\n{msg}")
+            print(f"--- cycle\n{msg}")
+            failed = True
+        elif done is not None and newest <= done:
             msg = f"no new trading day (data ends {newest}, last cycle {done}): cycle skipped"
             log.append(f"--- cycle\n{msg}")
             print(f"--- cycle\n{msg}")

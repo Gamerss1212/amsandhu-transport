@@ -6,18 +6,21 @@ echo.
 echo === QuantAgents-50 setup (paper trading only) ===
 echo.
 if exist ".venv\Scripts\python.exe" goto have_venv
-where py >nul 2>nul
-if %errorlevel%==0 (
-    py -3 -m venv .venv
-) else (
-    python -m venv .venv
-)
+rem try the Python launcher first, then python on the PATH
+py -3 -m venv .venv >nul 2>nul
+if not exist ".venv\Scripts\python.exe" python -m venv .venv
 if not exist ".venv\Scripts\python.exe" (
     echo Could not create the Python environment.
     echo Install Python 3.11 or newer from python.org and tick "Add python.exe to PATH".
     goto fail
 )
 :have_venv
+".venv\Scripts\python.exe" -c "import sys; sys.exit(0 if sys.version_info >= (3, 11) else 1)"
+if errorlevel 1 (
+    echo This Python is too old: QuantAgents needs 3.11 or newer.
+    echo Install a newer Python from python.org, delete the .venv folder, and run setup.bat again.
+    goto fail
+)
 ".venv\Scripts\python.exe" -m pip install --upgrade pip
 ".venv\Scripts\python.exe" -m pip install -e ".[dev,data]"
 if errorlevel 1 goto fail

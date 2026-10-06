@@ -106,3 +106,31 @@ def test_research_never_overwrites_a_report(home: Path) -> None:
     assert _free_path(str(first)) == Path("docs/research/grid-2026-10-06-2.md")
     Path("docs/research/grid-2026-10-06-2.csv").write_text("old", encoding="utf-8")
     assert _free_path(str(first)) == Path("docs/research/grid-2026-10-06-3.md")
+
+
+def test_one_folder_never_mixes_two_universes(
+    home: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    monkeypatch.setattr(sources, "fetch_yahoo", lambda s, a, b: fake_history(s, last_weekday()))
+    assert main(["daily", "--yahoo", "AAA", "BBB", "--out", "data/stocks.csv"]) == 0
+    capsys.readouterr()
+    # a different universe in the same folder is refused before any cycle runs
+    assert main(["daily", "--yahoo", "CCC", "--out", "data/other.csv"]) == 1
+    out = capsys.readouterr().out
+    assert "REFUSED" in out and "One folder holds one paper account" in out
+    # and a cycle on a file without the account's positions is refused too
+    from quantagents.config import AppConfig
+    from quantagents.execution.paper import PaperAccount
+    from quantagents.schemas import Fill, OrderSide
+
+    cfg = AppConfig()
+    account = PaperAccount(cfg.system.capital, cfg.costs)
+    fill = Fill(
+        fill_id="f1", intent_id="i1", symbol="ZZZ", side=OrderSide.BUY, qty=1.0, price=10.0,
+        fee=0.0, trade_date=last_weekday(), kind="entry",
+    )  # fmt: skip
+    account.ledger.record(fill)
+    account.broker.book.apply(fill)
+    account.save(home / "state" / "paper_account.json")
+    assert main(["cycle", "--data", "data/stocks.csv"]) == 2
+    assert "holds ZZZ" in capsys.readouterr().err

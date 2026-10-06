@@ -1,6 +1,6 @@
 # Build status
 
-Updated: 2026-10-06 (kit v0.5.0 + Phases 1-3 built + a 7,668-backtest research grid; the 30-day paper run is next)
+Updated: 2026-10-06 (release 0.6.0: Phases 1-3 built, research grid run, clean-install tested; the 30-day paper run is next)
 
 ## Where things stand
 
@@ -8,7 +8,7 @@ Updated: 2026-10-06 (kit v0.5.0 + Phases 1-3 built + a 7,668-backtest research g
 - The other 25 roster agents are **parked** (`core: false` in `config/agents.yaml`): optional, built later only if they earn it.
 - New signal agents A13 and A15 are in **shadow**: sealed and scored by A35, no vote until the owner promotes them.
 - Mode: **paper**. Autonomy level: **1**. Live trading: **not approved**.
-- Tests: 433, all gates green, 99% line coverage overall, 100% branch coverage on risk.
+- Tests: 434, all gates green, 99% line coverage overall, 100% branch coverage on risk.
 - **Phase 1 passed** (2026-10-06): real data store, free data sources, split check, event-driven backtester, benchmark, leakage tests.
 - **Phase 2 done** (2026-10-06): five published strategies tested on real data, pre-registered, run once. **All five FAIL** the promotion bar. No edge strong enough to trade has been found yet.
 - **Phase 3 built** (2026-10-06): chaos tests, watchdog, daily run and schedule guide. The 30-day paper run needs calendar time on the owner's PC.
@@ -140,6 +140,31 @@ Pre-registered in `docs/research/grid-preregistration.md` (committed before the 
 
 Phase 2 numbers came from the old engine. Their verdicts (all FAIL) stand.
 
+## Release 0.6.0 (2026-10-06): problems found and fixed
+
+Found by installing the download from scratch on Python 3.11, 3.12 and 3.13 (Linux, and
+Windows under Wine), running it on live data, and reviewing the code.
+
+| Problem | Fix |
+|---|---|
+| A clean install on Python 3.12/3.13 failed the type check (new numpy 2.5 type hints) | Code fixed; ruff and mypy pinned so a new release cannot break a fresh install |
+| Kraken `BTC/USD` and Yahoo `BTC-USD` were both stored as `BTC-USD`: the store could switch sources | Exchange data is now `BTC-USD.KRAKEN` |
+| Store file names could contain characters Windows forbids | Safe names on every system |
+| Each read scanned every snapshot ever stored (slower every day) | A read opens only the one file it needs |
+| The daily run downloaded 26 years of history every day | 5 years (enough for every agent) |
+| A second research run on the same day overwrote the report | Reports are never overwritten (`-2`, `-3`...) |
+| Two universes in one folder shared one paper account (wrong account value) | Refused with a clear message; one folder per universe (`config/crypto.example.yaml` for crypto) |
+| Research workers were forked from a multi-threaded process (deadlock risk on Python 3.12+) | Workers start the same way as on Windows ("spawn") |
+| `setup.bat` gave up if the Python launcher was broken | It tries the launcher, then `python`, and checks the version |
+| The download builder dropped `src/quantagents/data/` and `tests/data/` (caught before release) | Fixed; a test proves every program and test file ships |
+
+**New**
+- `setup`, `daily` and `status` scripts for Windows and macOS/Linux.
+- The `status` dashboard and the `doctor` install check.
+- `daily` reads its symbols from the config.
+- `START_HERE.md`.
+- The release builder: `python scripts/make_release.py`.
+
 ## Human approvals
 
 | Date | Decision | Owner |
@@ -157,10 +182,10 @@ Phase 2 numbers came from the old engine. Their verdicts (all FAIL) stand.
 
 ## Next step
 
-1. Owner: on your PC, install Python 3.11+, Git and Claude Code. Then run
-   `python -m pip install -e ".[dev,data]"` and `python scripts/check.py`.
-2. Owner: copy `config/us_etfs.example.yaml` to `config/my_universe.yaml`, run the daily
-   command once by hand, then approve and switch on the schedule (`docs/schedule.md`).
+1. Owner: unzip `QuantAgents-50-v0.6.0.zip` and follow `START_HERE.md`. On Windows:
+   install Python 3.11+, double-click `setup.bat`, then `daily.bat` once, then `status.bat`.
+2. Owner: schedule `daily.bat` (`docs/schedule.md`) and let it run for 30 trading days. Check
+   `status.bat` now and then.
 3. Owner (optional): decide the PBO question in the Phase 2 results.
 4. After 30 clean paper days: Phase 4 scoring has real data to score. Phase 8 (real money)
    stays locked until you approve it here.
