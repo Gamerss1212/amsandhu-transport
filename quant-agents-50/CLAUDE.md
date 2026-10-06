@@ -28,6 +28,7 @@ Current phase, progress and human approvals (loaded every session):
 - Roster: `python -m quantagents agents --core`; strategy stress: `python -m quantagents stress --strategy tsmom`
 - Research: `python -m quantagents validate --strategy tsmom` (A43 backtest + A44 statistics + A39 red team)
 - Paper day: `python -m quantagents cycle --data data/prices.csv`; kill switch: `python -m quantagents killswitch status`
+- Real data (Phase 1): `python -m quantagents data fetch --yahoo SPY`, `data list`, `data benchmark --symbol SPY`, `data export --out data/us.csv`
 
 ## How to work
 

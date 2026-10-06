@@ -6,6 +6,7 @@ from collections.abc import Iterable
 
 from quantagents.agents.a45_stress import StrategyStress
 from quantagents.backtest.engine import BacktestResult
+from quantagents.backtest.event import EventResult
 from quantagents.orchestrator import CycleReport
 from quantagents.registry import AgentSpec, Registry
 from quantagents.schemas import ContextReport, ScoreSummary, StressReport
@@ -276,6 +277,22 @@ def format_backtest(result: BacktestResult) -> str:
         f"Total return {m['total_return']:+.2%} | CAGR {m['cagr']:+.2%} | volatility {m['ann_vol']:.2%}",
         f"Sharpe {m['sharpe']:.2f} | max drawdown {m['max_drawdown']:.2%} | "
         f"avg daily turnover {m['avg_daily_turnover']:.3f} | invested on {m['exposure_days_pct']:.0f}% of days",
+    ]
+    return "\n".join(lines)
+
+
+def format_event_backtest(result: EventResult, currency: str) -> str:
+    m, c = result.metrics, result.costs
+    lines = [
+        f"Event-driven backtest: {result.name} ({result.dates[0].isoformat()} to "
+        f"{result.dates[-1].isoformat()}), {result.capital:,.0f} {currency} start",
+        f"Costs: fee {c.fee_bps:g} bp + slippage {c.slippage_bps:g} bp + square-root impact; "
+        f"orders capped at {c.max_adv_participation:.0%} of daily traded value; fills at the next open",
+        f"End value {result.equity[-1]:,.0f} {currency} | total return {m['total_return']:+.2%} | "
+        f"CAGR {m['cagr']:+.2%} | Sharpe {m['sharpe']:.2f} | max drawdown {m['max_drawdown']:.2%}",
+        f"Orders {m['orders']:.0f} | partial fills {m['partial_fills']:.0f} | rejected "
+        f"{m['rejections']:.0f} | unfunded top-ups {m['unfunded']:.0f} | fees "
+        f"{m['fees_paid']:,.2f} {currency} | average impact {m['avg_impact_bps']:.1f} bp",
     ]
     return "\n".join(lines)
 

@@ -26,7 +26,7 @@ from quantagents.agents.a48_portfolio import PortfolioAgent
 from quantagents.agents.base import AgentContext, SignalAgent
 from quantagents.aggregation import go_decision
 from quantagents.config import AppConfig, RiskConfig
-from quantagents.market import MarketData
+from quantagents.market import Bars, MarketData
 from quantagents.schemas import (
     DecisionProposal,
     Direction,
@@ -119,8 +119,8 @@ def test_a02_warnings_and_actions() -> None:
     market = wavy_market(n=300)
     clean = DataQualityAgent().check(market.view(market.dates[-1]), "S1", RiskConfig())
     assert clean.score_0_100 == 100 and clean.action is HealthAction.OK
-    spiked = with_value(market, "AAA", "close", len(market) - 1, 300.0)
-    spiked = with_value(spiked, "AAA", "high", len(market) - 1, 301.0)
+    spiked = with_value(market, "AAA", "close", len(market) - 1, 140.0)  # a spike, not split-like
+    spiked = with_value(spiked, "AAA", "high", len(market) - 1, 141.0)
     spiked = with_value(spiked, "AAA", "volume", len(market) - 1, 0.0)
     report = DataQualityAgent().check(spiked.view(market.dates[-1]), "S1", RiskConfig())
     assert report.score_0_100 == 96 and report.blocked_symbols == ()
@@ -130,6 +130,51 @@ def test_a02_warnings_and_actions() -> None:
     bad = with_value(bad, "BBB", "close", len(market) - 1, math.nan)
     halted = DataQualityAgent().check(bad.view(market.dates[-1]), "S1", RiskConfig())
     assert halted.action is HealthAction.HALT and halted.stale_symbols == ("AAA", "BBB")
+
+
+def split_at(market: MarketData, symbols: tuple[str, ...], index: int, ratio: float) -> MarketData:
+    """Prices of ``symbols`` divided by ``ratio`` from ``index`` on (an unadjusted split)."""
+    bars = {}
+    for s in market.symbols:
+        b = market.bars(s)
+        scale = np.where(np.arange(len(market)) >= index, 1.0 / ratio, 1.0) if s in symbols else 1.0
+        bars[s] = Bars.from_arrays(
+            open=b.open * scale,
+            high=b.high * scale,
+            low=b.low * scale,
+            close=b.close * scale,
+            volume=b.volume,
+        )
+    return MarketData(market.dates, bars)
+
+
+@pytest.mark.parametrize("ratio", [2.0, 3.0, 10.0, 0.5, 0.25])
+def test_a02_blocks_an_unadjusted_split(ratio: float) -> None:
+    market = wavy_market(n=300)
+    split = split_at(market, ("BBB",), len(market) - 40, ratio)
+    report = DataQualityAgent().check(split.view(market.dates[-1]), "S1", RiskConfig())
+    assert report.blocked_symbols == ("BBB",)
+    detail = next(c.detail for c in report.checks if c.name == "BBB")
+    assert "split-like jump" in detail
+    assert market.dates[-40].isoformat() in detail
+
+
+def test_a02_split_check_ignores_shared_moves_and_old_splits() -> None:
+    market = wavy_market(n=400)
+    # every symbol halves on the same day: a market-wide move (or a currency switch), not a split
+    shared = split_at(market, market.symbols, len(market) - 40, 2.0)
+    report = DataQualityAgent().check(shared.view(market.dates[-1]), "S1", RiskConfig())
+    assert report.blocked_symbols == ()
+    # a split older than the feature window no longer affects any feature
+    old = split_at(market, ("BBB",), 30, 2.0)
+    assert (
+        DataQualityAgent().check(old.view(market.dates[-1]), "S1", RiskConfig()).blocked_symbols
+        == ()
+    )
+    # with no peers a split-like jump still counts
+    alone = MarketData(market.dates, {"BBB": split_at(market, ("BBB",), 380, 2.0).bars("BBB")})
+    lonely = DataQualityAgent().check(alone.view(market.dates[-1]), "S1", RiskConfig())
+    assert lonely.blocked_symbols == ("BBB",)
 
 
 def test_a08_volatility_and_shock() -> None:

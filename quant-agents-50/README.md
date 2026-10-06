@@ -27,7 +27,7 @@ python scripts/check.py
 ```
 
 - `demo` runs one full decision cycle of all 25 agents on **synthetic** data (fake symbols SYN_A to SYN_F).
-- `check.py` runs every quality gate: lint, formatting, strict types, 308 tests, and 100% coverage of the risk code.
+- `check.py` runs every quality gate: lint, formatting, strict types, 369 tests, and 100% coverage of the risk code.
 - `python -m quantagents simulate --days 120` runs the full cycle day after day on a fresh paper account.
 
 ### What to expect
@@ -82,6 +82,11 @@ New context and risk agents can only **reduce** risk. If one crashes, the system
 | Command | Purpose |
 |---|---|
 | `python -m quantagents demo` | One decision cycle on synthetic data |
+| `python -m quantagents data fetch --yahoo SPY QQQ --start 2000-01-01` | Download free daily bars (stocks/ETFs, with dividends and splits) into the append-only store |
+| `python -m quantagents data fetch --ccxt kraken:BTC/USD` | Free daily crypto candles (needs `pip install -e ".[data]"`) |
+| `python -m quantagents data benchmark --symbol SPY` | Phase 1 check: buy-and-hold total return three ways, within 0.1% a year |
+| `python -m quantagents data export --out data/us.csv --symbols SPY QQQ` | Adjusted prices to a CSV, plus a `.meta.json` with each source's caveats |
+| `python -m quantagents backtest --data data/us.csv --engine event` | Event-driven backtest: orders, partial fills, impact, 1%-of-ADV cap |
 | `python -m quantagents simulate --days 120` | The full cycle day by day, with A35 scorecards and why it did not trade |
 | `python -m quantagents agents --core` | The 25-agent core and each agent's state |
 | `python -m quantagents stress --strategy tsmom` | A45 Monte Carlo and 2x-cost stress of a strategy |
@@ -114,7 +119,7 @@ New context and risk agents can only **reduce** risk. If one crashes, the system
 | `config/default.yaml` | Every limit and setting |
 | `config/agents.yaml` | The roster: 25 core agents and 25 parked |
 | `src/quantagents/` | The code (one module per agent in `agents/`) |
-| `tests/` | 308 tests |
+| `tests/` | 369 tests |
 | `.claude/` | Settings, hooks, skills, subagents and rules for Claude Code |
 
 ## Canada notes

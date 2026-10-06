@@ -19,8 +19,11 @@ from quantagents.agents.a35_scorekeeper import Scorekeeper
 from quantagents.agents.a45_stress import stress_returns
 from quantagents.audit import AuditLog, read_records, verify_chain
 from quantagents.backtest.engine import Backtester
+from quantagents.backtest.event import EventBacktester, EventCosts
 from quantagents.backtest.strategies import DEFAULT_VARIANT, strategy_grid
 from quantagents.config import AppConfig, load_config
+from quantagents.data import commands as data_commands
+from quantagents.data.store import data_labels
 from quantagents.data.synthetic import DEMO_AS_OF, synthetic_market
 from quantagents.execution.paper import PaperAccount
 from quantagents.lots import acb_report
@@ -31,6 +34,7 @@ from quantagents.report import (
     DISCLAIMER,
     format_backtest,
     format_cycle_report,
+    format_event_backtest,
     format_registry,
     format_simulation,
     format_strategy_stress,
@@ -55,8 +59,27 @@ def _config(args: argparse.Namespace) -> AppConfig:
 
 def _market(args: argparse.Namespace, cfg: AppConfig) -> MarketData:
     if getattr(args, "data", None):
+        _data_note(args.data)
         return load_csv(args.data)
     return synthetic_market(seed=cfg.system.seed)
+
+
+def _universe_note(cfg: AppConfig, market: MarketData) -> None:
+    """Say so plainly when the config's universe leaves nothing in the file to trade."""
+    wanted = set(cfg.universe.symbols)
+    if wanted and not wanted & set(market.symbols):
+        print(
+            f"Note: none of this file's symbols ({', '.join(market.symbols[:8])}) are in "
+            f"universe.symbols in the config ({', '.join(sorted(wanted)[:8])}), so nothing can "
+            "trade. Put your symbols there, or use [] to trade every symbol in the file.\n"
+        )
+
+
+def _data_note(path: str) -> None:
+    """Every result on real data carries its source's caveats (spec sections 58, 74)."""
+    for label in data_labels(path):
+        print(f"Data {Path(path).name}: {label}")
+    print()
 
 
 def cmd_demo(args: argparse.Namespace) -> int:
@@ -83,7 +106,9 @@ def cmd_demo(args: argparse.Namespace) -> int:
 
 def cmd_cycle(args: argparse.Namespace) -> int:
     cfg = _config(args)
+    _data_note(args.data)
     market = load_csv(args.data)
+    _universe_note(cfg, market)
     as_of = date.fromisoformat(args.as_of) if args.as_of else market.dates[-1]
     state = Path(args.state)
     scores_path = state.with_name(SCORES_FILE.name)
@@ -112,6 +137,7 @@ def cmd_cycle(args: argparse.Namespace) -> int:
 def cmd_simulate(args: argparse.Namespace) -> int:
     cfg = _config(args)
     market = _market(args, cfg)
+    _universe_note(cfg, market)
     end = date.fromisoformat(args.end) if args.end else None
     sim = run_paper_simulation(cfg, Registry.load(), market, days=args.days, end=end)
     if not getattr(args, "data", None):
@@ -149,8 +175,14 @@ def cmd_backtest(args: argparse.Namespace) -> int:
     name = args.variant or DEFAULT_VARIANT[args.strategy]
     if name not in variants:
         raise KeyError(f"unknown variant {name!r}; choose from {sorted(variants)}")
-    result = Backtester(cfg.costs.one_way_cost).run(market, variants[name](market), name=name)
-    print(format_backtest(result))
+    if args.engine == "event":
+        event = EventBacktester(EventCosts.from_config(cfg), cfg.system.capital).run(
+            market, variants[name](market), name=name
+        )
+        print(format_event_backtest(event, cfg.system.base_currency))
+    else:
+        result = Backtester(cfg.costs.one_way_cost).run(market, variants[name](market), name=name)
+        print(format_backtest(result))
     print(f"\n{DISCLAIMER}")
     return 0
 
@@ -287,6 +319,13 @@ def build_parser() -> argparse.ArgumentParser:
         p.add_argument("--strategy", default="tsmom", choices=sorted(DEFAULT_VARIANT))
         p.add_argument("--variant", help="one named variant (default: the family's preset)")
         p.add_argument("--data", help="CSV data (default: synthetic)")
+        if name == "backtest":
+            p.add_argument(
+                "--engine",
+                choices=["vector", "event"],
+                default="vector",
+                help="vector: fast screening; event: orders, partial fills, impact, ADV cap",
+            )
         p.set_defaults(func=func)
 
     p = sub.add_parser("agents", help="list the agent roster (25 core + 25 parked)")
@@ -310,6 +349,8 @@ def build_parser() -> argparse.ArgumentParser:
     p = sub.add_parser("audit", help="verify the audit log hash chain")
     p.add_argument("--path", default=str(RUNS_DIR / "audit.jsonl"))
     p.set_defaults(func=cmd_audit)
+
+    data_commands.add_parser(sub)
 
     p = sub.add_parser("acb", help="adjusted cost base report from paper fills (not tax advice)")
     p.add_argument("--state", default=str(ACCOUNT_FILE))

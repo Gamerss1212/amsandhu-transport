@@ -5,6 +5,12 @@ Tests run here:
   must not change (catches look-ahead and full-sample normalization)
 - determinism: the same inputs must give the same outputs
 - bounds: weights must be finite, long-only unless shorting is on, and within gross limits
+- time shift: the same strategy fed data one bar older must not do better. A signal that
+  improves when it arrives late was built on inputs whose dates are off somewhere. The test is
+  paired (same days) and only fires on a clear difference (t >= 3 and >= 1% a year), so chance
+  alone almost never trips it.
+Duplicate timestamps cannot reach a strategy: MarketData, load_csv, RawDaily and the store all
+refuse them (tests/test_leakage.py proves each entry point).
 Any critical finding blocks the strategy until it is fixed (Tier 1 power).
 """
 
@@ -16,8 +22,8 @@ from typing import Literal
 
 import numpy as np
 
-from quantagents.backtest.engine import StrategyFactory
-from quantagents.market import FIELDS, Bars, MarketData
+from quantagents.backtest.engine import Backtester, Strategy, StrategyFactory
+from quantagents.market import FIELDS, Bars, MarketData, MarketView
 from quantagents.schemas import Message
 
 Severity = Literal["critical", "high", "medium", "low"]
@@ -74,6 +80,72 @@ def run_window(
     return [dict(strategy(market.view_at(i))) for i in range(start, end + 1)]
 
 
+def delayed(factory: StrategyFactory, lag: int) -> StrategyFactory:
+    """The same strategy, but at day t it sees only data up to t - ``lag`` (its signal is late)."""
+    if lag < 1:
+        raise ValueError("lag must be >= 1")
+
+    def build(market: MarketData) -> Strategy:
+        inner = factory(market)
+
+        def strategy(view: MarketView) -> Mapping[str, float]:
+            k = len(view) - 1 - lag
+            return inner(market.view_at(k)) if k >= 0 else {}
+
+        return strategy
+
+    return build
+
+
+class TimeShiftResult(Message):
+    lag: int
+    days: int
+    original_annual: float
+    delayed_annual: float
+    t_stat: float
+    finding: Finding | None
+
+
+def time_shift_test(
+    factory: StrategyFactory,
+    market: MarketData,
+    *,
+    lag: int = 1,
+    warmup: int = 260,
+    cost_rate: float = 0.0,
+    t_limit: float = 3.0,
+    min_annual_gain: float = 0.01,
+) -> TimeShiftResult:
+    """Spec section 59: shifting the inputs forward in time must not help."""
+    engine = Backtester(cost_rate)
+    original = engine.run(market, factory(market), warmup=warmup, name="original")
+    late = engine.run(market, delayed(factory, lag)(market), warmup=warmup, name="delayed")
+    diff = late.returns - original.returns
+    n = len(diff)
+    sd = float(np.std(diff, ddof=1)) if n > 1 else 0.0
+    mean = float(np.mean(diff)) if n else 0.0
+    t = mean / (sd / math.sqrt(n)) if sd > 0 else 0.0
+    gain = 252.0 * mean
+    finding = None
+    if t >= t_limit and gain >= min_annual_gain:
+        finding = Finding(
+            severity="critical",
+            test="time_shift",
+            detail=(
+                f"data {lag} bar(s) older did better by {gain:+.1%} a year (t = {t:.1f}): "
+                "the inputs' dates are probably off"
+            ),
+        )
+    return TimeShiftResult(
+        lag=lag,
+        days=n,
+        original_annual=252.0 * float(np.mean(original.returns)) if n else 0.0,
+        delayed_annual=252.0 * float(np.mean(late.returns)) if n else 0.0,
+        t_stat=t,
+        finding=finding,
+    )
+
+
 class RedTeamAuditor:
     agent_id = "A39"
     name = "Red-Team Auditor"
@@ -87,12 +159,14 @@ class RedTeamAuditor:
         window: int = 15,
         probes: int = 4,
         seed: int = 0,
+        time_shift: bool = True,
     ) -> None:
         self.max_gross = max_gross
         self.allow_short = allow_short
         self.window = window
         self.probes = probes
         self.seed = seed
+        self.time_shift = time_shift
 
     def audit(
         self, factory: StrategyFactory, market: MarketData, *, name: str, warmup: int = 260
@@ -151,9 +225,21 @@ class RedTeamAuditor:
                         )
                     )
                     break
+        # the time shift needs a full backtest, which refuses out-of-bounds weights
+        if self.time_shift and warmup + 2 < n and not any(f.test == "bounds" for f in findings):
+            try:
+                shift = time_shift_test(factory, market, warmup=warmup)
+            except ValueError as exc:
+                findings.append(
+                    Finding(severity="high", test="time_shift", detail=f"could not run: {exc}")
+                )
+            else:
+                if shift.finding is not None:
+                    findings.append(shift.finding)
         return RedTeamReport(
             strategy=name,
-            tests_run=("future_perturbation", "determinism", "bounds"),
+            tests_run=("future_perturbation", "determinism", "bounds")
+            + (("time_shift",) if self.time_shift else ()),
             findings=tuple(findings),
             passed=not any(f.severity == "critical" for f in findings),
         )

@@ -75,7 +75,7 @@ def test_every_phase_has_a_prompt_with_acceptance_criteria() -> None:
     for n in range(10):
         text = (ROOT / "docs" / "phases" / f"phase-{n}.md").read_text(encoding="utf-8")
         assert text.startswith(f"# Phase {n}:")
-        assert "## Acceptance" in text and "- [ ]" in text
+        assert "## Acceptance" in text and ("- [ ]" in text or "- [x]" in text)  # [x] = passed
     assert "Approve Phase 8" in (ROOT / "docs" / "phases" / "phase-8.md").read_text(
         encoding="utf-8"
     )
