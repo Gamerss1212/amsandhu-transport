@@ -3,6 +3,16 @@
 Implements Newey-West t-statistics, the Probabilistic and Deflated Sharpe Ratios
 (Bailey and Lopez de Prado), minimum backtest length, PBO via CSCV, Benjamini-Hochberg
 FDR, the stationary bootstrap, and walk-forward / purged k-fold splits.
+
+Phase 2 additions:
+- Hansen's SPA test (2005) with the stationary bootstrap: could the best of all the variants
+  tried have looked this good by luck alone? Its "upper" p-value is the studentized form of
+  White's Reality Check (2000). Benchmark: cash at 0% (no risk-free data yet, so optimistic).
+- Walk-forward selection: in each window pick the variant with the best in-sample Sharpe, then
+  measure it on the next, unseen window. Every fold is reported (spec section 60); the
+  out-of-sample / in-sample Sharpe ratio says how much of the in-sample edge survives.
+- Results by volatility regime: days split into thirds by the market's trailing 63-day
+  volatility (known before each day). Descriptive only; the cut points use the whole sample.
 """
 
 from __future__ import annotations
@@ -211,6 +221,134 @@ def purged_kfold_splits(
     return splits
 
 
+class SpaResult(Message):
+    statistic: float
+    p_value: float  # Hansen's consistent p-value
+    p_value_upper: float  # conservative: the studentized White Reality Check
+    n_models: int
+
+
+def spa_test(
+    excess: npt.ArrayLike, *, samples: int = 500, mean_block: float = 10.0, seed: int = 0
+) -> SpaResult:
+    """Hansen's Superior Predictive Ability test on a T x K matrix of returns over a benchmark.
+
+    Null: no variant beats the benchmark. A small p-value means the best variant's edge is
+    unlikely to be luck from trying K variants.
+    """
+    d = np.asarray(excess, dtype=np.float64)
+    if d.ndim == 1:
+        d = d[:, None]
+    n, k = d.shape
+    if n < 30 or k < 1:
+        raise ValueError("need at least 30 periods and one variant")
+    rng = np.random.default_rng(seed)
+    dbar = d.mean(axis=0)
+    boot = np.empty((samples, k))
+    for b in range(samples):
+        boot[b] = d[stationary_bootstrap_indices(n, mean_block, rng)].mean(axis=0)
+    omega = np.sqrt(n * np.var(boot, axis=0))
+    safe = np.where(omega > 0, omega, np.inf)
+    t_obs = math.sqrt(n) * dbar / safe
+    stat = max(float(np.max(t_obs)), 0.0)
+    clearly_bad = t_obs <= -math.sqrt(2.0 * math.log(math.log(n)))
+    centred = boot - dbar
+    t_c = np.maximum(
+        np.max(math.sqrt(n) * (centred + np.where(clearly_bad, dbar, 0.0)) / safe, axis=1), 0.0
+    )
+    t_u = np.maximum(np.max(math.sqrt(n) * centred / safe, axis=1), 0.0)
+    return SpaResult(
+        statistic=stat,
+        p_value=float(np.mean(t_c >= stat)),
+        p_value_upper=float(np.mean(t_u >= stat)),
+        n_models=k,
+    )
+
+
+class WalkForwardFold(Message):
+    train_start: int
+    test_start: int
+    test_end: int  # exclusive
+    chosen: str
+    in_sample_sharpe: float
+    out_sample_sharpe: float
+
+
+def walk_forward_selection(
+    matrix: npt.ArrayLike, names: Sequence[str], *, train: int, test: int
+) -> list[WalkForwardFold]:
+    """Pick the best in-sample variant in each rolling window and score it on the next one."""
+    m = np.asarray(matrix, dtype=np.float64)
+    if m.ndim == 1:
+        m = m[:, None]
+    if m.shape[1] != len(names):
+        raise ValueError("one name per variant column")
+    folds: list[WalkForwardFold] = []
+    for tr, te in walk_forward_splits(m.shape[0], train, test):
+        ins = [sharpe_ratio(m[tr.start : tr.stop, j]) for j in range(m.shape[1])]
+        best = int(np.argmax(ins))
+        folds.append(
+            WalkForwardFold(
+                train_start=tr.start,
+                test_start=te.start,
+                test_end=te.stop,
+                chosen=names[best],
+                in_sample_sharpe=ins[best],
+                out_sample_sharpe=sharpe_ratio(m[te.start : te.stop, best]),
+            )
+        )
+    return folds
+
+
+def oos_is_ratio(folds: Sequence[WalkForwardFold]) -> float:
+    """Mean out-of-sample Sharpe / mean in-sample Sharpe (nan when in-sample is not positive)."""
+    if not folds:
+        return math.nan
+    ins = float(np.mean([f.in_sample_sharpe for f in folds]))
+    oos = float(np.mean([f.out_sample_sharpe for f in folds]))
+    return oos / ins if ins > 0 else math.nan
+
+
+class RegimeResult(Message):
+    regime: Literal["low vol", "mid vol", "high vol"]
+    days: int
+    annual_return: float
+    sharpe: float
+
+
+def regime_split(
+    returns: npt.ArrayLike, market_returns: npt.ArrayLike, *, window: int = 63
+) -> list[RegimeResult]:
+    """Strategy results on low-, mid- and high-volatility days (by the market's trailing vol)."""
+    r = np.asarray(returns, dtype=np.float64)
+    m = np.asarray(market_returns, dtype=np.float64)
+    if r.shape != m.shape or r.ndim != 1:
+        raise ValueError("returns and market returns must be 1-D and the same length")
+    vol = np.full(len(m), np.nan)
+    for t in range(window, len(m)):
+        vol[t] = float(np.std(m[t - window : t], ddof=1))
+    ok = np.isfinite(vol) & np.isfinite(r)
+    if np.sum(ok) < 3 * window:
+        return []
+    lo, hi = np.quantile(vol[ok], [1 / 3, 2 / 3])
+    out: list[RegimeResult] = []
+    for label, sel in (
+        ("low vol", ok & (vol <= lo)),
+        ("mid vol", ok & (vol > lo) & (vol <= hi)),
+        ("high vol", ok & (vol > hi)),
+    ):
+        x = r[sel]
+        out.append(
+            RegimeResult(
+                regime=label,
+                days=len(x),
+                annual_return=float(np.mean(x)) * 252.0 if len(x) else 0.0,
+                sharpe=sharpe_ratio(x) if len(x) > 1 else 0.0,
+            )
+        )
+    return out
+
+
 class ValidationReport(Message):
     strategy: str
     n_obs: int
@@ -220,6 +358,8 @@ class ValidationReport(Message):
     passed: bool
     verdict: Literal["PASS", "FAIL"]
     notes: tuple[str, ...] = ()
+    folds: tuple[WalkForwardFold, ...] = ()
+    regimes: tuple[RegimeResult, ...] = ()
 
 
 class StatisticalValidator:
@@ -240,6 +380,8 @@ class StatisticalValidator:
         stressed_returns: npt.ArrayLike | None = None,
         notes: Sequence[str] = (),
         seed: int = 0,
+        trial_names: Sequence[str] | None = None,
+        market_returns: npt.ArrayLike | None = None,
     ) -> ValidationReport:
         cfg = self.cfg
         r = clean_returns(returns)
@@ -280,16 +422,19 @@ class StatisticalValidator:
                 detail=f"DSR = {dsr:.3f} after {n_trials} trial(s) (need {cfg.min_dsr:g})",
             ),
         ]
-        if trial_matrix is None:
+        matrix = None if trial_matrix is None else np.asarray(trial_matrix, dtype=np.float64)
+        if matrix is not None and matrix.ndim == 1:
+            matrix = matrix[:, None]
+        if matrix is None or matrix.shape[1] < 2:
             checks.append(
                 CheckResult(
                     name="pbo",
                     passed=False,
-                    detail="not run: needs the returns of every variant tried",
+                    detail="not run: needs the returns of every variant tried (2 or more)",
                 )
             )
         else:
-            pbo = pbo_cscv(trial_matrix)
+            pbo = pbo_cscv(matrix)
             metrics["pbo"] = pbo
             checks.append(
                 CheckResult(
@@ -310,6 +455,57 @@ class StatisticalValidator:
                     detail=f"Sharpe at 2x costs = {stressed:.2f} (need > 0)",
                 )
             )
+        folds: list[WalkForwardFold] = []
+        if matrix is None:
+            checks.append(CheckResult(name="spa", passed=False, detail="not run: no variants"))
+            checks.append(
+                CheckResult(name="walk_forward", passed=False, detail="not run: no variants")
+            )
+        else:
+            spa = spa_test(
+                matrix,
+                samples=cfg.bootstrap_samples,
+                mean_block=cfg.bootstrap_mean_block,
+                seed=seed,
+            )
+            metrics["spa_p"] = spa.p_value
+            metrics["spa_p_upper"] = spa.p_value_upper
+            checks.append(
+                CheckResult(
+                    name="spa",
+                    passed=spa.p_value <= cfg.max_spa_p,
+                    detail=f"Hansen SPA p = {spa.p_value:.3f} over {spa.n_models} variant(s) vs "
+                    f"cash (White RC form {spa.p_value_upper:.3f}; need <= {cfg.max_spa_p:g})",
+                )
+            )
+            names = list(trial_names or [f"v{j}" for j in range(matrix.shape[1])])
+            folds = walk_forward_selection(
+                matrix, names, train=cfg.wf_train_days, test=cfg.wf_test_days
+            )
+            if not folds:
+                checks.append(
+                    CheckResult(
+                        name="walk_forward",
+                        passed=False,
+                        detail=f"not run: needs {cfg.wf_train_days + cfg.wf_test_days} days",
+                    )
+                )
+            else:
+                ratio = oos_is_ratio(folds)
+                oos = float(np.mean([f.out_sample_sharpe for f in folds]))
+                metrics["oos_sharpe_mean"] = oos
+                metrics["oos_is_ratio"] = ratio
+                checks.append(
+                    CheckResult(
+                        name="walk_forward",
+                        passed=oos > 0 and math.isfinite(ratio) and ratio >= cfg.min_oos_is_ratio,
+                        detail=f"{len(folds)} folds: mean out-of-sample Sharpe {oos:.2f}, "
+                        f"OOS/IS {ratio:.2f} (need > 0 and >= {cfg.min_oos_is_ratio:g})",
+                    )
+                )
+        regimes = (
+            regime_split(r, clean_returns(market_returns)) if market_returns is not None else []
+        )
         passed = all(c.passed for c in checks)
         return ValidationReport(
             strategy=strategy,
@@ -320,4 +516,6 @@ class StatisticalValidator:
             passed=passed,
             verdict="PASS" if passed else "FAIL",
             notes=tuple(notes),
+            folds=tuple(folds),
+            regimes=tuple(regimes),
         )

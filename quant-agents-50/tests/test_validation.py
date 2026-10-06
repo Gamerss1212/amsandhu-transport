@@ -91,19 +91,92 @@ def test_splits_never_leak() -> None:
 
 
 def test_validator_pass_and_fail() -> None:
-    validator = S.StatisticalValidator(ValidationConfig())
+    # 1000 days: walk-forward windows of 500 in, 250 out give 2 folds
+    validator = S.StatisticalValidator(ValidationConfig(wf_train_days=500, wf_test_days=250))
     rng = np.random.default_rng(11)
     variants = rng.normal(0.0, 0.01, (1000, 5))
     variants[:, 0] = GOOD
     report = validator.validate(
-        GOOD, strategy="good", n_trials=5, trial_matrix=variants, stressed_returns=GOOD - 0.0005
+        GOOD,
+        strategy="good",
+        n_trials=5,
+        trial_matrix=variants,
+        stressed_returns=GOOD - 0.0005,
+        trial_names=["good", "n1", "n2", "n3", "n4"],
+        market_returns=NOISE,
     )
     assert report.verdict == "PASS", [c for c in report.checks if not c.passed]
+    assert [f.chosen for f in report.folds] == ["good", "good"]
+    assert [g.regime for g in report.regimes] == ["low vol", "mid vol", "high vol"]
+    assert report.metrics["spa_p"] <= 0.05
     bad = validator.validate(NOISE, strategy="noise", notes=["synthetic"])
     assert bad.verdict == "FAIL" and not bad.passed
     failed = {c.name for c in bad.checks if not c.passed}
-    assert {"pbo", "sharpe_at_2x_costs", "newey_west_t"} <= failed
+    assert {"pbo", "sharpe_at_2x_costs", "newey_west_t", "spa", "walk_forward"} <= failed
     assert bad.notes == ("synthetic",)
+    one = validator.validate(GOOD, strategy="one", trial_matrix=GOOD)  # a single variant
+    detail = {c.name: c.detail for c in one.checks}
+    assert "2 or more" in detail["pbo"] and "Hansen SPA" in detail["spa"]
+    short = S.StatisticalValidator(ValidationConfig()).validate(
+        GOOD, strategy="short", trial_matrix=variants
+    )
+    assert "not run: needs 1008 days" in {c.name: c.detail for c in short.checks}["walk_forward"]
+
+
+def test_spa_separates_luck_from_edge() -> None:
+    rng = np.random.default_rng(5)
+    noise = rng.normal(0.0, 0.01, (1500, 20))
+    luck = S.spa_test(noise, samples=300, seed=1)
+    assert luck.p_value > 0.10 and luck.n_models == 20
+    assert luck.p_value_upper >= luck.p_value  # the White RC form is the conservative one
+    edge = noise.copy()
+    edge[:, 7] += 0.0015
+    found = S.spa_test(edge, samples=300, seed=1)
+    assert found.p_value < 0.01 and found.statistic > 3
+    losers = S.spa_test(noise - 0.002, samples=200, seed=1)
+    assert losers.statistic == 0.0 and losers.p_value == 1.0
+    flat = S.spa_test(np.zeros((100, 2)), samples=50)  # never invested: no edge, no crash
+    assert flat.p_value == 1.0
+    assert S.spa_test(GOOD, samples=100).n_models == 1
+    with pytest.raises(ValueError, match="30 periods"):
+        S.spa_test(np.zeros((10, 2)))
+
+
+def test_walk_forward_selection_reports_every_fold() -> None:
+    rng = np.random.default_rng(9)
+    m = rng.normal(0.0, 0.01, (1000, 3))
+    m[:600, 1] += 0.003  # variant 1 shines early, then stops working
+    folds = S.walk_forward_selection(m, ["a", "b", "c"], train=400, test=200)
+    assert [(f.train_start, f.test_start, f.test_end) for f in folds] == [
+        (0, 400, 600),
+        (200, 600, 800),
+        (400, 800, 1000),
+    ]
+    assert folds[0].chosen == "b" and folds[0].out_sample_sharpe > 1
+    assert folds[1].chosen == "b" and folds[1].out_sample_sharpe < folds[1].in_sample_sharpe
+    ratio = S.oos_is_ratio(folds)
+    assert 0 < ratio < 1
+    assert math.isnan(S.oos_is_ratio([]))
+    losers = S.walk_forward_selection(-np.abs(m), ["a", "b", "c"], train=400, test=200)
+    assert math.isnan(S.oos_is_ratio(losers))  # no positive in-sample Sharpe to compare with
+    assert len(S.walk_forward_selection(m[:, 0], ["only"], train=400, test=200)) == 3
+    with pytest.raises(ValueError, match="one name"):
+        S.walk_forward_selection(m, ["a"], train=400, test=200)
+
+
+def test_regime_split_uses_only_past_volatility() -> None:
+    rng = np.random.default_rng(4)
+    calm = rng.normal(0.0, 0.005, 400)
+    wild = rng.normal(0.0, 0.03, 400)
+    market = np.concatenate([calm, wild, calm])
+    strategy = np.concatenate([np.full(400, 0.001), np.full(400, -0.002), np.full(400, 0.001)])
+    regimes = S.regime_split(strategy, market)
+    by = {g.regime: g for g in regimes}
+    assert by["low vol"].annual_return > 0 > by["high vol"].annual_return
+    assert sum(g.days for g in regimes) == len(market) - 63
+    assert S.regime_split(strategy[:100], market[:100]) == []  # too short
+    with pytest.raises(ValueError, match="same length"):
+        S.regime_split(strategy, market[:-1])
 
 
 def test_red_team_passes_causal_strategies(market: MarketData) -> None:

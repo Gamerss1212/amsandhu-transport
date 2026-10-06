@@ -15,6 +15,7 @@ from quantagents.agents.a16_reversion import ShortTermReversionAgent
 from quantagents.agents.a23_calendar import CalendarAgent
 from quantagents.agents.base import AgentContext, SignalAgent
 from quantagents.aggregation import go_decision, pool_votes, size_hint, votes_from_predictions
+from quantagents.backtest import library
 from quantagents.backtest.engine import Strategy, StrategyFactory
 from quantagents.config import AppConfig
 from quantagents.features import momentum, sma
@@ -144,6 +145,24 @@ def strategy_grid(name: str, cfg: AppConfig) -> list[tuple[str, StrategyFactory]
         "tsmom": lambda: [(f"tsmom_{k}", tsmom(k)) for k in (21, 42, 63, 126, 189, 252)],
         "sma": lambda: [(f"sma_{k}", sma_filter(k)) for k in (50, 100, 150, 200, 250)],
         "ensemble": lambda: [("ensemble", ensemble(cfg))],
+        # Phase 2 library (backtest/library.py): grids fixed before any real-data run
+        "tsmom_blend": lambda: [
+            ("tsmom_blend_vt10", library.tsmom_blend(target_vol=0.10)),
+            ("tsmom_blend_raw", library.tsmom_blend(target_vol=None)),
+        ],
+        "xs_mom": lambda: [
+            ("xsmom_12_1", library.xs_momentum()),
+            ("xsmom_12_1_trend", library.xs_momentum(trend_filter=True)),
+        ],
+        "faber": lambda: [(f"faber_{m}m", library.faber(m)) for m in (10, 8, 12)],
+        "rsi2": lambda: [
+            ("rsi2_10", library.rsi2(10.0)),
+            ("rsi2_5", library.rsi2(5.0)),
+        ],
+        "vol_target": lambda: [
+            ("vt10_hold", library.vol_target(buy_and_hold(), 0.10)),
+            ("vt15_hold", library.vol_target(buy_and_hold(), 0.15)),
+        ],
     }
     if name not in grids:
         raise KeyError(f"unknown strategy {name!r}; choose from {sorted(grids)}")
@@ -155,4 +174,9 @@ DEFAULT_VARIANT = {
     "tsmom": "tsmom_126",
     "sma": "sma_200",
     "ensemble": "ensemble",
+    "tsmom_blend": "tsmom_blend_vt10",
+    "xs_mom": "xsmom_12_1",
+    "faber": "faber_10m",
+    "rsi2": "rsi2_10",
+    "vol_target": "vt10_hold",
 }

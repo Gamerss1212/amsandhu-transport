@@ -69,6 +69,10 @@ validation:                    # A44 promotion thresholds (spec section 64)
   min_observations: 252
   bootstrap_samples: 500
   bootstrap_mean_block: 10
+  max_spa_p: 0.05              # Hansen SPA over every variant tried (data snooping)
+  min_oos_is_ratio: 0.5        # walk-forward: out-of-sample Sharpe / in-sample Sharpe
+  wf_train_days: 756           # walk-forward windows: 3 years in-sample...
+  wf_test_days: 252            # ...then 1 year out-of-sample, rolling
 
 universe:
   asset_class: US_equities

@@ -305,6 +305,19 @@ def format_validation(report: ValidationReport, red_team: RedTeamReport | None =
         f"Sharpe {report.metrics['sharpe']:.2f} (95% bootstrap interval "
         f"{report.metrics['sharpe_ci_low']:.2f} to {report.metrics['sharpe_ci_high']:.2f})"
     )
+    if report.folds:
+        lines.append("Walk-forward folds (best in-sample variant, then the next unseen year):")
+        lines.extend(
+            f"  days {f.test_start}-{f.test_end - 1}: {f.chosen} in-sample Sharpe "
+            f"{f.in_sample_sharpe:.2f} -> out-of-sample {f.out_sample_sharpe:.2f}"
+            for f in report.folds
+        )
+    if report.regimes:
+        lines.append("By market volatility (trailing 63 days; descriptive only):")
+        lines.extend(
+            f"  {g.regime:<8} {g.days:>5} days: {g.annual_return:+.1%} a year, Sharpe {g.sharpe:.2f}"
+            for g in report.regimes
+        )
     lines.extend(f"Note: {n}" for n in report.notes)
     if red_team is not None:
         lines.append(

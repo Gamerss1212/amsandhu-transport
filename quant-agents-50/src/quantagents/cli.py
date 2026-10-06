@@ -9,7 +9,7 @@ import argparse
 import json
 import sys
 from collections.abc import Sequence
-from datetime import date
+from datetime import UTC, date, datetime
 from pathlib import Path
 
 import numpy as np
@@ -20,7 +20,7 @@ from quantagents.agents.a45_stress import stress_returns
 from quantagents.audit import AuditLog, read_records, verify_chain
 from quantagents.backtest.engine import Backtester
 from quantagents.backtest.event import EventBacktester, EventCosts
-from quantagents.backtest.strategies import DEFAULT_VARIANT, strategy_grid
+from quantagents.backtest.strategies import DEFAULT_VARIANT, buy_and_hold, strategy_grid
 from quantagents.config import AppConfig, load_config
 from quantagents.data import commands as data_commands
 from quantagents.data.store import data_labels
@@ -44,6 +44,13 @@ from quantagents.risk.killswitch import RESET_PHRASE, KillSwitch
 from quantagents.simulate import run_paper_simulation
 from quantagents.validation.leakage import RedTeamAuditor
 from quantagents.validation.stats import StatisticalValidator
+from quantagents.validation.trials import (
+    TRIALS_FILE,
+    Trial,
+    append_trials,
+    data_id,
+    trial_count,
+)
 
 STATE_DIR = Path("state")
 RUNS_DIR = Path("runs")
@@ -164,6 +171,11 @@ def cmd_stress(args: argparse.Namespace) -> int:
     )
     print(format_backtest(base))
     print(format_strategy_stress(name, result, note))
+    _log(
+        args,
+        cfg,
+        [(name, "vectorized, 1x and 2x costs, A45 stress", base.metrics["sharpe"], "stress run")],
+    )
     print(f"\n{DISCLAIMER}")
     return 0
 
@@ -180,9 +192,15 @@ def cmd_backtest(args: argparse.Namespace) -> int:
             market, variants[name](market), name=name
         )
         print(format_event_backtest(event, cfg.system.base_currency))
+        detail, sharpe = "event-driven A43, config costs", event.metrics["sharpe"]
     else:
         result = Backtester(cfg.costs.one_way_cost).run(market, variants[name](market), name=name)
         print(format_backtest(result))
+        detail, sharpe = (
+            f"vectorized A43, {cfg.costs.one_way_cost:.2%} one way",
+            result.metrics["sharpe"],
+        )
+    _log(args, cfg, [(name, detail, sharpe, "backtest only, not validated")])
     print(f"\n{DISCLAIMER}")
     return 0
 
@@ -199,26 +217,64 @@ def cmd_validate(args: argparse.Namespace) -> int:
     stressed = Backtester(2 * cfg.costs.one_way_cost).run(
         market, dict(grid)[chosen](market), name=chosen
     )
-    matrix = np.column_stack([r.returns for r in results.values()]) if len(results) > 1 else None
-    notes = [f"{len(grid)} variant(s) tried in this family; every one counts as a trial."]
-    if not getattr(args, "data", None):
+    matrix = np.column_stack([r.returns for r in results.values()])
+    real = bool(getattr(args, "data", None))
+    names = list(results)
+    n_trials = trial_count(args.strategy, names) if real else len(grid)
+    notes = [
+        f"{len(grid)} variant(s) run now; {n_trials} trial(s) charged to this family "
+        "(every variant ever run on real data counts)."
+    ]
+    if not real:
         notes.append("Synthetic data: a PASS or FAIL here proves nothing about real markets.")
+    market_returns = Backtester(0.0).run(market, buy_and_hold()(market), name="market").returns
     report = StatisticalValidator(cfg.validation).validate(
         results[chosen].returns,
         strategy=chosen,
-        n_trials=len(grid),
+        n_trials=n_trials,
         trial_matrix=matrix,
         stressed_returns=stressed.returns,
         notes=notes,
         seed=cfg.system.seed,
+        trial_names=names,
+        market_returns=market_returns,
     )
     red_team = RedTeamAuditor(max_gross=cfg.risk.max_gross_exposure_pct / 100.0).audit(
         dict(grid)[chosen], market, name=chosen
     )
     print(format_backtest(results[chosen]))
     print(format_validation(report, red_team))
+    verdict = "PASS" if report.passed and red_team.passed else "FAIL"
+    _log(
+        args,
+        cfg,
+        [
+            (
+                name,
+                f"validate, vectorized, {cfg.costs.one_way_cost:.2%} one way",
+                result.metrics["sharpe"],
+                f"{verdict} (A44 + A39, reported variant)"
+                if name == chosen
+                else "variant (counted)",
+            )
+            for name, result in results.items()
+        ],
+    )
     print(f"\n{DISCLAIMER}")
     return 0
+
+
+def _log(args: argparse.Namespace, cfg: AppConfig, rows: list[tuple[str, str, float, str]]) -> None:
+    """Spec section 63: every run is a trial, written to docs/research/trials.md."""
+    data = data_id(getattr(args, "data", None), cfg.system.seed)
+    today = datetime.now(UTC).date()
+    append_trials(
+        [
+            Trial(today, args.strategy, name, detail, data, sharpe, verdict)
+            for name, detail, sharpe, verdict in rows
+        ]
+    )
+    print(f"\nLogged {len(rows)} trial(s) to {TRIALS_FILE}.")
 
 
 def cmd_agents(args: argparse.Namespace) -> int:

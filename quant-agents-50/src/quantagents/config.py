@@ -156,6 +156,10 @@ class ValidationConfig(_Section):
     min_observations: int = Field(default=252, ge=30)
     bootstrap_samples: int = Field(default=500, ge=50)
     bootstrap_mean_block: float = Field(default=10.0, ge=1)
+    max_spa_p: float = Field(default=0.05, gt=0, lt=1)  # Hansen SPA, all variants vs cash
+    min_oos_is_ratio: float = Field(default=0.5, ge=0)  # walk-forward OOS / IS Sharpe
+    wf_train_days: int = Field(default=756, ge=60)  # 3 years in, then
+    wf_test_days: int = Field(default=252, ge=20)  # 1 year out, rolling
 
 
 class UniverseConfig(_Section):

@@ -117,6 +117,32 @@ def test_backtest_and_validate(workdir: Path, capsys: pytest.CaptureFixture[str]
     assert "A44 validation" in out and "A39 red team" in out and "6 variant(s)" in out
 
 
+def test_every_run_is_logged_as_a_trial(workdir: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    log = workdir / "docs" / "research" / "trials.md"
+    assert main(["validate", "--strategy", "faber"]) == 0
+    out = capsys.readouterr().out
+    assert "Logged 3 trial(s)" in out and "spa: Hansen SPA" in out
+    text = log.read_text(encoding="utf-8")
+    assert text.count("synthetic (seed") == 3
+    assert "faber_10m (validate" in text and "variant (counted)" in text
+    assert main(["backtest", "--strategy", "rsi2", "--engine", "event"]) == 0
+    assert main(["stress", "--strategy", "xs_mom"]) == 0
+    text = log.read_text(encoding="utf-8")
+    assert "rsi2_10 (event-driven A43" in text and "xsmom_12_1 (vectorized, 1x and 2x" in text
+
+    # on real data, every variant ever run counts against the family
+    assert main(["make-data", "--out", "data/prices.csv"]) == 0
+    capsys.readouterr()
+    assert main(["validate", "--strategy", "faber", "--data", "data/prices.csv"]) == 0
+    assert "3 trial(s) charged" in capsys.readouterr().out
+    with log.open("a", encoding="utf-8") as handle:
+        handle.write(
+            "| 2026-01-01 | faber | faber_6m (old run) | old.csv 000000000000 | 0.1 | - |\n"
+        )
+    assert main(["validate", "--strategy", "faber", "--data", "data/prices.csv"]) == 0
+    assert "4 trial(s) charged" in capsys.readouterr().out
+
+
 def test_tampered_audit_log_fails(workdir: Path, capsys: pytest.CaptureFixture[str]) -> None:
     main(["demo", "--save"])
     path = workdir / "runs" / "demo-2026-09-30" / "audit.jsonl"
