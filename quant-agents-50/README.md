@@ -14,20 +14,26 @@ A multi-agent trading research and **paper-trading** platform, built step by ste
 - Not live trading. The kit ships with a paper broker only.
 - Not financial, legal or tax advice.
 
-## Quick start (about 5 minutes)
+## Quick start (about 10 minutes)
 
-You need Python 3.11 or newer.
+You need Python 3.11 or newer. **Beginners: read `START_HERE.md`.**
+
+- **Windows:** double-click `setup.bat`, then `daily.bat` once, then `status.bat`.
+- **macOS/Linux:** `bash setup.sh`, then `bash daily.sh`, then `bash status.sh`.
+
+By hand, the same thing:
 
 ```bash
 python -m venv .venv
 # Windows:  .venv\Scripts\activate      macOS/Linux:  source .venv/bin/activate
-python -m pip install -e ".[dev]"
-python -m quantagents demo
+python -m pip install -e ".[dev,data]"
+python -m quantagents doctor
 python scripts/check.py
+python -m quantagents demo
 ```
 
 - `demo` runs one full decision cycle of all 25 agents on **synthetic** data (fake symbols SYN_A to SYN_F).
-- `check.py` runs every quality gate: lint, formatting, strict types, 423 tests, and 100% coverage of the risk code.
+- `check.py` runs every quality gate: lint, formatting, strict types, 433 tests, and 100% coverage of the risk code.
 - `python -m quantagents simulate --days 120` runs the full cycle day after day on a fresh paper account.
 
 ### What to expect
@@ -95,7 +101,10 @@ New context and risk agents can only **reduce** risk. If one crashes, the system
 | `python -m quantagents make-data --out data/prices.csv` | Write synthetic prices to try the paper loop |
 | `python -m quantagents cycle --data data/prices.csv` | One paper-trading day (account and A35 memory saved in `state/`) |
 | `python -m quantagents killswitch status` | Check, engage or reset the kill switch |
-| `python -m quantagents --config config/my_universe.yaml daily --yahoo SPY TLT` | One scheduled paper day: fetch, export, cycle, watchdog (see `docs/schedule.md`) |
+| `python -m quantagents status` | One-screen dashboard: paper account, kill switch, last cycle, progress toward 30 paper days |
+| `python -m quantagents doctor` | Check the install, the config and the folders |
+| `python scripts/make_release.py` | Build the download zip (none of your data, account or secrets go in) |
+| `python -m quantagents --config config/my_universe.yaml daily` | One scheduled paper day for the config's symbols: fetch, export, cycle, watchdog (see `docs/schedule.md`) |
 | `python -m quantagents watchdog --data data/prices.csv` | Stop trading if cycles or data go stale (never resets) |
 | `python -m quantagents audit` | Verify the tamper-evident audit log |
 | `python -m quantagents acb` | Adjusted cost base report (Canada; not tax advice) |
@@ -122,7 +131,7 @@ New context and risk agents can only **reduce** risk. If one crashes, the system
 | `config/default.yaml` | Every limit and setting |
 | `config/agents.yaml` | The roster: 25 core agents and 25 parked |
 | `src/quantagents/` | The code (one module per agent in `agents/`) |
-| `tests/` | 423 tests |
+| `tests/` | 433 tests |
 | `.claude/` | Settings, hooks, skills, subagents and rules for Claude Code |
 
 ## Canada notes

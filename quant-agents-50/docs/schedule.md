@@ -7,12 +7,14 @@ before it is switched on.
 
 | When (Mountain Time) | What | Command |
 |---|---|---|
-| Weekdays 3:30 PM (after the US close at 2:00 PM MT, once the daily bars are final) | Fetch, export, one paper cycle, watchdog | `python -m quantagents --config config/my_universe.yaml daily --yahoo SPY EFA EEM TLT IEF GLD DBC VNQ --out data/prices.csv` |
+| Weekdays 3:30 PM (after the US close at 2:00 PM MT, once the daily bars are final) | Fetch, export, one paper cycle, watchdog | `daily.bat` (Windows) or `bash daily.sh`; both run `python -m quantagents --config config/my_universe.yaml daily` |
 | Weekdays 4:30 PM | A second, independent watchdog | `python scripts/watchdog.py --data data/prices.csv` |
 
 What each part does:
 - **daily:**
-  - Downloads a fresh snapshot. The append-only store keeps every old one.
+  - Reads the symbols from `config/my_universe.yaml`. Crypto from an exchange is written
+    `BTC-USD.KRAKEN`.
+  - Downloads a fresh snapshot of the last 5 years. The append-only store keeps every old one.
   - Writes the CSV and its caveats.
   - Runs the cycle only if there is a trading day the last cycle has not seen, so a holiday
     or a second run the same day is skipped.
@@ -25,23 +27,24 @@ What each part does:
 
 ## Before the first run
 
-1. `python -m pip install -e ".[dev,data]"` and `python scripts/check.py` (all gates green).
-2. Copy `config/us_etfs.example.yaml` to `config/my_universe.yaml` and set your symbols. Only
-   the universe changes; every risk limit keeps its default.
-3. Run the daily command once by hand and read the report. Check that `data health` is 100 and
-   that `blocked` is `none`.
+1. Run `setup.bat` (Windows) or `bash setup.sh`. It installs everything and runs every
+   quality gate; all must be green.
+2. `setup.bat` (or `setup.sh`) copies `config/us_etfs.example.yaml` to
+   `config/my_universe.yaml`. Set your symbols there. Only the universe changes; every risk
+   limit keeps its default.
+3. Run `daily.bat` once by hand and read the report. Check that `data health` is 100 and that
+   `blocked` is `none`. `status.bat` shows the result on one screen.
 
 ## Windows (Task Scheduler)
 
 1. Open Task Scheduler and choose Create Basic Task. Name it `QuantAgents daily`.
 2. Trigger: Weekly, Monday to Friday, at 3:30 PM.
 3. Action: Start a program.
-   - Program: the full path to `python.exe` in your virtual environment, for example
-     `C:\Users\you\quant-agents-50\.venv\Scripts\python.exe`.
-   - Arguments: `-m quantagents --config config/my_universe.yaml daily --yahoo SPY EFA EEM TLT IEF GLD DBC VNQ --out data/prices.csv`.
-   - Start in: the project folder, for example `C:\Users\you\quant-agents-50`.
+   - Program: the full path to `daily.bat`, for example `C:\QuantAgents-50\daily.bat`.
+   - Start in: the project folder, for example `C:\QuantAgents-50`.
 4. Repeat for `QuantAgents watchdog` at 4:30 PM:
-   - Arguments: `scripts\watchdog.py --data data/prices.csv`.
+   - Program: `C:\QuantAgents-50\.venv\Scripts\python.exe`
+   - Arguments: `scripts\watchdog.py --data data/prices.csv`
    - Same Start in folder.
 5. In each task's properties, tick "Run whether user is logged on or not". The PC must be on
    at that time.
@@ -51,7 +54,7 @@ What each part does:
 `crontab -e`, then (times in your machine's local time; this example is Mountain Time):
 
 ```
-30 15 * * 1-5  cd ~/quant-agents-50 && .venv/bin/python -m quantagents --config config/my_universe.yaml daily --yahoo SPY EFA EEM TLT IEF GLD DBC VNQ --out data/prices.csv
+30 15 * * 1-5  bash ~/quant-agents-50/daily.sh
 30 16 * * 1-5  cd ~/quant-agents-50 && .venv/bin/python scripts/watchdog.py --data data/prices.csv
 ```
 

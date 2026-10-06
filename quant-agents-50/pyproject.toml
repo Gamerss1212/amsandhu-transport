@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "quantagents"
-version = "0.5.0"
+version = "0.6.0"
 description = "QuantAgents-50: a 50-agent quant research and paper-trading starter kit (paper only)."
 readme = "README.md"
 requires-python = ">=3.11"
@@ -19,8 +19,9 @@ dev = [
     "pytest>=8.0",
     "pytest-cov>=5.0",
     "hypothesis>=6.100",
-    "ruff>=0.6",
-    "mypy>=1.10",
+    # the quality gates' own tools are pinned, so a new release cannot fail a fresh install
+    "ruff==0.16.10",
+    "mypy==2.4.0",
     "types-PyYAML>=6.0",
     # the store tests need these (same pins as the [data] extra)
     "duckdb==1.5.6",

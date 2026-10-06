@@ -8,6 +8,9 @@
   dividend or split happens (mixing vintages would create fake price jumps).
 - Provenance: every file keeps its ``SourceInfo`` (spec section 74), so every result can carry the
   right caveat ("survivorship-biased: upper bound only").
+- File names are safe on every operating system (anything but letters, digits, ``.``, ``_`` and
+  ``-`` becomes ``_``), and reading one symbol opens only the one file it needs: the store stays
+  fast after years of daily snapshots.
 DuckDB and PyArrow are optional ([data] extra); only this module and the CLI import them.
 """
 
@@ -17,6 +20,7 @@ import hashlib
 import json
 import math
 import os
+import re
 from collections.abc import Iterable, Sequence
 from dataclasses import asdict
 from datetime import UTC, date, datetime, timedelta
@@ -35,6 +39,15 @@ def _duckdb() -> Any:
     import duckdb  # optional [data] extra
 
     return duckdb
+
+
+STAMP = "%Y%m%dT%H%M%S%fZ"
+_UNSAFE = re.compile(r"[^A-Za-z0-9._-]")
+
+
+def safe_name(symbol: str) -> str:
+    """A form of ``symbol`` that is a valid file name everywhere (Windows forbids : * ? and more)."""
+    return _UNSAFE.sub("_", symbol) or "_"
 
 
 class BarStore:
@@ -60,10 +73,11 @@ class BarStore:
             digest.update(d.isoformat().encode())
         for arr in (raw.open, raw.high, raw.low, raw.close, raw.adj_close, raw.volume):
             digest.update(np.ascontiguousarray(arr).tobytes())
-        safe = raw.symbol.replace("/", "-").replace("=", "_")
+        safe = safe_name(raw.symbol)
         self.bars_dir.mkdir(parents=True, exist_ok=True)
-        path = self.bars_dir / f"{safe}__{when:%Y%m%dT%H%M%S%fZ}__{digest.hexdigest()[:10]}.parquet"
-        if path.exists() or any(self.bars_dir.glob(f"{safe}__{when:%Y%m%dT%H%M%S%fZ}__*.parquet")):
+        stamp = f"{when:{STAMP}}"
+        path = self.bars_dir / f"{safe}__{stamp}__{digest.hexdigest()[:10]}.parquet"
+        if path.exists() or any(self.bars_dir.glob(f"{safe}__{stamp}__*.parquet")):
             raise FileExistsError(
                 f"{raw.symbol} already has a snapshot at {when.isoformat()}: the store never "
                 "overwrites or mixes snapshots"
@@ -94,8 +108,10 @@ class BarStore:
     def _files(self) -> list[Path]:
         return sorted(self.bars_dir.glob("*.parquet")) if self.bars_dir.exists() else []
 
-    def _query(self, sql: str, params: Sequence[Any] = ()) -> list[tuple[Any, ...]]:
-        files = self._files()
+    def _query(
+        self, sql: str, params: Sequence[Any] = (), files: Sequence[Path] | None = None
+    ) -> list[tuple[Any, ...]]:
+        files = self._files() if files is None else list(files)
         if not files:
             return []
         con = _duckdb().connect()
@@ -118,24 +134,49 @@ class BarStore:
     def symbols(self) -> list[str]:
         return sorted({s for s, _, _ in self.vintages()})
 
+    def _candidates(self, symbol: str) -> list[tuple[datetime, Path]]:
+        """Snapshot files that may hold ``symbol``, newest first, found from file names alone."""
+        safe = safe_name(symbol)
+        out: list[tuple[datetime, Path]] = []
+        if not self.bars_dir.exists():
+            return out
+        for path in self.bars_dir.glob(f"{safe}__*.parquet"):
+            parts = path.stem.rsplit("__", 2)
+            if len(parts) != 3 or parts[0] != safe:
+                continue
+            try:
+                when = datetime.strptime(parts[1], STAMP).replace(tzinfo=UTC)
+            except ValueError:
+                continue
+            out.append((when, path))
+        return sorted(out, reverse=True)
+
+    def _snapshot(
+        self, symbol: str, as_of_ingest: datetime | None
+    ) -> tuple[datetime, list[tuple[Any, ...]]]:
+        cutoff = (as_of_ingest or datetime.now(UTC)).astimezone(UTC)
+        for when, path in self._candidates(symbol):
+            if when > cutoff:
+                continue
+            rows = self._query(
+                "SELECT date, open, high, low, close, adj_close, volume, dividend, split, source "
+                "FROM bars WHERE symbol = ? AND epoch_us(ingested_at) = ? ORDER BY date",
+                [symbol, _epoch_us(when)],
+                files=[path],
+            )
+            if rows:  # another symbol with the same file-safe name is skipped
+                return when, rows
+        raise KeyError(f"{symbol}: no snapshot ingested by {cutoff.isoformat()}")
+
     def snapshot_time(self, symbol: str, *, as_of_ingest: datetime | None = None) -> datetime:
         """Ingest time of the newest snapshot of ``symbol`` at or before ``as_of_ingest``."""
-        cutoff = (as_of_ingest or datetime.now(UTC)).astimezone(UTC)
-        snaps = [t for _, t, _ in self.vintages(symbol) if t <= cutoff]
-        if not snaps:
-            raise KeyError(f"{symbol}: no snapshot ingested by {cutoff.isoformat()}")
-        return snaps[-1]
+        return self._snapshot(symbol, as_of_ingest)[0]
 
     def raw(
         self, symbol: str, *, as_of_ingest: datetime | None = None
     ) -> tuple[RawDaily, SourceInfo]:
         """The newest snapshot of ``symbol`` ingested at or before ``as_of_ingest``."""
-        when = self.snapshot_time(symbol, as_of_ingest=as_of_ingest)
-        rows = self._query(
-            "SELECT date, open, high, low, close, adj_close, volume, dividend, split, source "
-            "FROM bars WHERE symbol = ? AND epoch_us(ingested_at) = ? ORDER BY date",
-            [symbol, _epoch_us(when)],
-        )
+        _, rows = self._snapshot(symbol, as_of_ingest)
         dates = tuple(_as_date(r[0]) for r in rows)
         table = np.array([r[1:9] for r in rows], dtype=np.float64)
         raw = RawDaily(

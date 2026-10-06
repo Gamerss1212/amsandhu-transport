@@ -127,8 +127,8 @@ def block_bootstrap_market(
             [[b.high[0] if math.isfinite(b.high[0]) else start], prior * r["high"]]
         )
         low = np.concatenate([[b.low[0] if math.isfinite(b.low[0]) else start], prior * r["low"]])
-        hi = np.maximum.reduce([high, open_, close])
-        lo = np.minimum.reduce([low, open_, close])
+        hi = np.maximum(np.maximum(high, open_), close)
+        lo = np.minimum(np.minimum(low, open_), close)
         volume = np.nan_to_num(np.asarray(b.volume), nan=0.0)
         bars[symbol] = Bars.from_arrays(
             open=open_,

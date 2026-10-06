@@ -1,6 +1,10 @@
 """One paper-trading day, in order, for the task scheduler (Phase 3 daily schedule).
 
-    python -m quantagents --config config/my_universe.yaml daily --yahoo SPY EFA TLT --out data/prices.csv
+    python -m quantagents --config config/my_universe.yaml daily
+
+The symbols come from the config's ``universe.symbols`` (``BTC-USD.KRAKEN`` style names are
+downloaded from that exchange, everything else from Yahoo), or from ``--yahoo`` / ``--ccxt``.
+Each day downloads the last 5 years (enough for every agent), not the whole history again.
 
 1. ``data fetch``: a new snapshot in the append-only store (never overwrites).
 2. ``data export``: adjusted prices to ``--out``, with the sources' caveats in the sidecar.
@@ -22,9 +26,12 @@ from collections.abc import Callable
 from datetime import UTC, date, datetime
 from pathlib import Path
 
+from quantagents.config import load_config
+from quantagents.data.sources import ccxt_symbol, split_universe
 from quantagents.watchdog import last_data_date
 
 LOG_FILE = Path("runs/daily.log")
+HISTORY_YEARS = 5  # A06 needs 2 years of volatility history; the features need about 15 months
 
 
 def last_cycle_as_of(runs_dir: Path) -> date | None:
@@ -84,15 +91,34 @@ def add_parser(sub: argparse._SubParsersAction[argparse.ArgumentParser]) -> None
     p.add_argument("--ccxt", nargs="+", metavar="EXCHANGE:PAIR", default=[])
     p.add_argument("--out", default="data/prices.csv")
     p.add_argument("--store", default="data/store")
-    p.add_argument("--start", default="2000-01-01", help="history to download (default 2000)")
+    p.add_argument("--start", help=f"history to download (default: the last {HISTORY_YEARS} years)")
 
     def run(args: argparse.Namespace) -> int:
         from quantagents.cli import main  # late import: cli imports this module
 
-        args.symbols = [*args.yahoo, *(c.partition(":")[2].replace("/", "-") for c in args.ccxt)]
+        if not (args.yahoo or args.ccxt):
+            path = Path(args.config) if args.config else Path("config/default.yaml")
+            symbols = load_config(path if path.exists() else None).universe.symbols
+            if not symbols or all(s.startswith("SYN_") for s in symbols):
+                print(
+                    "Nothing to do: the config's universe is empty or still the synthetic demo "
+                    "(SYN_A...). Copy config/us_etfs.example.yaml to config/my_universe.yaml, "
+                    "list your symbols, and pass --config config/my_universe.yaml."
+                )
+                return 2
+            args.yahoo, args.ccxt = split_universe(symbols)
+        args.symbols = [
+            *args.yahoo,
+            *(ccxt_symbol(*c.split(":", 1)) for c in args.ccxt if ":" in c),
+        ]
         if not args.symbols:
             print("Nothing to do: add --yahoo SYMBOLS and/or --ccxt exchange:PAIR")
             return 2
+        if not args.start:
+            today = datetime.now(UTC).date()
+            args.start = today.replace(
+                year=today.year - HISTORY_YEARS, day=min(today.day, 28)
+            ).isoformat()
         return run_daily(args, main)
 
     p.set_defaults(func=run)

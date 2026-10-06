@@ -30,7 +30,8 @@ Current phase, progress and human approvals (loaded every session):
 - Research grid: `python -m quantagents research --universe NAME=CSV --noise 20 --jobs 4` (87 pre-registered variants, noise controls; never edit the grid after a run without a new pre-registration)
 - Paper day: `python -m quantagents cycle --data data/prices.csv`; kill switch: `python -m quantagents killswitch status`
 - Real data (Phase 1): `python -m quantagents data fetch --yahoo SPY`, `data list`, `data benchmark --symbol SPY`, `data export --out data/us.csv`
-- Daily paper run (Phase 3): `python -m quantagents --config config/my_universe.yaml daily --yahoo SPY ...`; watchdog: `python -m quantagents watchdog --data data/prices.csv`
+- Daily paper run (Phase 3): `python -m quantagents --config config/my_universe.yaml daily` (symbols from the config); watchdog: `python -m quantagents watchdog --data data/prices.csv`
+- Everyday: `python -m quantagents status` (dashboard), `python -m quantagents doctor` (install check); release zip: `python scripts/make_release.py`
 
 ## How to work
 

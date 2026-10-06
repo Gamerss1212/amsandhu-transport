@@ -340,3 +340,48 @@ def test_annual_gaps_are_tiny_on_good_data() -> None:
     assert all(abs(g) < 1e-4 for _, g in gaps)
     one_day = tiny("X", [date(2023, 12, 29), date(2024, 1, 2)], [1.0, 1.0])
     assert annual_gaps(one_day) == []
+
+
+def test_file_names_are_safe_on_every_system() -> None:
+    from quantagents.data.store import safe_name
+
+    assert safe_name("BTC-USD.KRAKEN") == "BTC-USD.KRAKEN"
+    assert safe_name('X:Y*?<>|"\\/Z') == "X_Y" + "_" * 8 + "Z"
+    assert safe_name("") == "_"
+
+
+def test_symbols_sharing_a_file_safe_name_stay_apart(tmp_path: Path) -> None:
+    store = BarStore(tmp_path)
+    days = [date(2024, 1, 2), date(2024, 1, 3)]
+    store.append(tiny("A/B", days, [1.0, 2.0]), YAHOO_INFO, ingested_at=T0)
+    store.append(tiny("A_B", days, [5.0, 6.0]), YAHOO_INFO, ingested_at=T0 + timedelta(hours=1))
+    assert store.raw("A/B")[0].close.tolist() == [1.0, 2.0]
+    assert store.raw("A_B")[0].close.tolist() == [5.0, 6.0]
+    assert store.snapshot_time("A/B") == T0
+    with pytest.raises(KeyError):
+        store.raw("C:D")
+
+
+def test_reading_a_symbol_opens_one_file(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    store = BarStore(tmp_path)
+    for k in range(5):
+        store.append(spy(), YAHOO_INFO, ingested_at=T0 + timedelta(days=k))
+        store.append(btc(), ccxt_info("kraken"), ingested_at=T0 + timedelta(days=k))
+    (store.bars_dir / "junk.parquet").write_bytes(b"not a snapshot")  # ignored by name
+    opened: list[int] = []
+    real_query = BarStore._query
+
+    def counting(self: BarStore, sql: str, params: Any = (), files: Any = None) -> Any:
+        opened.append(len(self._files()) if files is None else len(files))
+        return real_query(self, sql, params, files)
+
+    monkeypatch.setattr(BarStore, "_query", counting)
+    raw, _ = store.raw("SPY", as_of_ingest=T0 + timedelta(days=2, hours=1))
+    assert opened == [1] and len(raw) == 23
+
+
+def test_crypto_from_an_exchange_never_clashes_with_yahoo() -> None:
+    from quantagents.data.sources import ccxt_symbol
+
+    assert ccxt_symbol("kraken", "BTC/USD") == "BTC-USD.KRAKEN"
+    assert ccxt_symbol("coinbase", "eth/cad") == "ETH-CAD.COINBASE"

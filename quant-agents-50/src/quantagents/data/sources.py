@@ -63,6 +63,39 @@ YAHOO_INFO = SourceInfo(
 )
 
 
+def ccxt_symbol(exchange_id: str, pair: str) -> str:
+    """How a crypto pair from an exchange is named in the store: ``BTC/USD`` on kraken is
+    ``BTC-USD.KRAKEN``. The exchange tag keeps it apart from Yahoo's ``BTC-USD`` (a different
+    source with different prices), so the store never switches sources silently."""
+    return f"{pair.replace('/', '-').upper()}.{exchange_id.upper()}"
+
+
+CCXT_EXCHANGES = frozenset(
+    {
+        "binance", "binanceus", "bitfinex", "bitstamp", "bybit", "coinbase",
+        "coinbaseexchange", "cryptocom", "gemini", "kraken", "kucoin", "ndax", "okx",
+    }
+)  # fmt: skip
+
+
+def split_universe(symbols: Sequence[str]) -> tuple[list[str], list[str]]:
+    """Which download each universe symbol needs: (Yahoo symbols, CCXT ``exchange:PAIR`` specs).
+
+    ``BTC-USD.KRAKEN`` is a CCXT pair (see ``ccxt_symbol``); everything else, including
+    Yahoo's own ``BTC-USD`` and Toronto listings such as ``XIC.TO``, comes from Yahoo.
+    """
+    yahoo: list[str] = []
+    ccxt: list[str] = []
+    for symbol in symbols:
+        stem, _, tag = symbol.rpartition(".")
+        if stem and tag.lower() in CCXT_EXCHANGES and "-" in stem:
+            base, _, quote = stem.partition("-")
+            ccxt.append(f"{tag.lower()}:{base}/{quote}")
+        else:
+            yahoo.append(symbol)
+    return yahoo, ccxt
+
+
 def ccxt_info(exchange_id: str) -> SourceInfo:
     return SourceInfo(
         name=f"ccxt:{exchange_id}",
@@ -301,5 +334,4 @@ def fetch_ccxt(
         if nxt <= since:
             break
         since = nxt
-    symbol = pair.replace("/", "-")
-    return parse_ccxt_ohlcv(rows, symbol)
+    return parse_ccxt_ohlcv(rows, ccxt_symbol(exchange_id, pair))

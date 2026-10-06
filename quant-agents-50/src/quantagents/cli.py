@@ -15,7 +15,7 @@ from pathlib import Path
 
 import numpy as np
 
-from quantagents import __version__, daily, watchdog
+from quantagents import __version__, daily, ops, watchdog
 from quantagents.agents.a35_scorekeeper import Scorekeeper
 from quantagents.agents.a45_stress import stress_returns
 from quantagents.audit import AuditLog, read_records, verify_chain
@@ -304,6 +304,27 @@ def cmd_killswitch(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_status(args: argparse.Namespace) -> int:
+    cfg = _config(args)
+    lines = ops.status_report(
+        cfg,
+        config_path=args.config or "config/default.yaml",
+        state_file=Path(args.state),
+        kill_file=KILL_FILE,
+        runs_dir=RUNS_DIR,
+        data=Path(args.data) if args.data else None,
+        today=datetime.now(UTC).date(),
+    )
+    print("\n".join(lines))
+    return 0
+
+
+def cmd_doctor(args: argparse.Namespace) -> int:
+    report = ops.doctor(config_path=args.config)
+    print("\n".join(report.lines()))
+    return 1 if report.errors else 0
+
+
 def cmd_watchdog(args: argparse.Namespace) -> int:
     report = watchdog.run(
         runs_dir=RUNS_DIR,
@@ -326,6 +347,16 @@ def cmd_watchdog(args: argparse.Namespace) -> int:
     return 1
 
 
+def _free_path(name: str) -> Path:
+    """``name``, or ``name`` with -2, -3... added: a research record is never overwritten."""
+    path = Path(name)
+    k = 2
+    while path.exists() or path.with_suffix(".csv").exists():
+        path = Path(name).with_name(f"{Path(name).stem}-{k}{Path(name).suffix}")
+        k += 1
+    return path
+
+
 def cmd_research(args: argparse.Namespace) -> int:
     cfg = _config(args)
     universes: dict[str, str] = {}
@@ -346,7 +377,7 @@ def cmd_research(args: argparse.Namespace) -> int:
         run_date=today,
         trials_path=TRIALS_FILE,
     )
-    out = Path(args.report or f"docs/research/grid-{today.isoformat()}.md")
+    out = Path(args.report) if args.report else _free_path(f"docs/research/grid-{today}.md")
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(format_report(report), encoding="utf-8")
     write_variants_csv(report, out.with_suffix(".csv"))
@@ -466,6 +497,16 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--report", help="markdown report path (a .csv is written next to it)")
     p.set_defaults(func=cmd_research)
 
+    p = sub.add_parser(
+        "status", help="one-screen dashboard: account, kill switch, cycles, watchdog"
+    )
+    p.add_argument("--state", default=str(ACCOUNT_FILE))
+    p.add_argument("--data", help="the CSV the daily cycle reads (checks how fresh it is)")
+    p.set_defaults(func=cmd_status)
+
+    p = sub.add_parser("doctor", help="check the install, config and folders (reads only)")
+    p.set_defaults(func=cmd_doctor)
+
     p = sub.add_parser("watchdog", help="stop trading if cycles or data go stale (never resets)")
     p.add_argument(
         "--data", help="the CSV the daily cycle reads (checks how old its newest bar is)"
@@ -497,6 +538,10 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: Sequence[str] | None = None) -> int:
+    for stream in (sys.stdout, sys.stderr):
+        reconfigure = getattr(stream, "reconfigure", None)
+        if reconfigure is not None:  # never crash on a character the console cannot show
+            reconfigure(errors="replace")
     args = build_parser().parse_args(argv)
     try:
         result: int = args.func(args)

@@ -8,7 +8,7 @@ Updated: 2026-10-06 (kit v0.5.0 + Phases 1-3 built + a 7,668-backtest research g
 - The other 25 roster agents are **parked** (`core: false` in `config/agents.yaml`): optional, built later only if they earn it.
 - New signal agents A13 and A15 are in **shadow**: sealed and scored by A35, no vote until the owner promotes them.
 - Mode: **paper**. Autonomy level: **1**. Live trading: **not approved**.
-- Tests: 423, all gates green, 99% line coverage overall, 100% branch coverage on risk.
+- Tests: 433, all gates green, 99% line coverage overall, 100% branch coverage on risk.
 - **Phase 1 passed** (2026-10-06): real data store, free data sources, split check, event-driven backtester, benchmark, leakage tests.
 - **Phase 2 done** (2026-10-06): five published strategies tested on real data, pre-registered, run once. **All five FAIL** the promotion bar. No edge strong enough to trade has been found yet.
 - **Phase 3 built** (2026-10-06): chaos tests, watchdog, daily run and schedule guide. The 30-day paper run needs calendar time on the owner's PC.

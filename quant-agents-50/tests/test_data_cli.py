@@ -39,7 +39,7 @@ def offline(
     def fake_ccxt(exchange: str, pair: str, start: date, end: date) -> RawDaily:
         calls.append((exchange, pair))
         rows = json.loads((DATA / "ccxt_kraken_btcusd_2024_10.json").read_text("utf-8"))
-        return sources.parse_ccxt_ohlcv(rows, pair.replace("/", "-"))
+        return sources.parse_ccxt_ohlcv(rows, sources.ccxt_symbol(exchange, pair))
 
     monkeypatch.setattr(sources, "fetch_yahoo", fake_yahoo)
     monkeypatch.setattr(sources, "fetch_ccxt", fake_ccxt)
@@ -55,13 +55,13 @@ def test_fetch_list_benchmark(
     assert main(["data", "fetch", "--yahoo", "SPY", "--ccxt", "kraken:BTC/USD"]) == 0
     out = capsys.readouterr().out
     assert "SPY: stored 23 days 2024-03-01 to 2024-04-03, 1 dividends" in out
-    assert "BTC-USD: stored 10 days" in out
+    assert "BTC-USD.KRAKEN: stored 10 days" in out
     assert "survivorship-biased: upper bound only" in out
     assert offline == [("yahoo", "SPY"), ("kraken", "BTC/USD")]
 
     assert main(["data", "list"]) == 0
     out = capsys.readouterr().out
-    assert "SPY" in out and "BTC-USD" in out and "2 symbols, 2 snapshots" in out
+    assert "SPY" in out and "BTC-USD.KRAKEN" in out and "2 symbols, 2 snapshots" in out
 
     assert main(["data", "benchmark", "--symbol", "SPY"]) == 0
     out = capsys.readouterr().out
