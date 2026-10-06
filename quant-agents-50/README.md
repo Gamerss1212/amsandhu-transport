@@ -87,6 +87,7 @@ New context and risk agents can only **reduce** risk. If one crashes, the system
 | `python -m quantagents data benchmark --symbol SPY` | Phase 1 check: buy-and-hold total return three ways, within 0.1% a year |
 | `python -m quantagents data export --out data/us.csv --symbols SPY QQQ` | Adjusted prices to a CSV, plus a `.meta.json` with each source's caveats |
 | `python -m quantagents backtest --data data/us.csv --engine event` | Event-driven backtest: orders, partial fills, impact, 1%-of-ADV cap |
+| `python -m quantagents research --universe us=data/us.csv --noise 20 --jobs 4` | The pre-registered 87-variant grid at 1x and 2x costs plus noise controls, judged as one experiment (report in `docs/research/`) |
 | `python -m quantagents simulate --days 120` | The full cycle day by day, with A35 scorecards and why it did not trade |
 | `python -m quantagents agents --core` | The 25-agent core and each agent's state |
 | `python -m quantagents stress --strategy tsmom` | A45 Monte Carlo and 2x-cost stress of a strategy |
