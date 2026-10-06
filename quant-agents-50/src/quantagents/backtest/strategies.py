@@ -163,6 +163,20 @@ def strategy_grid(name: str, cfg: AppConfig) -> list[tuple[str, StrategyFactory]
             ("vt10_hold", library.vol_target(buy_and_hold(), 0.10)),
             ("vt15_hold", library.vol_target(buy_and_hold(), 0.15)),
         ],
+        # added with the research grid (backtest/grid.py), same parameters as there
+        "sma_cross": lambda: [
+            (f"sma_cross_{f}_{s}", library.sma_cross(f, s))
+            for f, s in ((50, 200), (20, 100), (50, 150), (100, 200))
+        ],
+        "dual_mom": lambda: [
+            (f"dual_mom_{lb}_top{k}", library.dual_momentum(lb, k))
+            for lb in (252, 126)
+            for k in (1, 2, 3)
+        ],
+        "donchian": lambda: [
+            (f"donchian_{e}_{x}", library.donchian(e, x))
+            for e, x in ((55, 20), (20, 10), (100, 50))
+        ],
     }
     if name not in grids:
         raise KeyError(f"unknown strategy {name!r}; choose from {sorted(grids)}")
@@ -179,4 +193,7 @@ DEFAULT_VARIANT = {
     "faber": "faber_10m",
     "rsi2": "rsi2_10",
     "vol_target": "vt10_hold",
+    "sma_cross": "sma_cross_50_200",
+    "dual_mom": "dual_mom_252_top1",
+    "donchian": "donchian_55_20",
 }

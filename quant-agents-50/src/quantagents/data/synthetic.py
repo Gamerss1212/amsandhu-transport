@@ -86,3 +86,55 @@ def synthetic_market(
             open=open_, high=high, low=low, close=close, volume=volume
         )
     return MarketData(days, bars)
+
+
+def block_bootstrap_market(
+    market: MarketData, *, seed: int, mean_block: float = 20.0
+) -> MarketData:
+    """A noise control: the real days, reshuffled in blocks of about a month (spec section 64).
+
+    Each new day copies one real day's moves for every symbol at once (open, high, low and close
+    relative to the previous close, and the volume), so daily volatility, cross-asset correlation
+    and short-run behaviour are kept. Blocks of geometric length (mean ``mean_block`` days) are
+    drawn at random, so anything slower than about a month (trends, 3-12 month momentum) is
+    destroyed. A rule that still looks good here is finding luck, not a market effect.
+    """
+    from quantagents.validation.stats import stationary_bootstrap_indices  # avoids a cycle
+
+    n = len(market)
+    if n < 3:
+        raise ValueError("need at least 3 days to bootstrap")
+    rng = np.random.default_rng(seed)
+    source = stationary_bootstrap_indices(n - 1, mean_block, rng) + 1  # real days 1..n-1
+    bars: dict[str, Bars] = {}
+    for symbol in market.symbols:
+        b = market.bars(symbol)
+        prev = b.close[:-1]
+        with np.errstate(divide="ignore", invalid="ignore"):
+            ratios = {
+                f: np.nan_to_num(np.asarray(b.field(f))[1:] / prev, nan=1.0, posinf=1.0, neginf=1.0)
+                for f in ("open", "high", "low", "close")
+            }
+        r = {f: x[source - 1] for f, x in ratios.items()}
+        r["close"] = np.where(r["close"] > 0, r["close"], 1.0)
+        start = float(b.close[0]) if math.isfinite(float(b.close[0])) else 100.0
+        close = np.concatenate([[start], start * np.cumprod(r["close"])])
+        prior = close[:-1]
+        open_ = np.concatenate(
+            [[b.open[0] if math.isfinite(b.open[0]) else start], prior * r["open"]]
+        )
+        high = np.concatenate(
+            [[b.high[0] if math.isfinite(b.high[0]) else start], prior * r["high"]]
+        )
+        low = np.concatenate([[b.low[0] if math.isfinite(b.low[0]) else start], prior * r["low"]])
+        hi = np.maximum.reduce([high, open_, close])
+        lo = np.minimum.reduce([low, open_, close])
+        volume = np.nan_to_num(np.asarray(b.volume), nan=0.0)
+        bars[symbol] = Bars.from_arrays(
+            open=open_,
+            high=hi,
+            low=lo,
+            close=close,
+            volume=np.concatenate([[volume[0]], volume[source]]),
+        )
+    return MarketData(market.dates, bars)

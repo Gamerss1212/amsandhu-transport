@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 from collections.abc import Sequence
 from datetime import UTC, date, datetime
@@ -40,6 +41,7 @@ from quantagents.report import (
     format_strategy_stress,
     format_validation,
 )
+from quantagents.research import format_report, run_research, write_variants_csv
 from quantagents.risk.killswitch import RESET_PHRASE, KillSwitch
 from quantagents.simulate import run_paper_simulation
 from quantagents.validation.leakage import RedTeamAuditor
@@ -324,6 +326,42 @@ def cmd_watchdog(args: argparse.Namespace) -> int:
     return 1
 
 
+def cmd_research(args: argparse.Namespace) -> int:
+    cfg = _config(args)
+    universes: dict[str, str] = {}
+    for spec in args.universe:
+        name, _, path = spec.partition("=")
+        if not name or not path:
+            raise ValueError(f"write each universe as NAME=CSV, not {spec!r}")
+        if not Path(path).exists():
+            raise FileNotFoundError(path)
+        universes[name] = path
+    today = datetime.now(UTC).date()
+    report = run_research(
+        universes,
+        cfg=cfg,
+        noise=args.noise,
+        jobs=max(1, args.jobs),
+        families=args.families,
+        run_date=today,
+        trials_path=TRIALS_FILE,
+    )
+    out = Path(args.report or f"docs/research/grid-{today.isoformat()}.md")
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(format_report(report), encoding="utf-8")
+    write_variants_csv(report, out.with_suffix(".csv"))
+    for u in report.universes:
+        verdict = "n/a" if u.finalist is None else ("PASS" if u.finalist.passed else "FAIL")
+        print(
+            f"{u.name}: best {u.best} Sharpe {u.get(u.best).sharpe:.2f} vs buy-and-hold "
+            f"{u.benchmark.sharpe:.2f}; finalist {verdict}"
+        )
+    print(f"\n{report.backtests:,} backtests. Report: {out} (+ {out.with_suffix('.csv').name})")
+    print(f"Logged {report.real_trials} trial(s) to {TRIALS_FILE}.")
+    print(f"\n{DISCLAIMER}")
+    return 0
+
+
 def cmd_config(args: argparse.Namespace) -> int:
     cfg = _config(args)
     s, r = cfg.system, cfg.risk
@@ -417,6 +455,16 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--reason")
     p.add_argument("--confirm", help=f"type {RESET_PHRASE} to reset")
     p.set_defaults(func=cmd_killswitch)
+
+    p = sub.add_parser(
+        "research", help="the pre-registered grid: every variant, every universe, noise controls"
+    )
+    p.add_argument("--universe", action="append", required=True, metavar="NAME=CSV")
+    p.add_argument("--noise", type=int, default=20, help="noise-control panels per universe")
+    p.add_argument("--jobs", type=int, default=os.cpu_count() or 1, help="parallel processes")
+    p.add_argument("--families", nargs="+", help="only these families (quick checks only)")
+    p.add_argument("--report", help="markdown report path (a .csv is written next to it)")
+    p.set_defaults(func=cmd_research)
 
     p = sub.add_parser("watchdog", help="stop trading if cycles or data go stale (never resets)")
     p.add_argument(

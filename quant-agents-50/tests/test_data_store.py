@@ -117,6 +117,17 @@ def test_yahoo_parser_drops_padded_and_unfinished_bars() -> None:
     assert parse_yahoo_chart(data, "SPY", now=early).dates[-1] == date(2024, 3, 5)
 
 
+def test_yahoo_parser_keeps_todays_crypto_bar_out_until_the_utc_day_ends() -> None:
+    data = copy.deepcopy(payload("yahoo_spy_2024_03.json"))
+    data["chart"]["result"][0]["meta"].update({"instrumentType": "CRYPTOCURRENCY", "gmtoffset": 0})
+    full = parse_yahoo_chart(data, "BTC-USD")
+    last = full.dates[-1]
+    evening = datetime(last.year, last.month, last.day, 23, 0, tzinfo=UTC)
+    assert parse_yahoo_chart(data, "BTC-USD", now=evening).dates[-1] < last  # still forming
+    next_day = evening + timedelta(hours=2)
+    assert parse_yahoo_chart(data, "BTC-USD", now=next_day).dates[-1] == last
+
+
 def test_yahoo_parser_rejects_other_payloads() -> None:
     with pytest.raises(ValueError, match="not a Yahoo chart"):
         parse_yahoo_chart({"chart": {"result": None}}, "SPY")

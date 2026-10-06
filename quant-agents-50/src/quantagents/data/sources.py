@@ -122,6 +122,8 @@ def parse_yahoo_chart(
     quote = (res.get("indicators", {}).get("quote") or [{}])[0]
     adj = ((res.get("indicators", {}).get("adjclose") or [{}])[0]).get("adjclose") or []
     now_local = (now or datetime.now(UTC)) + offset
+    # crypto trades around the clock: its daily bar is only final once the UTC day is over
+    always_open = res.get("meta", {}).get("instrumentType") == "CRYPTOCURRENCY"
     cols = {f: list(quote.get(f) or []) for f in ("open", "high", "low", "close", "volume")}
     rows: dict[date, tuple[float, ...]] = {}
     for k, ts in enumerate(stamps):
@@ -130,7 +132,7 @@ def parse_yahoo_chart(
         adj_close = _num(adj[k]) if k < len(adj) else values[3]
         if any(math.isnan(v) for v in values[:4]):
             continue
-        if day == now_local.date() and now_local.time() < US_SESSION_CLOSE:
+        if day == now_local.date() and (always_open or now_local.time() < US_SESSION_CLOSE):
             continue  # today's bar is still forming
         if day > now_local.date():
             continue

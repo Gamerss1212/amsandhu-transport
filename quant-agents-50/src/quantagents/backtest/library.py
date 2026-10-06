@@ -17,6 +17,16 @@ result depends on one lucky parameter. All of them count as trials (spec section
 - ``vol_target``: volatility-targeting overlay (A16) on any base strategy: scale the book so its
   estimated volatility is 10% (or 15%) a year, never above 100% invested.
 
+Added for the research grid (2026-10-06):
+- ``sma_cross``: the golden-cross trend filter (A1). Hold a symbol while its fast moving average
+  (e.g. 50 days) is above its slow one (e.g. 200 days).
+- ``dual_momentum``: Antonacci dual momentum (A2). Rank by the lookback return, keep the top k,
+  and hold each only while its own return is positive (absolute momentum); otherwise cash.
+- ``donchian``: Turtle-style channel breakout (A1). Buy on a close above the highest high of
+  the previous N days; sell on a close below the lowest low of the previous M days.
+
+Volatility is annualized with 365 days for markets that trade every day (crypto), else 252.
+
 Monthly strategies decide on the first trading day of each month using data up to that day,
 then trade at the next open (one day later than the papers' month-end rule; never earlier).
 """
@@ -30,7 +40,7 @@ import numpy as np
 
 from quantagents.backtest.engine import Strategy, StrategyFactory
 from quantagents.features import rsi
-from quantagents.market import FloatArray, MarketData, MarketView
+from quantagents.market import FloatArray, MarketData, MarketView, periods_per_year
 
 Weights = dict[str, float]
 TRADING_DAYS = 252
@@ -40,11 +50,15 @@ def _closes(view: MarketView, symbol: str, n: int) -> FloatArray:
     return np.ascontiguousarray(view.close(symbol)[-n:])
 
 
-def _ann_vol(close: FloatArray, window: int) -> float:
+def _ann_vol(close: FloatArray, window: int, periods: int = TRADING_DAYS) -> float:
     c = close[-(window + 1) :]
     if len(c) < window + 1 or not np.all(np.isfinite(c)) or np.any(c <= 0):
         return math.nan
-    return float(np.std(np.diff(np.log(c)), ddof=1)) * math.sqrt(TRADING_DAYS)
+    return float(np.std(np.diff(np.log(c)), ddof=1)) * math.sqrt(periods)
+
+
+def _periods(view: MarketView, window: int) -> int:
+    return periods_per_year(view.dates[-(window + 1) :])
 
 
 def new_month(view: MarketView) -> bool:
@@ -82,7 +96,7 @@ def tsmom_blend(
                 continue
             weight = share / n
             if target_vol is not None:
-                vol = _ann_vol(c, window)
+                vol = _ann_vol(c, window, _periods(view, window))
                 if not (math.isfinite(vol) and vol > 0):
                     continue
                 weight *= min(1.0, target_vol / vol)
@@ -201,12 +215,81 @@ def vol_target(base: StrategyFactory, target: float = 0.10, window: int = 63) ->
                 rets.append(np.diff(np.log(c)))
             weights = np.array(list(w.values()))
             cov = np.atleast_2d(np.cov(np.array(rets)))
-            vol = math.sqrt(max(float(weights @ cov @ weights), 0.0) * TRADING_DAYS)
+            vol = math.sqrt(max(float(weights @ cov @ weights), 0.0) * _periods(view, window))
             if vol <= 0:
                 return {}
             scale = min(target / vol, 1.0 / float(np.sum(weights)))
             return {s: x * scale for s, x in w.items()}
 
         return Monthly(compute)
+
+    return factory
+
+
+def sma_cross(fast: int = 50, slow: int = 200) -> StrategyFactory:
+    if not 0 < fast < slow:
+        raise ValueError("need 0 < fast < slow")
+
+    def factory(market: MarketData) -> Strategy:
+        def strategy(view: MarketView) -> Weights:
+            n = len(view.symbols)
+            out: Weights = {}
+            for s in view.symbols:
+                c = _closes(view, s, slow)
+                if len(c) == slow and np.all(np.isfinite(c)) and np.mean(c[-fast:]) > np.mean(c):
+                    out[s] = 1.0 / n
+            return out
+
+        return strategy
+
+    return factory
+
+
+def dual_momentum(lookback: int = 252, top_k: int = 1) -> StrategyFactory:
+    def compute(view: MarketView) -> Weights:
+        scores: dict[str, float] = {}
+        for s in view.symbols:
+            c = _closes(view, s, lookback + 1)
+            if len(c) == lookback + 1 and math.isfinite(c[0]) and math.isfinite(c[-1]):
+                scores[s] = float(c[-1] / c[0] - 1.0)
+        top = sorted(scores, key=lambda s: (-scores[s], s))[:top_k]
+        return {s: 1.0 / top_k for s in top if scores[s] > 0}
+
+    def factory(market: MarketData) -> Strategy:
+        return Monthly(compute)
+
+    return factory
+
+
+class _Donchian:
+    def __init__(self, entry: int, exit_: int) -> None:
+        self.entry, self.exit = entry, exit_
+        self.held: set[str] = set()
+
+    def __call__(self, view: MarketView) -> Weights:
+        n = len(view.symbols)
+        span = max(self.entry, self.exit) + 1
+        for s in view.symbols:
+            h = np.ascontiguousarray(view.high(s)[-span:])
+            lo = np.ascontiguousarray(view.low(s)[-span:])
+            c = float(view.close(s)[-1])
+            ok = len(h) == span and np.all(np.isfinite(h)) and np.all(np.isfinite(lo))
+            if not ok or not math.isfinite(c):
+                self.held.discard(s)
+                continue
+            if s in self.held:
+                if c < float(np.min(lo[-self.exit - 1 : -1])):
+                    self.held.discard(s)
+            elif c > float(np.max(h[-self.entry - 1 : -1])):
+                self.held.add(s)
+        return dict.fromkeys(sorted(self.held), 1.0 / n)
+
+
+def donchian(entry: int = 55, exit_: int = 20) -> StrategyFactory:
+    if entry < 2 or exit_ < 2:
+        raise ValueError("channels need at least 2 days")
+
+    def factory(market: MarketData) -> Strategy:
+        return _Donchian(entry, exit_)
 
     return factory
