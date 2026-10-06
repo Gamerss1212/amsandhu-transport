@@ -27,7 +27,20 @@
 
 ## Acceptance (spec section 83)
 
-- [ ] 100% branch coverage on risk logic (the gate already enforces it)
-- [ ] Chaos tests pass
-- [ ] 30 paper days with zero A49 breaches and no reconciliation break
-- [ ] Kill switch tested this week
+- [x] 100% branch coverage on risk logic (the gate already enforces it)
+- [x] Chaos tests pass (`tests/test_chaos.py`: stale data, duplicate fills, dropped broker, corrupted kill switch)
+- [ ] 30 paper days with zero A49 breaches and no reconciliation break (needs about six weeks of calendar time on the owner's PC; see `docs/schedule.md`)
+- [ ] Kill switch tested this week (automated tests pass; the owner tests it by hand each week of the paper run)
+
+## Built (2026-10-06)
+
+- Chaos: the cycle survives a broker that drops before the open or at submit. It records a
+  reconciliation break, engages the kill switch and sends nothing. A02 blocks a stale feed (a last
+  bar that copies the one before).
+- Watchdog: `quantagents watchdog` and `scripts/watchdog.py`. It can only engage the switch.
+- Daily run: `quantagents daily` (fetch, export, cycle, watchdog), and it never runs a day twice.
+  Schedule guide: `docs/schedule.md`.
+- Real data through A02: the 8-ETF universe (`config/us_etfs.example.yaml`) scored 100/100
+  with nothing blocked. Across 3,608 sampled days of real history in three universes, A02
+  blocked nothing (no false split or stale alarms).
+- Broker paper adapter (optional): not built. It needs the owner's paper-account keys in `.env`.

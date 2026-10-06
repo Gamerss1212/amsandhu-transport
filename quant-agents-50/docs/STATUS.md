@@ -1,6 +1,6 @@
 # Build status
 
-Updated: 2026-10-06 (kit v0.5.0 + Phase 1 and Phase 2 on real data)
+Updated: 2026-10-06 (kit v0.5.0 + Phases 1-3 built; the 30-day paper run is next)
 
 ## Where things stand
 
@@ -8,9 +8,10 @@ Updated: 2026-10-06 (kit v0.5.0 + Phase 1 and Phase 2 on real data)
 - The other 25 roster agents are **parked** (`core: false` in `config/agents.yaml`): optional, built later only if they earn it.
 - New signal agents A13 and A15 are in **shadow**: sealed and scored by A35, no vote until the owner promotes them.
 - Mode: **paper**. Autonomy level: **1**. Live trading: **not approved**.
-- Tests: 387, all gates green, 99% line coverage overall, 100% branch coverage on risk.
+- Tests: 410, all gates green, 99% line coverage overall, 100% branch coverage on risk.
 - **Phase 1 passed** (2026-10-06): real data store, free data sources, split check, event-driven backtester, benchmark, leakage tests.
 - **Phase 2 done** (2026-10-06): five published strategies tested on real data, pre-registered, run once. **All five FAIL** the promotion bar. No edge strong enough to trade has been found yet.
+- **Phase 3 built** (2026-10-06): chaos tests, watchdog, daily run and schedule guide. The 30-day paper run needs calendar time on the owner's PC.
 - An independent review found 8 defects in the new agents (1 high, 3 medium, 4 low). All are fixed and covered by regression tests.
 
 ## The 25-agent core
@@ -31,7 +32,7 @@ Updated: 2026-10-06 (kit v0.5.0 + Phase 1 and Phase 2 on real data)
 | 0 | Setup on the owner's PC | Checked in the build environment (all gates green); still to do on the owner's PC |
 | 1 | Data and backtester | **Passed** 2026-10-06 (see Phase 1 results below) |
 | 2 | First signals and validation | **Done** 2026-10-06: 5 families, all FAIL (see Phase 2 results) |
-| 3 | Risk, execution, paper | Built; chaos tests, watchdog and 30 paper days to do |
+| 3 | Risk, execution, paper | Built and tested 2026-10-06; **30 paper days to run** (owner's PC, `docs/schedule.md`) |
 | 4 | Context, aggregation, scoring | Built (core complete); 60+ real paper days to score agents |
 | 5-7 | Parked agents (optional) | Not planned |
 | 8 | Micro-live (owner approval) | Locked |
@@ -85,6 +86,29 @@ downloaded 2026-10-06). Pass = every route within 10 bp (0.1%) a year.
 - **FX carry** needs interest-rate data that the store does not have yet.
 - A21 stays registered and idle until a carry source exists.
 
+## Phase 3 (2026-10-06)
+
+**Chaos tests:** all pass (`tests/test_chaos.py`).
+- **Stale feed:** that symbol is blocked. If the whole feed is stale, A49 halts and fires the
+  kill switch.
+- **Duplicate fill:** applied once. If the broker double-books a fill, the next cycle sees a
+  reconciliation break, halts and fires the kill switch.
+- **Broker drops before the open:** reconciliation break, halt and kill switch. Queued orders
+  are kept.
+- **Broker drops at submit:** nothing is sent, and A46 fires the kill switch.
+- **Corrupted kill-switch file** (empty, garbage, half-written, wrong type, or a folder in its
+  place): it counts as engaged, and only the reset phrase clears it.
+
+**Real data through the full cycle:** 8 ETFs, as of 2026-10-05.
+- Data health 100/100, nothing blocked, all 25 agents ran.
+- Decision: no trade. GO: none, 8 reasoned no-trades.
+- Across 3,608 sampled days of real history, A02 raised no false split or stale alarms.
+
+**Watchdog and daily run:** built and tested. The guide is in `docs/schedule.md`. It is not
+switched on: the owner approves the schedule first.
+
+**30 paper days:** not started. This needs about six weeks of calendar time on the owner's PC.
+
 ## Human approvals
 
 | Date | Decision | Owner |
@@ -102,6 +126,10 @@ downloaded 2026-10-06). Pass = every route within 10 bp (0.1%) a year.
 
 ## Next step
 
-- Owner: on your PC, install Python 3.11+, Git and Claude Code, then `python -m pip install -e ".[dev,data]"` and `python scripts/check.py`.
-- Owner: decide the PBO question above (optional).
-- Build: Phase 3 (chaos tests, watchdog, daily schedule). Paper days need calendar time.
+1. Owner: on your PC, install Python 3.11+, Git and Claude Code. Then run
+   `python -m pip install -e ".[dev,data]"` and `python scripts/check.py`.
+2. Owner: copy `config/us_etfs.example.yaml` to `config/my_universe.yaml`, run the daily
+   command once by hand, then approve and switch on the schedule (`docs/schedule.md`).
+3. Owner (optional): decide the PBO question in the Phase 2 results.
+4. After 30 clean paper days: Phase 4 scoring has real data to score. Phase 8 (real money)
+   stays locked until you approve it here.

@@ -1,0 +1,7 @@
+# Example config for paper trading real ETFs (Phase 3).
+# Copy it to config/my_universe.yaml, edit the symbols, and pass it with --config.
+# Every setting not written here keeps its default from config/default.yaml's values in code,
+# so all risk limits stay exactly as they are. Only the universe changes.
+universe:
+  asset_class: US_equities
+  symbols: [SPY, EFA, EEM, TLT, IEF, GLD, DBC, VNQ]

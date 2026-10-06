@@ -223,12 +223,26 @@ class Orchestrator:
         # 2 Data (A01, A02, A05): earlier orders fill at today's open, then stops are checked
         bars = {s: view.last(s) for s in view.symbols}
         opens = {s: b.open for s, b in bars.items() if math.isfinite(b.open) and b.open > 0}
-        early_fills = broker.fill_pending(opens, as_of) + broker.check_stops(bars, as_of)
+        broker_error = ""
+        early_fills: list[Fill] = []
+        try:  # one call at a time, so fills that did happen are still recorded
+            early_fills += broker.fill_pending(opens, as_of)
+            early_fills += broker.check_stops(bars, as_of)
+        except Exception as exc:  # a dropped broker must never crash the cycle (spec section 18)
+            broker_error = f"{type(exc).__name__}: {exc}"
         for fill in early_fills:
             ledger.record(fill)
             publish("A50", "orders.fills", fill)
         health = self.a02.check(view, sid, cfg.risk)
         recon = reconcile(ledger, broker)
+        if broker_error:
+            # we cannot know what the broker did: treat it as a reconciliation break (A49 halts)
+            recon = recon.model_copy(
+                update={
+                    "ok": False,
+                    "diffs": (*recon.diffs, f"broker unreachable ({broker_error})"),
+                }
+            )
         publish("A02", "data.health", health)
         prices = dict(snapshot.last_close)
         publish("A05", "ledger.state", ledger.state(prices))
@@ -668,17 +682,29 @@ class Orchestrator:
         orders = [
             intent.model_copy(update={"qty": result.approved_qty}) for intent, result in approved
         ]
-        broker.submit(orders, as_of)
         next_day = market.next_date(as_of)
         exec_fills: list[Fill] = []
-        if self.simulate_next_open and next_day is not None:
-            next_opens = {s: market.bar(s, next_day).open for s in market.symbols}
-            exec_fills = broker.fill_pending(
-                {s: o for s, o in next_opens.items() if math.isfinite(o) and o > 0}, next_day
+        execution_ok = True
+        try:
+            broker.submit(orders, as_of)
+            if self.simulate_next_open and next_day is not None:
+                next_opens = {s: market.bar(s, next_day).open for s in market.symbols}
+                exec_fills = broker.fill_pending(
+                    {s: o for s, o in next_opens.items() if math.isfinite(o) and o > 0}, next_day
+                )
+                where = f"filled at the {next_day.isoformat()} open (simulated paper fill)"
+            else:
+                where = "queued for the next session's open"
+        except Exception as exc:  # broker dropped: stop new trading until a human checks
+            execution_ok = False
+            reason = f"broker unreachable at submit ({type(exc).__name__}: {exc})"
+            state = self.kill_switch.engage(reason, by="A46")
+            publish(
+                "A46",
+                "ops.killswitch",
+                KillSwitchEvent(engaged=True, reason=state.reason, by=state.by),
             )
-            where = f"filled at the {next_day.isoformat()} open (simulated paper fill)"
-        else:
-            where = "queued for the next session's open"
+            where = "NOT confirmed: the broker could not be reached; kill switch engaged"
         for fill in exec_fills:
             publish("A50", "orders.fills", fill)
         step(
@@ -691,6 +717,13 @@ class Orchestrator:
         for fill in exec_fills:
             ledger.record(fill)
         recon_after = reconcile(ledger, broker)
+        if broker_error:  # what the broker did this cycle is unknown: the break stands
+            recon_after = recon_after.model_copy(
+                update={
+                    "ok": False,
+                    "diffs": (*recon_after.diffs, f"broker unreachable ({broker_error})"),
+                }
+            )
         account.record_equity(as_of, equity)
         by_intent = {r.intent_id: r for r in verdict.results}
         snapshot_hash = sid
@@ -701,9 +734,12 @@ class Orchestrator:
             proposal = next(p for p in proposals.values() if p.decision_id == intent.decision_id)
             result = by_intent[intent.intent_id]
             fills = tuple(f for f in exec_fills if f.intent_id == intent.intent_id)
-            outcome = (
-                "filled" if fills else ("queued" if result.approved_qty > 0 else "rejected by A49")
-            )
+            if fills:
+                outcome = "filled"
+            elif result.approved_qty <= 0:
+                outcome = "rejected by A49"
+            else:
+                outcome = "queued" if execution_ok else "not confirmed: broker unreachable"
             record = TradeDecisionRecord(
                 decision_id=intent.decision_id,
                 cycle_id=cycle_id,

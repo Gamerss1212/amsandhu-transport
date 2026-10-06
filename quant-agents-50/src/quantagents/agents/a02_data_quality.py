@@ -8,6 +8,9 @@ Corporate actions (spec section 57, Phase 1): a one-day close-to-close jump near
 unadjusted split, not a real move. It is a hard fault for as long as it sits inside the feature
 window, because every return-based feature over that window would be wrong. The fix is adjusted
 data (the store's ``load`` adjusts by default), not trading through it.
+
+Stale feed (Phase 3 chaos): a last bar identical in every field (open, high, low, close and
+volume) to the bar before is a feed re-sending old data, so the symbol is blocked that day.
 """
 
 from __future__ import annotations
@@ -23,6 +26,11 @@ from quantagents.config import RiskConfig
 from quantagents.features import FEATURE_TAIL
 from quantagents.market import MarketView
 from quantagents.schemas import CheckResult, DataHealthReport, HealthAction
+
+
+def _repeats(*series: npt.NDArray[np.float64]) -> bool:
+    """True when every field of the last bar equals the bar before: a feed re-sending old data."""
+    return all(float(x[-1]) == float(x[-2]) for x in series)
 
 
 class DataQualityAgent(Agent):
@@ -61,6 +69,8 @@ class DataQualityAgent(Agent):
         finite_volume = v[np.isfinite(v)]
         if np.any(finite_volume < 0):
             faults.append("negative volume")
+        if len(c) >= 2 and _repeats(o, h, lo, c, v):  # NaN never equals NaN: gaps do not count
+            faults.append("last bar is an exact copy of the one before (stale feed?)")
         faults.extend(self._split_like(view, symbol))
         return faults
 

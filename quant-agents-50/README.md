@@ -27,7 +27,7 @@ python scripts/check.py
 ```
 
 - `demo` runs one full decision cycle of all 25 agents on **synthetic** data (fake symbols SYN_A to SYN_F).
-- `check.py` runs every quality gate: lint, formatting, strict types, 387 tests, and 100% coverage of the risk code.
+- `check.py` runs every quality gate: lint, formatting, strict types, 410 tests, and 100% coverage of the risk code.
 - `python -m quantagents simulate --days 120` runs the full cycle day after day on a fresh paper account.
 
 ### What to expect
@@ -94,6 +94,8 @@ New context and risk agents can only **reduce** risk. If one crashes, the system
 | `python -m quantagents make-data --out data/prices.csv` | Write synthetic prices to try the paper loop |
 | `python -m quantagents cycle --data data/prices.csv` | One paper-trading day (account and A35 memory saved in `state/`) |
 | `python -m quantagents killswitch status` | Check, engage or reset the kill switch |
+| `python -m quantagents --config config/my_universe.yaml daily --yahoo SPY TLT` | One scheduled paper day: fetch, export, cycle, watchdog (see `docs/schedule.md`) |
+| `python -m quantagents watchdog --data data/prices.csv` | Stop trading if cycles or data go stale (never resets) |
 | `python -m quantagents audit` | Verify the tamper-evident audit log |
 | `python -m quantagents acb` | Adjusted cost base report (Canada; not tax advice) |
 
@@ -119,7 +121,7 @@ New context and risk agents can only **reduce** risk. If one crashes, the system
 | `config/default.yaml` | Every limit and setting |
 | `config/agents.yaml` | The roster: 25 core agents and 25 parked |
 | `src/quantagents/` | The code (one module per agent in `agents/`) |
-| `tests/` | 387 tests |
+| `tests/` | 410 tests |
 | `.claude/` | Settings, hooks, skills, subagents and rules for Claude Code |
 
 ## Canada notes

@@ -14,7 +14,7 @@ from pathlib import Path
 
 import numpy as np
 
-from quantagents import __version__
+from quantagents import __version__, daily, watchdog
 from quantagents.agents.a35_scorekeeper import Scorekeeper
 from quantagents.agents.a45_stress import stress_returns
 from quantagents.audit import AuditLog, read_records, verify_chain
@@ -301,6 +301,28 @@ def cmd_killswitch(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_watchdog(args: argparse.Namespace) -> int:
+    report = watchdog.run(
+        runs_dir=RUNS_DIR,
+        state_file=Path(args.state),
+        kill_file=KILL_FILE,
+        data=Path(args.data) if args.data else None,
+        max_missed_days=args.max_missed_days,
+        max_data_age_days=args.max_data_age_days,
+        engage=not args.dry_run,
+    )
+    if report.ok:
+        print("Watchdog: all clear.")
+        return 0
+    for problem in report.problems:
+        print(f"Watchdog: {problem}")
+    if report.engaged:
+        print(
+            f"Kill switch ENGAGED. After review: quantagents killswitch reset --confirm {RESET_PHRASE}"
+        )
+    return 1
+
+
 def cmd_config(args: argparse.Namespace) -> int:
     cfg = _config(args)
     s, r = cfg.system, cfg.risk
@@ -395,6 +417,16 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--confirm", help=f"type {RESET_PHRASE} to reset")
     p.set_defaults(func=cmd_killswitch)
 
+    p = sub.add_parser("watchdog", help="stop trading if cycles or data go stale (never resets)")
+    p.add_argument(
+        "--data", help="the CSV the daily cycle reads (checks how old its newest bar is)"
+    )
+    p.add_argument("--state", default=str(ACCOUNT_FILE))
+    p.add_argument("--max-missed-days", type=int, default=2, help="weekdays without a cycle")
+    p.add_argument("--max-data-age-days", type=int, default=3, help="weekdays since the newest bar")
+    p.add_argument("--dry-run", action="store_true", help="report only; do not engage the switch")
+    p.set_defaults(func=cmd_watchdog)
+
     p = sub.add_parser("config", help="validate the config and print a summary")
     p.set_defaults(func=cmd_config)
 
@@ -407,6 +439,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.set_defaults(func=cmd_audit)
 
     data_commands.add_parser(sub)
+    daily.add_parser(sub)
 
     p = sub.add_parser("acb", help="adjusted cost base report from paper fills (not tax advice)")
     p.add_argument("--state", default=str(ACCOUNT_FILE))
