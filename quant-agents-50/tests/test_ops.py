@@ -95,7 +95,8 @@ def test_doctor_checks_the_install(home: Path, capsys: pytest.CaptureFixture[str
         "risk:\n  max_daily_loss_pct: -5\n", encoding="utf-8"
     )
     assert main(["--config", "config/broken.yaml", "doctor"]) == 1
-    assert "[ERROR] config config/broken.yaml is invalid" in capsys.readouterr().out
+    out = capsys.readouterr().out  # the path prints with \\ on Windows and / elsewhere
+    assert f"[ERROR] config {Path('config/broken.yaml')} is invalid" in out
 
 
 def test_research_never_overwrites_a_report(home: Path) -> None:

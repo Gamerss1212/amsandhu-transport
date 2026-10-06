@@ -157,6 +157,21 @@ Windows under Wine), running it on live data, and reviewing the code.
 | Research workers were forked from a multi-threaded process (deadlock risk on Python 3.12+) | Workers start the same way as on Windows ("spawn") |
 | `setup.bat` gave up if the Python launcher was broken | It tries the launcher, then `python`, and checks the version |
 | The download builder dropped `src/quantagents/data/` and `tests/data/` (caught before release) | Fixed; a test proves every program and test file ships |
+| `setup.bat` carried on after a crash (Windows crash exit codes are negative; `if errorlevel 1` misses them) | Any non-zero exit stops setup |
+| With numpy 1.26 (the oldest supported) the type check failed on one line | Clean on numpy 1.26.4, 2.4.6 and 2.5.3 |
+| One test expected `/` in a path; Windows prints `\` | The test works on both |
+
+**Where the download was tested** (unzipped from the release, then `setup`):
+
+| System | Python | numpy | Result |
+|---|---|---|---|
+| Linux | 3.11, 3.12, 3.13 | 2.4 and 2.5 (newest) | all gates green |
+| Linux | 3.11 | 1.26.4 (oldest supported) | all gates green |
+| Windows (Wine) | 3.11 | 1.26.4 | `setup.bat` through every gate (see the note below) |
+
+- Wine (the Windows layer used for testing here) cannot run numpy 2.x: it lacks one C library
+  function (`crealf`) that real Windows has. So the Windows test used numpy 1.26.4.
+- On a real PC, setup installs the newest numpy. That version passes every gate on Linux.
 
 **New**
 - `setup`, `daily` and `status` scripts for Windows and macOS/Linux.
