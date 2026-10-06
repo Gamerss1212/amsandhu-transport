@@ -1,6 +1,6 @@
 # Build status
 
-Updated: 2026-10-06 (kit v0.5.0 + Phases 1-3 built; the 30-day paper run is next)
+Updated: 2026-10-06 (kit v0.5.0 + Phases 1-3 built + a 7,668-backtest research grid; the 30-day paper run is next)
 
 ## Where things stand
 
@@ -8,10 +8,11 @@ Updated: 2026-10-06 (kit v0.5.0 + Phases 1-3 built; the 30-day paper run is next
 - The other 25 roster agents are **parked** (`core: false` in `config/agents.yaml`): optional, built later only if they earn it.
 - New signal agents A13 and A15 are in **shadow**: sealed and scored by A35, no vote until the owner promotes them.
 - Mode: **paper**. Autonomy level: **1**. Live trading: **not approved**.
-- Tests: 410, all gates green, 99% line coverage overall, 100% branch coverage on risk.
+- Tests: 423, all gates green, 99% line coverage overall, 100% branch coverage on risk.
 - **Phase 1 passed** (2026-10-06): real data store, free data sources, split check, event-driven backtester, benchmark, leakage tests.
 - **Phase 2 done** (2026-10-06): five published strategies tested on real data, pre-registered, run once. **All five FAIL** the promotion bar. No edge strong enough to trade has been found yet.
 - **Phase 3 built** (2026-10-06): chaos tests, watchdog, daily run and schedule guide. The 30-day paper run needs calendar time on the owner's PC.
+- **Research grid** (2026-10-06): 87 pre-registered variants x 4 universes (US multi-asset ETFs, US sectors, US index ETFs, BTC+ETH). Every variant ran at 1x and 2x costs and on 20 noise panels: **7,668 backtests**. **All four finalists FAIL.** No strategy was shown to beat buy-and-hold. Report: `docs/research/grid-2026-10-06.md`.
 - An independent review found 8 defects in the new agents (1 high, 3 medium, 4 low). All are fixed and covered by regression tests.
 
 ## The 25-agent core
@@ -109,6 +110,36 @@ switched on: the owner approves the schedule first.
 
 **30 paper days:** not started. This needs about six weeks of calendar time on the owner's PC.
 
+## Research grid (2026-10-06)
+
+Pre-registered in `docs/research/grid-preregistration.md` (committed before the run). Full report:
+`docs/research/grid-2026-10-06.md`, with every variant in the `.csv` next to it.
+
+| Universe | Best of 87 | Sharpe | Buy-and-hold Sharpe | Walk-forward OOS Sharpe (B&H) | Verdict |
+|---|---|---|---|---|---|
+| multi_asset (8 ETFs) | xsmom_126_0_half | 0.72 | 0.60 | 0.51 (0.87) | FAIL |
+| sectors (9 SPDRs) | faber_10m | 0.69 | 0.53 | 0.83 (0.99) | FAIL |
+| us_index (SPY QQQ IWM DIA) | vt15_21_hold | 0.68 | 0.58 | 0.61 (0.94) | FAIL |
+| crypto (BTC ETH) | sma_50 | 1.22 | 0.72 | 0.25 (0.43) | FAIL |
+
+**In plain words**
+- **Nothing beats holding.** 0 of 344 variants beat buy-and-hold after the false-discovery
+  check.
+- **Picking last period's winner did worse than holding**, in every universe.
+- **Luck alone** (noise panels with no trends) produces winners about as good-looking as the
+  real ones.
+- **Trend and volatility rules** (Faber, trend blend, vol targeting) cut the worst losses
+  (drawdowns) a lot. Their risk-adjusted return was similar or slightly better, but too little
+  to prove. Outside crypto they earned less than holding.
+
+**Engine fixes in this round**
+- **Holdings now drift with prices.** Before, the book was reset to its targets every day for
+  free. The two backtest engines now agree within 0.01% a year.
+- **Crypto uses 365-day years.**
+- **Unfinished crypto bars are dropped** until the UTC day ends.
+
+Phase 2 numbers came from the old engine. Their verdicts (all FAIL) stand.
+
 ## Human approvals
 
 | Date | Decision | Owner |
@@ -117,7 +148,7 @@ switched on: the owner approves the schedule first.
 
 ## Open issues
 
-- Real-data research so far: 5 strategy families, all FAIL (Phase 2). Synthetic results prove nothing about real markets.
+- Real-data research so far: Phase 2 (5 families) and the research grid (87 variants x 4 universes): no strategy passes. Synthetic results prove nothing about real markets.
 - The default config universe is the synthetic SYN_A..SYN_F. To paper-trade real symbols, put them in `universe.symbols` (or `[]` for every symbol in the file). `cycle` now says so when nothing can trade.
 - Export stocks and crypto to separate CSVs: crypto trades on weekends, so a mixed file has gaps that make A02 block the stocks.
 - On the synthetic data the full chain rarely says GO: two teams must agree and the edge must beat 1.5x costs. That is by design.
