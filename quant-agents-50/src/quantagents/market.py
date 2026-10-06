@@ -205,6 +205,18 @@ class MarketView:
         return self._data.bar(symbol, self.as_of)
 
 
+def periods_per_year(dates: Sequence[date]) -> int:
+    """365 for markets that trade every day (crypto), 252 for weekday markets (stocks, ETFs).
+
+    Decided from the calendar itself: if more than 10% of the dates fall on a weekend, the
+    market trades seven days a week.
+    """
+    if not dates:
+        return 252
+    weekend = sum(1 for d in dates if d.weekday() >= 5)
+    return 365 if weekend / len(dates) > 0.10 else 252
+
+
 def load_csv(path: Path | str) -> MarketData:
     """Load long-format CSV with columns date,symbol,open,high,low,close,volume.
 

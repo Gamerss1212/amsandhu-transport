@@ -176,7 +176,13 @@ def stationary_bootstrap_indices(
 
 
 def bootstrap_sharpe_interval(
-    returns: npt.ArrayLike, *, samples: int, mean_block: float, alpha: float = 0.05, seed: int = 0
+    returns: npt.ArrayLike,
+    *,
+    samples: int,
+    mean_block: float,
+    alpha: float = 0.05,
+    seed: int = 0,
+    periods_per_year: int = 252,
 ) -> tuple[float, float]:
     r = clean_returns(returns)
     rng = np.random.default_rng(seed)
@@ -184,7 +190,7 @@ def bootstrap_sharpe_interval(
     for _ in range(samples):
         s = r[stationary_bootstrap_indices(len(r), mean_block, rng)]
         sd = float(np.std(s, ddof=1))
-        stats.append(float(np.mean(s)) / sd * math.sqrt(252.0) if sd > 0 else 0.0)
+        stats.append(float(np.mean(s)) / sd * math.sqrt(periods_per_year) if sd > 0 else 0.0)
     lo, hi = np.quantile(stats, [alpha / 2.0, 1.0 - alpha / 2.0])
     return float(lo), float(hi)
 
@@ -317,7 +323,11 @@ class RegimeResult(Message):
 
 
 def regime_split(
-    returns: npt.ArrayLike, market_returns: npt.ArrayLike, *, window: int = 63
+    returns: npt.ArrayLike,
+    market_returns: npt.ArrayLike,
+    *,
+    window: int = 63,
+    periods_per_year: int = 252,
 ) -> list[RegimeResult]:
     """Strategy results on low-, mid- and high-volatility days (by the market's trailing vol)."""
     r = np.asarray(returns, dtype=np.float64)
@@ -342,8 +352,8 @@ def regime_split(
             RegimeResult(
                 regime=label,
                 days=len(x),
-                annual_return=float(np.mean(x)) * 252.0 if len(x) else 0.0,
-                sharpe=sharpe_ratio(x) if len(x) > 1 else 0.0,
+                annual_return=float(np.mean(x)) * periods_per_year if len(x) else 0.0,
+                sharpe=sharpe_ratio(x, periods_per_year) if len(x) > 1 else 0.0,
             )
         )
     return out
@@ -382,17 +392,23 @@ class StatisticalValidator:
         seed: int = 0,
         trial_names: Sequence[str] | None = None,
         market_returns: npt.ArrayLike | None = None,
+        periods_per_year: int = 252,
     ) -> ValidationReport:
         cfg = self.cfg
         r = clean_returns(returns)
         t_stat = newey_west_tstat(r)
         psr = probabilistic_sharpe_ratio(r)
         dsr = deflated_sharpe_ratio(r, n_trials)
+        ppy = periods_per_year
         lo, hi = bootstrap_sharpe_interval(
-            r, samples=cfg.bootstrap_samples, mean_block=cfg.bootstrap_mean_block, seed=seed
+            r,
+            samples=cfg.bootstrap_samples,
+            mean_block=cfg.bootstrap_mean_block,
+            seed=seed,
+            periods_per_year=ppy,
         )
         metrics = {
-            "sharpe": sharpe_ratio(r),
+            "sharpe": sharpe_ratio(r, ppy),
             "sharpe_ci_low": lo,
             "sharpe_ci_high": hi,
             "newey_west_t": t_stat,
@@ -446,7 +462,7 @@ class StatisticalValidator:
         if stressed_returns is None:
             checks.append(CheckResult(name="sharpe_at_2x_costs", passed=False, detail="not run"))
         else:
-            stressed = sharpe_ratio(stressed_returns)
+            stressed = sharpe_ratio(stressed_returns, ppy)
             metrics["sharpe_at_2x_costs"] = stressed
             checks.append(
                 CheckResult(
@@ -504,7 +520,9 @@ class StatisticalValidator:
                     )
                 )
         regimes = (
-            regime_split(r, clean_returns(market_returns)) if market_returns is not None else []
+            regime_split(r, clean_returns(market_returns), periods_per_year=ppy)
+            if market_returns is not None
+            else []
         )
         passed = all(c.passed for c in checks)
         return ValidationReport(

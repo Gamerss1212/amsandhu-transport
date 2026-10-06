@@ -64,8 +64,12 @@ def test_buy_and_hold_matches_the_price_change_at_zero_cost(market: MarketData) 
     result = EventBacktester(FREE, 10_000).run(one, buy_and_hold()(one), warmup=WARMUP)
     bars = one.bars("SYN_A")
     expected = bars.close[-1] / bars.open[WARMUP + 1]
-    # cash left over when the open is below the prior close is invested on later days
-    assert result.equity[-1] / 10_000 == pytest.approx(expected, rel=1e-4)
+    # sized from the prior close; when the open is higher, the buy is shrunk to the cash
+    qty = min(10_000 / bars.close[WARMUP], 10_000 / bars.open[WARMUP + 1])
+    left = 10_000 - qty * bars.open[WARMUP + 1]
+    assert result.equity[-1] == pytest.approx(left + qty * bars.close[-1], rel=1e-9)
+    assert result.equity[-1] / 10_000 == pytest.approx(expected, rel=0.01)
+    assert len([o for o in result.orders if o.filled_qty]) == 1  # bought once, then held
     assert len(result.equity) == len(result.dates) == len(one) - WARMUP
 
 
@@ -157,10 +161,11 @@ def test_thin_history_and_tiny_sizes_are_rejected() -> None:
     result = EventBacktester(costs, 10_000).run(no_volume, hold("AAA"), warmup=WARMUP)  # type: ignore[arg-type]
     assert result.orders[0].status is FillStatus.REJECTED
     assert "volume history" in result.orders[0].reason
-    # two half-weights with whole shares: drift asks for 1-share top-ups once cash is spent
+    # a target that changes every day re-sizes from today's value: whole-share top-ups
+    # with no cash left are counted as unfunded
     pair = wavy_market(("AAA", "BBB"), n=300)
-    halves = EventBacktester(costs, 10_000).run(
-        pair, lambda _: {"AAA": 0.5, "BBB": 0.5}, warmup=WARMUP
+    halves = EventBacktester(costs, 10_000).run(  # a target that moves a little every day
+        pair, lambda v: {"AAA": 0.5, "BBB": 0.5 - 0.001 * (len(v) % 2)}, warmup=WARMUP
     )
     unfunded = [o for o in halves.orders if o.status is FillStatus.UNFUNDED]
     assert unfunded and all("no cash" in o.reason for o in unfunded)

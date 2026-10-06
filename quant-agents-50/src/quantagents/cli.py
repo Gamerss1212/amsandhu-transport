@@ -27,7 +27,7 @@ from quantagents.data.store import data_labels
 from quantagents.data.synthetic import DEMO_AS_OF, synthetic_market
 from quantagents.execution.paper import PaperAccount
 from quantagents.lots import acb_report
-from quantagents.market import MarketData, load_csv, save_csv
+from quantagents.market import MarketData, load_csv, periods_per_year, save_csv
 from quantagents.orchestrator import Orchestrator
 from quantagents.registry import Registry
 from quantagents.report import (
@@ -238,6 +238,7 @@ def cmd_validate(args: argparse.Namespace) -> int:
         seed=cfg.system.seed,
         trial_names=names,
         market_returns=market_returns,
+        periods_per_year=periods_per_year(market.dates),
     )
     red_team = RedTeamAuditor(max_gross=cfg.risk.max_gross_exposure_pct / 100.0).audit(
         dict(grid)[chosen], market, name=chosen

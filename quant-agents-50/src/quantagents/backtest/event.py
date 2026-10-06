@@ -18,6 +18,9 @@ every trade is an order that can be partly filled or rejected:
   allows; a buy with no cash for even one unit is counted as **unfunded**, not rejected (a
   fully invested strategy asks for small top-ups every day that no broker would ever see).
 - Sells go first each morning, so their cash can pay for that morning's buys.
+- A target identical to the previous day's is not a new decision: the quantities decided earlier
+  stand, only their unfilled part is worked, and price drift is not traded (the same rule as
+  the vectorized engine).
 - Long only, no leverage, so there is no borrow, funding or financing cost to charge. Prices
   should be the store's adjusted prices, so dividends and splits are already in them. Taxes
   are estimated from paper fills by ``quantagents acb`` (not here, and not tax advice).
@@ -35,7 +38,7 @@ import numpy as np
 
 from quantagents.backtest.engine import Strategy, performance_metrics
 from quantagents.config import AppConfig
-from quantagents.market import FloatArray, MarketData
+from quantagents.market import FloatArray, MarketData, periods_per_year
 
 
 @dataclass(frozen=True)
@@ -167,14 +170,23 @@ class EventBacktester:
             return cash + held
 
         mark(warmup)
+        target_prev: dict[str, float] | None = None
+        goal: dict[str, float] = {}
         for t in range(warmup, n - 1):
             value = equity[-1]
             weights = self._targets(strategy(market.view_at(t)), symbols)
+            if weights != target_prev:  # a new decision: size it from the last close
+                goal = {
+                    s: weights.get(s, 0.0) * value / last_close[s]
+                    if math.isfinite(last_close[s])
+                    else qty[s]
+                    for s in symbols
+                }
+                target_prev = weights
+            # the same target as yesterday only works what is still unfilled (no drift trades)
             wanted: dict[str, float] = {}
             for s in symbols:
-                ref = last_close[s]
-                goal = weights.get(s, 0.0) * value / ref if math.isfinite(ref) else qty[s]
-                delta = _round_toward_zero(goal - qty[s], c.quantity_step)
+                delta = _round_toward_zero(goal[s] - qty[s], c.quantity_step)
                 if delta:
                     wanted[s] = delta
             # sells first (they free cash), then buys
@@ -189,7 +201,7 @@ class EventBacktester:
         values = np.array(equity)
         returns = values[1:] / values[:-1] - 1.0
         turnover = np.zeros(len(returns))
-        metrics = performance_metrics(returns, turnover)
+        metrics = performance_metrics(returns, turnover, periods_per_year(market.dates[warmup:]))
         filled = [o for o in orders if o.filled_qty]
         traded = sum(abs(o.filled_qty * o.price) for o in filled)
         metrics.update(

@@ -99,3 +99,16 @@ def test_synthetic_data_is_deterministic_and_valid() -> None:
         assert np.all(bars.high >= np.maximum(bars.open, bars.close))
     days = business_days(date(2026, 10, 4), 3)
     assert days == [date(2026, 9, 30), date(2026, 10, 1), date(2026, 10, 2)]
+
+
+def test_periods_per_year_follows_the_calendar() -> None:
+    from datetime import timedelta
+
+    from quantagents.market import periods_per_year
+
+    start = date(2026, 1, 5)
+    every_day = [start + timedelta(days=k) for k in range(60)]
+    weekdays = [d for d in every_day if d.weekday() < 5]
+    assert periods_per_year(every_day) == 365  # crypto
+    assert periods_per_year(weekdays) == 252  # stocks and ETFs
+    assert periods_per_year([]) == 252

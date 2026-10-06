@@ -109,3 +109,29 @@ def test_agent_ensemble_strategy_is_long_only_and_bounded(
     for weights in outputs:
         assert all(0 < w <= cfg.risk.max_position_pct / 100 for w in weights.values())
         assert sum(weights.values()) <= 1.0 + 1e-9
+
+
+def test_an_unchanged_target_drifts_like_real_buy_and_hold(market: MarketData) -> None:
+    """Fix 2026-10-06: the engine no longer resets the book to its targets every day for free."""
+    two = MarketData(market.dates, {s: market.bars(s) for s in ("SYN_A", "SYN_B")})
+    result = Backtester(0.0).run(two, lambda _: {"SYN_A": 0.5, "SYN_B": 0.5}, warmup=WARMUP)
+    a, b = two.bars("SYN_A"), two.bars("SYN_B")
+    expected = 0.5 * a.close[-1] / a.open[WARMUP + 1] + 0.5 * b.close[-1] / b.open[WARMUP + 1]
+    assert result.equity[-1] == pytest.approx(expected, rel=1e-12)
+    assert result.turnover[0] == 1.0 and np.all(result.turnover[1:] == 0.0)
+
+
+def test_a_changed_target_trades_from_the_drifted_holdings(market: MarketData) -> None:
+    two = MarketData(market.dates, {s: market.bars(s) for s in ("SYN_A", "SYN_B")})
+
+    def tilt(view: MarketView) -> Mapping[str, float]:
+        return {"SYN_A": 0.5, "SYN_B": 0.5 if len(view) == WARMUP + 1 else 0.4}
+
+    result = Backtester(0.001).run(two, tilt, warmup=WARMUP)
+    a, b = two.bars("SYN_A"), two.bars("SYN_B")
+    t = WARMUP + 1  # bought at this open; prices then move to the next open
+    ra, rb = a.open[t + 1] / a.open[t], b.open[t + 1] / b.open[t]
+    growth = 0.5 * ra + 0.5 * rb
+    held_a, held_b = 0.5 * ra / growth, 0.5 * rb / growth
+    assert result.turnover[1] == pytest.approx(abs(0.5 - held_a) + abs(0.4 - held_b), rel=1e-12)
+    assert np.all(result.turnover[2:] == 0.0)  # 0.5/0.4 then stays the same: held

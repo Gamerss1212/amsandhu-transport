@@ -2,11 +2,20 @@
 
 Timeline for each day t (decision after the close of t, trade at the open of t+1):
     equity[t+1] = equity[t]
-                  x (1 + sum w_prev * (open[t+1] / close[t] - 1))      overnight, old weights
+                  x (1 + sum w_held * (open[t+1] / close[t] - 1))      overnight, what is held
                   x (1 - turnover * cost_rate)                         trade at the open
-                  x (1 + sum w_new * (close[t+1] / open[t+1] - 1))     intraday, new weights
+                  x (1 + sum w_after * (close[t+1] / open[t+1] - 1))   intraday, after the trade
 The strategy only ever receives a MarketView ending at t, so it cannot see t+1.
-This is a vectorized screening engine; re-test finalists event-driven (e.g. NautilusTrader).
+
+Holdings drift with prices (fix, 2026-10-06). ``w_held`` is what the book really holds after
+prices moved, not yesterday's target:
+- a target **identical** to the previous one means "no new decision": nothing is traded and the
+  book keeps drifting (a monthly strategy holds between rebalances, and buy-and-hold really is
+  buy-and-hold);
+- any **change** in the target trades the whole book back to it, and turnover is measured from
+  the drifted holdings, so the cost of undoing drift is paid.
+Before this fix the engine assumed the book was reset to its targets every day for free.
+This is a screening engine; re-test finalists in the event-driven engine (``event.py``).
 """
 
 from __future__ import annotations
@@ -18,7 +27,7 @@ from datetime import date
 
 import numpy as np
 
-from quantagents.market import FloatArray, MarketData, MarketView
+from quantagents.market import FloatArray, MarketData, MarketView, periods_per_year
 
 Strategy = Callable[[MarketView], Mapping[str, float]]
 StrategyFactory = Callable[[MarketData], Strategy]
@@ -45,6 +54,14 @@ def performance_metrics(
         "avg_daily_turnover": float(np.mean(turnover)) if len(turnover) else 0.0,
         "exposure_days_pct": 0.0,
     }
+
+
+def _drift(weights: FloatArray, returns: FloatArray, growth: float) -> FloatArray:
+    """Weights after prices move by ``returns`` (cash, the rest, earns nothing)."""
+    if growth <= 0:
+        return np.zeros_like(weights)
+    drifted: FloatArray = weights * (1.0 + returns) / growth
+    return drifted
 
 
 @dataclass(frozen=True)
@@ -95,7 +112,8 @@ class Backtester:
         symbols = market.symbols
         opens = np.column_stack([market.bars(s).open for s in symbols])
         closes = np.column_stack([market.bars(s).close for s in symbols])
-        w_prev = np.zeros(len(symbols))
+        target_prev: FloatArray | None = None
+        held = np.zeros(len(symbols))  # weights actually held, drifting with prices
         equity = [1.0]
         rets: list[float] = []
         turns: list[float] = []
@@ -104,20 +122,26 @@ class Backtester:
             w_new = self._weights(strategy(market.view_at(t)), symbols)
             overnight_r = np.nan_to_num(opens[t + 1] / closes[t] - 1.0)
             intraday_r = np.nan_to_num(closes[t + 1] / opens[t + 1] - 1.0)
-            turnover = float(np.sum(np.abs(w_new - w_prev)))
-            growth = (
-                (1.0 + float(w_prev @ overnight_r))
-                * (1.0 - turnover * self.cost_rate)
-                * (1.0 + float(w_new @ intraday_r))
-            )
+            g_overnight = 1.0 + float(held @ overnight_r)
+            held = _drift(held, overnight_r, g_overnight)
+            if target_prev is not None and np.array_equal(w_new, target_prev):
+                turnover = 0.0  # no new decision: keep what is held
+            else:
+                turnover = float(np.sum(np.abs(w_new - held)))
+                held = w_new.copy()
+            g_intraday = 1.0 + float(held @ intraday_r)
+            growth = g_overnight * (1.0 - turnover * self.cost_rate) * g_intraday
+            held = _drift(held, intraday_r, g_intraday)
             equity.append(equity[-1] * growth)
             rets.append(growth - 1.0)
             turns.append(turnover)
             history.append({s: float(x) for s, x in zip(symbols, w_new, strict=True) if x != 0})
-            w_prev = w_new
+            target_prev = w_new
         returns = np.array(rets)
         turnover_arr = np.array(turns)
-        metrics = performance_metrics(returns, turnover_arr)
+        metrics = performance_metrics(
+            returns, turnover_arr, periods_per_year(market.dates[warmup:])
+        )
         metrics["exposure_days_pct"] = 100.0 * sum(1 for h in history if h) / len(history)
         return BacktestResult(
             name=name,
