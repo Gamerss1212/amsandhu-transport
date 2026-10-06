@@ -1,0 +1,719 @@
+# Agent registry: all 50 agents (spec sections 9, 10 and 22).
+# state: proposed (not built yet) | sandbox | shadow | probation | active | watchlist | retired
+# core: true for the 25-agent core this kit builds in full; false = parked for later (optional).
+# implementation: module:Class for built agents, null for agents not built yet.
+# New signal agents start in shadow (scored by A35, no vote). Only the owner promotes them.
+# Adding agent #51+: same fields, a new team slug only with a human-approved spec change (section 17).
+# tests/test_registry.py checks counts, teams, tiers, phases and that every implementation imports.
+
+agents:
+  # Team 1: data_integrity
+  - id: A01
+    name: Market Data & PIT Librarian
+    team: data_integrity
+    kind: code
+    llm: false
+    cadence: each bar
+    info_subset: [broker_feeds, exchange_feeds, vendor_files]
+    output: MarketSnapshot.v1
+    tier: 4
+    state: active
+    weight_cap: 0.25
+    phase: 1
+    core: true
+    implementation: quantagents.agents.a01_market_data:MarketDataAgent
+  - id: A02
+    name: Data Quality Sentinel
+    team: data_integrity
+    kind: code
+    llm: false
+    cadence: continuous
+    info_subset: [market_snapshot]
+    output: DataHealthReport.v1
+    tier: 1
+    state: active
+    weight_cap: 0.25
+    phase: 1
+    core: true
+    implementation: quantagents.agents.a02_data_quality:DataQualityAgent
+  - id: A03
+    name: Feature Factory
+    team: data_integrity
+    kind: code
+    llm: false
+    cadence: each bar
+    info_subset: [market_snapshot]
+    output: FeatureFrame.v1
+    tier: 4
+    state: active
+    weight_cap: 0.25
+    phase: 1
+    core: true
+    implementation: quantagents.agents.a03_features:FeatureAgent
+  - id: A04
+    name: Text Intake & Sanitizer
+    team: data_integrity
+    kind: mixed
+    llm: true
+    cadence: on event
+    info_subset: [raw_text]
+    output: SanitizedTextItem.v1
+    tier: 4
+    state: proposed
+    weight_cap: 0.25
+    phase: 5
+    core: false
+    implementation: null
+  - id: A05
+    name: Ledger & Reconciliation Keeper
+    team: data_integrity
+    kind: code
+    llm: false
+    cadence: continuous
+    info_subset: [broker_account, internal_orders]
+    output: LedgerState.v1
+    tier: 1
+    state: active
+    weight_cap: 0.25
+    phase: 3
+    core: true
+    implementation: quantagents.execution.paper:Ledger
+  # Team 2: market_context
+  - id: A06
+    name: Regime Classifier
+    team: market_context
+    kind: mixed
+    llm: false
+    cadence: daily
+    info_subset: [returns, volatility, breadth, cross_asset]
+    output: ContextReport.v1
+    tier: 3
+    state: active
+    weight_cap: 0.25
+    phase: 4
+    core: true
+    implementation: quantagents.agents.a06_regime:RegimeAgent
+  - id: A07
+    name: Transition Detector
+    team: market_context
+    kind: stat
+    llm: false
+    cadence: each bar
+    info_subset: [returns, volatility, correlations, regime_probs]
+    output: ContextReport.v1
+    tier: 1
+    state: active
+    weight_cap: 0.25
+    phase: 4
+    core: true
+    implementation: quantagents.agents.a07_transition:TransitionAgent
+  - id: A08
+    name: Volatility Forecaster
+    team: market_context
+    kind: stat
+    llm: false
+    cadence: each bar
+    info_subset: [ohlc, realized_vol, implied_vol]
+    output: ContextReport.v1
+    tier: 3
+    state: active
+    weight_cap: 0.25
+    phase: 2
+    core: true
+    implementation: quantagents.agents.a08_volatility:VolatilityAgent
+  - id: A09
+    name: Liquidity & Microstructure Analyst
+    team: market_context
+    kind: stat
+    llm: false
+    cadence: each bar
+    info_subset: [l1_l2_books, trades, volume]
+    output: ContextReport.v1
+    tier: 3
+    state: active
+    weight_cap: 0.25
+    phase: 3
+    core: true
+    implementation: quantagents.agents.a09_liquidity:LiquidityAgent
+  - id: A10
+    name: Macro & Cross-Asset Analyst
+    team: market_context
+    kind: stat
+    llm: false
+    cadence: daily
+    info_subset: [macro_pit, rates, curves, commodities, calendar]
+    output: ContextReport.v1
+    tier: 3
+    state: proposed
+    weight_cap: 0.25
+    phase: 4
+    core: false
+    implementation: null
+  # Team 3: trend_momentum
+  - id: A11
+    name: Time-Series Trend Agent
+    team: trend_momentum
+    kind: stat
+    llm: false
+    cadence: daily
+    info_subset: [ohlcv, vol_forecast]
+    output: AgentPrediction.v1
+    tier: 3
+    state: active
+    weight_cap: 0.25
+    phase: 2
+    core: true
+    implementation: quantagents.agents.a11_trend:TrendAgent
+  - id: A12
+    name: Cross-Sectional Momentum Agent
+    team: trend_momentum
+    kind: stat
+    llm: false
+    cadence: weekly or monthly
+    info_subset: [ohlcv_panel, vol_forecast]
+    output: AgentPrediction.v1
+    tier: 3
+    state: active
+    weight_cap: 0.25
+    phase: 2
+    core: true
+    implementation: quantagents.agents.a12_xs_momentum:CrossSectionalMomentumAgent
+  - id: A13
+    name: Structure & Breakout Agent
+    team: trend_momentum
+    kind: mixed
+    llm: false
+    cadence: each bar
+    info_subset: [ohlcv, volume_profile]
+    output: AgentPrediction.v1
+    tier: 3
+    state: shadow
+    weight_cap: 0.25
+    phase: 4
+    core: true
+    implementation: quantagents.agents.a13_breakout:BreakoutAgent
+  - id: A14
+    name: Intraday Momentum & VWAP Agent
+    team: trend_momentum
+    kind: stat
+    llm: false
+    cadence: each bar
+    info_subset: [intraday_ohlcv, vwap, session_times]
+    output: AgentPrediction.v1
+    tier: 3
+    state: proposed
+    weight_cap: 0.25
+    phase: 5
+    core: false
+    implementation: null
+  - id: A15
+    name: Trend Exhaustion Agent
+    team: trend_momentum
+    kind: stat
+    llm: false
+    cadence: daily
+    info_subset: [ohlcv, adx, efficiency_ratio]
+    output: AgentPrediction.v1
+    tier: 3
+    state: shadow
+    weight_cap: 0.25
+    phase: 4
+    core: true
+    implementation: quantagents.agents.a15_exhaustion:ExhaustionAgent
+  # Team 4: mean_reversion_relative_value
+  - id: A16
+    name: Short-Term Reversion Agent
+    team: mean_reversion_relative_value
+    kind: stat
+    llm: false
+    cadence: daily
+    info_subset: [ohlcv]
+    output: AgentPrediction.v1
+    tier: 3
+    state: active
+    weight_cap: 0.25
+    phase: 2
+    core: true
+    implementation: quantagents.agents.a16_reversion:ShortTermReversionAgent
+  - id: A17
+    name: Range & Auction Agent
+    team: mean_reversion_relative_value
+    kind: stat
+    llm: false
+    cadence: daily
+    info_subset: [ohlcv, volume_profile, vwap]
+    output: AgentPrediction.v1
+    tier: 3
+    state: proposed
+    weight_cap: 0.25
+    phase: 5
+    core: false
+    implementation: null
+  - id: A18
+    name: Overreaction & Gap Agent
+    team: mean_reversion_relative_value
+    kind: stat
+    llm: false
+    cadence: daily
+    info_subset: [ohlcv, gaps, liquidations, news_flags]
+    output: AgentPrediction.v1
+    tier: 3
+    state: proposed
+    weight_cap: 0.25
+    phase: 6
+    core: false
+    implementation: null
+  - id: A19
+    name: Pairs & Cointegration Agent
+    team: mean_reversion_relative_value
+    kind: stat
+    llm: false
+    cadence: daily
+    info_subset: [ohlcv_panel]
+    output: AgentPrediction.v1
+    tier: 3
+    state: proposed
+    weight_cap: 0.25
+    phase: 5
+    core: false
+    implementation: null
+  - id: A20
+    name: Stat-Arb Residual Agent
+    team: mean_reversion_relative_value
+    kind: stat
+    llm: false
+    cadence: daily
+    info_subset: [equity_panel, sector_map]
+    output: AgentPrediction.v1
+    tier: 3
+    state: proposed
+    weight_cap: 0.25
+    phase: 7
+    core: false
+    implementation: null
+  # Team 5: carry_factors_events
+  - id: A21
+    name: Carry Agent
+    team: carry_factors_events
+    kind: stat
+    llm: false
+    cadence: daily
+    info_subset: [rates, futures_curves, funding]
+    output: AgentPrediction.v1
+    tier: 3
+    state: proposed
+    weight_cap: 0.25
+    phase: 2
+    core: false
+    implementation: null
+  - id: A22
+    name: Equity Factor Agent
+    team: carry_factors_events
+    kind: stat
+    llm: false
+    cadence: weekly or monthly
+    info_subset: [fundamentals_pit, ohlcv]
+    output: AgentPrediction.v1
+    tier: 3
+    state: proposed
+    weight_cap: 0.25
+    phase: 5
+    core: false
+    implementation: null
+  - id: A23
+    name: Calendar & Seasonality Agent
+    team: carry_factors_events
+    kind: code
+    llm: false
+    cadence: daily
+    info_subset: [calendar]
+    output: AgentPrediction.v1
+    tier: 3
+    state: active
+    weight_cap: 0.25
+    phase: 2
+    core: true
+    implementation: quantagents.agents.a23_calendar:CalendarAgent
+  - id: A24
+    name: Event-Driven Agent
+    team: carry_factors_events
+    kind: mixed
+    llm: false
+    cadence: on event
+    info_subset: [event_calendar, surprise_metrics]
+    output: AgentPrediction.v1
+    tier: 3
+    state: proposed
+    weight_cap: 0.25
+    phase: 5
+    core: false
+    implementation: null
+  - id: A25
+    name: Fundamental Analyst Agent
+    team: carry_factors_events
+    kind: mixed
+    llm: true
+    cadence: on event
+    info_subset: [sanitized_filings, computed_fundamentals]
+    output: AgentPrediction.v1
+    tier: 3
+    state: proposed
+    weight_cap: 0.25
+    phase: 6
+    core: false
+    implementation: null
+  # Team 6: information_positioning
+  - id: A26
+    name: News Sentiment Agent
+    team: information_positioning
+    kind: llm
+    llm: true
+    cadence: on event
+    info_subset: [sanitized_news]
+    output: AgentPrediction.v1
+    tier: 3
+    state: proposed
+    weight_cap: 0.25
+    phase: 6
+    core: false
+    implementation: null
+  - id: A27
+    name: Crowd Sentiment & Contrarian Agent
+    team: information_positioning
+    kind: stat
+    llm: false
+    cadence: daily
+    info_subset: [social_volume, surveys, put_call, search_interest]
+    output: AgentPrediction.v1
+    tier: 3
+    state: proposed
+    weight_cap: 0.25
+    phase: 5
+    core: false
+    implementation: null
+  - id: A28
+    name: Positioning & Flows Agent
+    team: information_positioning
+    kind: stat
+    llm: false
+    cadence: daily
+    info_subset: [cot, short_interest, etf_flows, funding, open_interest]
+    output: AgentPrediction.v1
+    tier: 3
+    state: proposed
+    weight_cap: 0.25
+    phase: 5
+    core: false
+    implementation: null
+  - id: A29
+    name: On-Chain Agent
+    team: information_positioning
+    kind: stat
+    llm: false
+    cadence: daily
+    info_subset: [on_chain]
+    output: AgentPrediction.v1
+    tier: 3
+    state: proposed
+    weight_cap: 0.25
+    phase: 5
+    core: false
+    implementation: null
+  - id: A30
+    name: Options & Volatility-Surface Agent
+    team: information_positioning
+    kind: stat
+    llm: false
+    cadence: daily
+    info_subset: [options_chains, iv_surface]
+    output: AgentPrediction.v1
+    tier: 3
+    state: proposed
+    weight_cap: 0.25
+    phase: 6
+    core: false
+    implementation: null
+  # Team 7: ml_evaluation_lab
+  - id: A31
+    name: Gradient-Boosting Ranker
+    team: ml_evaluation_lab
+    kind: ml
+    llm: false
+    cadence: daily
+    info_subset: [declared_features, triple_barrier_labels]
+    output: AgentPrediction.v1
+    tier: 3
+    state: proposed
+    weight_cap: 0.25
+    phase: 5
+    core: false
+    implementation: null
+  - id: A32
+    name: Deep Sequence Forecaster
+    team: ml_evaluation_lab
+    kind: ml
+    llm: false
+    cadence: daily
+    info_subset: [sequences]
+    output: AgentPrediction.v1
+    tier: 3
+    state: proposed
+    weight_cap: 0.25
+    phase: 7
+    core: false
+    implementation: null
+  - id: A33
+    name: Meta-Labeling Agent
+    team: ml_evaluation_lab
+    kind: ml
+    llm: false
+    cadence: daily
+    info_subset: [primary_signals, context, features]
+    output: AgentPrediction.v1
+    tier: 3
+    state: proposed
+    weight_cap: 0.25
+    phase: 5
+    core: false
+    implementation: null
+  - id: A34
+    name: Anomaly & Novelty Detector
+    team: ml_evaluation_lab
+    kind: ml
+    llm: false
+    cadence: each bar
+    info_subset: [feature_vectors, cross_asset_state]
+    output: ContextReport.v1
+    tier: 1
+    state: proposed
+    weight_cap: 0.25
+    phase: 5
+    core: false
+    implementation: null
+  - id: A35
+    name: Scorekeeper & Calibration Agent
+    team: ml_evaluation_lab
+    kind: stat
+    llm: false
+    cadence: daily
+    info_subset: [sealed_predictions, outcomes]
+    output: AgentScorecard.v1
+    tier: 4
+    state: active
+    weight_cap: 0.25
+    phase: 4
+    core: true
+    implementation: quantagents.agents.a35_scorekeeper:Scorekeeper
+  # Team 8: adversarial_review_board
+  - id: A36
+    name: Bull Advocate
+    team: adversarial_review_board
+    kind: llm
+    llm: true
+    cadence: on event
+    info_subset: [decision_snapshot, evidence_store]
+    output: DebateCase.v1
+    tier: 3
+    state: proposed
+    weight_cap: 0.25
+    phase: 6
+    core: false
+    implementation: null
+  - id: A37
+    name: Bear Advocate
+    team: adversarial_review_board
+    kind: llm
+    llm: true
+    cadence: on event
+    info_subset: [decision_snapshot, evidence_store]
+    output: DebateCase.v1
+    tier: 3
+    state: proposed
+    weight_cap: 0.25
+    phase: 6
+    core: false
+    implementation: null
+  - id: A38
+    name: Pre-Mortem Agent (Devil's Advocate)
+    team: adversarial_review_board
+    kind: mixed
+    llm: true
+    cadence: on event
+    info_subset: [decision_snapshot, evidence_store]
+    output: PreMortem.v1
+    tier: 3
+    state: proposed
+    weight_cap: 0.25
+    phase: 6
+    core: false
+    implementation: null
+  - id: A39
+    name: Red-Team Auditor
+    team: adversarial_review_board
+    kind: mixed
+    llm: true
+    cadence: on event
+    info_subset: [strategy_code, backtests, live_signals]
+    output: RedTeamReport.v1
+    tier: 1
+    state: active
+    weight_cap: 0.25
+    phase: 3
+    core: true
+    implementation: quantagents.validation.leakage:RedTeamAuditor
+  - id: A40
+    name: No-Trade Agent
+    team: adversarial_review_board
+    kind: stat
+    llm: false
+    cadence: daily
+    info_subset: [net_edge, data_health, events, disagreement, novelty, drawdown, liquidity]
+    output: NoTradeVerdict.v1
+    tier: 1
+    state: active
+    weight_cap: 0.25
+    phase: 2
+    core: true
+    implementation: quantagents.agents.a40_no_trade:NoTradeAgent
+  # Team 9: research_validation_lab
+  - id: A41
+    name: Hypothesis Generator
+    team: research_validation_lab
+    kind: llm
+    llm: true
+    cadence: weekly or monthly
+    info_subset: [appendix_a, research_notes, scorecards, post_mortems]
+    output: StrategyDNA.v1
+    tier: 4
+    state: proposed
+    weight_cap: 0.25
+    phase: 5
+    core: false
+    implementation: null
+  - id: A42
+    name: Strategy Evolution Engine
+    team: research_validation_lab
+    kind: ml
+    llm: false
+    cadence: nightly
+    info_subset: [strategy_dna, trial_registry]
+    output: StrategyDNA.v1
+    tier: 4
+    state: proposed
+    weight_cap: 0.25
+    phase: 7
+    core: false
+    implementation: null
+  - id: A43
+    name: Backtest Engineer
+    team: research_validation_lab
+    kind: code
+    llm: false
+    cadence: nightly
+    info_subset: [pit_data, cost_models]
+    output: BacktestResult.v1
+    tier: 4
+    state: active
+    weight_cap: 0.25
+    phase: 1
+    core: true
+    implementation: quantagents.backtest.engine:Backtester
+  - id: A44
+    name: Statistical Validator
+    team: research_validation_lab
+    kind: code
+    llm: false
+    cadence: nightly
+    info_subset: [backtest_returns, trial_registry]
+    output: ValidationReport.v1
+    tier: 1
+    state: active
+    weight_cap: 0.25
+    phase: 2
+    core: true
+    implementation: quantagents.validation.stats:StatisticalValidator
+  - id: A45
+    name: Stress & Simulation Agent
+    team: research_validation_lab
+    kind: code
+    llm: false
+    cadence: nightly
+    info_subset: [strategies, portfolio]
+    output: StressReport.v1
+    tier: 4
+    state: active
+    weight_cap: 0.25
+    phase: 3
+    core: true
+    implementation: quantagents.agents.a45_stress:StressAgent
+  # Team 10: command_risk_execution
+  - id: A46
+    name: Orchestrator (Chief of Staff)
+    team: command_risk_execution
+    kind: mixed
+    llm: true
+    cadence: continuous
+    info_subset: [all_messages]
+    output: TradeDecisionRecord.v1
+    tier: 4
+    state: active
+    weight_cap: 0.25
+    phase: 1
+    core: true
+    implementation: quantagents.orchestrator:Orchestrator
+  - id: A47
+    name: Meta-Aggregator (CIO)
+    team: command_risk_execution
+    kind: stat
+    llm: false
+    cadence: daily
+    info_subset: [sealed_predictions, context, scorecards, debate_cases]
+    output: DecisionProposal.v1
+    tier: 2
+    state: active
+    weight_cap: 0.25
+    phase: 4
+    core: true
+    implementation: quantagents.agents.a47_aggregator:MetaAggregator
+  - id: A48
+    name: Portfolio & Sizing Agent
+    team: command_risk_execution
+    kind: stat
+    llm: false
+    cadence: daily
+    info_subset: [proposals, positions, prices, risk_model]
+    output: TargetPortfolio.v1
+    tier: 2
+    state: active
+    weight_cap: 0.25
+    phase: 3
+    core: true
+    implementation: quantagents.agents.a48_portfolio:PortfolioAgent
+  - id: A49
+    name: Risk & Compliance Governor
+    team: command_risk_execution
+    kind: code
+    llm: false
+    cadence: continuous
+    info_subset: [order_intents, positions, limits, account_state]
+    output: RiskCheckResult.v1
+    tier: 0
+    state: active
+    weight_cap: 0.25
+    phase: 3
+    core: true
+    implementation: quantagents.risk.governor:RiskGovernor
+  - id: A50
+    name: Execution & TCA Agent
+    team: command_risk_execution
+    kind: code
+    llm: false
+    cadence: continuous
+    info_subset: [approved_orders, quotes]
+    output: Fill.v1
+    tier: 4
+    state: active
+    weight_cap: 0.25
+    phase: 3
+    core: true
+    implementation: quantagents.execution.paper:PaperBroker

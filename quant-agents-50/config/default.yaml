@@ -1,0 +1,75 @@
+# QuantAgents-50 configuration. PAPER TRADING ONLY.
+# Every *_pct value is a percent: 0.5 means 0.5%.
+# Raising any risk limit, changing autonomy or going live needs human approval (spec section 2).
+# tests/test_config.py checks that this file matches the code defaults exactly.
+
+system:
+  name: quantagents-50
+  phase: 4                     # runtime phase: 4 runs the whole 25-agent core (spec section 93)
+  execution_mode: paper        # backtest | paper | shadow | live (no live broker ships with the kit)
+  autonomy_level: 1            # 0 research, 1 paper, 2 shadow, 3 micro-live, 4 scaled live
+  live_trading_approved: false # never set this yourself; a human decides (spec section 65)
+  capital: 10000
+  base_currency: CAD
+  jurisdiction: CA-AB
+  timezone: America/Edmonton
+  seed: 7
+
+risk:                          # enforced by A49, the deterministic risk governor
+  max_risk_per_trade_pct: 0.5
+  major_trade_risk_pct: 0.25   # at or above this a trade needs the debate layer (Phase 6)
+  max_daily_loss_pct: 2
+  max_weekly_loss_pct: 4
+  max_drawdown_pct: 15
+  leverage_allowed: false
+  max_gross_exposure_pct: 100
+  max_position_pct: 20
+  shorting_allowed: false
+  max_order_notional_pct: 25   # fat-finger guard
+  price_band_pct: 5            # reject orders more than 5% away from the last price
+  max_orders_per_minute: 10
+  max_adv_participation_pct: 1 # one order at most 1% of a day's traded value (A09 measures it)
+  stop_atr_multiple: 2.0
+  quantity_step: 1             # whole shares; use e.g. 0.0001 for crypto
+  data_health_defensive: 80    # below: no new entries
+  data_health_halt: 50         # below: kill switch
+  quorum_pct: 0.70             # below: DEFENSIVE
+  quorum_reduced_pct: 0.85     # below: REDUCED
+  drawdown_reduced_frac: 0.50  # 50% of max drawdown used: REDUCED
+  drawdown_defensive_frac: 0.75
+
+costs:
+  fee_bps: 10
+  slippage_bps: 5
+  edge_buffer_pct: 0.10
+
+aggregation:                   # pooling and GO rules (spec section 13)
+  decision_horizon_days: 20
+  shrink_to_equal: 0.30
+  agent_weight_cap: 0.25
+  team_weight_cap: 0.40
+  go_min_p: 0.55
+  go_min_teams_agree: 2        # Phases 2-4: only 3 signal teams exist yet
+  go_min_teams_agree_from_phase5: 3
+  edge_cost_multiple: 1.5
+  max_p_no_trade: 0.50
+  n_eff_min: 5
+  low_n_eff_p_cap: 0.60
+  disagreement_max: 1.0
+  two_stage_from_phase: 4      # A47 two-stage pooling; equal-weight combiner before that
+  debate_live_from_phase: 6
+
+validation:                    # A44 promotion thresholds (spec section 64)
+  min_t_stat: 3.0
+  min_psr: 0.95
+  min_dsr: 0.95
+  max_pbo: 0.20
+  reject_pbo: 0.50
+  fdr_q: 0.10
+  min_observations: 252
+  bootstrap_samples: 500
+  bootstrap_mean_block: 10
+
+universe:
+  asset_class: US_equities
+  symbols: [SYN_A, SYN_B, SYN_C, SYN_D, SYN_E, SYN_F]   # synthetic demo symbols, not real tickers
