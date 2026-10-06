@@ -38,10 +38,10 @@ def clean_returns(returns: npt.ArrayLike) -> FloatArray:
     r = np.asarray(returns, dtype=np.float64)
     if r.ndim != 1:
         raise ValueError("returns must be one-dimensional")
-    r = r[np.isfinite(r)]
-    if len(r) < 3:
+    finite: FloatArray = r[np.isfinite(r)]  # typed, so numpy 1.26 and 2.x both check clean
+    if len(finite) < 3:
         raise ValueError("need at least 3 finite returns")
-    return r
+    return finite
 
 
 def sharpe_ratio(returns: npt.ArrayLike, periods_per_year: int = 252) -> float:
