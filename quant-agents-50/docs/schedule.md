@@ -63,7 +63,7 @@ What each part does:
    `config/my_universe.yaml`. Set your symbols there. Only the universe changes; every risk
    limit keeps its default.
 3. Run `daily.bat` once by hand and read the report. Check that `data health` is 100 and that
-   `blocked` is `none`. `status.bat` shows the result on one screen.
+   `blocked` is `none`. The QuantAgents page shows the result on one screen.
 
 ## Windows (Task Scheduler)
 

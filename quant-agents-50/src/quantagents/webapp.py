@@ -39,15 +39,14 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any
 
-import yaml
-
 from quantagents import __version__, envfile, migrate, ops
-from quantagents.config import AppConfig, ExecutionMode, load_config
+from quantagents.config import LIVE_APPROVAL_TOKEN, AppConfig, ExecutionMode, load_config
 from quantagents.data.sources import split_universe
-from quantagents.execution import live
+from quantagents.execution import arming, live
 from quantagents.execution.paper import PaperAccount
 from quantagents.menu import Shell, _shell, is_scheduled, schedule_for, set_schedule
 from quantagents.risk.killswitch import RESET_PHRASE, KillSwitch
+from quantagents.settings_file import update_config
 from quantagents.watchdog import check as watchdog_check
 
 APP = "QuantAgents"
@@ -165,26 +164,19 @@ def write_symbols(config: Path, symbols: list[str], asset_class: str, runs_dir: 
             f"this folder's paper account already trades {', '.join(sorted(before))}. One folder "
             "holds one paper account: for a completely different list, use a second copy."
         )
-    raw: dict[str, Any] = {}
-    if config.exists():
-        loaded = yaml.safe_load(config.read_text(encoding="utf-8"))
-        raw = loaded if isinstance(loaded, dict) else {}
-    universe = dict(raw.get("universe") or {})
-    universe["symbols"] = clean
-    universe["asset_class"] = "crypto_spot" if crypto else asset_class or "US_equities"
-    raw["universe"] = universe
-    if crypto:
-        raw["risk"] = {**dict(raw.get("risk") or {}), "quantity_step": 0.0001}
-    AppConfig.model_validate(raw)  # never write a file that would not load
-    header = (
-        "# Your QuantAgents settings. Written by the app; edit by hand if you like.\n"
-        "# Every setting not written here keeps its default (config/default.yaml).\n"
-    )
-    config.parent.mkdir(parents=True, exist_ok=True)
-    tmp = config.with_name(config.name + ".tmp")
-    tmp.write_text(header + yaml.safe_dump(raw, sort_keys=False), encoding="utf-8")
-    tmp.replace(config)
-    return _universe_text(clean, universe["asset_class"])
+    asset = "crypto_spot" if crypto else asset_class or "US_equities"
+
+    def change(raw: dict[str, Any]) -> None:
+        raw["universe"] = {
+            **dict(raw.get("universe") or {}),
+            "symbols": clean,
+            "asset_class": asset,
+        }
+        if crypto:
+            raw["risk"] = {**dict(raw.get("risk") or {}), "quantity_step": 0.0001}
+
+    update_config(config, change)  # never writes a file that would not load
+    return _universe_text(clean, asset)
 
 
 @dataclass
@@ -284,12 +276,18 @@ class App:
             today=datetime.now(UTC).date(),
             ccxt_installed=live.has_ccxt(),
         )
+        where = live.venue(cfg.universe.symbols)
         out["live"] = {
             "on": s.execution_mode is ExecutionMode.LIVE,
             "armed": all(g.ok for g in gates),
             "budget": cfg.live.budget,
             "gates": [{"name": g.name, "ok": g.ok, "detail": g.detail} for g in gates],
             "mirror": live.mirror_summary(live.STATE_FILE),
+            "keys_saved": arming.keys_saved(),
+            "approval_phrase": LIVE_APPROVAL_TOKEN,
+            "max_budget": arming.MAX_BUDGET,
+            "where": f"{where.exchange}, {where.quote}" if isinstance(where, live.Venue) else None,
+            "not_here": None if isinstance(where, live.Venue) else where,
         }
         job = self.jobs.current
         out["job"] = job.view() if job is not None and job.code is None else None
@@ -372,6 +370,12 @@ class App:
                     "error": f"Not resumed: type the exact phrase {RESET_PHRASE}."
                 }
             return HTTPStatus.OK, {"message": "Resumed. Trading may continue on the next day."}
+        if action == "real_money_off":  # always allowed: it only lowers risk
+            try:
+                lines = arming.switch_off(config=Path(self.config), env_path=envfile.ENV_FILE)
+            except ValueError as exc:
+                return HTTPStatus.BAD_REQUEST, {"error": f"Not switched off: {exc}"}
+            return HTTPStatus.OK, {"message": "\n".join(lines)}
         if action in JOBS:
             if action == "live_test_order" and body.get("confirm") != "YES":
                 return HTTPStatus.BAD_REQUEST, {"error": "Type YES to send the real test order."}
@@ -414,6 +418,28 @@ class App:
                 return HTTPStatus.BAD_REQUEST, {"error": f"Not imported: {exc}"}
             off = set_schedule(False, schedule_for(self.cfg(), old), old, self.system, self.shell)
             return HTTPStatus.OK, {"message": "\n".join([*lines, f"Old folder: {' '.join(off)}"])}
+        if action == "save_keys":
+            try:
+                message = arming.save_keys(
+                    envfile.ENV_FILE, str(body.get("key", "")), str(body.get("secret", ""))
+                )
+            except ValueError as exc:
+                return HTTPStatus.BAD_REQUEST, {"error": f"Not saved: {exc}"}
+            return HTTPStatus.OK, {"message": message}
+        if action == "real_money_on":
+            try:
+                lines = arming.switch_on(
+                    config=Path(self.config),
+                    env_path=envfile.ENV_FILE,
+                    status_file=live.STATUS_FILE,
+                    name=str(body.get("name", "")),
+                    budget=body.get("budget"),
+                    phrase=str(body.get("phrase", "")),
+                    today=datetime.now(UTC).date(),
+                )
+            except ValueError as exc:
+                return HTTPStatus.BAD_REQUEST, {"error": f"Not switched on: {exc}"}
+            return HTTPStatus.OK, {"message": "\n".join(lines)}
         if action == "quit":
             threading.Thread(target=self.stop_server, daemon=True).start()
             return HTTPStatus.OK, {"message": "The app is closing. You can close this tab."}

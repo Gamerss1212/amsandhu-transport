@@ -96,24 +96,56 @@
     <p class="muted small">One folder holds one paper account. Stocks and crypto need separate folders.</p>
   </section>
 
-  <section class="card" id="money">
-    <h2>Real money</h2>
+  <section class="card wide" id="money">
+    <div class="card-head"><h2>Real money</h2><span class="muted" id="money-where"></span></div>
     <p id="money-state" class="state"></p>
     <p class="muted small" id="money-mirror"></p>
-    <details>
-      <summary>The 11 safety gates (all must be open)</summary>
-      <ul class="gates" id="gates"></ul>
-    </details>
-    <div class="row wrap">
-      <button data-action="live_check">Check (reads your Kraken balance)</button>
-      <button data-action="live_preview">Preview real orders (sends nothing)</button>
+    <div id="money-not-here" class="banner warn" hidden></div>
+    <div class="money-grid">
+      <div class="step">
+        <h3>Step 1: your Kraken keys</h3>
+        <p class="muted small">On Kraken: Settings, API, create a key. Turn ON only Query Funds,
+          Query Open/Closed Orders &amp; Trades, Create &amp; Modify Orders, Cancel/Close Orders.
+          Leave <strong>Withdraw Funds OFF</strong>.</p>
+        <p class="small" id="keys-state"></p>
+        <input id="api-key" type="password" autocomplete="off" spellcheck="false" placeholder="API key">
+        <input id="api-secret" type="password" autocomplete="off" spellcheck="false" placeholder="Private key (secret)">
+        <div class="row"><button data-action="save_keys">Save keys</button></div>
+        <p class="muted small">Saved in the <code>.env</code> file in this folder. Never shown again, never sent anywhere but Kraken.</p>
+      </div>
+      <div class="step">
+        <h3>Step 2: switch it on</h3>
+        <p class="muted small" id="money-advice"></p>
+        <label for="budget">Budget: the most it may invest (start small)</label>
+        <input id="budget" type="number" min="1" step="1" placeholder="100">
+        <label for="owner">Your name (it is written in docs/STATUS.md as your approval)</label>
+        <input id="owner" autocomplete="off" placeholder="Your name">
+        <label for="approve">Type the phrase <code id="approval-phrase"></code></label>
+        <input id="approve" autocomplete="off" spellcheck="false">
+        <div class="row wrap">
+          <button class="danger" data-action="real_money_on">Switch real money ON</button>
+          <button data-action="real_money_off">Switch real money OFF</button>
+        </div>
+      </div>
+      <div class="step">
+        <h3>Step 3: check it</h3>
+        <div class="row wrap">
+          <button data-action="live_check">Check (reads your Kraken balance)</button>
+          <button data-action="live_preview">Preview real orders (sends nothing)</button>
+        </div>
+        <div class="row wrap">
+          <input id="confirm" autocomplete="off" placeholder="type YES" size="8">
+          <button data-action="live_test_order">Send a tiny test order</button>
+        </div>
+        <details>
+          <summary>The 11 safety gates (all must be open)</summary>
+          <ul class="gates" id="gates"></ul>
+        </details>
+      </div>
     </div>
-    <div class="row wrap">
-      <input id="confirm" autocomplete="off" placeholder="type YES" size="8">
-      <button data-action="live_test_order">Send a tiny test order</button>
-    </div>
-    <p class="muted small">The guide is <code>docs/REAL_MONEY.md</code> in this folder. Only you can switch
-      real money on, in 8 steps of your own. Not financial advice.</p>
+    <p class="muted small">Crypto on Kraken only. Every daily run then copies the paper portfolio to Kraken, within
+      your budget, with limit orders. Any problem stops everything. It cannot withdraw. Guide:
+      <code>docs/REAL_MONEY.md</code>. Not financial advice.</p>
   </section>
 
   <section class="card">

@@ -78,8 +78,8 @@ def import_from(old: Path, new: Path) -> list[str]:
     )
     lines += [
         "The OLD folder is now stopped (its kill switch is engaged), so it cannot trade twice.",
-        "Approvals were not copied: real money needs your dated approval row again in this "
-        "folder's docs/STATUS.md (docs/REAL_MONEY.md, step 7).",
+        "Approvals were not copied: to use real money here, switch it on again in this "
+        "folder's page (Real money box, step 2).",
     ]
     return lines
 

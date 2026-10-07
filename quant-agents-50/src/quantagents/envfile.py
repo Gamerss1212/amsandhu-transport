@@ -7,6 +7,7 @@ A name that is already in the environment wins over the file.
 
 from __future__ import annotations
 
+import contextlib
 import os
 from collections.abc import MutableMapping
 from pathlib import Path
@@ -41,3 +42,34 @@ def load(path: Path = ENV_FILE, environ: MutableMapping[str, str] | None = None)
     for name in loaded:
         env[name] = values[name]
     return loaded
+
+
+def update(path: Path, changes: dict[str, str | None]) -> None:
+    """Set (or, with ``None``, remove) names in ``path``, keeping every other line as it is.
+
+    Used only when the owner saves keys or switches real money on or off in the app. Values
+    are written, never read back to the screen. On macOS and Linux the file is made private.
+    """
+    try:
+        lines = path.read_text(encoding="utf-8-sig").splitlines()
+    except OSError:
+        lines = []
+    done: set[str] = set()
+    out: list[str] = []
+    for raw in lines:
+        stripped = raw.strip().removeprefix("export ")
+        name = stripped.partition("=")[0].strip() if "=" in stripped else ""
+        if name in changes and not raw.lstrip().startswith("#"):
+            value = changes[name]
+            if value is not None and name not in done:
+                out.append(f"{name}={value}")
+            done.add(name)
+            continue
+        out.append(raw)
+    out += [f"{n}={v}" for n, v in changes.items() if v is not None and n not in done]
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_name(path.name + ".tmp")
+    tmp.write_text("\n".join(out) + "\n", encoding="utf-8")
+    with contextlib.suppress(OSError):
+        os.chmod(tmp, 0o600)
+    tmp.replace(path)

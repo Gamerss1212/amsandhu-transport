@@ -213,7 +213,7 @@ def test_everything_is_closed_by_default(tmp_path: Path) -> None:
         **{**paths(tmp_path), "status_file": tmp_path / "STATUS.md"},
     )
     assert code == 3 and "REFUSED" in out[0] and not fake.orders
-    assert any(LIVE_APPROVAL_ENV in line for line in out)  # tells the owner the line to add
+    assert any("Real money box, step 2" in line for line in out)  # says where to switch on
 
 
 def test_the_approval_row_must_be_dated_and_signed(home: Path) -> None:

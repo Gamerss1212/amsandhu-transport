@@ -201,3 +201,8 @@ footer { text-align: center; padding: 8px 24px 32px; }
   .top, main { padding-left: 16px; padding-right: 16px; }
   .tile .value { font-size: 20px; }
 }
+
+.money-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin: 8px 0; }
+.step { background: var(--raised); border: 1px solid var(--border); border-radius: 10px; padding: 4px 14px 12px; }
+.step h3 { color: var(--ink); margin-top: 10px; }
+.step input { margin: 4px 0; }

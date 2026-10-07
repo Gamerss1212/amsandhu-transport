@@ -280,9 +280,21 @@ function renderControls(s) {
 function renderMoney(s) {
   const l = s.live;
   const open = l.gates.filter((g) => g.ok).length;
-  $("money-state").textContent = l.armed ? `ARMED: the daily run copies the paper portfolio to Kraken, up to ${l.budget}.` :
-    `OFF: ${open} of ${l.gates.length} safety gates open. Nothing real can be bought.`;
+  $("money-state").textContent = l.armed ? `ON and ARMED: each daily run copies the paper portfolio to Kraken, up to ${l.budget}.` :
+    l.on ? `Switched on, but ${l.gates.length - open} safety gate(s) still closed: nothing real is bought yet (see the gates below).` :
+    "OFF: paper trading only. Nothing real can be bought.";
+  $("money-where").textContent = l.where ? `trades on ${l.where}` : "";
   $("money-mirror").textContent = l.mirror || "";
+  const notHere = $("money-not-here");
+  notHere.hidden = !l.not_here;
+  notHere.textContent = l.not_here ? `This folder cannot trade for real: ${l.not_here}. Use a separate crypto folder (pick "Crypto on Kraken" in Your symbols there).` : "";
+  $("keys-state").textContent = l.keys_saved ? "✓ Keys saved (hidden)." : "No keys saved yet.";
+  $("approval-phrase").textContent = l.approval_phrase;
+  $("budget").max = l.max_budget;
+  const paper = `${s.paper_days} of ${s.days_needed} paper days so far`;
+  $("money-advice").textContent = s.paper_days < s.days_needed ?
+    `Recommended first: ${s.days_needed} paper days (${paper}). No strategy has beaten simply holding yet.` :
+    `${paper}. Check the scoreboard first: if paper is behind holding, real money will be too.`;
   $("gates").replaceChildren(...l.gates.map((g) => el("li", { class: g.ok ? "open" : "closed" },
     el("span", { class: "mark", text: g.ok ? "✓" : "✗" }), el("strong", { text: g.name }), `: ${g.detail}`)));
 }
@@ -291,7 +303,7 @@ function renderMoney(s) {
 
 function setBusy(busy) {
   for (const b of document.querySelectorAll("button[data-action]")) {
-    const always = ["stop", "resume", "quit"].includes(b.dataset.action);
+    const always = ["stop", "resume", "quit", "real_money_off"].includes(b.dataset.action);
     b.disabled = busy && !always;
   }
 }
@@ -335,6 +347,11 @@ async function act(button) {
   }
   if (action === "live_test_order") body.confirm = $("confirm").value.trim();
   if (action === "import") body.path = $("old-folder").value;
+  if (action === "save_keys") { body.key = $("api-key").value; body.secret = $("api-secret").value; }
+  if (action === "real_money_on") {
+    body.budget = $("budget").value; body.name = $("owner").value; body.phrase = $("approve").value;
+    if (!confirm(`Switch REAL MONEY on, with a budget of ${body.budget}? You can lose this money.`)) return;
+  }
   if (action === "quit" && !confirm("Close the app? The automatic daily run keeps working without it.")) return;
   if (action === "stop" && !confirm("Stop all trading now? Only you can resume it, with the phrase.")) return;
   button.disabled = true;
@@ -345,6 +362,8 @@ async function act(button) {
   if (reply.message) toast(reply.message, false);
   if (action === "resume") $("phrase").value = "";
   if (action === "live_test_order") $("confirm").value = "";
+  if (action === "save_keys") { $("api-key").value = ""; $("api-secret").value = ""; }
+  if (action === "real_money_on") $("approve").value = "";
   if (action === "quit") { document.body.replaceChildren(el("main", {}, el("section", { class: "card wide" }, el("h2", { text: "QuantAgents is closed." }), el("p", { text: "You can close this tab. Double-click QuantAgents.bat to open it again." })))); return; }
   await refresh();
 }

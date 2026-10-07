@@ -1,6 +1,7 @@
 @echo off
 rem QuantAgents-50 one-time setup for Windows. QuantAgents.bat runs it for you the first time.
 rem Creates a private Python environment in .venv, installs everything, checks it, runs a demo.
+rem (The developer copy, with a tests folder, also runs every quality gate.)
 cd /d "%~dp0"
 echo.
 echo === QuantAgents-50 setup ===
@@ -22,7 +23,9 @@ if %errorlevel% neq 0 (
     goto fail
 )
 ".venv\Scripts\python.exe" -m pip install --upgrade pip
-".venv\Scripts\python.exe" -m pip install -e ".[dev,data]"
+set EXTRAS=data
+if exist "tests\" set EXTRAS=dev,data
+".venv\Scripts\python.exe" -m pip install -e ".[%EXTRAS%]"
 if %errorlevel% neq 0 goto fail
 echo.
 if not exist "config\my_universe.yaml" copy "config\us_etfs.example.yaml" "config\my_universe.yaml" >nul
@@ -30,10 +33,12 @@ echo === Checking the install ===
 ".venv\Scripts\python.exe" -m quantagents --config config\my_universe.yaml doctor
 if %errorlevel% neq 0 goto fail
 echo.
+if not exist "tests\" goto demo
 echo === Running every quality gate (takes about a minute) ===
 ".venv\Scripts\python.exe" scripts\check.py
 if %errorlevel% neq 0 goto fail
 echo.
+:demo
 echo === Demo: one decision cycle on synthetic data ===
 ".venv\Scripts\python.exe" -m quantagents demo
 echo.

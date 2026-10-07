@@ -77,25 +77,15 @@ failed, it does not run.
 - **The dashboard shows what matters:** the scoreboard compares the paper account with simply
   holding the same coins. If paper stays behind, real money copying it will too.
 
-## Switch it on: 8 steps, all done by you
-
-Take them in order. After each one, the **Real money** box on the QuantAgents page shows
-which of the 11 safety gates are still closed.
+## Switch it on: 5 steps, all done by you, all on the QuantAgents page
 
 1. **A crypto folder on paper.**
-   - Unzip a second copy of QuantAgents, for example to `C:\QuantAgents-Crypto`.
-   - Put CAD pairs in its `config\my_universe.yaml`:
-     ```yaml
-     universe:
-       asset_class: crypto_spot
-       symbols: [BTC-CAD.KRAKEN, ETH-CAD.KRAKEN]
-     risk:
-       quantity_step: 0.0001
-     ```
-   - Turn its automatic daily run on (**Turn ON** on its page) and let it paper-trade for 30 days.
+   - Unzip a second copy of QuantAgents, for example to `C:\QuantAgents-Crypto`, and
+     double-click its `QuantAgents.bat`.
+   - In **Your symbols**, press **Use: Crypto on Kraken, in CAD**.
+   - Press **Turn ON** for the automatic daily run, and let it paper-trade for 30 days.
 2. **A Kraken account.**
-   - Get it verified.
-   - Turn on two-factor login.
+   - Get it verified and turn on two-factor login.
    - Deposit a small amount of CAD.
 3. **A trade-only API key.** On Kraken, go to Settings, then API, then create a key.
    - **Turn on only:**
@@ -108,41 +98,31 @@ which of the 11 safety gates are still closed.
    - If Kraken names these differently, the rule is the same: read balances and orders, place
      and cancel orders, nothing else.
    - Add your IP address to the key's allow-list if you can.
-4. **Your `.env` file.**
-   - In the crypto folder, copy `.env.example` to `.env`.
-   - Open it in Notepad and paste the key after `LIVE_API_KEY=` and the secret after
-     `LIVE_API_SECRET=`. Save.
+4. **Real money box, step 1: Save keys.**
+   - Paste the API key and the private key into the two boxes, and press **Save keys**.
+   - They go into the `.env` file in that folder and are never shown again.
    - Never paste keys into a chat, an email or a screenshot.
-5. **Your settings (`config\my_universe.yaml`).** Add these lines yourself. Start with a small
-   budget, about 1 to 5% of what you would trade:
-   ```yaml
-   system:
-     execution_mode: live
-     autonomy_level: 3
-     live_trading_approved: true
-   live:
-     budget: 100
-   ```
-6. **The approval phrase.**
-   - After step 5, the program refuses to start until `.env` holds the approval phrase. It
-     shows the exact line to add, in the Real money box's gate list or in the error message.
-   - Copy that one line into `.env` and save.
-7. **Your approval row.** Open `docs\STATUS.md` in the crypto folder. Under "Human approvals",
-   add a row with today's date and your name:
-   ```
-   | 2026-11-20 | Approve Phase 8 micro-live | Your Name |
-   ```
-8. **Check, preview, test.**
-   - **Check (reads your Kraken balance)**: every gate should say ok. It also reads your
-     Kraken balance, which proves
-     the keys work.
-   - **Preview real orders**: what it would buy or sell. Nothing is sent.
-   - **Send a tiny test order** (type YES first): one real order, the smallest buy Kraken
-     accepts, priced 20% under the
-     market so it does not fill, then cancelled at once.
+5. **Real money box, step 2: switch it on.** Type:
+   - a **budget**: the most it may invest (at most 1,000 here; start with about 100);
+   - **your name**;
+   - the **approval phrase** the page shows.
 
-From then on, every automatic daily run ends with a `live sync` step that copies the paper
-portfolio to Kraken.
+   Then press **Switch real money ON**. QuantAgents then:
+   - writes the live settings into your settings file;
+   - puts the phrase in `.env`;
+   - adds a dated row with your name to `docs\STATUS.md`.
+
+   Nothing switches on without your typed phrase.
+
+**Then check it (Real money box, step 3):**
+- **Check (reads your Kraken balance):** every gate should say ok, and it shows your free CAD,
+  which proves the keys work.
+- **Preview real orders:** what it would buy or sell today. Nothing is sent.
+- **Send a tiny test order** (type YES first): the smallest buy Kraken accepts, priced 20% under
+  the market so it does not fill, then cancelled at once.
+
+From then on, every automatic daily run ends with a step that copies the paper portfolio to
+Kraken.
 
 ## Every day
 
@@ -176,15 +156,14 @@ The kill switch engages on any of these:
 - Use **Bring it over** in the new folder's Tools box. It brings the account and the real-money ledger
   over, then stops the old folder (its kill switch is engaged).
   - Two copies running at once would both buy on the same Kraken account.
-- **Your approval row is not copied.** Add it again in the new folder's `docs\STATUS.md`
-  after reading what changed.
+- **Your approval is not copied.** Switch real money on again in the new folder's page
+  (Real money box, step 2) after reading what changed.
 
 ## Switch it off
 
-- **Fastest:** the red **STOP** button stops all new trading, paper and real. The coins the mirror
-  bought stay on Kraken as they are; sell them on the Kraken website if you want cash.
-- **For good:**
-  1. In your settings, set `execution_mode` back to `paper`, `autonomy_level` back to `1`, and
-     `live_trading_approved` back to `false`.
-  2. Remove the approval line from `.env`.
-  3. Delete the API key on Kraken.
+- **Fastest:** the red **STOP** button stops all new trading, paper and real.
+- **Back to paper:** **Switch real money OFF** in the Real money box. It removes the live
+  settings and the phrase.
+  - Your keys stay saved; delete the key on Kraken to stop it working for good.
+  - The coins the mirror bought stay on Kraken as they are. Sell them on the Kraken website
+    if you want cash.

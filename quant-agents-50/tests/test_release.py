@@ -22,15 +22,15 @@ def load_builder() -> object:
     return module
 
 
-def test_the_zip_has_the_whole_program_and_nothing_private(tmp_path: Path) -> None:
+def test_the_developer_zip_has_the_whole_program_and_nothing_private(tmp_path: Path) -> None:
     builder = load_builder()
-    out, count, digest = builder.build(tmp_path / "release.zip")  # type: ignore[attr-defined]
+    out, count, digest = builder.build(tmp_path / "release.zip", full=True)  # type: ignore[attr-defined]
     names = set(zipfile.ZipFile(out).namelist())
     assert count == len(names) and len(digest) == 64
     top = "QuantAgents-50/"
     for need in (
         "START_HERE.md", "QuantAgents.bat", "QuantAgents.sh", "setup.bat", "daily.bat",
-        "status.bat", "setup.sh", "pyproject.toml", "docs/REAL_MONEY.md",
+        "setup.sh", "pyproject.toml", "docs/REAL_MONEY.md",
         "src/quantagents/web/index.html", "src/quantagents/web/app.js", "src/quantagents/web/app.css",
         "src/quantagents/data/store.py", "src/quantagents/cli.py", "tests/data/yahoo_spy_2024_03.json",
         "config/default.yaml", "config/us_etfs.example.yaml", ".env.example", "docs/STATUS.md",
@@ -56,6 +56,30 @@ def test_the_zip_has_the_whole_program_and_nothing_private(tmp_path: Path) -> No
     for script in ("setup.sh", "QuantAgents.sh"):
         info = zipfile.ZipFile(out).getinfo(top + script)
         assert (info.external_attr >> 16) & 0o111  # shell scripts stay executable
+
+
+def test_the_owners_zip_has_only_what_running_needs(tmp_path: Path) -> None:
+    builder = load_builder()
+    out, count, _ = builder.build(tmp_path / "owner.zip")  # type: ignore[attr-defined]
+    top = "QuantAgents-50/"
+    names = {n.removeprefix(top) for n in zipfile.ZipFile(out).namelist()}
+    assert count == len(names)
+    outside_src = {n for n in names if not n.startswith(("src/", "config/"))}
+    assert outside_src == {
+        "QuantAgents.bat", "QuantAgents.sh", "setup.bat", "setup.sh", "daily.bat", "daily.sh",
+        "START_HERE.md", "README.md", ".env.example", "pyproject.toml",
+        "docs/REAL_MONEY.md", "docs/schedule.md", "docs/STATUS.md",
+    }  # fmt: skip
+    assert "src/quantagents/web/index.html" in names and "config/agents.yaml" in names
+    assert not any(n.startswith(("tests/", ".claude/")) or "SPEC" in n for n in names)
+    with zipfile.ZipFile(out) as zf:
+        status = zf.read(top + "docs/STATUS.md").decode("utf-8")
+        readme = zf.read(top + "README.md").decode("utf-8")
+    assert "## Human approvals" in status and "| (none yet) | | |" in status
+    assert "START_HERE.md" in readme
+    for script in ("setup.sh", "QuantAgents.sh", "daily.sh"):
+        info = zipfile.ZipFile(out).getinfo(top + script)
+        assert (info.external_attr >> 16) & 0o111
 
 
 def test_windows_scripts_use_windows_line_endings() -> None:

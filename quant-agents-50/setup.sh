@@ -9,10 +9,12 @@ PY=${PYTHON:-python3}
   exit 1
 }
 .venv/bin/python -m pip install --upgrade pip
-.venv/bin/python -m pip install -e ".[dev,data]"
+EXTRAS=data
+[ -d tests ] && EXTRAS=dev,data   # the developer copy also gets the test tools
+.venv/bin/python -m pip install -e ".[$EXTRAS]"
 [ -f config/my_universe.yaml ] || cp config/us_etfs.example.yaml config/my_universe.yaml
 .venv/bin/python -m quantagents --config config/my_universe.yaml doctor
-.venv/bin/python scripts/check.py
+[ -d tests ] && .venv/bin/python scripts/check.py
 .venv/bin/python -m quantagents demo
 echo
 echo "Setup finished. Next: bash QuantAgents.sh: it opens in your web browser (see START_HERE.md)"

@@ -35,7 +35,7 @@ python -m quantagents demo
 ```
 
 - `demo` runs one full decision cycle of all 25 agents on **synthetic** data (fake symbols SYN_A to SYN_F).
-- `check.py` runs every quality gate: lint, formatting, strict types, 496 tests, and 100% coverage of the risk code.
+- `check.py` runs every quality gate: lint, formatting, strict types, 503 tests, and 100% coverage of the risk code.
 - `python -m quantagents simulate --days 120` runs the full cycle day after day on a fresh paper account.
 
 ### What to expect
@@ -107,7 +107,7 @@ New context and risk agents can only **reduce** risk. If one crashes, the system
 | `python -m quantagents killswitch status` | Check, engage or reset the kill switch |
 | `python -m quantagents status` | One-screen dashboard: paper account, kill switch, last cycle, progress toward 30 paper days |
 | `python -m quantagents doctor` | Check the install, the config and the folders |
-| `python scripts/make_release.py` | Build the download zip (none of your data, account or secrets go in) |
+| `python scripts/make_release.py` | Build the owner's download (only what running needs; `--full` for the developer copy; none of your data, account or secrets go in) |
 | `python -m quantagents --config config/my_universe.yaml daily` | One scheduled paper day for the config's symbols: fetch, export, cycle, watchdog (see `docs/schedule.md`) |
 | `python -m quantagents watchdog --data data/prices.csv` | Stop trading if cycles or data go stale (never resets) |
 | `python -m quantagents audit` | Verify the tamper-evident audit log |
@@ -129,7 +129,7 @@ New context and risk agents can only **reduce** risk. If one crashes, the system
 - **Honest scoring.** A35 only scores a prediction after its horizon has passed and counts overlapping forecasts once. It can only make an agent less confident, never more.
 - **Audit trail.** Every cycle is logged in a hash chain, so edits are detectable.
 - **The web app is local and locked.** It listens on 127.0.0.1 only, refuses any other host name or another site's page, needs a random key only its own page knows, cannot be framed, and adds no powers: every button runs an ordinary command.
-- **Real money is a mirror, not a second brain.** It copies the paper account's weights onto Kraken, scaled to `live.budget` (0 by default). It needs 11 gates open, including your dated approval row in `docs/STATUS.md` and the approval phrase in your `.env`. It reconciles with the exchange first, sells only what it bought, uses capped limit orders, and engages the kill switch on any error. It has no withdrawal code. Details: `docs/REAL_MONEY.md`.
+- **Real money is a mirror, not a second brain.** It copies the paper account's weights onto Kraken, scaled to `live.budget` (0 by default). The owner switches it on from the page (trade-only keys, a budget, their name and a typed approval phrase), which opens the config, phrase and approval-row gates; the rest must hold at order time. It reconciles with the exchange first, sells only what it bought, uses capped limit orders, and engages the kill switch on any error. It has no withdrawal code. Details: `docs/REAL_MONEY.md`.
 
 ## Project map
 
@@ -142,7 +142,7 @@ New context and risk agents can only **reduce** risk. If one crashes, the system
 | `config/default.yaml` | Every limit and setting |
 | `config/agents.yaml` | The roster: 25 core agents and 25 parked |
 | `src/quantagents/` | The code (one module per agent in `agents/`) |
-| `tests/` | 496 tests |
+| `tests/` | 503 tests |
 | `.claude/` | Settings, hooks, skills, subagents and rules for Claude Code |
 
 ## Canada notes

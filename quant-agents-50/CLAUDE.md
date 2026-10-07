@@ -33,7 +33,7 @@ Current phase, progress and human approvals (loaded every session):
 - Paper day: `python -m quantagents cycle --data data/prices.csv`; kill switch: `python -m quantagents killswitch status`
 - Real data (Phase 1): `python -m quantagents data fetch --yahoo SPY`, `data list`, `data benchmark --symbol SPY`, `data export --out data/us.csv`
 - Daily paper run (Phase 3): `python -m quantagents --config config/my_universe.yaml daily` (symbols from the config); watchdog: `python -m quantagents watchdog --data data/prices.csv`
-- Everyday: `python -m quantagents status` (dashboard), `python -m quantagents doctor` (install check); release zip: `python scripts/make_release.py`
+- Everyday: `python -m quantagents status` (dashboard), `python -m quantagents doctor` (install check); release zip: `python scripts/make_release.py` (owner's slim copy; `--full` for the developer copy)
 - Menu: `python -m quantagents --config config/my_universe.yaml menu`; real money gates: `python -m quantagents live check` (reads only)
 
 ## How to work
@@ -65,6 +65,8 @@ Current phase, progress and human approvals (loaded every session):
 - `src/quantagents/execution/paper.py`: A05 ledger, A50 paper broker, reconciliation.
 - `src/quantagents/execution/live.py`: the real-money mirror (Phase 8). OFF until the owner opens every gate;
   guide in `docs/REAL_MONEY.md`. Edits ask the human first, like risk code.
+- `src/quantagents/execution/arming.py`: the owner's switch on the page (save keys; switch real money on with
+  their typed name, budget and phrase; switch off). Claude never calls it. `settings_file.py`: safe config writes.
 - `src/quantagents/webapp.py` + `src/quantagents/web/`: the local web app that `QuantAgents.bat` / `QuantAgents.sh` open
   (127.0.0.1 only; host, origin and key checks; no new powers). `menu.py`: the same as a text menu.
 - `src/quantagents/backtest/`, `src/quantagents/validation/`: A43, A44, A39 (research only, never trade).

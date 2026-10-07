@@ -1,6 +1,6 @@
 # Build status
 
-Updated: 2026-10-07 (release 0.8.0: QuantAgents opens in the web browser; real-money mirror built and switched off; the 30-day paper run is next)
+Updated: 2026-10-07 (release 0.9.0: slim download; the owner switches real money on and off from the page; it is OFF; the 30-day paper run is next)
 
 ## Where things stand
 
@@ -10,7 +10,7 @@ Updated: 2026-10-07 (release 0.8.0: QuantAgents opens in the web browser; real-m
 - Mode: **paper**. Autonomy level: **1**. Live trading: **not approved**.
 - **Real money: built, OFF.** The owner asked for it on 2026-10-06. It is a crypto-only mirror for Kraken (`docs/REAL_MONEY.md`). It sends nothing until the owner opens all 11 gates, including a dated approval row below. It was tested against a fake exchange and real Kraken prices, never a real account.
 - **Simple to run:** `QuantAgents.bat` (Windows) or `bash QuantAgents.sh` installs on the first run, then opens the app in the web browser (a page on this computer only, `http://127.0.0.1:8765`).
-- Tests: 496, all gates green, 97% coverage overall, 100% branch coverage on risk.
+- Tests: 503, all gates green, 97% coverage overall, 100% branch coverage on risk.
 - **Phase 1 passed** (2026-10-06): real data store, free data sources, split check, event-driven backtester, benchmark, leakage tests.
 - **Phase 2 done** (2026-10-06): five published strategies tested on real data, pre-registered, run once. **All five FAIL** the promotion bar. No edge strong enough to trade has been found yet.
 - **Phase 3 built** (2026-10-06): chaos tests, watchdog, daily run and schedule guide. The 30-day paper run needs calendar time on the owner's PC.
@@ -337,6 +337,52 @@ still exists (`quantagents menu`).
 - Not checked: opening the browser on a real Windows PC (Wine has no browser).
   `QuantAgents.bat` always prints the address, so it can be typed in by hand.
 
+## Release 0.9.0 (2026-10-07): only what is needed, and real money from the page
+
+The owner asked to "organize the final" (too much random stuff) and to make real money usable.
+
+**A slim download**
+- The owner's zip now holds 94 files instead of 184:
+  - the program and its settings;
+  - the start scripts (`QuantAgents`, `setup`, `daily`);
+  - three guides (`START_HERE`, `REAL_MONEY`, `schedule`);
+  - a short `docs/STATUS.md` for the owner's own approvals.
+- Left out: tests, the spec, research logs, Claude Code files and developer tools.
+  `make_release.py --full` still builds the developer copy.
+- Setup in the slim copy skips the developer tests and their tools, so it installs faster.
+- `status.bat` / `status.sh` are gone: the page shows the same.
+- Old zips were removed from `downloads/` (they stay in git history).
+
+**Real money from the page** (`execution/arming.py`)
+- **Step 1: Save keys.**
+  - The Kraken key and secret go into `.env`; other lines are kept.
+  - The keys are never shown again or sent back to the page. On macOS/Linux the file is made
+    private.
+- **Step 2: Switch real money ON.**
+  - Needs saved keys, a crypto-on-Kraken folder, a budget above 0 and at most 1,000
+    (micro-live), the owner's name, and the approval phrase typed exactly.
+  - Every check runs before any file changes. Then it writes the live settings, the phrase in
+    `.env`, and the dated row in `docs/STATUS.md`.
+  - No risk limit is touched.
+- **Switch real money OFF** works at any time, even while a job runs. It removes the live
+  settings and the phrase; the keys stay saved.
+- **The gates did not change.** Orders still need a fresh paper day that A49 did not halt,
+  the kill switch armed, and reconciliation with Kraken.
+- The gate hints now point to the page instead of to files.
+
+**Checked**
+- 7 new tests; all 503 pass and every gate is green.
+- In a real browser, the whole flow worked:
+  - keys saved and hidden, the input boxes cleared;
+  - a wrong phrase refused;
+  - switched ON: the row, the settings and the phrase were written;
+  - the preview waited for a paper day;
+  - switched OFF: back to paper.
+- A fresh install from the slim zip on Linux (Python 3.12) passed the install check, then ran a
+  live-data paper day from the page.
+- Under Wine, `setup.bat` from the slim zip skipped the tests, passed the install check and
+  ran the demo.
+
 ## Human approvals
 
 | Date | Decision | Owner |
@@ -354,7 +400,7 @@ still exists (`quantagents menu`).
 
 ## Next step
 
-1. **Owner:** unzip `QuantAgents-50-v0.8.0.zip` and double-click `QuantAgents.bat`. Your
+1. **Owner:** unzip `QuantAgents-50-v0.9.0.zip` and double-click `QuantAgents.bat`. Your
    browser opens the app.
    - Press **Run today's paper day**, then **Turn ON** for the automatic daily run.
    - Let it paper-trade for 30 trading days; the page shows progress and the scoreboard.
@@ -362,7 +408,7 @@ still exists (`quantagents menu`).
 3. **Real money is your decision.** It needs:
    - a separate crypto folder;
    - 30 paper days;
-   - the 8 steps in `docs/REAL_MONEY.md`, including your dated approval row above.
+   - the steps in `docs/REAL_MONEY.md`: save keys, then switch on in the Real money box.
 
    No strategy has passed validation yet, so the honest expectation is "no edge".
 4. After 30 clean paper days, Phase 4 scoring has real data to score.

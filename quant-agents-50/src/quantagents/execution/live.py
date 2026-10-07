@@ -6,9 +6,10 @@ as weights, onto a real exchange account, scaled to ``live.budget``:
 
     paper weight of BTC 12%, live.budget 200 CAD  ->  the mirror holds about 24 CAD of BTC
 
-It sends an order only when every gate in ``gates()`` is open, and the owner opens each one by
-hand: the Phase 8 row in ``docs/STATUS.md``, the three live settings in the config, the
-approval phrase and trade-only exchange keys in ``.env``, and a budget above 0.
+It sends an order only when every gate in ``gates()`` is open. The owner opens them on the
+page (``arming.py``): trade-only keys, then a budget, their name and the typed approval
+phrase, which write the live settings, the phrase in ``.env`` and the dated Phase 8 row in
+``docs/STATUS.md``.
 
 Safety rules in code. Each one can only shrink, skip or cancel an order:
 - before every run the mirror's own ledger is reconciled with the exchange; a break engages
@@ -41,8 +42,6 @@ from typing import Any, Protocol
 
 from quantagents import alerts
 from quantagents.config import (
-    LIVE_APPROVAL_ENV,
-    LIVE_APPROVAL_TOKEN,
     AppConfig,
     ExecutionMode,
     LiveConfig,
@@ -236,47 +235,49 @@ def gates(
             row,
             "your dated row is there"
             if row
-            else "add a row to the Human approvals table: | <date> | Approve Phase 8 micro-live | <your name> |",
+            else "switch real money on in the app (Real money box, step 2): it writes your dated approval row",
         ),
         Gate(
             "config: execution_mode live",
             s.execution_mode is ExecutionMode.LIVE,
             "set"
             if s.execution_mode is ExecutionMode.LIVE
-            else "set system.execution_mode to live",
+            else "switch real money on in the app (Real money box, step 2)",
         ),
         Gate(
             "config: autonomy_level 3",
             s.autonomy_level >= 3,
             f"level {s.autonomy_level}"
             if s.autonomy_level >= 3
-            else "set system.autonomy_level to 3",
+            else "switch real money on in the app (Real money box, step 2)",
         ),
         Gate(
             "config: live_trading_approved",
             s.live_trading_approved,
-            "set" if s.live_trading_approved else "set system.live_trading_approved to true",
+            "set"
+            if s.live_trading_approved
+            else "switch real money on in the app (Real money box, step 2)",
         ),
         Gate(
             "approval phrase in .env",
             live_approval_present(),
             "set"
             if live_approval_present()
-            else f"add this line to .env: {LIVE_APPROVAL_ENV}={LIVE_APPROVAL_TOKEN}",
+            else "type the approval phrase when you real money on in the app (Real money box, step 2)",
         ),
         Gate(
             "exchange keys in .env",
             bool(os.environ.get(KEY_ENV) and os.environ.get(SECRET_ENV)),
             "set (values hidden)"
             if os.environ.get(KEY_ENV) and os.environ.get(SECRET_ENV)
-            else f"make trade-only keys (withdrawals OFF) and add {KEY_ENV}= and {SECRET_ENV}= to .env",
+            else "save trade-only Kraken keys (withdrawals OFF) in the app (Real money box, step 1)",
         ),
         Gate(
             "a budget above 0",
             cfg.live.budget > 0,
             f"live.budget {cfg.live.budget:g}"
             if cfg.live.budget > 0
-            else "set live.budget in your config (start small, e.g. 100)",
+            else "choose a budget in the app (Real money box, step 2; start small, e.g. 100)",
         ),
         Gate(
             "crypto on one exchange",
