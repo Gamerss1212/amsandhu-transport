@@ -37,6 +37,7 @@ Same idea: open a terminal in the folder and run `bash QuantAgents.sh`.
    9  Real money: preview the real orders (sends nothing)
   10  Real money: send a tiny test order (cancelled at once)
   11  Check the install
+  12  Bring over my account from an older QuantAgents folder
    0  Quit
 ```
 
@@ -44,10 +45,14 @@ Same idea: open a terminal in the folder and run `bash QuantAgents.sh`.
 1. Choose **1**: it downloads prices and runs one paper day. You should see `cycle (exit 0)`
    and `Watchdog: all clear.`
 2. Choose **3**: the daily run now starts by itself, Monday to Friday at 3:30 PM (crypto
-   folders: every day at 7:00 PM). Keep the computer on and signed in at that time. A missed
-   day is picked up on the next run.
-3. Choose **2** any time to see the account, the kill switch, the last decision and your
-   progress toward 30 paper days.
+   folders: every day at 7:00 PM).
+   - It also runs on battery.
+   - If the computer was off or asleep at that time, it runs as soon as you are back.
+   - Stay signed in to Windows.
+3. Choose **2** any time to see:
+   - the account and the kill switch;
+   - the last decision and your progress toward 30 paper days;
+   - the **scoreboard**: the paper account against simply holding the same symbols.
 
 That is all. You can close the window; the automatic run keeps working without it.
 
@@ -62,6 +67,27 @@ That is all. You can close the window; the automatic run keeps working without i
 - **A watchdog** stops trading if anything goes stale. Only you can restart it (menu choice 6).
 - **The research tools** test strategies honestly. So far no strategy has beaten simply holding
   the same funds (`docs/research/grid-2026-10-06.md`: 7,668 backtests).
+
+## Phone alerts (optional)
+
+Make a Telegram bot with @BotFather, then put `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` in a
+`.env` file in this folder (copy `.env.example`). After every daily run your phone gets one
+line:
+- "Daily run OK: ..." with the day's result;
+- "Daily run FAILED: ..." if something broke, so you know the same day.
+
+## Updating to a new version
+
+1. Unzip the new version into a **new** folder, for example `C:\QuantAgents-50-v2`.
+2. Double-click its `QuantAgents.bat`.
+3. Choose **12** and type the path of your old folder.
+
+It copies your account, decision records, prices, settings and `.env` (never shown). Then:
+- the old folder's kill switch is engaged, so it can never trade twice;
+- its automatic run is turned off; choose **3** to turn it on in the new folder.
+
+Approvals are not copied: real money needs your dated approval row again (a new version
+deserves a fresh look).
 
 ## Your symbols
 
@@ -105,6 +131,7 @@ Read `docs/REAL_MONEY.md` before anything else. In short:
 | `docs/research/` | Every strategy test, failures included, and the trial log |
 | `config/my_universe.yaml` | Your settings and symbols (created on the first run) |
 | `state/`, `runs/`, `data/` | Your accounts, decision logs and price store (created as it runs) |
+| `state/backups/` | A copy of your account files after every daily run (the newest 30 days) |
 
 ## Honest limits
 

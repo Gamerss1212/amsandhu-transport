@@ -135,3 +135,30 @@ def test_one_folder_never_mixes_two_universes(
     account.save(home / "state" / "paper_account.json")
     assert main(["cycle", "--data", "data/stocks.csv"]) == 2
     assert "holds ZZZ" in capsys.readouterr().err
+
+
+def test_scoreboard_compares_paper_with_simply_holding(tmp_path: Path) -> None:
+    from quantagents.ops import hold_return, scoreboard
+
+    def cycle(day: str, a: float, b: float) -> dict[str, object]:
+        return {"as_of": day, "snapshot": {"last_close": {"AAA": a, "BBB": b}}}
+
+    cycles = [cycle("2026-10-01", 100.0, 50.0), cycle("2026-10-02", 110.0, 50.0)]
+    held, n, source = hold_return(cycles, None) or (0.0, 0, "")
+    assert held == pytest.approx(0.05) and n == 2 and source == "the cycle records"
+    line = str(scoreboard(cycles, None, 0.01))
+    assert "paper +1.00% vs holding the same 2 symbols in equal parts +5.00%" in line
+    assert "Paper is behind holding by 4.00 points." in line and "2 paper days" in line
+    assert "ahead of holding by 1.00 points" in str(scoreboard(cycles, None, 0.06))
+    assert scoreboard([], None, 0.0) is None
+    # the data file wins when it covers both days (its adjusted prices are consistent)
+    csv = tmp_path / "p.csv"
+    csv.write_text(
+        "date,symbol,open,high,low,close,volume\n"
+        "2026-10-01,AAA,1,1,1,90,1\n2026-10-01,BBB,1,1,1,40,1\n"
+        "2026-10-02,AAA,1,1,1,99,1\n2026-10-02,BBB,1,1,1,40,1\n",
+        encoding="utf-8",
+    )
+    from_file = hold_return(cycles, csv)
+    assert from_file is not None and from_file[1:] == (2, "p.csv")
+    assert from_file[0] == pytest.approx(0.05)

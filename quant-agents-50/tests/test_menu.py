@@ -76,7 +76,12 @@ def test_schedule_times_follow_the_market(tmp_path: Path) -> None:
     crypto = menu.schedule_for(CRYPTO, tmp_path / "QuantAgents-Crypto")
     assert (stocks.time, stocks.every_day) == ("15:30", False)
     assert (crypto.time, crypto.every_day) == ("19:00", True)
-    assert stocks.name == "QuantAgents daily (QuantAgents-50)" != crypto.name
+    assert (
+        stocks.name.startswith("QuantAgents daily (QuantAgents-50 ") and stocks.name != crypto.name
+    )
+    # two folders with the same name never share (and overwrite) one task
+    twin = menu.schedule_for(STOCKS, tmp_path / "other" / "QuantAgents-50")
+    assert twin.name != stocks.name and twin.name.startswith("QuantAgents daily (QuantAgents-50 ")
     on = menu.windows_commands(stocks, Path("C:/My Files/QuantAgents-50"))["on"]
     assert on[on.index("/TR") + 1] == f'"{Path("C:/My Files/QuantAgents-50/daily.bat")}"'
     assert on[on.index("/SC") :] == [
@@ -112,6 +117,46 @@ def test_windows_task_on_and_off(tmp_path: Path) -> None:
         "The automatic daily run is OFF."
     ]
     assert "already off" in menu.set_schedule(False, s, tmp_path, "Windows", shell)[0]
+    assert shell.calls[-1][:2] == ["schtasks", "/Query"]  # no English error text needed
+
+
+def test_windows_task_runs_on_battery_and_catches_up(tmp_path: Path) -> None:
+    import xml.etree.ElementTree as ET
+    from datetime import date
+
+    s = menu.schedule_for(STOCKS, tmp_path / "My Folder & Co")
+    xml = menu.task_xml(s, tmp_path / "My Folder & Co", date(2026, 10, 7))
+    root = ET.fromstring(xml.encode("utf-16"))
+    ns = {"t": "http://schemas.microsoft.com/windows/2004/02/mit/task"}
+
+    def text(path: str) -> str:
+        node = root.find(path, ns)
+        assert node is not None, path
+        return node.text or ""
+
+    assert text("t:Settings/t:DisallowStartIfOnBatteries") == "false"
+    assert text("t:Settings/t:StartWhenAvailable") == "true"
+    assert text("t:Settings/t:MultipleInstancesPolicy") == "IgnoreNew"
+    assert text("t:Triggers/t:CalendarTrigger/t:StartBoundary") == "2026-10-07T15:30:00"
+    days = root.find("t:Triggers/t:CalendarTrigger/t:ScheduleByWeek/t:DaysOfWeek", ns)
+    assert days is not None and len(days) == 5
+    assert text("t:Actions/t:Exec/t:Command") == f'"{tmp_path / "My Folder & Co" / "daily.bat"}"'
+    crypto = menu.task_xml(menu.schedule_for(CRYPTO, tmp_path), tmp_path, date(2026, 10, 7))
+    assert "<ScheduleByDay><DaysInterval>1</DaysInterval></ScheduleByDay>" in crypto
+
+    # Windows takes the XML: the full settings apply and no file is left behind
+    shell = FakeShell()
+    lines = menu.set_schedule(True, s, tmp_path, "Windows", shell)
+    assert "/XML" in shell.calls[0] and len(shell.calls) == 1 and "runs on battery" in lines[1]
+    assert not (tmp_path / "state" / "daily-task.xml").exists()
+
+    # Windows refuses the XML: the plain task is made, and the owner is told what it lacks
+    def no_xml(cmd: list[str], stdin: str | None) -> tuple[int, str]:
+        return (1, "ERROR: bad XML") if "/XML" in cmd else shell(cmd, stdin)
+
+    lines = menu.set_schedule(True, s, tmp_path, "Windows", no_xml)
+    assert "ON: Monday to Friday" in lines[0] and "only on mains power" in lines[1]
+    assert shell.calls[-1][:2] == ["schtasks", "/Create"] and "/SC" in shell.calls[-1]
 
 
 def test_cron_on_and_off_keeps_other_lines(tmp_path: Path) -> None:
@@ -237,3 +282,30 @@ def test_a_second_daily_run_at_the_same_time_does_nothing(
     assert main(["--config", "config/mine.yaml", "daily"]) == 0
     assert "Another daily run is still going" in capsys.readouterr().out and not fetched
     lock.release()
+
+
+def test_the_daily_run_sends_one_phone_line(
+    home: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    from quantagents import alerts
+
+    sent: list[str] = []
+
+    def fake_send(text: str, **kwargs: object) -> bool:
+        sent.append(text)
+        return True
+
+    monkeypatch.setattr(alerts, "send", fake_send)
+    monkeypatch.setattr(sources, "fetch_yahoo", lambda s, a, b: fake_history(s, last_weekday()))
+    assert main(["--config", "config/mine.yaml", "daily"]) == 0
+    assert sent[-1].startswith("Daily run OK: as of ") and "paper equity 10,000.00" in sent[-1]
+    assert main(["--config", "config/mine.yaml", "daily"]) == 0  # same day again
+    assert sent[-1].startswith("Daily run OK: no new trading day; as of ")
+
+    def offline(symbol: str, start: object, end: object) -> object:
+        raise OSError("no internet")
+
+    monkeypatch.setattr(sources, "fetch_yahoo", offline)
+    assert main(["--config", "config/mine.yaml", "daily"]) == 1
+    assert sent[-1].startswith("Daily run FAILED: fetch (exit ")
+    capsys.readouterr()

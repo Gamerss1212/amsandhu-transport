@@ -169,3 +169,22 @@ def test_daily_stops_before_the_cycle_when_the_fetch_fails(
     assert "--- watchdog (exit 1)" in out  # no cycle has ever run: the watchdog stops trading
     assert KillSwitch(daily_dir / "state" / "kill_switch.json").engaged
     assert main(["daily"]) == 2
+
+
+def test_account_files_are_backed_up_and_old_backups_pruned(tmp_path: Path) -> None:
+    from quantagents.daily import BACKUP_DAYS, backup_state
+
+    state = tmp_path / "state"
+    assert backup_state(state, date(2026, 10, 1)) is None  # nothing to save yet
+    state.mkdir()
+    (state / "paper_account.json").write_text('{"v": 1}', encoding="utf-8")
+    (state / "daily.lock").write_text("pid", encoding="utf-8")
+    for i in range(BACKUP_DAYS + 3):
+        saved = backup_state(state, date(2026, 1, 1) + timedelta(days=i))
+    assert (
+        saved is not None
+        and (saved / "paper_account.json").read_text(encoding="utf-8") == '{"v": 1}'
+    )
+    assert not (saved / "daily.lock").exists()  # only account files
+    days = sorted(p.name for p in (state / "backups").iterdir())
+    assert len(days) == BACKUP_DAYS and days[-1] == saved.name and days[0] == "2026-01-04"

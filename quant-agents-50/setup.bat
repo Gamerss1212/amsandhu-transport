@@ -25,8 +25,9 @@ if %errorlevel% neq 0 (
 ".venv\Scripts\python.exe" -m pip install -e ".[dev,data]"
 if %errorlevel% neq 0 goto fail
 echo.
+if not exist "config\my_universe.yaml" copy "config\us_etfs.example.yaml" "config\my_universe.yaml" >nul
 echo === Checking the install ===
-".venv\Scripts\python.exe" -m quantagents doctor
+".venv\Scripts\python.exe" -m quantagents --config config\my_universe.yaml doctor
 if %errorlevel% neq 0 goto fail
 echo.
 echo === Running every quality gate (takes about a minute) ===
@@ -35,7 +36,6 @@ if %errorlevel% neq 0 goto fail
 echo.
 echo === Demo: one decision cycle on synthetic data ===
 ".venv\Scripts\python.exe" -m quantagents demo
-if not exist "config\my_universe.yaml" copy "config\us_etfs.example.yaml" "config\my_universe.yaml" >nul
 echo.
 echo Setup finished. Next: double-click QuantAgents.bat for the menu. See START_HERE.md.
 if /i not "%~1"=="nopause" pause

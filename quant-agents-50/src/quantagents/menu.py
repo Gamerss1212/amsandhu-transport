@@ -10,16 +10,18 @@ It can also put the daily run in Windows Task Scheduler (or cron on macOS and Li
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import platform
 import shlex
 import subprocess
 from collections.abc import Callable
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from pathlib import Path
+from xml.sax.saxutils import escape
 
-from quantagents import envfile
+from quantagents import envfile, migrate
 from quantagents.config import LIVE_APPROVAL_ENV, AppConfig, ExecutionMode, load_config
 from quantagents.data.sources import split_universe
 from quantagents.execution import live
@@ -44,6 +46,7 @@ CHOICES = (
     ("9", "Real money: preview the real orders (sends nothing)"),
     ("10", "Real money: send a tiny test order (cancelled at once)"),
     ("11", "Check the install"),
+    ("12", "Bring over my account from an older QuantAgents folder"),
     ("0", "Quit"),
 )
 
@@ -83,9 +86,51 @@ class Schedule:
 
 
 def schedule_for(cfg: AppConfig, folder: Path) -> Schedule:
+    """The task for this folder. Its name carries a short code made from the full path, so two
+    folders that happen to share a name (C:\\stocks\\QuantAgents-50, C:\\crypto\\QuantAgents-50)
+    never overwrite each other's schedule."""
     _, crypto = split_universe(list(cfg.universe.symbols))
     every_day = bool(crypto)  # crypto trades on weekends and its day ends at midnight UTC
-    return Schedule(f"{TASK_PREFIX} ({folder.name})", "19:00" if every_day else "15:30", every_day)
+    code = hashlib.sha1(str(folder.resolve()).lower().encode("utf-8")).hexdigest()[:4]
+    name = f"{TASK_PREFIX} ({folder.resolve().name} {code})"
+    return Schedule(name, "19:00" if every_day else "15:30", every_day)
+
+
+def task_xml(s: Schedule, folder: Path, start: date) -> str:
+    """A Task Scheduler task that also runs on battery power and catches up on a missed run
+    (computer off or asleep at that time). The plain schtasks command cannot set either."""
+    if s.every_day:
+        when = "<ScheduleByDay><DaysInterval>1</DaysInterval></ScheduleByDay>"
+    else:
+        days = "".join(f"<{d} />" for d in ("Monday", "Tuesday", "Wednesday", "Thursday", "Friday"))
+        when = f"<ScheduleByWeek><DaysOfWeek>{days}</DaysOfWeek><WeeksInterval>1</WeeksInterval></ScheduleByWeek>"
+    bat, work = escape(f'"{folder / "daily.bat"}"'), escape(str(folder))
+    return f"""<?xml version="1.0" encoding="UTF-16"?>
+<Task version="1.2" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">
+  <RegistrationInfo><Description>{escape(s.name)}: one paper-trading day</Description></RegistrationInfo>
+  <Triggers>
+    <CalendarTrigger>
+      <StartBoundary>{start.isoformat()}T{s.time}:00</StartBoundary>
+      <Enabled>true</Enabled>
+      {when}
+    </CalendarTrigger>
+  </Triggers>
+  <Principals>
+    <Principal id="Author"><LogonType>InteractiveToken</LogonType><RunLevel>LeastPrivilege</RunLevel></Principal>
+  </Principals>
+  <Settings>
+    <MultipleInstancesPolicy>IgnoreNew</MultipleInstancesPolicy>
+    <DisallowStartIfOnBatteries>false</DisallowStartIfOnBatteries>
+    <StopIfGoingOnBatteries>false</StopIfGoingOnBatteries>
+    <StartWhenAvailable>true</StartWhenAvailable>
+    <ExecutionTimeLimit>PT2H</ExecutionTimeLimit>
+    <Enabled>true</Enabled>
+  </Settings>
+  <Actions Context="Author">
+    <Exec><Command>{bat}</Command><WorkingDirectory>{work}</WorkingDirectory></Exec>
+  </Actions>
+</Task>
+"""
 
 
 def windows_commands(s: Schedule, folder: Path) -> dict[str, list[str]]:
@@ -96,6 +141,23 @@ def windows_commands(s: Schedule, folder: Path) -> dict[str, list[str]]:
         "off": ["schtasks", "/Delete", "/TN", s.name, "/F"],
         "query": ["schtasks", "/Query", "/TN", s.name, "/FO", "LIST"],
     }
+
+
+def _windows_on(s: Schedule, folder: Path, shell: Shell) -> tuple[int, str, bool]:
+    """Create the task from XML; if Windows refuses it, fall back to the plain command."""
+    xml_path = folder / "state" / "daily-task.xml"
+    xml_path.parent.mkdir(parents=True, exist_ok=True)
+    xml_path.write_text(task_xml(s, folder, datetime.now().date()), encoding="utf-16")
+    try:
+        code, text = shell(
+            ["schtasks", "/Create", "/TN", s.name, "/XML", str(xml_path), "/F"], None
+        )
+    finally:
+        xml_path.unlink(missing_ok=True)
+    if code == 0:
+        return code, text, True
+    code, text = shell(windows_commands(s, folder)["on"], None)
+    return code, text, False
 
 
 def cron_line(s: Schedule, folder: Path) -> str:
@@ -114,18 +176,29 @@ def is_scheduled(s: Schedule, folder: Path, system: str, shell: Shell) -> bool:
 def set_schedule(on: bool, s: Schedule, folder: Path, system: str, shell: Shell) -> list[str]:
     """Add or remove the daily task. Returns what to tell the owner."""
     if system == "Windows":
-        code, text = shell(windows_commands(s, folder)["on" if on else "off"], None)
+        if not on and not is_scheduled(s, folder, system, shell):
+            return ["The automatic daily run was already off."]  # works in every Windows language
+        if on:
+            code, text, full = _windows_on(s, folder, shell)
+        else:
+            code, text = shell(windows_commands(s, folder)["off"], None)
+            full = True
         if code != 0:
-            if not on and "cannot find" in text.lower():
-                return ["The automatic daily run was already off."]
             return [f"Windows Task Scheduler said no ({text or code}).", "See docs/schedule.md."]
         if not on:
             return ["The automatic daily run is OFF."]
-        return [
-            f"The automatic daily run is ON: {s.words}.",
-            "Keep the computer on and signed in at that time. A missed day is picked up on the "
-            "next run.",
-        ]
+        lines = [f"The automatic daily run is ON: {s.words}."]
+        if full:
+            lines.append(
+                "It also runs on battery, and if the computer was off or asleep at that time it "
+                "runs as soon as you are back. Stay signed in to Windows."
+            )
+        else:
+            lines.append(
+                "Windows refused the full settings, so this task runs only on mains power and "
+                "skips a missed time. docs/schedule.md shows how to change both."
+            )
+        return lines
     code, text = shell(["crontab", "-l"], None)
     lines = [ln for ln in (text.splitlines() if code == 0 else []) if s.name not in ln]
     if on:
@@ -270,6 +343,22 @@ def run_menu(
                 say("Cancelled: nothing was sent.")
         elif choice == "11":
             do(["doctor"])
+        elif choice == "12":
+            typed = ask("Path of the OLDER QuantAgents folder (Enter cancels): ").strip()
+            typed = typed.strip('"').strip("'")
+            if not typed:
+                say("Cancelled: nothing was copied.")
+            else:
+                old = Path(typed)
+                try:
+                    for line in migrate.import_from(old, folder):
+                        say(line)
+                except (OSError, ValueError) as exc:
+                    say(f"Not imported: {exc}")
+                else:
+                    for line in set_schedule(False, schedule_for(cfg, old), old, system, shell):
+                        say(f"Old folder: {line}")
+                    say("Turn the automatic daily run on for THIS folder with choice 3.")
         else:
             say("Please type one of the numbers in the list.")
             continue

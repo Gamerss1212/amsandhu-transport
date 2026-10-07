@@ -35,7 +35,7 @@ python -m quantagents demo
 ```
 
 - `demo` runs one full decision cycle of all 25 agents on **synthetic** data (fake symbols SYN_A to SYN_F).
-- `check.py` runs every quality gate: lint, formatting, strict types, 476 tests, and 100% coverage of the risk code.
+- `check.py` runs every quality gate: lint, formatting, strict types, 484 tests, and 100% coverage of the risk code.
 - `python -m quantagents simulate --days 120` runs the full cycle day after day on a fresh paper account.
 
 ### What to expect
@@ -115,6 +115,7 @@ New context and risk agents can only **reduce** risk. If one crashes, the system
 | `python -m quantagents live sync --dry-run` | Preview the real orders the mirror would send (sends nothing) |
 | `python -m quantagents live test-order` | One tiny real buy 20% under the market, cancelled at once (needs every gate) |
 | `python -m quantagents live sync` | Copy the paper portfolio onto Kraken (the daily run does this when armed) |
+| `python -m quantagents import-from OLD_FOLDER` | After an update: bring your account over from the old folder, then stop the old folder |
 
 ## Safety rails
 
@@ -139,7 +140,7 @@ New context and risk agents can only **reduce** risk. If one crashes, the system
 | `config/default.yaml` | Every limit and setting |
 | `config/agents.yaml` | The roster: 25 core agents and 25 parked |
 | `src/quantagents/` | The code (one module per agent in `agents/`) |
-| `tests/` | 476 tests |
+| `tests/` | 484 tests |
 | `.claude/` | Settings, hooks, skills, subagents and rules for Claude Code |
 
 ## Canada notes

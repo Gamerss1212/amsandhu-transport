@@ -16,6 +16,7 @@ from typing import Any
 from quantagents.config import AppConfig, ExecutionMode, load_config
 from quantagents.execution.live import mirror_summary
 from quantagents.execution.paper import PaperAccount
+from quantagents.market import load_csv
 from quantagents.risk.killswitch import RESET_PHRASE, KillSwitch
 from quantagents.validation.trials import TRIALS_FILE
 from quantagents.watchdog import check as watchdog_check
@@ -47,6 +48,55 @@ def _last_daily(log: Path) -> list[str]:
     return [block[0].removeprefix("=== daily run ").strip()] + [
         line.removeprefix("--- ") for line in block if line.startswith("--- ")
     ]
+
+
+def hold_return(cycles: list[dict[str, Any]], data: Path | None) -> tuple[float, int, str] | None:
+    """Return of holding the first paper day's symbols in equal parts, first day to newest.
+
+    Uses the data file when it covers both days (its prices are adjusted the same way end to
+    end); otherwise the closes saved in the two cycle records. No fees, no rebalancing.
+    """
+    first, last = cycles[0], cycles[-1]
+    start, end = date.fromisoformat(str(first["as_of"])), date.fromisoformat(str(last["as_of"]))
+    begin = {str(k): float(v) for k, v in first.get("snapshot", {}).get("last_close", {}).items()}
+    if data is not None and data.exists():
+        try:
+            market = load_csv(data)
+            if market.has_date(start) and market.has_date(end):
+                i, j = market.index_of(start), market.index_of(end)
+                ratios = [
+                    float(market.bars(s).close[j] / market.bars(s).close[i])
+                    for s in sorted(begin)
+                    if s in market.symbols
+                ]
+                if ratios:
+                    return sum(ratios) / len(ratios) - 1.0, len(ratios), data.name
+        except (OSError, ValueError, KeyError):
+            pass  # fall back to the closes saved with the cycles
+    now = {str(k): float(v) for k, v in last.get("snapshot", {}).get("last_close", {}).items()}
+    ratios = [now[s] / p for s, p in sorted(begin.items()) if s in now and p > 0]
+    if not ratios:
+        return None
+    return sum(ratios) / len(ratios) - 1.0, len(ratios), "the cycle records"
+
+
+def scoreboard(cycles: list[dict[str, Any]], data: Path | None, paper: float) -> str | None:
+    """One honest line: the paper account against simply holding the same symbols."""
+    if not cycles:
+        return None
+    hold = hold_return(cycles, data)
+    if hold is None:
+        return None
+    held, n, source = hold
+    days = len({str(c["as_of"]) for c in cycles})
+    gap = (paper - held) * 100.0
+    verdict = "ahead of" if gap > 0.005 else "behind" if gap < -0.005 else "level with"
+    return (
+        f"Scoreboard since {cycles[0]['as_of']} ({days} paper day{'s' if days != 1 else ''}): "
+        f"paper {paper:+.2%} vs holding the same {n} symbol{'s' if n != 1 else ''} in equal parts "
+        f"{held:+.2%} (no fees; prices from {source}). Paper is {verdict} holding"
+        + (f" by {abs(gap):.2f} points." if verdict != "level with" else ".")
+    )
 
 
 def status_report(
@@ -102,6 +152,9 @@ def status_report(
             f"{equity / account.capital - 1:+.2%}) | cash {book.cash:,.2f} | "
             f"drawdown {max(0.0, 1 - equity / peak):.2%} from peak | fees paid {book.fees_paid:,.2f}"
         )
+        board = scoreboard(cycles, data, equity / account.capital - 1.0)
+        if board:
+            lines.append(f"  {board}")
         positions = {k: v for k, v in book.quantities().items() if v}
         if not positions:
             lines.append("  No open positions.")

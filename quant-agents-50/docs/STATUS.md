@@ -1,6 +1,6 @@
 # Build status
 
-Updated: 2026-10-06 (release 0.7.0: one-click launcher and menu; real-money mirror built and switched off; the 30-day paper run is next)
+Updated: 2026-10-07 (release 0.7.0: one-click launcher and menu; real-money mirror built and switched off; review round done; the 30-day paper run is next)
 
 ## Where things stand
 
@@ -10,7 +10,7 @@ Updated: 2026-10-06 (release 0.7.0: one-click launcher and menu; real-money mirr
 - Mode: **paper**. Autonomy level: **1**. Live trading: **not approved**.
 - **Real money: built, OFF.** The owner asked for it on 2026-10-06. It is a crypto-only mirror for Kraken (`docs/REAL_MONEY.md`). It sends nothing until the owner opens all 11 gates, including a dated approval row below. It was tested against a fake exchange and real Kraken prices, never a real account.
 - **Simple to run:** `QuantAgents.bat` (Windows) or `bash QuantAgents.sh` installs on the first run, then opens a numbered menu.
-- Tests: 476, all gates green, 97% coverage overall, 100% branch coverage on risk.
+- Tests: 484, all gates green, 97% coverage overall, 100% branch coverage on risk.
 - **Phase 1 passed** (2026-10-06): real data store, free data sources, split check, event-driven backtester, benchmark, leakage tests.
 - **Phase 2 done** (2026-10-06): five published strategies tested on real data, pre-registered, run once. **All five FAIL** the promotion bar. No edge strong enough to trade has been found yet.
 - **Phase 3 built** (2026-10-06): chaos tests, watchdog, daily run and schedule guide. The 30-day paper run needs calendar time on the owner's PC.
@@ -188,13 +188,14 @@ Windows under Wine), running it on live data, and reviewing the code.
 - `QuantAgents.bat` (Windows) and `QuantAgents.sh` (macOS/Linux):
   - the first run installs everything (setup, all gates, a demo);
   - after that, every double-click opens the menu.
-- The menu (`quantagents menu`) has 12 numbered choices:
+- The menu (`quantagents menu`) has 13 numbered choices:
   - run today and show the dashboard;
   - turn the automatic daily run on or off (Windows Task Scheduler or cron);
   - stop all trading, and resume with the reset phrase;
   - edit the symbols;
   - three real-money choices (what is still needed, a preview, a test order);
-  - check the install.
+  - check the install;
+  - bring an account over from an older folder.
 - The menu cannot raise a limit or switch on real money. Every choice runs an ordinary
   command.
 
@@ -248,6 +249,37 @@ Windows under Wine), running it on live data, and reviewing the code.
 **Not tested** (said plainly):
 - a real exchange account, because no keys were shared;
 - Windows Task Scheduler on a real PC.
+
+**Review round (2026-10-07): found and fixed before the download was built**
+
+| Problem | Fix |
+|---|---|
+| Crypto names like `BTC-CAD.KRAKEN` ran into the next column of the cycle report | Columns size to the longest name (a test fails without the fix) |
+| The dashboard never compared the paper account with simply holding | A scoreboard line: paper vs holding the same symbols in equal parts since the first paper day (no fees) |
+| A failed scheduled run was silent until someone looked | With Telegram set up, every daily run sends one line: OK with the day's result, or FAILED and which step |
+| Updating meant copying files by hand, and two copies could both trade (two mirrors would both buy on Kraken) | `import-from` (menu 12) copies the account, then engages the old folder's kill switch and turns its task off; a folder already moved cannot be imported twice; approvals are not copied |
+| Two folders with the same name shared one scheduled task (turning one on replaced the other) | Task names carry a code from the full path |
+| Windows tasks made by `schtasks` skip runs on battery and never catch up a missed time | The task is made from XML: runs on battery, catches up after sleep, never two at once. If Windows refuses it, the plain task is made and the menu says what it lacks |
+| Setup checked the demo settings, not yours (a confusing warning on first install) | Your settings file is created first and checked |
+| No backup of the account files | After each daily run, `state/backups/<date>/` (the newest 30 days) |
+| "Task already off" relied on English error text from Windows (wrong on a French or other-language Windows) | The menu asks Task Scheduler whether the task exists before deleting it |
+
+- **Checked on live data:** a crypto folder (BTC-CAD and ETH-CAD on Kraken) ran a full day.
+  - Data health was 100 and every agent ran.
+  - The result was no trade: only one team agreed, and two are needed.
+- **Kraken gives only the last 720 daily candles** (about 2 years). Every agent had enough
+  history.
+- **Fresh install from the zip on Python 3.13** (`bash QuantAgents.sh`):
+  - every gate green (483 passed, 1 skipped by design);
+  - the account was brought over from an earlier test folder, and that folder was stopped;
+  - a live-data day continued the imported account (paper day 2);
+  - the scoreboard read: paper +0.00% vs holding the same 8 ETFs +0.38%, so paper is behind.
+- **Windows under Wine:**
+  - the changed test files pass;
+  - menu choice 12 imported an account from a quoted Windows path (`"C:\..."`) and engaged the
+    old folder's kill switch.
+- **Not tested on a real PC:** the XML task (Wine has no working Task Scheduler). The menu
+  falls back to the plain task if Windows refuses it.
 
 ## Human approvals
 

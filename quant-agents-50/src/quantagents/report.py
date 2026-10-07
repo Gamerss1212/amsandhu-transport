@@ -24,6 +24,11 @@ def _rule(title: str) -> str:
     return f"\n{title}\n{'-' * len(title)}"
 
 
+def _width(symbols: list[str]) -> int:
+    """A symbol column wide enough for names like BTC-CAD.KRAKEN, plus one space."""
+    return max([len("symbol"), 8, *(len(s) for s in symbols)]) + 1
+
+
 def format_cycle_report(report: CycleReport, *, currency: str = "CAD") -> str:
     lines = [
         f"QuantAgents-50 decision cycle {report.cycle_id}",
@@ -43,8 +48,10 @@ def format_cycle_report(report: CycleReport, *, currency: str = "CAD") -> str:
 
     lines.append(_rule("Sealed predictions (P(up) on each agent's own horizon; - = abstained)"))
     agents = sorted({p.agent_id for p in report.predictions})
-    lines.append("symbol   " + "".join(f"{a:<14}" for a in agents))
-    for symbol in sorted({p.symbol for p in report.predictions}):
+    symbols = sorted({p.symbol for p in report.predictions})
+    w = _width(symbols)
+    lines.append(f"{'symbol':<{w}}" + "".join(f"{a:<14}" for a in agents))
+    for symbol in symbols:
         cells = []
         for a in agents:
             match = [p for p in report.predictions if p.symbol == symbol and p.agent_id == a]
@@ -53,7 +60,7 @@ def format_cycle_report(report: CycleReport, *, currency: str = "CAD") -> str:
             else:
                 p = match[0]
                 cells.append(f"{p.direction.value} {p.p_up:.3f}".ljust(14))
-        lines.append(f"{symbol:<9}" + "".join(cells))
+        lines.append(f"{symbol:<{w}}" + "".join(cells))
     if report.seal_rejections:
         lines.append(
             "rejected or failed: "
@@ -62,8 +69,9 @@ def format_cycle_report(report: CycleReport, *, currency: str = "CAD") -> str:
 
     lines.append(_rule("Decisions (A47 rules + A40 no-trade check)"))
     no_trade = {v.symbol: v for v in report.no_trade}
+    w = _width([prop.symbol for prop in report.proposals]) - 1
     for prop in report.proposals:
-        head = f"{prop.symbol:<7} {'GO' if prop.go else 'no trade':<9}"
+        head = f"{prop.symbol:<{w}} {'GO' if prop.go else 'no trade':<9}"
         stats = (
             f"P(up) {prop.pooled_p:.3f}, teams agree {prop.teams_agree}, "
             f"net edge {prop.net_edge:+.2%}, A40 {no_trade[prop.symbol].p_no_trade:.2f}"
@@ -141,12 +149,13 @@ def format_context(context: ContextReport) -> list[str]:
         lines.append(_rule("Transition check (A07): ALERT (detector failed, fail-safe)"))
     if context.liquidity:
         lines.append(_rule("Liquidity (A09; estimates from daily bars)"))
+        w = _width([x.symbol for x in context.liquidity]) - 1
         lines.append(
-            f"{'symbol':<8} {'ADV':>14} {'impact':>9} {'cost':>9} {'tradable':>9} {'max order':>12}"
+            f"{'symbol':<{w}} {'ADV':>14} {'impact':>9} {'cost':>9} {'tradable':>9} {'max order':>12}"
         )
         for x in context.liquidity:
             lines.append(
-                f"{x.symbol:<8} {x.adv_notional:>14,.0f} {x.impact_bps:>7.1f}bp "
+                f"{x.symbol:<{w}} {x.adv_notional:>14,.0f} {x.impact_bps:>7.1f}bp "
                 f"{x.est_cost_bps:>7.1f}bp {x.tradability:>9.2f} {x.max_order_notional:>12,.0f}"
             )
     return lines

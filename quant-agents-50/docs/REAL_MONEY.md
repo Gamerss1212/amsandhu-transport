@@ -68,6 +68,15 @@ failed, it does not run.
 - **Very small budgets do little.** Positions smaller than Kraken's minimum order, or smaller
   than `live.min_order_value` (10), are skipped. Under about 100 CAD, most of them will be.
 
+### What to expect
+
+- **Long stretches in cash.** With only two coins (BTC and ETH), two agent teams rarely agree,
+  so the paper account often holds nothing. Then the mirror holds nothing too.
+  - Example, on live Kraken data on 2026-10-06: the trend agent leaned long on both coins, but
+    the second team needed for a GO did not agree, so there was no trade.
+- **The dashboard shows what matters:** the scoreboard compares the paper account with simply
+  holding the same coins. If paper stays behind, real money copying it will too.
+
 ## Switch it on: 8 steps, all done by you
 
 Take them in order. After each one, menu choice **8** ("Real money: what is still needed")
@@ -159,6 +168,14 @@ The kill switch engages on any of these:
 2. Read the end of `runs\daily.log`.
 3. Fix the cause.
 4. Use menu choice **6** and type the reset phrase.
+
+## Updating to a new version
+
+- Use menu choice **12** in the new folder. It brings the account and the real-money ledger
+  over, then stops the old folder (its kill switch is engaged).
+  - Two copies running at once would both buy on the same Kraken account.
+- **Your approval row is not copied.** Add it again in the new folder's `docs\STATUS.md`
+  after reading what changed.
 
 ## Switch it off
 

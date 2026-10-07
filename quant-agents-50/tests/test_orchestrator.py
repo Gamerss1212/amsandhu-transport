@@ -331,3 +331,20 @@ def test_scorekeeper_failure_fails_safe(
     assert "A35" in report.context_failures and report.scores is None
     assert "A35 FAILED" in report.steps[5].summary and "FAILED" in report.steps[14].summary
     assert all("A35 calibration failed" in " ".join(v.reasons) for v in report.no_trade)
+
+
+def test_long_symbol_names_keep_the_report_columns_apart(
+    cfg: AppConfig, registry: Registry
+) -> None:
+    from quantagents.data.synthetic import DEFAULT_SPECS, SyntheticSpec, synthetic_market
+
+    specs = [
+        SyntheticSpec(f"{s.symbol}-CAD.KRAKEN", s.annual_drift, s.annual_vol)
+        for s in DEFAULT_SPECS[:3]
+    ]
+    every = AppConfig.model_validate({"universe": {"symbols": []}})  # every symbol in the data
+    report = make(every, registry).run_cycle(synthetic_market(specs=specs), DEMO_AS_OF)
+    text = format_cycle_report(report)
+    for spec in specs:
+        rows = [line for line in text.splitlines() if line.startswith(spec.symbol)]
+        assert rows and all(row[len(spec.symbol)] == " " for row in rows), rows

@@ -15,8 +15,10 @@ Each day downloads the last 5 years (enough for every agent), not the whole hist
    portfolio onto the exchange, and it refuses unless the owner has opened every real-money
    gate (see ``execution/live.py``). Skipped after any failed step.
 
-Everything printed is also appended to ``runs/daily.log``. In paper mode no step can send a
-real order.
+Everything printed is also appended to ``runs/daily.log``, and the account files are copied
+to ``state/backups/<date>/`` (the newest 30 days are kept). If Telegram is set up in ``.env``,
+one line goes to the owner's phone: what failed, or the day's result. In paper mode no step
+can send a real order.
 """
 
 from __future__ import annotations
@@ -25,16 +27,20 @@ import argparse
 import contextlib
 import io
 import json
+import shutil
 from collections.abc import Callable
 from datetime import UTC, date, datetime
 from pathlib import Path
+from typing import Any
 
+from quantagents import alerts
 from quantagents.config import ExecutionMode, load_config
 from quantagents.data.sources import ccxt_symbol, split_universe
 from quantagents.runlock import RunLock
 from quantagents.watchdog import last_data_date
 
 LOG_FILE = Path("runs/daily.log")
+BACKUP_DAYS = 30  # days of account backups kept in state/backups/
 HISTORY_YEARS = 5  # A06 needs 2 years of volatility history; the features need about 15 months
 
 
@@ -62,6 +68,9 @@ def run_daily(args: argparse.Namespace, cli: Callable[[list[str]], int]) -> int:
     log: list[str] = [f"=== daily run {datetime.now(UTC).isoformat(timespec='seconds')}"]
     prefix = ["--config", args.config] if args.config else []
 
+    codes: dict[str, int] = {}
+    notes: list[str] = []
+
     def call(label: str, argv: list[str]) -> int:
         buffer = io.StringIO()
         with contextlib.redirect_stdout(buffer), contextlib.redirect_stderr(buffer):
@@ -69,6 +78,7 @@ def run_daily(args: argparse.Namespace, cli: Callable[[list[str]], int]) -> int:
         text = buffer.getvalue().rstrip()
         log.append(f"--- {label} (exit {code})\n{text}")
         print(f"--- {label} (exit {code})\n{text}")
+        codes[label] = code
         return code
 
     store = ["data", "--store", args.store]
@@ -95,9 +105,11 @@ def run_daily(args: argparse.Namespace, cli: Callable[[list[str]], int]) -> int:
             )
             log.append(f"--- cycle\n{msg}")
             print(f"--- cycle\n{msg}")
+            codes["cycle"] = 2
             failed = True
         elif done is not None and newest <= done:
             msg = f"no new trading day (data ends {newest}, last cycle {done}): cycle skipped"
+            notes.append("no new trading day")
             log.append(f"--- cycle\n{msg}")
             print(f"--- cycle\n{msg}")
         elif call("cycle", ["cycle", "--data", args.out]) != 0:
@@ -106,10 +118,65 @@ def run_daily(args: argparse.Namespace, cli: Callable[[list[str]], int]) -> int:
         failed = True
     if getattr(args, "live", False) and not failed and call("live sync", ["live", "sync"]) != 0:
         failed = True
+    try:
+        saved = backup_state(Path("state"), datetime.now(UTC).date())
+        if saved is not None:
+            log.append(f"--- backup\nstate saved to {saved}")
+    except OSError as exc:  # a failed backup is reported, never fatal
+        log.append(f"--- backup\nfailed: {exc}")
+        print(f"--- backup\nfailed: {exc}")
     LOG_FILE.parent.mkdir(parents=True, exist_ok=True)
     with LOG_FILE.open("a", encoding="utf-8") as handle:
         handle.write("\n".join(log) + "\n")
+    alerts.send(summary(codes, notes, runs))
     return 1 if failed else 0
+
+
+def backup_state(state: Path, day: date) -> Path | None:
+    """Copy the account files (paper account, real-money ledger, kill switch...) to
+    ``state/backups/<day>/``, keeping the newest ``BACKUP_DAYS`` days."""
+    files = sorted(state.glob("*.json"))
+    if not files:
+        return None
+    target = state / "backups" / day.isoformat()
+    target.mkdir(parents=True, exist_ok=True)
+    for path in files:
+        shutil.copy2(path, target / path.name)
+    days = sorted(p for p in (state / "backups").iterdir() if p.is_dir())
+    for old in days[:-BACKUP_DAYS]:
+        shutil.rmtree(old)
+    return target
+
+
+def summary(codes: dict[str, int], notes: list[str], runs: Path) -> str:
+    """The one-line phone alert for a daily run (sent only if Telegram is set up in .env)."""
+    bad = [f"{label} (exit {code})" for label, code in codes.items() if code != 0]
+    if bad:
+        return (
+            f"Daily run FAILED: {', '.join(bad)}. Read runs/daily.log; menu choice 2 shows "
+            "the account and the kill switch."
+        )
+    newest: tuple[str, float, dict[str, Any]] | None = None
+    for path in (runs / "cycles").glob("*.json"):
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+            key = (str(data["as_of"]), path.stat().st_mtime, data)
+        except (OSError, ValueError, KeyError, TypeError):
+            continue
+        if newest is None or key[:2] > newest[:2]:
+            newest = key
+    parts = list(notes)
+    if newest is not None:
+        data = newest[2]
+        go = [str(p.get("symbol")) for p in data.get("proposals", []) if p.get("go")]
+        parts += [
+            f"as of {newest[0]}",
+            f"paper equity {float(data.get('equity', 0.0)):,.2f}",
+            f"GO: {', '.join(go) or 'none'}",
+            f"paper fills {len(data.get('fills', []))}",
+            f"risk level {data.get('risk', {}).get('level', '?')}",
+        ]
+    return "Daily run OK: " + "; ".join(parts) + "."
 
 
 def add_parser(sub: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
