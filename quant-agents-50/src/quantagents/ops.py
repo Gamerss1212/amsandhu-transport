@@ -24,7 +24,7 @@ from quantagents.watchdog import check as watchdog_check
 PAPER_DAYS_NEEDED = 30  # Phase 3 acceptance
 
 
-def _cycles(runs_dir: Path) -> list[dict[str, Any]]:
+def cycle_records(runs_dir: Path) -> list[dict[str, Any]]:
     out: list[dict[str, Any]] = []
     for path in (runs_dir / "cycles").glob("*.json"):
         try:
@@ -37,7 +37,7 @@ def _cycles(runs_dir: Path) -> list[dict[str, Any]]:
     return sorted(out, key=lambda d: (str(d["as_of"]), d["_ran"]))
 
 
-def _last_daily(log: Path) -> list[str]:
+def last_daily_lines(log: Path) -> list[str]:
     if not log.exists():
         return []
     lines = log.read_text(encoding="utf-8", errors="replace").splitlines()
@@ -78,6 +78,52 @@ def hold_return(cycles: list[dict[str, Any]], data: Path | None) -> tuple[float,
     if not ratios:
         return None
     return sum(ratios) / len(ratios) - 1.0, len(ratios), "the cycle records"
+
+
+def score_series(
+    cycles: list[dict[str, Any]], data: Path | None, capital: float
+) -> list[tuple[str, float, float | None]]:
+    """Per paper day: (date, paper return, return of holding the first day's symbols equally).
+
+    Paper comes from each cycle's equity. Holding uses the data file when it has every day
+    (consistent adjusted prices), otherwise the closes saved with the cycles.
+    """
+    by_day: dict[str, dict[str, Any]] = {}
+    for record in cycles:  # sorted oldest first, so a re-run of a day replaces it
+        by_day[str(record["as_of"])] = record
+    days = sorted(by_day)
+    if not days or capital <= 0:
+        return []
+    symbols = sorted(by_day[days[0]].get("snapshot", {}).get("last_close", {}))
+    closes: dict[str, dict[str, float]] = {
+        d: {
+            str(k): float(v) for k, v in by_day[d].get("snapshot", {}).get("last_close", {}).items()
+        }
+        for d in days
+    }
+    if data is not None and data.exists():
+        try:
+            market = load_csv(data)
+            if all(market.has_date(date.fromisoformat(d)) for d in days):
+                closes = {
+                    d: {
+                        s: float(market.bars(s).close[market.index_of(date.fromisoformat(d))])
+                        for s in symbols
+                        if s in market.symbols
+                    }
+                    for d in days
+                }
+        except (OSError, ValueError, KeyError):
+            pass  # keep the closes saved with the cycles
+    start = closes[days[0]]
+    out: list[tuple[str, float, float | None]] = []
+    for d in days:
+        paper = float(by_day[d].get("equity", capital)) / capital - 1.0
+        ratios = [
+            closes[d][s] / start[s] for s in symbols if s in closes[d] and start.get(s, 0) > 0
+        ]
+        out.append((d, paper, sum(ratios) / len(ratios) - 1.0 if ratios else None))
+    return out
 
 
 def scoreboard(cycles: list[dict[str, Any]], data: Path | None, paper: float) -> str | None:
@@ -130,7 +176,7 @@ def status_report(
     if switch.engaged:
         lines.append(f"  After review: quantagents killswitch reset --confirm {RESET_PHRASE}")
 
-    cycles = _cycles(runs_dir)
+    cycles = cycle_records(runs_dir)
     last = cycles[-1] if cycles else None
     prices = {
         str(k): float(v) for k, v in (last or {}).get("snapshot", {}).get("last_close", {}).items()
@@ -184,7 +230,7 @@ def status_report(
             f"  Paper days: {len(days)} of {PAPER_DAYS_NEEDED} for Phase 3 | halted cycles: "
             f"{halted} | reconciliation breaks: {breaks}"
         )
-    daily = _last_daily(runs_dir / "daily.log")
+    daily = last_daily_lines(runs_dir / "daily.log")
     if daily:
         lines.append(f"  Last daily run {daily[0]}: " + "; ".join(daily[1:]))
     problems = (

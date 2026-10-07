@@ -17,7 +17,7 @@ from pathlib import Path
 
 import numpy as np
 
-from quantagents import __version__, daily, envfile, menu, migrate, ops, watchdog
+from quantagents import __version__, daily, envfile, menu, migrate, ops, watchdog, webapp
 from quantagents.agents.a35_scorekeeper import Scorekeeper
 from quantagents.agents.a45_stress import stress_returns
 from quantagents.audit import AuditLog, read_records, verify_chain
@@ -545,6 +545,7 @@ def build_parser() -> argparse.ArgumentParser:
     live.add_parser(sub)
     menu.add_parser(sub)
     migrate.add_parser(sub)
+    webapp.add_parser(sub)
 
     p = sub.add_parser("acb", help="adjusted cost base report from paper fills (not tax advice)")
     p.add_argument("--state", default=str(ACCOUNT_FILE))

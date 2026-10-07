@@ -4,5 +4,5 @@ Paper trading only. No live broker adapter ships with this package, and the risk
 governor (A49) rejects live orders unless a human has explicitly approved them.
 """
 
-__version__ = "0.7.0"
+__version__ = "0.8.0"
 __all__ = ["__version__"]

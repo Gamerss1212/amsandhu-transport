@@ -1,6 +1,6 @@
 # Build status
 
-Updated: 2026-10-07 (release 0.7.0: one-click launcher and menu; real-money mirror built and switched off; review round done; the 30-day paper run is next)
+Updated: 2026-10-07 (release 0.8.0: QuantAgents opens in the web browser; real-money mirror built and switched off; the 30-day paper run is next)
 
 ## Where things stand
 
@@ -9,8 +9,8 @@ Updated: 2026-10-07 (release 0.7.0: one-click launcher and menu; real-money mirr
 - New signal agents A13 and A15 are in **shadow**: sealed and scored by A35, no vote until the owner promotes them.
 - Mode: **paper**. Autonomy level: **1**. Live trading: **not approved**.
 - **Real money: built, OFF.** The owner asked for it on 2026-10-06. It is a crypto-only mirror for Kraken (`docs/REAL_MONEY.md`). It sends nothing until the owner opens all 11 gates, including a dated approval row below. It was tested against a fake exchange and real Kraken prices, never a real account.
-- **Simple to run:** `QuantAgents.bat` (Windows) or `bash QuantAgents.sh` installs on the first run, then opens a numbered menu.
-- Tests: 484, all gates green, 97% coverage overall, 100% branch coverage on risk.
+- **Simple to run:** `QuantAgents.bat` (Windows) or `bash QuantAgents.sh` installs on the first run, then opens the app in the web browser (a page on this computer only, `http://127.0.0.1:8765`).
+- Tests: 496, all gates green, 97% coverage overall, 100% branch coverage on risk.
 - **Phase 1 passed** (2026-10-06): real data store, free data sources, split check, event-driven backtester, benchmark, leakage tests.
 - **Phase 2 done** (2026-10-06): five published strategies tested on real data, pre-registered, run once. **All five FAIL** the promotion bar. No edge strong enough to trade has been found yet.
 - **Phase 3 built** (2026-10-06): chaos tests, watchdog, daily run and schedule guide. The 30-day paper run needs calendar time on the owner's PC.
@@ -281,6 +281,62 @@ Windows under Wine), running it on live data, and reviewing the code.
 - **Not tested on a real PC:** the XML task (Wine has no working Task Scheduler). The menu
   falls back to the plain task if Windows refuses it.
 
+## Release 0.8.0 (2026-10-07): the local web app
+
+The owner said the system was not easy to run and asked for "a local host site". So
+`QuantAgents.bat` / `QuantAgents.sh` now open QuantAgents in the web browser. The text menu
+still exists (`quantagents menu`).
+
+**What it is**
+- `src/quantagents/webapp.py` (Python's own web server, no new packages) and
+  `src/quantagents/web/` (one page).
+- Boxes:
+  - **Today:** run today, with the live output.
+  - **Paper account:** tiles, the scoreboard, and a chart of paper vs holding, with a table
+    view.
+  - **Last decision:** each symbol and why there was no trade.
+  - **Automatic daily run:** ON and OFF.
+  - **Stop or resume:** STOP, and resume with the phrase.
+  - **Your symbols:** ready-made lists or your own.
+  - **Real money:** the 11 gates, check, preview and test order.
+  - **Tools:** install check, bring an account over, close the app.
+- **No new powers.** Every button runs an ordinary `quantagents` command.
+  - It cannot raise a limit, switch on real money or show a key.
+  - The test order still needs every gate, plus a typed YES.
+- **Symbols are saved carefully:**
+  - only `universe` (and, for crypto, the unit size) changes;
+  - every other setting is kept;
+  - a file that would not load is never written;
+  - stocks and crypto cannot be mixed;
+  - a completely different list is refused once the folder has a paper account.
+- **Double-clicking twice** opens the running app instead of starting a second one.
+- **Two folders** each get their own address (8765, 8766...).
+
+**Safety (tested)**
+- It listens on 127.0.0.1 only.
+- It refuses a request whose host name is not this app (DNS rebinding).
+- Every request needs a random key that only the app's own page knows. A button press from
+  another site's page is refused (Origin check).
+- Strict Content-Security-Policy: no outside scripts, and the page cannot be framed (no
+  hidden clicks).
+- One job at a time. **STOP** always works, even while a job runs.
+- A command that crashes still ends its job, and shows the error.
+
+**Checked**
+- 12 automated tests (`tests/test_webapp.py`).
+- A real browser (Chromium):
+  - light, dark and phone width, with no sideways scrolling and no page errors;
+  - clicks on every main button: a live-data day, stop, a wrong and then the right resume
+    phrase, a refused crypto switch, a bad symbol, the preview, and the test order without
+    YES.
+- Windows under Wine: `QuantAgents.bat` started the app, the page data loaded, the install
+  check ran from a button, and "Close the app" stopped it.
+- Fresh install from the zip (Linux, Python 3.11): every gate green (495 passed, 1 skipped by
+  design). Then `bash QuantAgents.sh` opened the app, and the first button press created the
+  paper account on live prices. The other buttons behaved as above.
+- Not checked: opening the browser on a real Windows PC (Wine has no browser).
+  `QuantAgents.bat` always prints the address, so it can be typed in by hand.
+
 ## Human approvals
 
 | Date | Decision | Owner |
@@ -298,9 +354,10 @@ Windows under Wine), running it on live data, and reviewing the code.
 
 ## Next step
 
-1. **Owner:** unzip `QuantAgents-50-v0.7.0.zip` and double-click `QuantAgents.bat`.
-   - Choose 1 (run today), then 3 (automatic daily run ON).
-   - Let it paper-trade for 30 trading days; choice 2 shows progress.
+1. **Owner:** unzip `QuantAgents-50-v0.8.0.zip` and double-click `QuantAgents.bat`. Your
+   browser opens the app.
+   - Press **Run today's paper day**, then **Turn ON** for the automatic daily run.
+   - Let it paper-trade for 30 trading days; the page shows progress and the scoreboard.
 2. **Owner (optional):** decide the PBO question in the Phase 2 results.
 3. **Real money is your decision.** It needs:
    - a separate crypto folder;

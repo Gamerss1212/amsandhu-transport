@@ -65,7 +65,8 @@ Current phase, progress and human approvals (loaded every session):
 - `src/quantagents/execution/paper.py`: A05 ledger, A50 paper broker, reconciliation.
 - `src/quantagents/execution/live.py`: the real-money mirror (Phase 8). OFF until the owner opens every gate;
   guide in `docs/REAL_MONEY.md`. Edits ask the human first, like risk code.
-- `src/quantagents/menu.py`: the numbered menu that `QuantAgents.bat` / `QuantAgents.sh` open.
+- `src/quantagents/webapp.py` + `src/quantagents/web/`: the local web app that `QuantAgents.bat` / `QuantAgents.sh` open
+  (127.0.0.1 only; host, origin and key checks; no new powers). `menu.py`: the same as a text menu.
 - `src/quantagents/backtest/`, `src/quantagents/validation/`: A43, A44, A39 (research only, never trade).
 - `tests/`: one test file per area. `tests/helpers.py` has builders for fake data and messages.
 

@@ -37,7 +37,7 @@ echo.
 echo === Demo: one decision cycle on synthetic data ===
 ".venv\Scripts\python.exe" -m quantagents demo
 echo.
-echo Setup finished. Next: double-click QuantAgents.bat for the menu. See START_HERE.md.
+echo Setup finished. Next: double-click QuantAgents.bat: it opens in your web browser. See START_HERE.md.
 if /i not "%~1"=="nopause" pause
 exit /b 0
 :fail

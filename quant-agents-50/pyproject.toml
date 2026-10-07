@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "quantagents"
-version = "0.7.0"
+version = "0.8.0"
 description = "QuantAgents-50: a 50-agent quant research and paper-trading starter kit (paper only)."
 readme = "README.md"
 requires-python = ">=3.11"
@@ -42,7 +42,7 @@ quantagents = "quantagents.cli:main"
 where = ["src"]
 
 [tool.setuptools.package-data]
-quantagents = ["py.typed"]
+quantagents = ["py.typed", "web/*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

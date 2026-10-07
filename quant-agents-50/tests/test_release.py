@@ -31,6 +31,7 @@ def test_the_zip_has_the_whole_program_and_nothing_private(tmp_path: Path) -> No
     for need in (
         "START_HERE.md", "QuantAgents.bat", "QuantAgents.sh", "setup.bat", "daily.bat",
         "status.bat", "setup.sh", "pyproject.toml", "docs/REAL_MONEY.md",
+        "src/quantagents/web/index.html", "src/quantagents/web/app.js", "src/quantagents/web/app.css",
         "src/quantagents/data/store.py", "src/quantagents/cli.py", "tests/data/yahoo_spy_2024_03.json",
         "config/default.yaml", "config/us_etfs.example.yaml", ".env.example", "docs/STATUS.md",
     ):  # fmt: skip

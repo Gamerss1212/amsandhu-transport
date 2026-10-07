@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="qa-key" content="__KEY__">
+<title>QuantAgents</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="/app.css">
+<script src="/app.js" defer></script>
+</head>
+<body>
+<header class="top">
+  <div class="brand">
+    <h1>QuantAgents</h1>
+    <span class="muted" id="folder">version __VERSION__</span>
+  </div>
+  <div class="pills" id="pills" aria-live="polite"></div>
+</header>
+
+<main>
+  <div id="banners"></div>
+  <div id="toast" class="toast" role="status" hidden></div>
+
+  <section class="card wide" id="today">
+    <div class="card-head">
+      <h2>Today</h2>
+      <span class="muted" id="today-note"></span>
+    </div>
+    <p class="lead">Downloads today's prices, lets the 25 agents decide, and records the result in the
+      paper account (practice money). It takes about a minute.</p>
+    <div class="row wrap">
+      <button class="primary big" data-action="run_today">Run today's paper day</button>
+      <span class="muted" id="last-run"></span>
+    </div>
+    <div id="job" class="job" hidden>
+      <div class="job-head"><strong id="job-label"></strong> <span class="muted" id="job-time"></span></div>
+      <pre id="job-output"></pre>
+    </div>
+  </section>
+
+  <section class="card wide" id="account">
+    <div class="card-head"><h2>Paper account</h2><span class="muted" id="account-note"></span></div>
+    <div class="tiles" id="tiles"></div>
+    <p class="scoreboard" id="scoreboard"></p>
+    <div class="chart-wrap">
+      <div class="chart-head">
+        <h3>Paper vs simply holding the same symbols, % since the first paper day</h3>
+        <button class="link" id="chart-toggle" type="button">Show as table</button>
+      </div>
+      <div id="chart" class="chart"></div>
+      <div id="chart-table" hidden></div>
+    </div>
+    <h3>Positions</h3>
+    <div id="positions"></div>
+  </section>
+
+  <section class="card wide" id="decision">
+    <div class="card-head"><h2>Last decision</h2><span class="muted" id="decision-note"></span></div>
+    <div id="decisions"></div>
+  </section>
+
+  <section class="card">
+    <h2>Automatic daily run</h2>
+    <p id="schedule-state" class="state"></p>
+    <p class="muted" id="schedule-words"></p>
+    <div class="row">
+      <button data-action="schedule_on">Turn ON</button>
+      <button data-action="schedule_off">Turn OFF</button>
+    </div>
+    <p class="muted small">It runs even when this page is closed. Keep the computer on and signed in.</p>
+  </section>
+
+  <section class="card">
+    <h2>Stop or resume</h2>
+    <p id="kill-state" class="state"></p>
+    <button class="danger big" data-action="stop">STOP all trading now</button>
+    <div class="resume">
+      <label for="phrase">To resume, first read what stopped it, then type the phrase
+        <code id="reset-phrase"></code></label>
+      <div class="row">
+        <input id="phrase" autocomplete="off" spellcheck="false" placeholder="type the phrase">
+        <button data-action="resume">Resume</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Your symbols</h2>
+    <p class="muted small">Now: <span id="symbols-now"></span></p>
+    <div class="presets" id="presets"></div>
+    <label for="symbols">Or type your own, separated by commas (Toronto: <code>XIC.TO</code>,
+      Kraken crypto: <code>BTC-CAD.KRAKEN</code>)</label>
+    <textarea id="symbols" rows="2" spellcheck="false"></textarea>
+    <div class="row"><button data-action="symbols">Save my symbols</button></div>
+    <p class="muted small">One folder holds one paper account. Stocks and crypto need separate folders.</p>
+  </section>
+
+  <section class="card" id="money">
+    <h2>Real money</h2>
+    <p id="money-state" class="state"></p>
+    <p class="muted small" id="money-mirror"></p>
+    <details>
+      <summary>The 11 safety gates (all must be open)</summary>
+      <ul class="gates" id="gates"></ul>
+    </details>
+    <div class="row wrap">
+      <button data-action="live_check">Check (reads your Kraken balance)</button>
+      <button data-action="live_preview">Preview real orders (sends nothing)</button>
+    </div>
+    <div class="row wrap">
+      <input id="confirm" autocomplete="off" placeholder="type YES" size="8">
+      <button data-action="live_test_order">Send a tiny test order</button>
+    </div>
+    <p class="muted small">The guide is <code>docs/REAL_MONEY.md</code> in this folder. Only you can switch
+      real money on, in 8 steps of your own. Not financial advice.</p>
+  </section>
+
+  <section class="card">
+    <h2>Tools</h2>
+    <div class="row wrap">
+      <button data-action="doctor">Check the install</button>
+      <button class="quiet" data-action="quit">Close the app</button>
+    </div>
+    <label for="old-folder">After an update: bring your account over from the older folder</label>
+    <div class="row">
+      <input id="old-folder" autocomplete="off" spellcheck="false" placeholder="C:\QuantAgents-50-old">
+      <button data-action="import">Bring it over</button>
+    </div>
+    <p class="muted small">This copies your account here, then stops the old folder so it can never trade twice.</p>
+  </section>
+</main>
+
+<footer class="muted small">
+  Paper results are not real results. No strategy here has beaten simply holding yet. Not financial advice.
+</footer>
+</body>
+</html>

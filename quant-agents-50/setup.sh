@@ -15,4 +15,4 @@ PY=${PYTHON:-python3}
 .venv/bin/python scripts/check.py
 .venv/bin/python -m quantagents demo
 echo
-echo "Setup finished. Next: bash QuantAgents.sh for the menu (see START_HERE.md)"
+echo "Setup finished. Next: bash QuantAgents.sh: it opens in your web browser (see START_HERE.md)"

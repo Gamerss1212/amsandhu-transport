@@ -5,29 +5,28 @@ In paper mode nothing here can place a real order. If you have armed real money 
 
 ## The easy way
 
-Double-click `QuantAgents.bat` (or `bash QuantAgents.sh`):
-- choice **3** turns the automatic daily run on;
-- choice **4** turns it off.
+Double-click `QuantAgents.bat` (or `bash QuantAgents.sh`). In the **Automatic daily run**
+box, press **Turn ON** (or **Turn OFF**).
 
-The menu picks the time for you:
+The app picks the time for you:
 - **Stocks and ETFs:** Monday to Friday at 3:30 PM.
 - **Crypto:** every day at 7:00 PM.
 
 The times are on this computer's clock, so set it to Alberta time.
 
-**On Windows** the menu makes a Task Scheduler task named
+**On Windows** the app makes a Task Scheduler task named
 `QuantAgents daily (<folder name> <code>)`. The code comes from the folder's full path, so two
 folders never share a task. The task:
 - also runs on battery power;
 - runs as soon as possible after a missed time (computer off or asleep);
 - never starts a second copy while one is running.
 
-If the menu says Windows refused the full settings, set the two missing ones by hand:
+If the app says Windows refused the full settings, set the two missing ones by hand:
 1. Open Task Scheduler and find the task. Open Properties.
 2. **Conditions:** untick "Start the task only if the computer is on AC power".
 3. **Settings:** tick "Run task as soon as possible after a scheduled start is missed".
 
-**On macOS and Linux** the menu adds one cron line.
+**On macOS and Linux** the app adds one cron line.
 
 The rest of this page does the same by hand.
 

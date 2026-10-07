@@ -8,7 +8,7 @@ Real money (crypto on Kraken) is built in, switched off, and only the owner can 
 - **A complete 25-agent core:** all 25 agents are built, tested and wired into one 15-step decision cycle.
 - **25 more agents parked:** the full 50-agent roster stays in the spec, as optional extras to build only when they earn it.
 - **Safety first:** a deterministic risk governor (A49) checks every order, and real money stays locked behind written owner approval.
-- **One file to run it:** `QuantAgents.bat` (Windows) or `bash QuantAgents.sh` installs on the first run, then opens a numbered menu.
+- **One file to run it:** `QuantAgents.bat` (Windows) or `bash QuantAgents.sh` installs on the first run, then opens the app in your web browser (a page on your own computer only).
 
 ## What it is not
 
@@ -20,8 +20,8 @@ Real money (crypto on Kraken) is built in, switched off, and only the owner can 
 
 You need Python 3.11 or newer. **Beginners: read `START_HERE.md`.**
 
-- **Windows:** double-click `QuantAgents.bat`. The first run installs everything, then the menu opens: `1` runs today, `3` schedules the daily run, `2` shows the dashboard.
-- **macOS/Linux:** `bash QuantAgents.sh`, then the same menu.
+- **Windows:** double-click `QuantAgents.bat`. The first run installs everything, then your browser opens the app at `http://127.0.0.1:8765`: press **Run today's paper day**, then **Turn ON** for the automatic daily run.
+- **macOS/Linux:** `bash QuantAgents.sh`, then the same page.
 
 By hand, the same thing:
 
@@ -35,7 +35,7 @@ python -m quantagents demo
 ```
 
 - `demo` runs one full decision cycle of all 25 agents on **synthetic** data (fake symbols SYN_A to SYN_F).
-- `check.py` runs every quality gate: lint, formatting, strict types, 484 tests, and 100% coverage of the risk code.
+- `check.py` runs every quality gate: lint, formatting, strict types, 496 tests, and 100% coverage of the risk code.
 - `python -m quantagents simulate --days 120` runs the full cycle day after day on a fresh paper account.
 
 ### What to expect
@@ -89,7 +89,8 @@ New context and risk agents can only **reduce** risk. If one crashes, the system
 
 | Command | Purpose |
 |---|---|
-| `python -m quantagents --config config/my_universe.yaml menu` | The numbered menu (what `QuantAgents.bat` opens) |
+| `python -m quantagents --config config/my_universe.yaml app` | The local web app (what `QuantAgents.bat` opens); only reachable from this computer |
+| `python -m quantagents --config config/my_universe.yaml menu` | The same choices as a numbered text menu |
 | `python -m quantagents demo` | One decision cycle on synthetic data |
 | `python -m quantagents data fetch --yahoo SPY QQQ --start 2000-01-01` | Download free daily bars (stocks/ETFs, with dividends and splits) into the append-only store |
 | `python -m quantagents data fetch --ccxt kraken:BTC/USD` | Free daily crypto candles (needs `pip install -e ".[data]"`) |
@@ -127,6 +128,7 @@ New context and risk agents can only **reduce** risk. If one crashes, the system
 - **Stress before every entry.** A45 shrinks new trades whose bad-day loss would break the daily limit, then re-checks the book.
 - **Honest scoring.** A35 only scores a prediction after its horizon has passed and counts overlapping forecasts once. It can only make an agent less confident, never more.
 - **Audit trail.** Every cycle is logged in a hash chain, so edits are detectable.
+- **The web app is local and locked.** It listens on 127.0.0.1 only, refuses any other host name or another site's page, needs a random key only its own page knows, cannot be framed, and adds no powers: every button runs an ordinary command.
 - **Real money is a mirror, not a second brain.** It copies the paper account's weights onto Kraken, scaled to `live.budget` (0 by default). It needs 11 gates open, including your dated approval row in `docs/STATUS.md` and the approval phrase in your `.env`. It reconciles with the exchange first, sells only what it bought, uses capped limit orders, and engages the kill switch on any error. It has no withdrawal code. Details: `docs/REAL_MONEY.md`.
 
 ## Project map
@@ -140,7 +142,7 @@ New context and risk agents can only **reduce** risk. If one crashes, the system
 | `config/default.yaml` | Every limit and setting |
 | `config/agents.yaml` | The roster: 25 core agents and 25 parked |
 | `src/quantagents/` | The code (one module per agent in `agents/`) |
-| `tests/` | 484 tests |
+| `tests/` | 496 tests |
 | `.claude/` | Settings, hooks, skills, subagents and rules for Claude Code |
 
 ## Canada notes
