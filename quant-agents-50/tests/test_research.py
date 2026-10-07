@@ -12,6 +12,7 @@ import pytest
 
 from quantagents.backtest import library
 from quantagents.backtest.grid import BENCHMARK, research_grid
+from quantagents.backtest.strategies import strategy_grid
 from quantagents.cli import main
 from quantagents.config import AppConfig
 from quantagents.data.synthetic import block_bootstrap_market
@@ -156,3 +157,30 @@ def test_research_cli_runs_in_parallel(
     assert (tmp_path / "out" / "grid.md").exists() and (tmp_path / "out" / "grid.csv").exists()
     assert main(["research", "--universe", "nameonly"]) == 2
     assert main(["research", "--universe", "x=missing.csv"]) == 2
+
+
+@pytest.mark.parametrize("family", ["hold_brake", "inv_vol", "dd_brake"])
+def test_round2_families_pass_the_red_team(family: str, market: MarketData) -> None:
+    for name, factory in strategy_grid(family, AppConfig()):
+        report = RedTeamAuditor(probes=3, window=20).audit(factory, market, name=name)
+        assert report.passed and report.findings == (), (name, report.findings)
+
+
+def test_round2_rules() -> None:
+    market = wavy_market(("UP", "SLIDE", "DOWN"), n=400, drifts=(0.001, -0.0005, -0.002))
+    view = market.view_at(399)
+    # SLIDE and DOWN are both below their average and down on the year
+    assert library.hold_brake(200, 252)(market)(view) == {"UP": 1 / 3}
+    weights = library.inverse_vol(63)(market)(view)
+    assert set(weights) == {"UP", "SLIDE", "DOWN"} and sum(weights.values()) == pytest.approx(1)
+    trend = library.inverse_vol(63, trend_sma=200)(market)(view)
+    assert set(trend) == {"UP"} and trend["UP"] == pytest.approx(weights["UP"])
+    up = [100.0 * 1.002**k for k in range(300)]
+    crash = [up[-1] * 0.98**k for k in range(1, 21)]
+    rebound = [crash[-1] * 1.02**k for k in range(1, 61)]
+    path = path_market(up + crash + rebound, spread=0.001)
+    brake = library.drawdown_brake(0.20)(path)
+    held = [bool(brake(path.view_at(t))) for t in range(260, len(path))]
+    assert held[0] and not held[300 + 12 - 260] and held[-1]  # out after -20%, back in later
+    with pytest.raises(ValueError, match="between 0 and 1"):
+        library.drawdown_brake(1.5)

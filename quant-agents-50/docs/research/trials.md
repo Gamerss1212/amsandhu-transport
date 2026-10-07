@@ -372,3 +372,15 @@ Every backtest variant ever run counts as a trial (spec section 63). Add one row
 | 2026-10-06 | donchian | donchian_100_50@crypto (grid 2026-10-06, vectorized, 0.15% one way; 2x costs Sharpe 0.98) | crypto.csv 51cdd990d23b | 0.99 | grid variant (counted) |
 | 2026-10-06 | buy_and_hold | buy_and_hold@crypto (grid 2026-10-06, vectorized, 0.15% one way; 2x costs Sharpe 0.72) | crypto.csv 51cdd990d23b | 0.72 | benchmark |
 | 2026-10-06 | noise_control | grid@crypto (20 block-bootstrap panels x 87 variants) | synthetic (bootstrap of crypto.csv 51cdd990d23b) | 1.12 | best-of-grid Sharpe on noise: median 1.12, 95th percentile 1.50 |
+| 2026-10-07 | hold_brake | hold_brake_200_252 (validate, vectorized, 0.15% one way) | multi_asset.csv 19e95947f2a0 | 0.52 | FAIL (A44 + A39, reported variant) |
+| 2026-10-07 | hold_brake | hold_brake_150_126 (validate, vectorized, 0.15% one way) | multi_asset.csv 19e95947f2a0 | 0.62 | variant (counted) |
+| 2026-10-07 | hold_brake | hold_brake_200_252 (validate, vectorized, 0.15% one way) | crypto.csv 51cdd990d23b | 1.03 | FAIL (A44 + A39, reported variant) |
+| 2026-10-07 | hold_brake | hold_brake_150_126 (validate, vectorized, 0.15% one way) | crypto.csv 51cdd990d23b | 1.03 | variant (counted) |
+| 2026-10-07 | inv_vol | inv_vol_63 (validate, vectorized, 0.15% one way) | multi_asset.csv 19e95947f2a0 | 0.69 | FAIL (A44 + A39, reported variant) |
+| 2026-10-07 | inv_vol | inv_vol_63_trend (validate, vectorized, 0.15% one way) | multi_asset.csv 19e95947f2a0 | 0.74 | variant (counted) |
+| 2026-10-07 | inv_vol | inv_vol_63 (validate, vectorized, 0.15% one way) | crypto.csv 51cdd990d23b | 0.77 | FAIL (A44 + A39, reported variant) |
+| 2026-10-07 | inv_vol | inv_vol_63_trend (validate, vectorized, 0.15% one way) | crypto.csv 51cdd990d23b | 0.91 | variant (counted) |
+| 2026-10-07 | dd_brake | dd_brake_20 (validate, vectorized, 0.15% one way) | multi_asset.csv 19e95947f2a0 | 0.51 | FAIL (A44 + A39, reported variant) |
+| 2026-10-07 | dd_brake | dd_brake_30 (validate, vectorized, 0.15% one way) | multi_asset.csv 19e95947f2a0 | 0.60 | variant (counted) |
+| 2026-10-07 | dd_brake | dd_brake_20 (validate, vectorized, 0.15% one way) | crypto.csv 51cdd990d23b | 0.63 | FAIL (A44 + A39, reported variant) |
+| 2026-10-07 | dd_brake | dd_brake_30 (validate, vectorized, 0.15% one way) | crypto.csv 51cdd990d23b | 0.84 | variant (counted) |

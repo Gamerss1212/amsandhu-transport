@@ -177,6 +177,19 @@ def strategy_grid(name: str, cfg: AppConfig) -> list[tuple[str, StrategyFactory]
             (f"donchian_{e}_{x}", library.donchian(e, x))
             for e, x in ((55, 20), (20, 10), (100, 50))
         ],
+        # round 2 (docs/research/round2-preregistration.md), fixed before any run
+        "hold_brake": lambda: [
+            ("hold_brake_200_252", library.hold_brake(200, 252)),
+            ("hold_brake_150_126", library.hold_brake(150, 126)),
+        ],
+        "inv_vol": lambda: [
+            ("inv_vol_63", library.inverse_vol(63)),
+            ("inv_vol_63_trend", library.inverse_vol(63, trend_sma=200)),
+        ],
+        "dd_brake": lambda: [
+            ("dd_brake_20", library.drawdown_brake(0.20)),
+            ("dd_brake_30", library.drawdown_brake(0.30)),
+        ],
     }
     if name not in grids:
         raise KeyError(f"unknown strategy {name!r}; choose from {sorted(grids)}")
@@ -196,4 +209,7 @@ DEFAULT_VARIANT = {
     "sma_cross": "sma_cross_50_200",
     "dual_mom": "dual_mom_252_top1",
     "donchian": "donchian_55_20",
+    "hold_brake": "hold_brake_200_252",
+    "inv_vol": "inv_vol_63",
+    "dd_brake": "dd_brake_20",
 }

@@ -293,3 +293,94 @@ def donchian(entry: int = 55, exit_: int = 20) -> StrategyFactory:
         return _Donchian(entry, exit_)
 
     return factory
+
+
+# Round 2 (2026-10-07, docs/research/round2-preregistration.md): start from holding, step out less.
+
+
+def hold_brake(window: int = 200, lookback: int = 252) -> StrategyFactory:
+    """Equal-weight hold; skip a symbol only while it is below its average AND its return is negative."""
+
+    def factory(market: MarketData) -> Strategy:
+        def strategy(view: MarketView) -> Weights:
+            n = len(view.symbols)
+            out: Weights = {}
+            span = max(window, lookback + 1)
+            for s in view.symbols:
+                c = _closes(view, s, span)
+                if len(c) < span or not np.all(np.isfinite(c)):
+                    continue
+                below = c[-1] < float(np.mean(c[-window:]))
+                falling = c[-1] < c[-(lookback + 1)]
+                if not (below and falling):
+                    out[s] = 1.0 / n
+            return out
+
+        return strategy
+
+    return factory
+
+
+def inverse_vol(window: int = 63, trend_sma: int | None = None) -> StrategyFactory:
+    """Monthly risk parity: weights in proportion to 1 / volatility, optionally trend-filtered."""
+
+    def compute(view: MarketView) -> Weights:
+        inv: dict[str, float] = {}
+        for s in view.symbols:
+            vol = _ann_vol(_closes(view, s, window + 1), window)
+            if math.isfinite(vol) and vol > 0:
+                inv[s] = 1.0 / vol
+        total = sum(inv.values())
+        out: Weights = {}
+        for s, x in inv.items():
+            if trend_sma is not None:
+                c = _closes(view, s, trend_sma)
+                if len(c) < trend_sma or not np.all(np.isfinite(c)) or c[-1] <= np.mean(c):
+                    continue
+            out[s] = x / total
+        return out
+
+    def factory(market: MarketData) -> Strategy:
+        return Monthly(compute)
+
+    return factory
+
+
+class _DrawdownBrake:
+    def __init__(self, max_drawdown: float, high_window: int, reentry_sma: int) -> None:
+        self.max_drawdown, self.high_window, self.reentry_sma = (
+            max_drawdown,
+            high_window,
+            reentry_sma,
+        )
+        self.out: set[str] = set()
+
+    def __call__(self, view: MarketView) -> Weights:
+        n = len(view.symbols)
+        weights: Weights = {}
+        span = max(self.high_window, self.reentry_sma)
+        for s in view.symbols:
+            c = _closes(view, s, span)
+            if len(c) < span or not np.all(np.isfinite(c)):
+                continue
+            if s in self.out:
+                if c[-1] > float(np.mean(c[-self.reentry_sma :])):
+                    self.out.discard(s)
+            elif c[-1] <= (1.0 - self.max_drawdown) * float(np.max(c[-self.high_window :])):
+                self.out.add(s)
+            if s not in self.out:
+                weights[s] = 1.0 / n
+        return weights
+
+
+def drawdown_brake(
+    max_drawdown: float = 0.20, high_window: int = 252, reentry_sma: int = 50
+) -> StrategyFactory:
+    """Equal-weight hold; sell a symbol X% below its 1-year high, buy back above its 50-day average."""
+    if not 0 < max_drawdown < 1:
+        raise ValueError("max_drawdown must be between 0 and 1")
+
+    def factory(market: MarketData) -> Strategy:
+        return _DrawdownBrake(max_drawdown, high_window, reentry_sma)
+
+    return factory

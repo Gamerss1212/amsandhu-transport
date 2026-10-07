@@ -10,7 +10,7 @@ Updated: 2026-10-07 (release 0.9.0: slim download; the owner switches real money
 - Mode: **paper**. Autonomy level: **1**. Live trading: **not approved**.
 - **Real money: built, OFF.** The owner asked for it on 2026-10-06. It is a crypto-only mirror for Kraken (`docs/REAL_MONEY.md`). It sends nothing until the owner opens all 11 gates, including a dated approval row below. It was tested against a fake exchange and real Kraken prices, never a real account.
 - **Simple to run:** `QuantAgents.bat` (Windows) or `bash QuantAgents.sh` installs on the first run, then opens the app in the web browser (a page on this computer only, `http://127.0.0.1:8765`).
-- Tests: 503, all gates green, 97% coverage overall, 100% branch coverage on risk.
+- Tests: 507, all gates green, 97% coverage overall, 100% branch coverage on risk.
 - **Phase 1 passed** (2026-10-06): real data store, free data sources, split check, event-driven backtester, benchmark, leakage tests.
 - **Phase 2 done** (2026-10-06): five published strategies tested on real data, pre-registered, run once. **All five FAIL** the promotion bar. No edge strong enough to trade has been found yet.
 - **Phase 3 built** (2026-10-06): chaos tests, watchdog, daily run and schedule guide. The 30-day paper run needs calendar time on the owner's PC.
@@ -383,6 +383,20 @@ The owner asked to "organize the final" (too much random stuff) and to make real
 - Under Wine, `setup.bat` from the slim zip skipped the tests, passed the install check and
   ran the demo.
 
+## Research round 2 (2026-10-07)
+
+Three new families of my own, pre-registered, run once each on the 8 ETFs and BTC+ETH (6 runs,
+12 trials). Report: `docs/research/round2-2026-10-07.md`.
+
+| Family | Idea | Best result | Verdict |
+|---|---|---|---|
+| `hold_brake` | hold; step out only when below the 200-day average AND down on the year | crypto Sharpe 1.03 vs 0.72 holding (t 2.97, PBO 0.92) | FAIL |
+| `inv_vol` | monthly risk parity (1 / volatility) | ETFs Sharpe 0.69 vs 0.60 holding (PBO 0.84) | FAIL |
+| `dd_brake` | sell 20% below the 1-year high, buy back above the 50-day average | below holding everywhere | FAIL |
+
+- **Still no edge proven.** Two came close, but neither clears every check (details in the report).
+- Nothing was tuned after the runs. The paper account's rules did not change.
+
 ## Human approvals
 
 | Date | Decision | Owner |
@@ -391,7 +405,7 @@ The owner asked to "organize the final" (too much random stuff) and to make real
 
 ## Open issues
 
-- Real-data research so far: Phase 2 (5 families) and the research grid (87 variants x 4 universes): no strategy passes. Synthetic results prove nothing about real markets.
+- Real-data research so far: Phase 2 (5 families), the research grid (87 variants x 4 universes) and round 2 (3 new families): no strategy passes. Synthetic results prove nothing about real markets.
 - The default config universe is the synthetic SYN_A..SYN_F. To paper-trade real symbols, put them in `universe.symbols` (or `[]` for every symbol in the file). `cycle` now says so when nothing can trade.
 - Export stocks and crypto to separate CSVs: crypto trades on weekends, so a mixed file has gaps that make A02 block the stocks.
 - On the synthetic data the full chain rarely says GO: two teams must agree and the edge must beat 1.5x costs. That is by design.
