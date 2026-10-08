@@ -180,10 +180,10 @@ def create_app(core, *, token: Optional[str] = None, on_shutdown=None) -> FastAP
         return core.bus.since(since, limit=min(limit, 2000))
 
     @api.post("/api/system/shutdown")
-    def shutdown():
-        out = core.shutdown()
+    async def shutdown():
+        out = await asyncio.to_thread(core.shutdown)
         if on_shutdown:
-            asyncio.get_event_loop().call_later(0.5, on_shutdown)
+            asyncio.get_running_loop().call_later(0.5, on_shutdown)
         return out
 
     # ------------------------------------------------------------ Command Center
@@ -356,7 +356,7 @@ def create_app(core, *, token: Optional[str] = None, on_shutdown=None) -> FastAP
 
     @api.post("/api/paper/balance")
     def paper_balance(b: BalanceIn):
-        return core.paper.set_balance(b.amount, "owner")
+        return core.set_paper_balance(b.amount)
 
     @api.post("/api/reconcile")
     def reconcile():
@@ -432,6 +432,7 @@ def create_app(core, *, token: Optional[str] = None, on_shutdown=None) -> FastAP
             return
         await sock.accept()
         sid = core.bus.subscribe()
+        rtask: Optional[asyncio.Task] = None
         try:
             since = int(sock.query_params.get("since", "0") or 0)
             missed = core.bus.since(since, limit=500) if since else []
@@ -440,20 +441,23 @@ def create_app(core, *, token: Optional[str] = None, on_shutdown=None) -> FastAP
 
             async def reader():
                 while True:
-                    await sock.receive_text()          # pings from the page; a disconnect raises
-
+                    await sock.receive_text()          # pings from the page; a disconnect ends the loop
             rtask = asyncio.create_task(reader())
             while not rtask.done():
                 evs = await asyncio.to_thread(core.bus.drain, sid, 1.0)
                 for ev in evs:
                     await sock.send_text(dumps(clean(ev)))
-            rtask.result()
         except (WebSocketDisconnect, RuntimeError):
             pass
         except Exception as e:                               # noqa: BLE001
             log.warning(f"websocket closed: {type(e).__name__}")
         finally:
             core.bus.unsubscribe(sid)
+            if rtask is not None:
+                if rtask.done():
+                    rtask.exception() if not rtask.cancelled() else None      # mark the disconnect as seen
+                else:
+                    rtask.cancel()
 
     # ------------------------------------------------------------ the compiled frontend
     def core_ack():

@@ -1,0 +1,117 @@
+# Requirements matrix — Trading AI 1.0.0
+
+Status meanings:
+* **DONE**: implemented and exercised by a test or by the self-test.
+* **PARTIAL**: implemented, with a limitation stated in the same row.
+* **REQUIRES CONNECTION**: the interface exists, but it needs a credential, paid dataset or service this build does not have.
+* **NOT DONE**: not built.
+
+How it was verified:
+* **Unit tests**: 57 tests (`backend/tests`).
+* **Self-test**: `START_TRADING_AI.exe --selftest` runs 18 steps over HTTP and WebSocket against the real server. It passed on the built Windows exe under Wine.
+* **Real-data run**: the dashboard and API were exercised on live Coinbase, Kraken and Yahoo data.
+
+The exe has been tested under Wine on Linux, **not on a physical Windows PC**.
+
+## Launch and packaging
+
+| Requirement | Status | Evidence / limitation |
+|---|---|---|
+| One launcher `START_TRADING_AI.exe`, no command prompt, npm or Python for the user | DONE | PyInstaller one-folder build (`packaging/trading_ai.spec`); Python, libraries and the compiled dashboard are inside `_internal/`. |
+| Starts backend on 127.0.0.1, auto-selects a free port from 8000 | DONE | `launcher.free_port`; never binds 0.0.0.0. |
+| Starts DB, trading engine, agents, WebSocket, risk, frontend; opens the browser | DONE | 15 start-up checks shown on `/health`; all 15 passed in the exe under Wine. |
+| Single instance (a second double-click opens the running dashboard) | DONE | OS file lock + `/api/system/ping` probe; verified under Wine. |
+| Clean stop (console close, Ctrl+C, Shut down button) with state saved | DONE | Windows console handler + `/api/system/shutdown`; bots, risk state and a DB backup are saved. |
+| Code signing | NOT DONE | Unsigned: SmartScreen may warn on first run. |
+
+## Stack
+
+| Requirement | Status | Evidence / limitation |
+|---|---|---|
+| Python + FastAPI backend | DONE | `backend/tradingai/api/server.py` |
+| React + TypeScript frontend | DONE | `frontend/` (Vite build, strict TypeScript) |
+| WebSockets for live updates | DONE | `/ws`: catch-up of missed events on reconnect. |
+| SQLite (transactions, migrations) | DONE | WAL, synchronous=FULL, schema v2. |
+| DuckDB + Parquet market store | DONE | Partitioned by provider/symbol/timeframe/year/month; provenance hashes stored. |
+
+## Markets and data
+
+| Requirement | Status | Evidence / limitation |
+|---|---|---|
+| Crypto | DONE | Coinbase and Kraken public candles (real-time completed bars). Paper trading only via the paper broker. |
+| Stocks / ETFs | DONE | Yahoo chart data; daily bars become available at the NYSE close (early closes included). Yahoo intraday history is limited by Yahoo. |
+| Forex | PARTIAL | Yahoo reference mid prices only: no dealer bid/ask. FX financing/swap is not modelled. |
+| Indices | PARTIAL | Reference only (SPX, NDX, DJI, RUT); not tradable, by design. |
+| Futures | PARTIAL | Yahoo continuous series with multipliers and quarterly roll windows for equity-index futures. No per-contract-month data, so rolls are approximated (positions flat in the roll window). |
+| Funding rates, order book, on-chain, economic calendar, news | REQUIRES CONNECTION | The features, agents and strategy templates that need these are marked UNAVAILABLE and abstain. No news or economic-calendar feed is connected and none is fabricated. |
+| Data quality (gaps, bad ticks, timestamps, staleness) and provenance | DONE | `data/quality.py`; quality score on every series; SHA-256 per dataset. |
+| Corporate actions | PARTIAL | Uses Yahoo adjusted closes, labelled as adjusted. No separate split/dividend ledger. |
+| Market calendars | DONE | NYSE holidays and early closes, CME, FX sessions, 24/7 crypto. |
+| Offline / DEMO data | DONE | Deterministic synthetic DEMO instruments, labelled SIMULATED everywhere they appear. |
+
+## Strategies, indicators, regimes, agents, ML
+
+| Requirement | Status | Evidence / limitation |
+|---|---|---|
+| Hundreds of strategy templates | DONE | 1,418 templates: 101 generators × 6 filters × 4 exits. 26 near-duplicate templates were pruned. 1,403 can run; 15 need data that is not connected. |
+| Hundreds of indicators / features | DONE | 226 registered features (123 distinct functions), all tested to use only past data. 19 need external data. |
+| Regime detection | DONE | Trend / volatility / character rules, a 2-state HMM and CUSUM change points. The HMM probability is labelled "uncalibrated". |
+| Multi-timeframe analysis | DONE | Each decision also evaluates completed higher-timeframe bars (agent T11). |
+| 100+ AI agents | DONE | 102 agents in 10 groups. 15 vote; the rest advise, veto or report. 20 need data that is not connected and say so. |
+| Ensemble without double counting | DONE | Votes are averaged within each information cluster first. |
+| Confidence / probabilities | DONE (by design) | No probability is shown unless a calibrated model passes evaluation. None has passed, so none is shown. |
+| Machine learning | PARTIAL | Logistic regression, boosted stumps, Platt calibration, triple-barrier labels and purged walk-forward exist in `ml/`. On real BTC data no model beat the base rate (AUC 0.51), so ML is not used in live decisions and has no page. |
+
+## Research engine (Strategy lab)
+
+| Requirement | Status | Evidence / limitation |
+|---|---|---|
+| Chronological train / validation / test, out-of-sample | DONE | 60/20/20 split; parameters are chosen on train only. |
+| Walk-forward | DONE | 3, 5 or 8 folds by depth. |
+| Monte Carlo | DONE | Trade reshuffle, stationary bootstrap, cost shocks, missed fills. |
+| Parameter stability, regime tests, cost stress (1.25×–3×), capacity | DONE | Capacity runs at DEEP depth only and needs volume data. |
+| Multiple-testing protection, Deflated Sharpe, PBO | DONE | Every run is recorded in the ledger and counted as a trial; PSR, DSR, Newey-West t, bootstrap interval and PBO (CSCV). |
+| Realistic costs | DONE | Fees, spread, volatility- and size-based slippage, participation cap and partial fills, futures multiplier, FX conversion. Cost-model defaults are labelled assumptions. |
+| Backtest vs paper vs live comparison | DONE | `/api/research/compare`. The live column stays empty until live trading has happened. |
+| Verdicts can never recommend live trading | DONE | The only verdicts are REJECT, RESEARCH FURTHER and PAPER TEST; fewer than 10 test trades means REJECT. |
+
+## Trading, risk, execution, brokers
+
+| Requirement | Status | Evidence / limitation |
+|---|---|---|
+| Paper trading | DONE | Decimal ledger, idempotent orders, spot vs margin accounting, partial fills; ledger-balance tests. |
+| Shadow trading | DONE | Full pipeline; orders are recorded and never sent (test). |
+| Live trading with explicit activation | PARTIAL | Arming requires: a live connection, every readiness check passing (including "adapter verified by an acceptance test"), caps, and the typed acknowledgement. No adapter has passed a live acceptance test, so **live arming is locked in this build**. Live never resumes by itself after a restart. |
+| Broker integrations | REQUIRES CONNECTION | Alpaca, OANDA, Kraken and IBKR adapters were written from the brokers' documentation and are marked UNVERIFIED. Coinbase Advanced needs ES256 signing, which this build does not include. Credentials go into the DPAPI vault. |
+| Broker eligibility, jurisdiction, permissions | DONE (by design) | Product permission comes from the broker's reported capabilities. The software cannot override a broker's rules. Withdrawal permission is never requested. |
+| Deterministic risk the AI cannot bypass | DONE | Order size, position, gross exposure, leverage, asset class, correlated cluster, open positions, liquidity, stale data, duplicate orders, order rate, fat-finger price and quantity, account/environment match, known market, contract multiplier, market open, reconciliation. Reduce-only claims are verified against positions. Each check has a test. |
+| Daily / weekly loss and drawdown locks; kill switch | DONE | Locks persist across restarts; re-arming needs the typed phrase; raising a limit needs a typed phrase. |
+| Execution algorithms | PARTIAL | TWAP, VWAP, POV and limit-with-timeout exist and are tested. Bots currently send market orders; the algorithms are not yet selectable per bot. |
+| Portfolio optimization | PARTIAL | Ledoit-Wolf, inverse volatility, risk parity, minimum variance, HRP and mean-variance exist and are tested. Bots are sized per trade from the risk budget; the optimizer does not yet allocate across bots. |
+| Audit log | DONE | Hash-chained; verified at every start and in the self-test. |
+| Crash recovery | DONE | Uncertain orders are resolved by asking the broker. Paper and shadow bots resume; live does not. The kill switch survives restarts (test). |
+| Reconciliation | DONE (paper) / PARTIAL (live) | Paper: positions rebuilt from fills vs stored positions, plus a ledger check, at start-up and every 5 minutes. Live: compared against the broker, but never exercised because live is locked. |
+| Clock sync check | DONE | Measured from data-provider Date headers (1-second resolution). |
+
+## Pages
+
+| Requirement | Status | Evidence / limitation |
+|---|---|---|
+| Exactly three pages | DONE | Command Center, Broker & Money, Live Intelligence. Details open in drawers and dialogs. |
+| Command Center | DONE | Candlestick chart with fills; START/STOP BOT; paper/shadow mode; bots; positions; profit and loss; regime and agents; risk meters and editable limits; Strategy lab. |
+| Broker & Money | DONE | Account and balances; paper balance setting; connections (vault, test, remove); capability matrix; live readiness and arming; orders and fills; reconciliation. |
+| Live Intelligence | DONE | Decision feed with agent votes, conflicts, vetoes, risk checks, execution and audit trail; live event stream; system health; research ledger; agent roster. |
+| SIMULATED labels | DONE | Paper balances, DEMO prices and backtests on simulated data are labelled on every page. |
+| Works at phone width | DONE | No horizontal scrolling at 390 px (checked in Chromium). |
+
+## Known gaps
+
+1. Not tested on a physical Windows PC; tested only under Wine.
+2. No broker adapter is verified against a real account, so live trading cannot be armed.
+3. No news, economic-calendar, funding, order-book or on-chain feeds are connected.
+4. Machine-learning models and the portfolio optimizer are not used in live decisions.
+5. Execution algorithms are not selectable per bot.
+6. Futures use continuous series; there is no per-contract roll data.
+7. FX financing is not modelled.
+8. The program is not code-signed.
+9. No GPU acceleration.

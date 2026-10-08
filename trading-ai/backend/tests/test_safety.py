@@ -83,6 +83,60 @@ def test_excess_leverage_and_exposure_are_denied():
     assert not d.approved and {"gross exposure", "leverage"} <= failed(d)
 
 
+def pos(qty, price, market="crypto", mult=1):
+    return {"qty": D(qty), "price": D(price), "multiplier": D(mult), "market": market}
+
+
+def test_position_limit_denied_when_adding_to_a_large_position():
+    held = {"COINBASE:BTC-USD": pos("0.41", 60000)}                    # 24.6% of equity already; +0.6% breaks 25%
+    d = RiskService().check(req(quantity=D("0.01"), sized_target=D("0.01")), snap(positions=held))
+    assert not d.approved and "position limit" in failed(d)
+
+
+def test_asset_class_and_correlated_cluster_limits():
+    held = {"COINBASE:ETH-USD": pos(10, 3000), "COINBASE:SOL-USD": pos(100, 150)}   # 45k crypto
+    o = req(quantity=D("0.1"), sized_target=D("0.1"))                             # +6k BTC
+    d = RiskService().check(o, snap(positions=held, clusters=[["COINBASE:BTC-USD", "COINBASE:ETH-USD",
+                                                                 "COINBASE:SOL-USD"]]))
+    assert not d.approved and {"asset-class exposure", "correlated exposure"} <= failed(d)
+
+
+def test_open_positions_cap():
+    held = {f"US:X{i}": pos(1, 100, "stock") for i in range(10)}
+    d = RiskService().check(req(), snap(positions=held))
+    assert not d.approved and "open positions" in failed(d)
+
+
+def test_liquidity_and_spread_checks():
+    d = RiskService().check(req(), snap(last_volume=0.05, spread_bps=80.0))     # 20% of the bar's volume, wide spread
+    assert not d.approved and {"liquidity", "spread"} <= failed(d)
+
+
+def test_event_restriction_blocks_entries():
+    d = RiskService().check(req(), snap(event_block="FOMC in 10 minutes"))
+    assert not d.approved and "no event restriction" in failed(d)
+
+
+def test_order_rate_limit():
+    rs = RiskService(Limits(max_orders_per_minute=3, duplicate_window_s=0))
+    for i in range(3):
+        assert rs.check(req(client_order_id=f"R{i}", quantity=D("0.01") + D(i) / 1000,
+                            sized_target=D("0.02")), snap()).approved
+    d = rs.check(req(client_order_id="R9", quantity=D("0.015"), sized_target=D("0.02")), snap())
+    assert not d.approved and "order rate" in failed(d)
+
+
+def test_weekly_loss_and_drawdown_locks():
+    rs = RiskService(Limits(max_daily_loss_pct=0.5, max_weekly_loss_pct=0.06, max_drawdown_pct=0.5))
+    rs.on_equity(D(100_000), "2026-10-05", "2026-W41")
+    rs.on_equity(D(97_000), "2026-10-06", "2026-W41")             # new day: daily reference resets
+    assert rs.on_equity(D(93_900), "2026-10-07", "2026-W41") == ["weekly loss"]
+    rs2 = RiskService(Limits(max_daily_loss_pct=0.5, max_weekly_loss_pct=0.5, max_drawdown_pct=0.15))
+    rs2.on_equity(D(100_000), "2026-09-01", "2026-W36")
+    rs2.on_equity(D(120_000), "2026-09-20", "2026-W38")
+    assert rs2.on_equity(D(101_000), "2026-10-07", "2026-W41") == ["drawdown"]   # 15.8% below the 120k peak
+
+
 def test_duplicate_order_is_blocked_and_counted():
     rs = RiskService()
     assert rs.check(req(), snap()).approved
@@ -288,3 +342,42 @@ def test_account_view_with_no_positions(tmp_path):
         assert v["realized"] == "0.00" and v["unrealized"] == "0.00" and v["badge"] == "SIMULATED"
     finally:
         app.shutdown()
+
+
+def test_api_guard_and_shutdown(tmp_path):
+    """Through the real ASGI app: token, Host and Origin checks, then the Shut down button stops the core."""
+    from fastapi.testclient import TestClient
+
+    from tradingai.api.server import create_app
+    from tradingai.app import App
+    app = App(str(tmp_path / "home"), offline=True, start_loop=False)
+    stopped = []
+    api = create_app(app, token="T0K", on_shutdown=lambda: stopped.append(True))
+    c = TestClient(api, base_url="http://127.0.0.1:8000")
+    assert c.get("/api/overview").status_code == 401
+    assert c.get("/api/overview", headers={"X-TA-Token": "T0K"}).json()["mode"] == "paper"
+    assert c.get("/health", headers={"Host": "attacker.example"}).status_code == 421
+    assert c.post("/api/bot/start", headers={"X-TA-Token": "T0K", "Origin": "http://attacker.example"}).status_code == 403
+    r = c.post("/api/mode", json={"mode": "live"}, headers={"X-TA-Token": "T0K"})
+    assert r.status_code == 403
+    r = c.post("/api/system/shutdown", headers={"X-TA-Token": "T0K", "Origin": "http://127.0.0.1:8000"})
+    assert r.status_code == 200 and r.json()["stopped"] is True
+    assert app.state.state == "SHUTTING_DOWN"
+
+
+def test_paper_balance_change_is_not_a_loss_and_references_survive_restart(tmp_path):
+    from tradingai.app import App
+    home = str(tmp_path / "home")
+    app = App(home, offline=True, start_loop=False)
+    app.tick()                                               # sets the day's reference at 100,000
+    app.set_paper_balance(D(25_000))
+    app.tick()
+    assert app.risk.trading_locked is None                   # a balance change is not a 75% loss
+    assert app.risk.day_start_equity == D("25000.00")
+    app.shutdown()
+    app2 = App(home, offline=True, start_loop=False)
+    try:
+        assert app2.risk.day_start_equity == D("25000.00")   # a restart does not reset the loss allowance
+        assert app2.state.state == "READY"
+    finally:
+        app2.shutdown()

@@ -193,11 +193,14 @@ def _reference_frames() -> list[FeatureFrame]:
 CACHE_FILE = __import__("pathlib").Path(__file__).with_name("library_cache.json")
 
 
-def _fingerprint() -> str:
+def _fingerprint() -> str | None:
     import hashlib
     import inspect
     from tradingai.strategies import signals
-    src = inspect.getsource(signals) + inspect.getsource(entry_mask) + inspect.getsource(apply_filter)
+    try:
+        src = inspect.getsource(signals) + inspect.getsource(entry_mask) + inspect.getsource(apply_filter)
+    except (OSError, TypeError):           # a packaged build without source files: the shipped cache was made from it
+        return None
     return hashlib.sha256(src.encode()).hexdigest()[:16]
 
 
@@ -211,7 +214,7 @@ def build() -> dict:
     dropped: list[dict] = []
     try:
         d = json.loads(CACHE_FILE.read_text())
-        if d.get("fingerprint") == fp:
+        if d.get("fingerprint") == fp or (fp is None and d.get("kept")):
             kept, dropped = [tuple(k) for k in d["kept"]], d["dropped"]
     except (OSError, ValueError, KeyError):
         pass

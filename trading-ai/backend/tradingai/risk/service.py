@@ -173,8 +173,10 @@ class RiskService:
                     f"order {qty} vs sized target {o.sized_target}")
             # duplicate orders
             now = time.time()
-            self.recent = [r for r in self.recent if now - r[0] <= L.duplicate_window_s]
-            dup = any(r[1] == o.client_order_id or (r[2], r[3], r[4]) == (o.instrument_id, o.side, str(qty))
+            # keep a full minute for the order-rate check; duplicates are judged within their own window
+            self.recent = [r for r in self.recent if now - r[0] <= max(60.0, L.duplicate_window_s)]
+            dup = any(now - r[0] <= L.duplicate_window_s and
+                      (r[1] == o.client_order_id or (r[2], r[3], r[4]) == (o.instrument_id, o.side, str(qty)))
                       for r in self.recent)
             if dup:
                 self.counters["duplicates_blocked"] += 1
@@ -337,6 +339,18 @@ class RiskService:
                    severity="warning" if raising else "info", data={"changes": changes})
         return asdict(self.limits)
 
+    def rebase(self, equity: Decimal, reason: str) -> None:
+        """An owner deposit/withdrawal or a paper balance change is not a profit or loss: the loss and drawdown
+        references move to the new equity (locks already engaged stay engaged)."""
+        with self._lock:
+            self.day_start_equity = self.week_start_equity = self.peak_equity = equity
+        self.audit("risk", f"loss references reset to {equity}: {reason}", data={"equity": str(equity)})
+
+    def references(self) -> dict:
+        s = lambda v: None if v is None else str(v)         # noqa: E731
+        return {"day_key": self.day_key, "day_start_equity": s(self.day_start_equity), "week_key": self.week_key,
+                "week_start_equity": s(self.week_start_equity), "peak_equity": s(self.peak_equity)}
+
     def state(self) -> dict:
         return {"kill_switch": self.kill_switch, "trading_locked": self.trading_locked,
                 "limits": asdict(self.limits), "counters": dict(self.counters),
@@ -352,3 +366,9 @@ class RiskService:
                 self.limits = Limits(**{k: v for k, v in saved["limits"].items() if k in known})
             self.kill_switch = saved.get("kill_switch")
             self.trading_locked = saved.get("trading_locked")
+            # loss references survive a restart, so restarting cannot reset the daily loss allowance
+            refs = saved.get("references") or {}
+            d = lambda v: None if v in (None, "") else Decimal(str(v))      # noqa: E731
+            self.day_key, self.week_key = refs.get("day_key"), refs.get("week_key")
+            self.day_start_equity, self.week_start_equity = d(refs.get("day_start_equity")), d(refs.get("week_start_equity"))
+            self.peak_equity = d(refs.get("peak_equity"))

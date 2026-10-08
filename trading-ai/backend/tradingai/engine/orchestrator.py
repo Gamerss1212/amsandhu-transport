@@ -120,8 +120,19 @@ class Orchestrator:
                      "market_ok": True, "reconciliation": "ok" if snap.reconciliation_ok else "REQUIRED",
                      "duplicates_blocked": app.risk.counters["duplicates_blocked"]}
         research = app.research_snapshot(bot.strategy_id, inst.instrument_id)
+        htf_ff = None
+        htf_tf = HTF.get(bot.tf)
+        t = time.perf_counter()
+        if htf_tf and htf_tf != bot.tf:                  # multi-timeframe: completed higher-timeframe bars only
+            try:
+                hb, _ = app.md.bars(inst.instrument_id, htf_tf, lookback=300, max_age_s=60)
+                if len(hb) >= 60:
+                    htf_ff = FeatureFrame(hb, inst.calendar or "CRYPTO", market)
+            except Exception:                            # noqa: BLE001 - the HTF agent abstains without it
+                htf_ff = None
+        lat["htf_ms"] = (time.perf_counter() - t) * 1000 if htf_ff is not None else 0.0
         ctx = roster.AgentContext(
-            instrument=inst, market=market, tf=bot.tf, bars=bars, ff=ff, now_ms=now_ms(), regime=reg,
+            instrument=inst, market=market, tf=bot.tf, bars=bars, ff=ff, now_ms=now_ms(), regime=reg, htf=htf_ff,
             quality=dstatus, extra_data=self._extra(inst, bot.tf),
             risk={"usage": app.risk.usage(snap), "limits": vars(app.risk.limits), "kill_switch": app.risk.kill_switch,
                   "trading_locked": app.risk.trading_locked},

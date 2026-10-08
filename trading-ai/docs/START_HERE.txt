@@ -1,0 +1,59 @@
+TRADING AI - START HERE
+=======================
+
+1. Unzip TradingAI.zip anywhere you like (for example Documents\TradingAI).
+   Keep START_TRADING_AI.exe and the _internal folder together.
+
+2. Double-click START_TRADING_AI.exe
+
+   - A small black window opens and says "Local server running at http://127.0.0.1:8000".
+     Keep it open while you use the dashboard. Closing it stops everything safely.
+   - Your web browser opens the dashboard by itself. If it does not, type
+     http://127.0.0.1:8000 into the browser (the window shows the exact address).
+   - Double-clicking again while it runs just opens the dashboard again.
+   - Windows SmartScreen may warn about an unknown publisher the first time (the program is not code-signed).
+     Click "More info" -> "Run anyway" only if you got this file from your own repository.
+
+3. You start in PAPER mode. Paper = simulated money at real market prices. No real money moves.
+
+THE THREE PAGES
+---------------
+Command Center      Chart, START BOT / STOP BOT, your bots, positions, profit and loss, market regime,
+                    what the agents think, risk limits, and the Strategy lab (backtesting).
+Broker & Money      Your paper account, broker connections, what each broker supports, live-trading
+                    readiness and arming, orders and fills, reconciliation.
+Live Intelligence   Every decision the bots make and why (agent votes, risk checks, execution),
+                    the live event stream, system health, the research ledger and the agent list.
+
+FIRST STEPS
+-----------
+1. Command Center -> "+ Add bot" -> pick a market (e.g. COINBASE:BTC-USD), a timeframe and a strategy.
+2. Press START BOT. Decisions appear on Live Intelligence each time a new candle completes.
+3. Try the Strategy lab: pick a strategy, press "Run backtest", open the result.
+   Most strategies are REJECTED after costs. That is a normal and honest result.
+
+SAFETY
+------
+- EMERGENCY STOP (top right) stops every bot, cancels working orders and blocks new orders.
+- Risk limits are checked on every order by fixed rules. No agent can raise them.
+- Real-money trading stays OFF. It can only be armed on Broker & Money with a verified live broker
+  connection, every readiness check passing, your caps, and a typed confirmation. In this version no
+  broker adapter has passed a live acceptance test yet, so live arming stays locked.
+- Never give this program (or anyone) a key with withdrawal permission.
+
+YOUR DATA
+---------
+Everything is stored next to the program in the "data" folder: database, market data, encrypted
+credentials (Windows DPAPI, readable only by your Windows user), and a database backup in
+data\backups each time you close the program.
+Logs are in the "logs" folder. To move to a new computer, copy the whole folder (re-enter broker keys:
+DPAPI-encrypted keys only open for the Windows user who saved them).
+
+IF SOMETHING GOES WRONG
+-----------------------
+- "Already running" but no page: wait 10 seconds and double-click again.
+- The page says the server is unreachable: the black window was closed. Start the program again.
+- Port 8000 busy: the program picks the next free port and shows it in the black window.
+- Send logs\trading-ai.log when asking for help (it never contains your keys).
+
+Nothing in this program is financial advice. Backtests describe the past under stated assumptions.

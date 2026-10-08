@@ -171,7 +171,8 @@ class App:
     def _persist_risk(self) -> None:
         st = self.risk.state()
         self.db.set_setting("risk_state", {"limits": st["limits"], "kill_switch": st["kill_switch"],
-                                           "trading_locked": st["trading_locked"]})
+                                           "trading_locked": st["trading_locked"],
+                                           "references": self.risk.references()})
 
     def _paper(self) -> str:
         self.paper = PaperBroker(self.db, self.book, self.quote, audit=self.audit)
@@ -335,7 +336,10 @@ class App:
         self.paper.process()
         acct = self.broker_for(self.mode).get_balance()
         d = datetime.now(timezone.utc)
+        before = self.risk.references()
         fired = self.risk.on_equity(acct.equity or Decimal(0), d.strftime("%Y-%m-%d"), d.strftime("%G-W%V"))
+        if self.risk.references() != before:
+            self._persist_risk()
         if fired:
             self._persist_risk()
             self.oms.cancel_all(self.broker_for(self.mode), "loss breaker: " + ", ".join(fired))
@@ -668,6 +672,13 @@ class App:
         return self.jobs.submit(f"{profile}: {strategy_id} on {instrument_id} {tf}", work,
                                 meta={"strategy_id": strategy_id, "instrument_id": instrument_id, "tf": tf,
                                       "profile": profile})
+
+    def set_paper_balance(self, amount: Decimal) -> dict:
+        out = self.paper.set_balance(amount, "owner")
+        if self.mode != "live":
+            self.risk.rebase(self.paper.get_balance().equity, "owner set the paper balance")
+            self._persist_risk()
+        return out
 
     def reconcile(self) -> dict:
         """Paper: positions rebuilt from fills must equal the stored positions. Live: broker truth vs local fills.

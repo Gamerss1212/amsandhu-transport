@@ -306,14 +306,14 @@ def main(argv: Optional[list[str]] = None) -> int:
         time.sleep(4)
         return 2
     port = free_port(a.port)
-    print(f"Starting Trading AI {__version__} ...")
+    print(f"Starting Trading AI {__version__} ...", flush=True)
     srv = Server(home, port, offline=a.offline)
     lock.write_port(port)
     _console_close_handler(srv)
 
     def opener():
         if srv.wait_ready(60):
-            print(banner(srv.url, srv.core))
+            print(banner(srv.url, srv.core), flush=True)
             if not a.no_browser:
                 webbrowser.open(srv.url)
         else:

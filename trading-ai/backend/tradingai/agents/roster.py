@@ -224,6 +224,20 @@ def trend(c):
             "message": {1: "averages stacked up", -1: "averages stacked down", 0: "averages mixed"}[d]}
 
 
+@agent("T11", "Higher-timeframe trend", "technical", "price_trend", votes=True, horizon_bars=12)
+def htf_trend(c):
+    """The same trend test one timeframe up (completed higher-timeframe bars only). It shares the price_trend
+    cluster with T01 so the ensemble does not count one idea twice."""
+    if c.htf is None or len(c.htf.c) < 60:
+        return nodata("no completed higher-timeframe bars yet")
+    e20, e50, px = last(c.htf["ema_20"]), last(c.htf["ema_50"]), last(c.htf.c)
+    if not all(map(ok, (e20, e50, px))):
+        return nodata()
+    d = 1 if px > e20 > e50 else -1 if px < e20 < e50 else 0
+    return {"direction": d, "score": 0.6 * d, "evidence": {"htf": c.htf.b.tf, "close": px, "ema20": e20, "ema50": e50},
+            "message": f"{c.htf.b.tf}: " + {1: "trend up", -1: "trend down", 0: "no clear trend"}[d]}
+
+
 @agent("T02", "Momentum", "technical", "price_momentum", votes=True)
 def momentum(c):
     r, roc = last(c.ff["rsi_14"]), last(c.ff["roc_10"])
