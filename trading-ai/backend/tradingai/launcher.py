@@ -79,6 +79,8 @@ def ping(port: int, timeout: float = 1.5) -> Optional[dict]:
 def free_port(preferred: Optional[int] = None) -> int:
     for p in ([preferred] if preferred else []) + list(PORT_RANGE):
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            if os.name != "nt":                              # ignore TIME_WAIT from a copy that just exited
+                s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             try:
                 s.bind((config.HOST, p))
                 return p

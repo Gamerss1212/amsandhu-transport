@@ -201,12 +201,13 @@ class Orchestrator:
         rec.update(outcome=outcome, reason=reason, latency={k: round(v, 2) for k, v in lat.items()})
         app = self.app
         app.db.execute("INSERT INTO decisions (decision_id, ts, instrument_id, strategy_id, mode, signal, regime, votes, "
-                       "risk, order_json, outcome, reason, latency) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                       "risk, order_json, outcome, reason, latency, bot_id, tf, simulated) "
+                       "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
                        (rec["decision_id"], rec["ts"], rec["instrument"], rec.get("strategy_id"), rec["mode"],
                         dumps(rec.get("signal")), dumps(rec.get("regime")),
                         dumps({"ensemble": rec.get("ensemble"), "votes": rec.get("votes")}),
                         dumps((rec.get("order") or {}).get("risk")), dumps(rec.get("order")), outcome, reason,
-                        dumps(rec["latency"])))
+                        dumps(rec["latency"]), rec.get("bot_id"), rec.get("tf"), int(bool(rec.get("simulated_data")))))
         app.bus.publish("decision", {k: rec.get(k) for k in ("decision_id", "ts", "bot_id", "instrument", "tf", "mode",
                                                               "outcome", "reason", "signal", "ensemble", "regime",
                                                               "order", "latency", "simulated_data")},

@@ -77,6 +77,13 @@ MIGRATIONS: list[str] = [
     CREATE TABLE session_snapshots (
         session_id TEXT PRIMARY KEY, ts INTEGER NOT NULL, mode TEXT NOT NULL, config TEXT NOT NULL);
     """,
+    # 2: decisions carry the bot, timeframe and whether the data was simulated (the pages show them after a reload)
+    """
+    ALTER TABLE decisions ADD COLUMN bot_id TEXT;
+    ALTER TABLE decisions ADD COLUMN tf TEXT;
+    ALTER TABLE decisions ADD COLUMN simulated INTEGER;
+    CREATE INDEX decisions_instrument ON decisions(instrument_id, ts);
+    """,
 ]
 
 GENESIS = "0" * 64

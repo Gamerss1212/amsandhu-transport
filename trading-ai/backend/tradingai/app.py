@@ -766,12 +766,19 @@ class App:
         fills = self.db.query("SELECT * FROM fills WHERE environment=? ORDER BY ts DESC LIMIT 50",
                               ("live" if self.mode == "live" else "paper",))
         day0 = self.risk.day_start_equity
-        realized = sum((Decimal(p.get("realized") or 0) for p in positions), Decimal(0))
+        if br is self.paper:                          # every position row, closed ones included
+            realized = sum((Decimal(r["realized"] or 0) for r in self.db.query(
+                "SELECT realized FROM positions WHERE account_id=?", (self.paper.account_id,))), Decimal(0))
+        else:
+            realized = sum((Decimal(p.get("realized") or 0) for p in positions), Decimal(0))
+        fees = sum((Decimal(r["fee"]) for r in self.db.query(
+            "SELECT fee FROM fills WHERE environment=?", ("live" if self.mode == "live" else "paper",))), Decimal(0))
         unreal = sum((Decimal(p["unrealized"]) for p in positions if p.get("unrealized")), Decimal(0))
         return {"mode": self.mode, "badge": a.source, "account": _acct(a), "positions": positions,
                 "open_orders": [asdict(o) for o in br.get_open_orders()],
                 "day_pnl": None if day0 is None or a.equity is None else str((a.equity - day0).quantize(Decimal("0.01"))),
                 "realized": str(realized.quantize(Decimal("0.01"))), "unrealized": str(unreal.quantize(Decimal("0.01"))),
+                "fees": str(fees.quantize(Decimal("0.01"))),
                 "drawdown": None if not self.risk.peak_equity or a.equity is None else
                 str(((self.risk.peak_equity - a.equity) / self.risk.peak_equity).quantize(Decimal("0.0001"))),
                 "trades_today": sum(b.trades_today for b in self.bots.values()),
@@ -811,7 +818,8 @@ class App:
         return {"version": __version__, "state": self.state.view(), "mode": self.mode, "live": self.live,
                 "risk": self.risk.state(), "bots": [b.as_dict() for b in self.bots.values()],
                 "library": lib_summary(), "features": feature_summary(), "agents": _roster.roster_summary(),
-                "brokers": broker_matrix(), "live_ack": LIVE_ACK, "offline": self.offline}
+                "brokers": broker_matrix(), "live_ack": LIVE_ACK, "offline": self.offline,
+                "vault": self.vault.backend}
 
     # ================================================================== shutdown
     def shutdown(self) -> dict:

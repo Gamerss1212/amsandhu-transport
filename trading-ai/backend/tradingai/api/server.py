@@ -373,18 +373,25 @@ def create_app(core, *, token: Optional[str] = None, on_shutdown=None) -> FastAP
     # ------------------------------------------------------------ Live Intelligence
     @api.get("/api/decisions")
     def decisions(limit: int = 50, instrument: str = ""):
-        sql = "SELECT decision_id, ts, instrument_id, strategy_id, mode, signal, regime, risk, order_json, outcome, " \
-              "reason, latency FROM decisions"
+        """Same shape as the live "decision" event, so a reloaded page shows exactly what it showed before."""
+        sql = "SELECT decision_id, ts, bot_id, instrument_id, tf, strategy_id, mode, signal, regime, " \
+              "json_extract(votes, '$.ensemble') AS ensemble, order_json, outcome, reason, latency, simulated " \
+              "FROM decisions"
         args: tuple = ()
         if instrument:
             sql += " WHERE instrument_id=?"
             args = (instrument,)
-        rows = core.db.query(sql + " ORDER BY ts DESC LIMIT ?", args + (min(limit, 500),))
+        out = []
         import json
-        for r in rows:
-            for k in ("signal", "regime", "risk", "order_json", "latency"):
-                r[k] = json.loads(r[k]) if r.get(k) else None
-        return rows
+        for r in core.db.query(sql + " ORDER BY ts DESC LIMIT ?", args + (min(limit, 500),)):
+            j = {k: (json.loads(r[k]) if r.get(k) else None) for k in ("signal", "regime", "ensemble", "order_json",
+                                                                      "latency")}
+            out.append({"decision_id": r["decision_id"], "ts": r["ts"], "bot_id": r["bot_id"],
+                        "instrument": r["instrument_id"], "tf": r["tf"], "mode": r["mode"],
+                        "strategy_id": r["strategy_id"], "outcome": r["outcome"], "reason": r["reason"],
+                        "signal": j["signal"], "regime": j["regime"], "ensemble": j["ensemble"], "order": j["order_json"],
+                        "latency": j["latency"], "simulated_data": bool(r["simulated"])})
+        return out
 
     @api.get("/api/decisions/{decision_id}")
     def decision(decision_id: str):
