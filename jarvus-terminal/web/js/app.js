@@ -8,7 +8,7 @@ import * as intel from './intel.js';
 
 const PAGES = {
   command: { title: 'Command Center', mod: command },
-  connections: { title: 'Connections', mod: connections },
+  connections: { title: 'Broker & Money', mod: connections },
   intel: { title: 'Live Intelligence', mod: intel },
 };
 let current = null;
@@ -222,14 +222,14 @@ async function closeAllFlow() {
 // ---------------------------------------------------------------- shut down (the website has no window to close)
 async function shutdownFlow() {
   const ok = await confirmBox('Shut down Jarvus?', 'The website and every bot stop until you start Jarvus again ' +
-    '(double-click JarvusTerminal.exe). Open trades stay recorded and are managed again when it restarts.', { okLabel: 'Shut down' });
+    '(double-click START_TRADING_AI.exe). Open trades stay recorded and are managed again when it restarts.', { okLabel: 'Shut down' });
   if (!ok) return;
   try { await api('/api/app/shutdown', {}); } catch (e) { errorToast(e); return; }
   stopStream();
   replace($('#root'), h('main.off', h('section.panel', { style: { maxWidth: '560px', margin: '12vh auto' } },
     h('h2', 'Jarvus is off'),
     h('p', 'The website and all bots have stopped. Nothing trades until you start it again.'),
-    h('p.note', 'To start again: double-click JarvusTerminal.exe (or the "Open Jarvus" shortcut once it runs). This page ' +
+    h('p.note', 'To start again: double-click START_TRADING_AI.exe (or the "Open Jarvus" shortcut once it runs). This page ' +
       'can be closed.'))));
 }
 

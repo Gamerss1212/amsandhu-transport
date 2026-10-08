@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Entry point for the packaged program (JarvusTerminal.exe): Jarvus is a website on this computer.
+"""Entry point for the packaged program (START_TRADING_AI.exe): Jarvus is a website on this computer.
 
 Double-click: it starts quietly (no app window) and opens http://127.0.0.1:8787 in the browser once it answers. Shut
-it down from the website (Shut down, top right). What it has to say goes to data/jarvus.log; the few things that need
+it down from the website (Shut down, top right). What it has to say goes to logs/jarvus.log; the few things that need
 the owner (an older copy holds the address, it cannot start) appear as small Windows message boxes. Started from a
 console (python desktop.py), the same messages print there instead. A second launch shows the copy already running
 instead of failing on the port, and offers to close an older copy that holds it (see engine/launcher.py).
@@ -66,7 +66,7 @@ def hold(msg: str = "") -> None:
 
 
 def _log_to_file(folder: str) -> None:
-    """Without a console, everything printed goes to <data>/jarvus.log (kept under ~2 MB)."""
+    """Without a console, everything printed goes to logs/jarvus.log beside the program (kept under ~2 MB)."""
     try:
         os.makedirs(folder, exist_ok=True)
         path = os.path.join(folder, "jarvus.log")
@@ -97,7 +97,7 @@ def _already_running(launcher, config, who, background: bool) -> int:
     old = ("An OLDER copy of Jarvus is running on this computer (maybe in the background, because it was set to "
            "start with Windows). It holds the address this version needs, and it has no ULTRON.")
     if not pids:
-        hold(f"\n  {old}\n\n  Close it (Task Manager -> JarvusTerminal -> End task), then start this one again.")
+        hold(f"\n  {old}\n\n  Close it (Task Manager -> START_TRADING_AI -> End task), then start this one again.")
         return 1
     if not ask(f"\n  {old}\n\n  Close the old copy and start this one? Its paper trades stay saved in its own folder."):
         return 1
@@ -107,7 +107,7 @@ def _already_running(launcher, config, who, background: bool) -> int:
             print("  The old copy is closed.", flush=True)
             return -1
         time.sleep(0.5)
-    hold("\n  The old copy did not close. End it in Task Manager (JarvusTerminal), then start this one again.")
+    hold("\n  The old copy did not close. End it in Task Manager (START_TRADING_AI), then start this one again.")
     return 1
 
 
@@ -130,7 +130,7 @@ def main() -> int:
     try:
         import config
         if WINDOWLESS:
-            _log_to_file(config.DATA_DIR)
+            _log_to_file(config.LOG_DIR)
         import server
         from engine import launcher
     except Exception:                                    # noqa: BLE001
@@ -157,7 +157,7 @@ def main() -> int:
     if launcher.inside_temp(config.BASE_DIR) and not background:
         tell("Jarvus is running from a TEMPORARY folder (opened straight from the zip?). Windows may delete it, with "
              "your paper trades and settings.\n\nShut it down (top right of the website), right-click the zip -> "
-             "Extract All..., and start JarvusTerminal.exe from the extracted folder.", error=True)
+             "Extract All..., and start START_TRADING_AI.exe from the extracted folder.", error=True)
     if not background:
         try:
             from engine import startup
@@ -196,7 +196,7 @@ def main() -> int:
         return 1
     except Exception as exc:                             # noqa: BLE001
         traceback.print_exc()
-        hold(f"Jarvus stopped unexpectedly: {type(exc).__name__}: {exc}\n\nDetails: {config.DATA_DIR}\\jarvus.log")
+        hold(f"Jarvus stopped unexpectedly: {type(exc).__name__}: {exc}\n\nDetails: {config.LOG_DIR}\\jarvus.log")
         return 1
     return 0
 

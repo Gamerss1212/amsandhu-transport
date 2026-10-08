@@ -46,7 +46,7 @@ def status(reg=None, force: bool = False) -> dict:
     reg = reg or _winreg()
     if reg is None or not (force or supported(reg)):
         return {"supported": False, "enabled": False,
-                "note": "Starting with Windows is available in the Windows app (JarvusTerminal.exe). From source, add "
+                "note": "Starting with Windows is available in the Windows app (START_TRADING_AI.exe). From source, add "
                         "run.py to your system's startup items yourself."}
     cur = _read(reg)
     return {"supported": True, "enabled": bool(cur) and os.path.basename(sys.executable).lower() in cur.lower(),

@@ -75,14 +75,20 @@ def compute(trades: Sequence, capital: float, days: Sequence[str], periods_per_y
     gross_before_fees = sum(pnl) + fees
     dp = daily_pnl(trades, utc_day)
     daily = [dp.get(d, 0.0) / capital for d in days]
-    eq, acc = [], capital
+    # A cash account cannot lose more than it has: once equity reaches 0 the account is RUINED and stays at 0, so
+    # net_return never goes below -100% and max_drawdown never above 100%. The per-trade statistics (expectancy,
+    # win rate) still describe every trade the rules produced; net_pnl_uncapped keeps the plain sum for reference.
+    eq, acc, ruin_day = [], capital, None
     for d in days:
-        acc += dp.get(d, 0.0)
+        if ruin_day is None:
+            acc += dp.get(d, 0.0)
+            if acc <= 0:
+                acc, ruin_day = 0.0, d
         eq.append(acc)
     mu, sd = _mean(daily), _std(daily)
     downside = [min(0.0, v) for v in daily]
     dsd = math.sqrt(sum(v * v for v in downside) / len(downside)) if downside else None
-    total_ret = sum(pnl) / capital
+    total_ret = -1.0 if ruin_day is not None else sum(pnl) / capital
     years = len(days) / periods_per_year if days else 0
     mdd = max_drawdown([capital] + eq)
     streak = worst = 0
@@ -99,7 +105,8 @@ def compute(trades: Sequence, capital: float, days: Sequence[str], periods_per_y
         "profit_factor": (gross_profit / gross_loss) if gross_loss else (None if not gross_profit else float("inf")),
         "expectancy": _mean(pnl), "expectancy_r": r_mean, "median_r": sorted(rs)[len(rs) // 2] if rs else None,
         "r_std": r_sd, "t_stat_r": t_stat,
-        "net_pnl": sum(pnl), "net_return": total_ret, "gross_return_before_fees": gross_before_fees / capital,
+        "net_pnl": -capital if ruin_day is not None else sum(pnl), "net_pnl_uncapped": sum(pnl),
+        "ruined": ruin_day is not None, "ruin_day": ruin_day, "net_return": total_ret, "gross_return_before_fees": gross_before_fees / capital,
         "fees": fees, "fee_share_of_gross": (fees / gross_before_fees) if gross_before_fees > 0 else None,
         "annualized_return": (total_ret / years) if years else None,
         "sharpe": (mu / sd * math.sqrt(periods_per_year)) if (sd and mu is not None) else None,

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Jarvus web server: the three-page app, its JSON API and its live event stream. Standard library only.
 
-Pages (one app, three destinations): Command Center, Connections, Live Intelligence.
+Pages (one app, three destinations): Command Center, Broker & Money (#/connections), Live Intelligence.
 
 Security
 * Listens on 127.0.0.1 only; the Host header must name this computer (stops DNS rebinding) and a POST's Origin, when
@@ -35,6 +35,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import config                      # noqa: E402
+from engine import appstate        # noqa: E402
 from engine import library         # noqa: E402  (also puts market_analysis_bots on sys.path)
 from engine.auth import Auth       # noqa: E402
 from engine.supervisor import DEFAULT_FEE_PROFILE, Supervisor  # noqa: E402
@@ -69,13 +70,43 @@ class App:
         self._candle_cache = {}
         self.sse_clients = 0
         self.lock = threading.Lock()
+        self.data_dir = data_dir
+        self.started = time.time()
+        self.lifecycle = appstate.Lifecycle()
+        self.startup_checks = []
+
+    def run_startup_checks(self) -> list:
+        """Section 120: databases, data folder, web page, strategy library. Each is a real check; a failure puts the
+        app in ERROR, so no bot engine starts (the page still opens and says why)."""
+        checks = [appstate.check("app database", lambda: appstate.sqlite_quick_check(os.path.join(self.data_dir,
+                                                                                                    "app.db")))]
+        for w in self.auth.workspaces():
+            db = os.path.join(w["path"], "data", "mab.db")
+            checks.append(appstate.check(f"{w['kind']} workspace database",
+                                         lambda db=db: appstate.sqlite_quick_check(db)))
+        checks.append(appstate.check("data folder writable", lambda: _probe_write(self.data_dir)))
+        checks.append(appstate.check("web page files", _probe_web))
+        checks.append(appstate.check("strategy library",
+                                     lambda: f"{len(library.library().get('strategies') or [])} strategies"))
+        self.startup_checks = checks
+        problem = appstate.summarize(checks)
+        if problem:
+            self.lifecycle.to(appstate.ERROR, "start-up check failed: " + problem)
+        return checks
 
     def boot(self):
+        if self.lifecycle.state == appstate.BOOTING:
+            self.run_startup_checks()
+        if self.lifecycle.state == appstate.ERROR:
+            print(f"\n  START-UP CHECK FAILED: {appstate.summarize(self.startup_checks)}\n  No bot engine was started. "
+                  "Open the website for details.\n", flush=True)
+            return
         if self.start_engines:
             for w in self.auth.workspaces():                     # the AI starts trading as soon as Jarvus opens
                 if w["kind"] == "main" and autopilot_on(self.st(w["workspace_id"])):
                     self.auth.set_autostart(w["workspace_id"], True)
             self.sup.boot()
+        self.lifecycle.to(appstate.READY, "start-up checks passed")
 
     def st(self, wid):
         return self.sup.storage(wid)
@@ -89,6 +120,21 @@ class App:
     def notify_connections(self, wid):
         if self.sup.running(wid):
             self.sup.command(wid, "connections_changed", {}, wait=2.0)
+
+
+def _probe_write(folder: str) -> str:
+    path = os.path.join(folder, f".write-test-{os.getpid()}")
+    with open(path, "w", encoding="utf-8") as fh:
+        fh.write("ok")
+    os.remove(path)
+    return folder
+
+
+def _probe_web() -> str:
+    for rel in ("index.html", os.path.join("js", "app.js"), "app.css"):
+        if not os.path.isfile(os.path.join(WEB_DIR, rel)):
+            raise FileNotFoundError(rel)
+    return WEB_DIR
 
 
 APP: App = None
@@ -511,6 +557,65 @@ def health(ctx):
             "stream_clients": APP.sse_clients, "time": _now()}
 
 
+def _main_workspace():
+    for w in APP.auth.workspaces():
+        if w["kind"] == "main":
+            return w
+    return None
+
+
+def system_health() -> dict:
+    """GET /health (section 270): every component's status for the owner's main workspace, measured now. Never a
+    secret, an account number or a balance: it answers without sign-in (this computer only, Host-checked)."""
+    out = {"app": "jarvus", "version": config.VERSION, "time": _now(), "lifecycle": APP.lifecycle.view(),
+           "startup_checks": APP.startup_checks}
+    comp = {"backend": {"status": "ok", "pid": os.getpid(), "uptime_s": round(time.time() - APP.started)}}
+    bad = [c for c in APP.startup_checks if not c["ok"] and "database" in c["name"]]
+    comp["database"] = ({"status": "error", "detail": bad[0]["detail"]} if bad else
+                        {"status": "ok" if APP.startup_checks else "not checked", "detail": "quick_check at start-up"})
+    w = _main_workspace()
+    facts = {"engine_running": False}
+    if w is not None:
+        wid, st = w["workspace_id"], APP.st(w["workspace_id"])
+        running = APP.sup.running(wid)
+        fh = fleet_json(wid, "/api/health") if running else None
+        la = st.kv_get("live_authorization", {}) or {}
+        deps = (fh or {}).get("deployments") or {}
+        rows = (fleet_json(wid, "/api/deployments", []) or []) if running else []
+        facts = {"engine_running": running, "emergency": bool(st.kv_get("emergency")),
+                 "reconciliation_problems": sum(1 for d in rows if str(d.get("blocked") or "").startswith(
+                     "reconciliation")),
+                 "live_authorized": bool(la.get("authorized")),
+                 "live_deployments_running": sum(1 for d in rows if d.get("mode") == "live"
+                                                 and d.get("state") == "running")}
+        if fh:
+            series = fh.get("series_status") or {}
+            comp["strategy_engine"] = {"status": "paused" if fh.get("paused") else "running", "bots": fh.get("bots"),
+                                       "bot_states": fh.get("bot_states"),
+                                       "eval_ms_p95": fh.get("eval_ms_p95")}
+            comp["market_feed"] = {"status": "ok" if series and not any(series.get(k) for k in ("stale", "unavailable"))
+                                   else "degraded" if series else "no data yet", "series": fh.get("series"),
+                                   "series_status": series, "http_429": fh.get("http_429"),
+                                   "latency_ms_p95": fh.get("latency_ms_p95")}
+            comp["execution_engine"] = {"status": "ok", "deployments": deps, "execution": fh.get("execution")}
+        else:
+            stopped = {"status": "stopped", "detail": "the bot engine is not running"}
+            comp["strategy_engine"] = comp["market_feed"] = comp["execution_engine"] = stopped
+        comp["risk_service"] = {"status": "EMERGENCY STOP" if facts["emergency"] else "ok",
+                                "kill_switch": "engaged" if facts["emergency"] else "armed"}
+        brokers = []
+        for c in APP.conns(wid).list():
+            brokers.append({"provider": c.get("provider"), "environment": c.get("environment"),
+                            "status": c.get("status"), "real_money": bool(c.get("real_money"))})
+        comp["broker"] = {"status": "ok", "connections": brokers}
+    out["components"] = comp
+    out["trading_state"] = appstate.trading_state(facts)
+    out["live"] = appstate.live_state(facts)
+    out["ok"] = APP.lifecycle.state not in (appstate.ERROR,) and all(
+        (v.get("status") not in ("error",)) for v in comp.values())
+    return out
+
+
 def connections_view(ctx):
     wid, st = ctx["wid"], ctx["st"]
     c = APP.conns(wid)
@@ -910,6 +1015,8 @@ class Handler(BaseHTTPRequestHandler):
             if route == "/api/version":                        # read by a second launch (see desktop.py)
                 return self._json({"app": "jarvus", "version": config.VERSION, "pid": os.getpid(),
                                    "ready": APP is not None})
+            if route == "/health":                             # section 270: structured status, no secrets
+                return self._json(system_health())
             if route == "/api/auth/state":
                 s = self._session()
                 extra = None
@@ -1099,6 +1206,8 @@ def serve():
         print("\n  stopped.\n")
     finally:
         HTTPD = None
+        if app.lifecycle.can(appstate.SHUTTING_DOWN):
+            app.lifecycle.to(appstate.SHUTTING_DOWN, "the owner shut Jarvus down")
         app.sup.stop_all()
         httpd.server_close()
 

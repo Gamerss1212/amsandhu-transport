@@ -6,7 +6,7 @@ Standard-library Python (no required packages), one SQLite database per workspac
 ## Processes
 
 ```
-JarvusTerminal.exe / run.py
+START_TRADING_AI.exe / run.py
 └── app server (server.py, ThreadingHTTPServer on 127.0.0.1)
     ├── sign-in, sessions, workspaces ............ engine/auth.py  -> data/app.db
     ├── supervisor ................................ engine/supervisor.py
@@ -21,6 +21,13 @@ JarvusTerminal.exe / run.py
   and streams the audit log. A few safety commands work with the engine stopped: EMERGENCY STOP, clearing it,
   revoking live authorisation, switching autopilot.
 * An engine is restarted by a watchdog if it stops unexpectedly (autostart workspaces, bounded restarts).
+* Start-up and state (`engine/appstate.py`): the server runs real checks before any engine starts (every database's
+  `PRAGMA quick_check`, data folder writable, web files present, strategy library loads). A failure puts the app in
+  ERROR and no engine starts. The lifecycle machine (BOOTING, READY, ..., SHUTTING_DOWN) refuses impossible moves;
+  real money is reachable only through LIVE_LOCKED, then LIVE_ARMED, then LIVE_RUNNING. `GET /health` reports every
+  component and the trading state read from recorded facts (no secrets, ids or balances).
+* Windows build (`jarvus.spec`): one folder, `START_TRADING_AI.exe` + `_internal/` (read-only payload); `data/` and
+  `logs/` are written beside the exe.
 * `JARVUS_MAX_FLEETS` limits concurrent engines; `JARVUS_RESEARCH_WORKERS`, `JARVUS_JOB_TIMEOUT_S` and
   `JARVUS_JOB_MEMORY_MB` bound research.
 
@@ -91,5 +98,5 @@ compiled in the rule language and registered as untested research versions only.
 
 Plain ES modules, no build step, strict Content-Security-Policy (scripts from the app only). Text is always
 inserted as text, never parsed as HTML. TradingView Lightweight Charts 5 (Apache-2.0) is vendored with its
-licence. Three destinations: Command Center, Connections, Live Intelligence; everything else is a tab, drawer
+licence. Three destinations: Command Center, Broker & Money (route #/connections), Live Intelligence; everything else is a tab, drawer
 or modal. Live updates arrive over SSE with `Last-Event-ID` resume.

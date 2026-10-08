@@ -467,7 +467,7 @@ function renderAutopilot() {
 function changeBalance(cid) {
   const a = (S.overview && S.overview.accounts || []).find(x => x.connection_id === cid);
   if (!a) { toast('That account is not ready yet', 'bad'); return; }
-  if (!a.simulated) { toast('Broker balances are what the broker reports: add funds on the broker\'s site (Connections)', 'bad'); return; }
+  if (!a.simulated) { toast('Broker balances are what the broker reports: add funds on the broker\'s site (Broker & Money)', 'bad'); return; }
   const ap = cid === 'paper-research' && st.ap && st.ap.account && st.ap.account.equity !== undefined ? st.ap.account : null;
   const live = cid === 'paper-research' ? st.money : null;                       // the account right now, at live prices
   balanceDialog({ ...a, equity: live ? live.equity : (ap ? ap.equity : a.equity), invested: live ? live.invested : a.exposure,
@@ -638,7 +638,7 @@ function renderBuilder() {
     const env = mode.value;
     const accts = (o ? o.accounts : []).filter(a => a.environment === env && a.connection_id !== 'paper-research');
     replace(account, accts.length ? accts.map(a => h('option', { value: a.connection_id }, `${a.label}${a.equity !== null ? ' · ' + money(a.equity, a.currency, 0) : ''}`))
-      : [h('option', { value: '' }, env === 'live' ? 'no live account connected (Connections)' : 'no account')]);
+      : [h('option', { value: '' }, env === 'live' ? 'no live account connected (Broker & Money)' : 'no account')]);
   };
   fillAccounts();
   mode.addEventListener('change', () => { fillAccounts(); updateBacktest(); });
@@ -743,7 +743,7 @@ function renderBuilder() {
       h('div.row', readyBtn, startBtn, evalBtn),
       result,
       h('p.note', 'START runs every check again and starts only this bot, in the mode shown. LIVE also needs your separate live '
-        + 'authorisation (Connections) and an explicit confirmation of account, strategy, allocation and limits.')));
+        + 'authorisation (Broker & Money) and an explicit confirmation of account, strategy, allocation and limits.')));
   updateBacktest();
 }
 

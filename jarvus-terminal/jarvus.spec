@@ -1,8 +1,9 @@
 # PyInstaller spec for Jarvus.
 #
-# One file, console kept: the window is where the app explains itself, tells you the address and
-# shows an error instead of vanishing. The web folder and the models are bundled read-only;
-# everything the app writes goes beside the executable (see config.BASE_DIR).
+# One folder: START_TRADING_AI.exe (the one file the owner opens) + _internal/ (Python, the code, the web page and the
+# models, read-only). No window: it is a website; messages go to logs/jarvus.log or a small message box. Everything the
+# app writes (data/, logs/) goes beside the exe (see config.BASE_DIR). One folder starts faster than one file: nothing
+# is unpacked to a temporary folder on every start.
 
 import os
 
@@ -19,6 +20,7 @@ datas = [
     ("web", "web"),
     (os.path.join(MAB, "mab", "dashboard.html"), "mab"),
     (os.path.join(MAB, "mab", "models", "volgate.json"), "mab/models"),                    # the volatility gate
+    (os.path.join(MAB, "mab", "data", "contract_specs.json"), "mab/data"),                 # futures specs (versioned)
     (os.path.join(MAB, "bots", "registry.json"), "market_analysis_bots/bots"),
     (os.path.join(MAB, "config", "fleet.example.json"), "market_analysis_bots/config"),
     (os.path.join(MAB, "results", "system_backtest_summary.json"), "market_analysis_bots/results"),
@@ -76,17 +78,24 @@ a = Analysis(
 pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
 
 exe = EXE(
-    pyz, a.scripts, a.binaries, a.zipfiles, a.datas, [],
-    name="JarvusTerminal",
+    pyz, a.scripts, [],
+    exclude_binaries=True,
+    name="START_TRADING_AI",
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
     upx=False,                 # UPX compression is a common antivirus false-positive trigger
-    runtime_tmpdir=None,
     console=False,              # a website, not an app: no window; it opens in the browser
     disable_windowed_traceback=False,
     argv_emulation=False,
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
+)
+coll = COLLECT(
+    exe, a.binaries, a.datas,
+    strip=False,
+    upx=False,
+    name="START_TRADING_AI",
+    contents_directory="_internal",
 )

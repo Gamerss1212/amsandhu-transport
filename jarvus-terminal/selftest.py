@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Check the install: python3 run.py selftest   (or JarvusTerminal.exe selftest)
+"""Check the install: python3 run.py selftest   (or START_TRADING_AI.exe selftest)
 
 Offline and self-contained: loads the strategy library, the bots, the volatility gate and the measured results,
 checks the database migrations and the credential vault, then starts the app's server on a spare port with a

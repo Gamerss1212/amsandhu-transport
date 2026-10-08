@@ -6,9 +6,9 @@ from __future__ import annotations
 import os
 import sys
 
-# Running from source, everything sits next to this file. Running as a packaged executable, the code
-# lives in a temporary folder that is wiped on exit, so anything worth keeping (the bots' database, your
-# settings) is written beside the executable instead.
+# Running from source, everything sits next to this file. Running as the packaged program (START_TRADING_AI.exe), the
+# code and the read-only payload live in _internal/ beside the exe, and everything the app writes (data/, logs/) is
+# written beside the exe too, so it survives updates of _internal/.
 FROZEN = getattr(sys, "frozen", False)
 if FROZEN:
     BASE_DIR = os.path.dirname(os.path.abspath(sys.executable))   # beside the .exe
@@ -17,6 +17,8 @@ else:
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
     BUNDLE_DIR = BASE_DIR
 DATA_DIR = os.environ.get("JARVUS_DATA") or os.path.join(BASE_DIR, "data")
+LOG_DIR = os.environ.get("JARVUS_LOGS") or os.path.join(BASE_DIR, "logs")
+EXE_NAME = "START_TRADING_AI.exe"                                 # the one file the owner opens (Windows build)
 WEB_DIR = os.path.join(BUNDLE_DIR, "web")
 
 # This computer only: the app controls the bots and receives broker keys, so it never listens on a network.

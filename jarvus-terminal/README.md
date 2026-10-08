@@ -7,7 +7,7 @@ keeps testing them, and live visibility into everything they do. **The AI makes 
 **What "the AI" is:** 311 rule-based bots plus the **brain**, a statistical learner that runs on this computer
 (it scores each entry from fees, volatility and what each strategy has actually achieved, and learns from every
 closed trade). No language model is called to trade or on any market tick; the optional Claude assistant
-(Connections) only explains decisions and drafts ideas for testing, and cannot place orders.
+(Broker & Money) only explains decisions and drafts ideas for testing, and cannot place orders.
 
 **Money:** the bots trade **simulated (paper) money** at live market prices. **Real money is off**
 and stays off until you connect a live account, authorise live trading separately with your own caps,
@@ -18,7 +18,7 @@ for what live use still needs.
 
 | You have | Do this |
 |---|---|
-| **Windows, no Python** | Double-click `JarvusTerminal.exe`. It opens the app in your browser; keep its window open (closing it stops Jarvus). |
+| **Windows, no Python** | Double-click `START_TRADING_AI.exe` (the only file in the folder besides `_internal\` and the guide). It opens the app in your browser; Shut down (top right) stops it. |
 | Windows with Python | Double-click `Jarvus Terminal.bat` |
 | Mac | Double-click `Jarvus Terminal.command` (first time: right-click, **Open**) |
 | Linux / any | `python3 run.py` (Python 3.9+; no pip needed) |
@@ -129,7 +129,7 @@ It is a measurement of recent history, not a forecast.
 | Page | What it is for |
 |---|---|
 | **Command Center** | **Your money** (live balance, open trades, buys and sells, what the AI decided); **What the AI sees** (its live analysis of every market: trend, volatility forecast with tested accuracy, the bots' signals, the strategy it trusts most there, its latest decision); the AUTOPILOT button, its status, fee selector, start-with-Windows switch and goal calculator; account equity, buying power, allocated capital, realised/unrealised P&L, exposure and daily drawdown; the candlestick chart (timeframes, volume, EMA/VWAP/Bollinger, markers for real fills coloured by mode); building and starting your own bot (strategy, market, mode, account, allocation, risk limits, readiness checks); bot cards with **PAUSE NEW ENTRIES**, **STOP** (keep protective orders or close) and details; equity and drawdown charts; recent trades; alerts. |
-| **Connections** | Every account: the simulated paper account, Alpaca paper/live, Kraken Pro, NDAX. Identity, environment, status, permissions, buying power, last sync, supported assets; connect / test / sync / reconnect / disconnect; **Add funds** opens the provider's own funding page (Jarvus never moves money or simulates a deposit); the separate **live-trading authorisation**; the AI research assistant's key and budget; news feeds. |
+| **Broker & Money** | Every account: the simulated paper account, Alpaca paper/live, Kraken Pro, NDAX. Identity, environment, status, permissions, buying power, last sync, supported assets; connect / test / sync / reconnect / disconnect; **Add funds** opens the provider's own funding page (Jarvus never moves money or simulates a deposit); the separate **live-trading authorisation**; the AI research assistant's key and budget; news feeds. |
 | **Live Intelligence** | Decision feed (live) with the full lifecycle of each decision: market update → signal (every rule condition) → brain → risk checks → order → broker acknowledgement → fills (fees, slippage) → position → exit; scanner with watchlists; bot status; orders, fills, positions and exposure; side-by-side comparison (backtest vs research vs paper vs demo vs live, never mixed); searchable history with CSV/JSON export; research jobs and model registry; service health (queue, latencies, data age, CPU, memory, this computer's hardware). |
 
 **Modes are labelled everywhere:** `DEMO` (synthetic market, simulated money), `PAPER` (simulated money
@@ -174,7 +174,7 @@ job is to refuse trades that fees would eat, and it does that.
 * **Network:** the app listens on `127.0.0.1` only and opens without a sign-in page (anyone using this
   computer can open it). Every change still needs the page's session cookie, a CSRF token and the app's
   header, and foreign Host and Origin headers are refused, so websites cannot drive it.
-* **AI research assistant (optional):** add an Anthropic API key under Connections. It uses the
+* **AI research assistant (optional):** add an Anthropic API key under Broker & Money. It uses the
   `claude-opus-5-5` model through the official `anthropic` SDK (bundled in the exe; `pip install
   anthropic` when running from source), only when you press a button, within daily request and token
   budgets. Server-side model fallback on refusals is enabled (`fallbacks: "default"`). It can summarise
@@ -187,7 +187,7 @@ job is to refuse trades that fees would eat, and it does that.
 ## Checks and tests
 
 ```
-python3 run.py selftest                      # the install, offline (also: JarvusTerminal.exe selftest)
+python3 run.py selftest                      # the install, offline (also: START_TRADING_AI.exe selftest)
 python3 -m pytest jarvus-terminal/tests      # app server: sign-in, CSRF, isolation, secrets, autopilot, stream
 python3 -m pytest market_analysis_bots/tests # engine: risk limits, duplicate orders, restarts, partial fills,
                                              # stale data, rejections, emergency controls, providers, research

@@ -1,19 +1,27 @@
 JARVUS + ULTRON BRAIN: a website on your own computer (Windows)
 
+THE FOLDER
+  START_TRADING_AI.exe   the ONE file you open
+  _internal\             the program itself (do not change or move anything in it)
+  START-HERE.txt         this guide
+  After the first start, Jarvus adds  data\  (your paper trades and settings),  logs\  (what it did) and an
+  "Open Jarvus" shortcut. Keep them: an update replaces only START_TRADING_AI.exe and _internal\.
+
 RUN IT
   1. Right-click the zip -> Extract All... (do not run it from inside the zip: Windows may delete that copy and
-     your data with it). Keep JarvusTerminal.exe in its folder.
-  2. Double-click JarvusTerminal.exe. If Windows says "Windows protected your PC": More info -> Run anyway (once).
+     your data with it).
+  2. Double-click START_TRADING_AI.exe. If Windows says "Windows protected your PC": More info -> Run anyway (once).
   3. That's it: no app window opens. Jarvus starts quietly and, as soon as it is ready (a few seconds, up to a minute
      the first time), your browser opens the Jarvus website at  http://127.0.0.1:8787
      (127.0.0.1 is "localhost": your own computer. Nothing is on the internet; only you can open it.)
   The bots keep working while Jarvus runs, even with the browser tab closed.
   Back to the website later: double-click "Open Jarvus" (appears next to the exe), or type the address above, or
-  double-click JarvusTerminal.exe again (if Jarvus is already running it just opens the website).
-  To stop everything: Shut down, top right of the website. (Or Task Manager -> JarvusTerminal -> End task.)
+  double-click START_TRADING_AI.exe again (if Jarvus is already running it just opens the website).
+  To stop everything: Shut down, top right of the website. (Or Task Manager -> START_TRADING_AI -> End task.)
   If an OLDER Jarvus is still running (for example one that was set to start with Windows), a small box asks
   whether to close it.
-  Something wrong? Jarvus writes what it does to  data\jarvus.log  next to the exe.
+  Something wrong? Jarvus writes what it does to  logs\jarvus.log  next to the exe.
+  Is everything healthy? Open  http://127.0.0.1:8787/health  : every part of the system, checked now.
   Ultron.exe from earlier was a separate desktop window; you don't need it: ULTRON lives in this website now.
 
 WHAT'S NEW: THE ULTRON BRAIN
@@ -34,8 +42,8 @@ PAPER MONEY (the default)
   open trades are valued at the market price. Change the balance any time (Change balance / Fleet tab).
 
 REAL MONEY (only when you switch it on yourself)
-  Real money stays OFF until you do all of this, on the Live money page:
-   1. Connections -> Connect an account:
+  Real money stays OFF until you do all of this, on the Broker & Money page:
+   1. Broker & Money -> Connect an account:
         NDAX or Kraken for crypto, Alpaca for US stocks and ETFs (Toronto stocks, forex and the ETFs of other
         countries stay paper: none of these brokers trades them).
       Create the API key on the exchange's website with TRADING permission only - never withdrawal or deposit.
@@ -63,7 +71,7 @@ REAL MONEY (only when you switch it on yourself)
   So 20 paper trades on ONE bot takes about a year. The Live trading authorisation has a box to waive the paper
   record. Ticking it skips your own proof - only do it with an amount you can afford to lose.
   Back to paper at any time: "Revoke live authorisation" pauses every live bot; EMERGENCY STOP blocks all new orders.
-  Your live account's money, trades and P&L show on the Live money page and in Your money.
+  Your live account's money, trades and P&L show on the Broker & Money page and in Your money.
 
   IMPORTANT: the NDAX and Kraken order connections were written to their published APIs but have never been run
   against the real exchanges (no keys were ever available to test them). Kraken's request signing matches the

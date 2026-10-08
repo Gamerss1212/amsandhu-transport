@@ -1,0 +1,26 @@
+{
+  "version": "2026-10-08",
+  "source": "Exchange contract specifications (CME Group: CME, CBOT, NYMEX, COMEX) as published; reference only.",
+  "verify_with_broker": "Every field must match the broker's own contract definition before a live order (resolve_contract refuses a mismatch). Margins, fees and trading hours change: they are not stored here.",
+  "contracts": {
+    "ES":  {"name": "E-mini S&P 500", "exchange": "CME", "currency": "USD", "multiplier": "50", "tick_size": "0.25", "settlement": "cash", "group": "equity_index", "index": "SPX", "active": true},
+    "MES": {"name": "Micro E-mini S&P 500", "exchange": "CME", "currency": "USD", "multiplier": "5", "tick_size": "0.25", "settlement": "cash", "group": "equity_index", "index": "SPX", "active": true},
+    "NQ":  {"name": "E-mini Nasdaq-100", "exchange": "CME", "currency": "USD", "multiplier": "20", "tick_size": "0.25", "settlement": "cash", "group": "equity_index", "index": "NDX", "active": true},
+    "MNQ": {"name": "Micro E-mini Nasdaq-100", "exchange": "CME", "currency": "USD", "multiplier": "2", "tick_size": "0.25", "settlement": "cash", "group": "equity_index", "index": "NDX", "active": true},
+    "YM":  {"name": "E-mini Dow ($5)", "exchange": "CBOT", "currency": "USD", "multiplier": "5", "tick_size": "1", "settlement": "cash", "group": "equity_index", "index": "DJI", "active": true},
+    "MYM": {"name": "Micro E-mini Dow", "exchange": "CBOT", "currency": "USD", "multiplier": "0.5", "tick_size": "1", "settlement": "cash", "group": "equity_index", "index": "DJI", "active": true},
+    "RTY": {"name": "E-mini Russell 2000", "exchange": "CME", "currency": "USD", "multiplier": "50", "tick_size": "0.1", "settlement": "cash", "group": "equity_index", "index": "RUT", "active": true},
+    "M2K": {"name": "Micro E-mini Russell 2000", "exchange": "CME", "currency": "USD", "multiplier": "5", "tick_size": "0.1", "settlement": "cash", "group": "equity_index", "index": "RUT", "active": true},
+    "GC":  {"name": "Gold", "exchange": "COMEX", "currency": "USD", "multiplier": "100", "tick_size": "0.1", "settlement": "physical", "group": "metals", "active": true},
+    "MGC": {"name": "Micro Gold", "exchange": "COMEX", "currency": "USD", "multiplier": "10", "tick_size": "0.1", "settlement": "physical", "group": "metals", "active": true},
+    "SI":  {"name": "Silver", "exchange": "COMEX", "currency": "USD", "multiplier": "5000", "tick_size": "0.005", "settlement": "physical", "group": "metals", "active": true},
+    "CL":  {"name": "Crude Oil (WTI)", "exchange": "NYMEX", "currency": "USD", "multiplier": "1000", "tick_size": "0.01", "settlement": "physical", "group": "energy", "active": true},
+    "NG":  {"name": "Henry Hub Natural Gas", "exchange": "NYMEX", "currency": "USD", "multiplier": "10000", "tick_size": "0.001", "settlement": "physical", "group": "energy", "active": true},
+    "6E":  {"name": "Euro FX", "exchange": "CME", "currency": "USD", "multiplier": "125000", "tick_size": "0.00005", "settlement": "physical", "group": "fx", "market_type": "fx_future", "active": true},
+    "6B":  {"name": "British Pound", "exchange": "CME", "currency": "USD", "multiplier": "62500", "tick_size": "0.0001", "settlement": "physical", "group": "fx", "market_type": "fx_future", "active": true},
+    "6J":  {"name": "Japanese Yen", "exchange": "CME", "currency": "USD", "multiplier": "12500000", "tick_size": "0.0000005", "settlement": "physical", "group": "fx", "market_type": "fx_future", "active": true},
+    "6C":  {"name": "Canadian Dollar", "exchange": "CME", "currency": "USD", "multiplier": "100000", "tick_size": "0.00005", "settlement": "physical", "group": "fx", "market_type": "fx_future", "active": true},
+    "ZN":  {"name": "10-Year T-Note", "exchange": "CBOT", "currency": "USD", "multiplier": "1000", "tick_size": "0.015625", "settlement": "physical", "group": "rates", "note": "quoted in points of par; one point = 1,000 USD; tick = half of 1/32 point", "active": true},
+    "ZC":  {"name": "Corn", "exchange": "CBOT", "currency": "USD", "multiplier": "50", "tick_size": "0.25", "settlement": "physical", "group": "agriculture", "note": "quoted in cents per bushel: 5,000 bushels x 0.01 USD = 50 USD per cent", "active": false}
+  }
+}
