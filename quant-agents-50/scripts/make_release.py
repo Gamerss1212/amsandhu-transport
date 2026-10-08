@@ -70,9 +70,10 @@ USER_FILES = {
     "docs/REAL_MONEY.md", "docs/schedule.md",
 }  # fmt: skip
 USER_DIRS = ("config/", "src/")
+# only these sit at the top of the owner's folder; everything else goes into program/
+OWNER_TOP = {"QuantAgents.bat", "START_HERE.md"}
+PROGRAM = "program/"
 USER_WRITTEN = {
-    "README.md": "# QuantAgents-50\n\nRead START_HERE.md, then double-click QuantAgents.bat "
-    "(Windows) or run bash QuantAgents.sh (macOS/Linux).\n",
     "docs/STATUS.md": "# Your approvals\n\n"
     "Your own decisions. When you switch real money on in the app (Real money box, step 2),\n"
     "QuantAgents writes a dated row here with your name. Real money only runs while such a\n"
@@ -97,6 +98,8 @@ def build(out: Path, *, full: bool = False) -> tuple[Path, int, str]:
     with zipfile.ZipFile(out, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=9) as zf:
         entries = [(p.relative_to(ROOT).as_posix(), p.read_bytes()) for p in files]
         entries += [(rel, text.encode("utf-8")) for rel, text in written.items()]
+        if not full:
+            entries = [(r if r in OWNER_TOP else PROGRAM + r, d) for r, d in entries]
         for rel, data in sorted(entries):
             info = zipfile.ZipInfo(f"{TOP}/{rel}", date_time=(2026, 1, 1, 0, 0, 0))
             info.compress_type = zipfile.ZIP_DEFLATED

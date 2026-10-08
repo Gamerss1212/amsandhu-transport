@@ -5,7 +5,7 @@ In paper mode nothing here can place a real order. If you have armed real money 
 
 ## The easy way
 
-Double-click `QuantAgents.bat` (or `bash QuantAgents.sh`). In the **Automatic daily run**
+Double-click `QuantAgents.bat` (macOS/Linux: `bash program/QuantAgents.sh` in the download). In the **Automatic daily run**
 box, press **Turn ON** (or **Turn OFF**).
 
 The app picks the time for you:

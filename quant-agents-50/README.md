@@ -21,7 +21,7 @@ Real money (crypto on Kraken) is built in, switched off, and only the owner can 
 You need Python 3.11 or newer. **Beginners: read `START_HERE.md`.**
 
 - **Windows:** double-click `QuantAgents.bat`. The first run installs everything, then your browser opens the app at `http://127.0.0.1:8765`: press **Run today's paper day**, then **Turn ON** for the automatic daily run.
-- **macOS/Linux:** `bash QuantAgents.sh`, then the same page.
+- **macOS/Linux:** `bash QuantAgents.sh` here, or `bash program/QuantAgents.sh` in the download; then the same page.
 
 By hand, the same thing:
 

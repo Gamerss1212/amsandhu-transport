@@ -23,6 +23,7 @@ from quantagents.risk.killswitch import KillSwitch
 COPY_DIRS = ("state", "runs", "data")
 COPY_FILES = ("config/my_universe.yaml", ".env")
 SKIP_SUFFIXES = (".lock", ".tmp")
+PROGRAM = "program"
 
 
 def _has_account(folder: Path) -> bool:
@@ -34,6 +35,8 @@ def _has_account(folder: Path) -> bool:
 def import_from(old: Path, new: Path) -> list[str]:
     """Copy ``old``'s account into ``new`` and stop ``old``. Returns what to tell the owner."""
     old, new = old.expanduser().resolve(), new.resolve()
+    if (old / PROGRAM / "pyproject.toml").is_file():
+        old = old / PROGRAM  # a download from 0.10.0 on keeps everything in program/
     if old == new:
         raise ValueError("that is this folder: give the path of the OLDER QuantAgents folder")
     if not old.is_dir():

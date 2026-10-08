@@ -1,5 +1,8 @@
 # Real money (Phase 8): how it works and how to switch it on
 
+File paths in this guide (`runs\daily.log`, `state\live_ledger.json`, `docs\STATUS.md`) are
+inside the `program` folder of your QuantAgents folder.
+
 Real money is **off** when you unzip QuantAgents. It stays off until you do every step below
 yourself. Nothing in the program, and no Claude session, can switch it on for you.
 

@@ -3,6 +3,8 @@ rem QuantAgents-50: double-click this file. That is all you need to do.
 rem The first time, it installs everything (about 5 minutes, needs the internet). Then it
 rem opens QuantAgents in your web browser. Keep the black window open while you use it.
 cd /d "%~dp0"
+rem In the download, everything else lives in the "program" folder next to this file.
+if exist "program\pyproject.toml" cd /d "%~dp0program"
 title QuantAgents-50
 if not exist ".venv\Scripts\python.exe" goto install
 ".venv\Scripts\python.exe" -c "import quantagents" >nul 2>nul

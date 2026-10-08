@@ -1,6 +1,6 @@
 # Build status
 
-Updated: 2026-10-07 (release 0.9.0: slim download; the owner switches real money on and off from the page; it is OFF; the 30-day paper run is next)
+Updated: 2026-10-08 (release 0.10.0: one file to double-click; real money is OFF; the 30-day paper run is next)
 
 ## Where things stand
 
@@ -9,8 +9,8 @@ Updated: 2026-10-07 (release 0.9.0: slim download; the owner switches real money
 - New signal agents A13 and A15 are in **shadow**: sealed and scored by A35, no vote until the owner promotes them.
 - Mode: **paper**. Autonomy level: **1**. Live trading: **not approved**.
 - **Real money: built, OFF.** The owner asked for it on 2026-10-06. It is a crypto-only mirror for Kraken (`docs/REAL_MONEY.md`). It sends nothing until the owner opens all 11 gates, including a dated approval row below. It was tested against a fake exchange and real Kraken prices, never a real account.
-- **Simple to run:** `QuantAgents.bat` (Windows) or `bash QuantAgents.sh` installs on the first run, then opens the app in the web browser (a page on this computer only, `http://127.0.0.1:8765`).
-- Tests: 507, all gates green, 97% coverage overall, 100% branch coverage on risk.
+- **Simple to run:** the download holds `QuantAgents.bat`, `START_HERE.md` and a `program` folder. `QuantAgents.bat` (macOS/Linux: `bash program/QuantAgents.sh`) installs on the first run, then opens the app in the web browser (a page on this computer only, `http://127.0.0.1:8765`).
+- Tests: 508, all gates green, 97% coverage overall, 100% branch coverage on risk.
 - **Phase 1 passed** (2026-10-06): real data store, free data sources, split check, event-driven backtester, benchmark, leakage tests.
 - **Phase 2 done** (2026-10-06): five published strategies tested on real data, pre-registered, run once. **All five FAIL** the promotion bar. No edge strong enough to trade has been found yet.
 - **Phase 3 built** (2026-10-06): chaos tests, watchdog, daily run and schedule guide. The 30-day paper run needs calendar time on the owner's PC.
@@ -397,6 +397,19 @@ Three new families of my own, pre-registered, run once each on the 8 ETFs and BT
 - **Still no edge proven.** Two came close, but neither clears every check (details in the report).
 - Nothing was tuned after the runs. The paper account's rules did not change.
 
+## Release 0.10.0 (2026-10-08): one file to double-click
+
+The owner asked for one file that starts the whole system with the local server.
+- **The download now opens to three things:** `QuantAgents.bat`, `START_HERE.md` and a
+  `program` folder with everything else (program, settings, guides, and later the accounts).
+- `QuantAgents.bat` steps into `program` by itself: first run installs, every run starts the
+  local server and opens the page. The developer copy keeps its old layout and the same
+  launcher works there too.
+- **Bring it over** accepts either layout: type the folder you unzipped, old or new.
+- The owner asked Claude to "watch and learn" from a YouTube video (Chart Fanatics, "Trading
+  LIVE with a World TOP Ranked Scalper"). Claude cannot watch video; only the title was read.
+  Nothing from it was added. Scalping needs minute data, which this kit does not use.
+
 ## Human approvals
 
 | Date | Decision | Owner |
@@ -414,7 +427,7 @@ Three new families of my own, pre-registered, run once each on the 8 ETFs and BT
 
 ## Next step
 
-1. **Owner:** unzip `QuantAgents-50-v0.9.0.zip` and double-click `QuantAgents.bat`. Your
+1. **Owner:** unzip `QuantAgents-50-v0.10.0.zip` and double-click `QuantAgents.bat`. Your
    browser opens the app.
    - Press **Run today's paper day**, then **Turn ON** for the automatic daily run.
    - Let it paper-trade for 30 trading days; the page shows progress and the scoreboard.

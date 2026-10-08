@@ -1,4 +1,4 @@
-# Start here: QuantAgents-50 (version 0.9.0)
+# Start here: QuantAgents-50 (version 0.10.0)
 
 A 25-agent trading system. Once a day, after the market closes, it downloads real prices, lets
 the agents decide, and trades in a **paper account**: 10,000 CAD of practice money.
@@ -9,7 +9,8 @@ the agents decide, and trades in a **paper account**: 10,000 CAD of practice mon
 1. **Install Python 3.11 or newer** from python.org. On the first screen, tick
    **"Add python.exe to PATH"**.
 2. **Unzip** this folder somewhere simple, for example `C:\QuantAgents-50`.
-3. **Double-click `QuantAgents.bat`** (macOS/Linux: `bash QuantAgents.sh`).
+3. **Double-click `QuantAgents.bat`.** It is the only file you ever need to open.
+   (macOS/Linux: in a terminal, `bash program/QuantAgents.sh`.)
    - The first time, it installs itself (5 to 10 minutes, needs the internet).
    - Then your web browser opens QuantAgents at `http://127.0.0.1:8765`. This page lives on
      your own computer; nobody else can open it.
@@ -40,7 +41,7 @@ the agents decide, and trades in a **paper account**: 10,000 CAD of practice mon
 
 ## Real money, in short
 
-Read `docs/REAL_MONEY.md` first. Then:
+Read `program/docs/REAL_MONEY.md` first. Then:
 1. Use a **separate crypto folder** (unzip a second copy, pick **Crypto on Kraken, in CAD**).
 2. Let it **paper-trade for 30 days**.
 3. In its **Real money** box:
@@ -57,14 +58,24 @@ Every safety check stays in force:
 
 ## Updating
 
-Unzip the new version into a new folder and open it. In **Tools**, type the old folder's path
-and press **Bring it over**. Your account moves over and the old folder is stopped.
+Unzip the new version into a new folder and double-click its `QuantAgents.bat`. In **Tools**,
+type the old folder's path (the folder you unzipped before) and press **Bring it over**. Your account moves over and the old folder is stopped.
 
 ## Files
 
+The folder you unzip holds only three things:
+
 | Path | What it is |
 |---|---|
-| `QuantAgents.bat` / `QuantAgents.sh` | Start QuantAgents |
+| `QuantAgents.bat` | **The one file to double-click.** It installs (first time), starts the local server and opens the page |
+| `START_HERE.md` | This guide |
+| `program/` | Everything else. You never need to open it |
+
+Inside `program/`, in case you want to look:
+
+| Path | What it is |
+|---|---|
+| `QuantAgents.sh` | The same starter for macOS/Linux |
 | `daily.bat` / `daily.sh` | One daily run (what the automatic run starts) |
 | `docs/REAL_MONEY.md` | How real money works, step by step |
 | `docs/schedule.md` | The daily schedule, if you want to set it by hand |

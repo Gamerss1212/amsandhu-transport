@@ -64,19 +64,25 @@ def test_the_owners_zip_has_only_what_running_needs(tmp_path: Path) -> None:
     top = "QuantAgents-50/"
     names = {n.removeprefix(top) for n in zipfile.ZipFile(out).namelist()}
     assert count == len(names)
+    assert {n for n in names if not n.startswith("program/")} == {
+        "QuantAgents.bat",
+        "START_HERE.md",
+    }
+    top += "program/"  # one file to double-click; everything else sits in program/
+    names = {n.removeprefix("program/") for n in names if n.startswith("program/")}
     outside_src = {n for n in names if not n.startswith(("src/", "config/"))}
     assert outside_src == {
-        "QuantAgents.bat", "QuantAgents.sh", "setup.bat", "setup.sh", "daily.bat", "daily.sh",
-        "START_HERE.md", "README.md", ".env.example", "pyproject.toml",
+        "QuantAgents.sh", "setup.bat", "setup.sh", "daily.bat", "daily.sh",
+        ".env.example", "pyproject.toml",
         "docs/REAL_MONEY.md", "docs/schedule.md", "docs/STATUS.md",
     }  # fmt: skip
     assert "src/quantagents/web/index.html" in names and "config/agents.yaml" in names
     assert not any(n.startswith(("tests/", ".claude/")) or "SPEC" in n for n in names)
     with zipfile.ZipFile(out) as zf:
         status = zf.read(top + "docs/STATUS.md").decode("utf-8")
-        readme = zf.read(top + "README.md").decode("utf-8")
+        launcher = zf.read("QuantAgents-50/QuantAgents.bat").decode("utf-8")
     assert "## Human approvals" in status and "| (none yet) | | |" in status
-    assert "START_HERE.md" in readme
+    assert 'if exist "program\\pyproject.toml" cd /d "%~dp0program"' in launcher
     for script in ("setup.sh", "QuantAgents.sh", "daily.sh"):
         info = zipfile.ZipFile(out).getinfo(top + script)
         assert (info.external_attr >> 16) & 0o111

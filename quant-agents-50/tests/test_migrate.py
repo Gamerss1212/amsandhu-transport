@@ -109,3 +109,15 @@ def test_import_from_the_command_line_and_the_menu(
     assert "Old folder: The automatic daily run was already off." in text
     assert any(c[:2] == ["schtasks", "/Query"] for c in shell.calls)  # asked, nothing to delete
     assert (other / "state" / "paper_account.json").exists()
+
+
+def test_import_finds_the_account_inside_a_newer_download(old: Path, tmp_path: Path) -> None:
+    root = tmp_path / "QuantAgents-50-0.10"  # 0.10.0 on: QuantAgents.bat + program/
+    root.mkdir()
+    old.rename(root / "program")
+    (root / "program" / "pyproject.toml").write_text("[project]\n", encoding="utf-8")
+    new = tmp_path / "next" / "program"
+    new.mkdir(parents=True)
+    import_from(root, new)  # the owner types the folder they unzipped, not program/
+    assert (new / "state" / "paper_account.json").exists()
+    assert KillSwitch(root / "program" / "state" / "kill_switch.json").engaged
