@@ -183,7 +183,7 @@ class Orchestrator:
                            sized_target=abs(target) if target != 0 else abs(delta),
                            reduces_position=abs(target) < abs(pos_qty) and np.sign(target) in (0, np.sign(pos_qty)),
                            tradable=tradable,
-                           permitted=app.permission(inst, mode))
+                           permitted=app.permission(inst, mode), quantity_step=inst.quantity_step)
         t = time.perf_counter()
         res = app.oms.place(decision_id=did, req=req, snapshot=snap, broker=app.broker_for(mode),
                             broker_symbol=app.broker_symbol(inst, mode), mode=mode, strategy_id=bot.strategy_id,

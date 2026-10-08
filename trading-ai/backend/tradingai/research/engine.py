@@ -286,7 +286,8 @@ def run_research(spec: StrategySpec, bars: Bars, inst: Instrument, calendar: str
     checks = _gates(rep_test, stat, wf_sh, wf_ratio, stability, stress, remove, placebo)
     score = _quality(rep_test, stat, wf_sh, wf_ratio, stability, stress, rep_full, placebo, test)
     passed = all(c["passed"] for c in checks if c["required"])
-    promising = sum(1 for c in checks if c["passed"]) >= len(checks) * 0.6
+    # a handful of test trades proves nothing either way: below 10 the verdict is REJECT (insufficient sample)
+    promising = sum(1 for c in checks if c["passed"]) >= len(checks) * 0.6 and rep_test["trades"] >= 10
     verdict = "PAPER TEST" if passed else ("RESEARCH FURTHER" if promising else "REJECT")
     return {
         "status": "ok", "verdict": verdict, "strategy_id": spec.strategy_id, "instrument": inst.instrument_id,
@@ -303,9 +304,28 @@ def run_research(spec: StrategySpec, bars: Bars, inst: Instrument, calendar: str
             "strategy_version": spec.version, "code_version": __version__, "seed": seed, "profile": profile,
             "cost_model": full.costs.get("model"), "simulated_data": bars.simulated},
         "runtime_s": round(time.time() - t0, 2),
+        "equity_curve": _curve(bars.ts, full.equity),
+        "test_trades": [_trade_row(t) for t in test.trades[-300:]],
         "language_note": "Results describe past data under the stated assumptions. They are not a promise of future "
                          "returns.",
     }
+
+
+def _curve(ts: np.ndarray, equity: np.ndarray, points: int = 400) -> list[list]:
+    """The full-history equity curve, thinned to at most `points` (every point is a real value from the run)."""
+    n = min(len(ts), len(equity))
+    if n == 0:
+        return []
+    idx = np.unique(np.linspace(0, n - 1, min(points, n)).astype(int))
+    return [[int(ts[i]), round(float(equity[i]), 2)] for i in idx]
+
+
+def _trade_row(t) -> dict:
+    notional = t.qty * t.entry_px
+    return {"side": t.side, "entry_ts": t.entry_ts, "exit_ts": t.exit_ts, "entry": round(t.entry_px, 6),
+            "exit": round(t.exit_px, 6), "net": round(t.net, 2), "fees": round(t.fees, 2),
+            "ret": round(t.net / notional, 6) if notional else None, "r": None if t.r_multiple is None else
+            round(t.r_multiple, 3), "bars": t.bars, "exit_reason": t.exit_reason}
 
 
 def _q(x, q):

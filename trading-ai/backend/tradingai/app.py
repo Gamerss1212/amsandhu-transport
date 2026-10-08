@@ -42,6 +42,8 @@ from tradingai.features.registry import summary as feature_summary
 from tradingai.market import universe
 from tradingai.market.calendars import session
 from tradingai.market.instruments import Instrument, MarketType
+from tradingai.research.compare import compare as compare_runs
+from tradingai.research.engine import PROFILES, Cancelled, run_research
 from tradingai.research.jobs import Jobs
 from tradingai.research.ledger import Ledger
 from tradingai.risk.service import RiskService, Snapshot
@@ -109,6 +111,7 @@ class App:
         self._check("recovery", self._recover)
         if self.state.state == S.BOOTING:
             self.state.to(S.READY, "start-up checks passed")
+            self._sync_state("bots restored")
         self.audit("system", f"Trading AI {__version__} started ({platform.system()} {platform.release()})",
                    data={"checks": self.checks})
 
@@ -220,7 +223,9 @@ class App:
             notes.append("previous session was LIVE: back to PAPER; re-arm live trading to continue")
         if self.risk.kill_switch:
             notes.append("STOP ALL TRADING is still engaged from the previous session")
-        self._sync_state("recovered")
+        rec = self.reconcile()
+        if not rec["ok"]:
+            notes.append(f"RECONCILIATION REQUIRED: {len(rec['problems'])} difference(s)")
         return "; ".join(notes) or "clean start"
 
     # ================================================================== helpers used by the orchestrator
@@ -276,7 +281,8 @@ class App:
                         last_volume=float(bars.volume[-1]) if len(bars) and bars.volume[-1] > 0 else None,
                         market_open=bool(cal["open"]) or inst.market_type is MarketType.CRYPTO_SPOT,
                         broker_ok=br is self.paper or br.connected,
-                        reconciliation_ok=self.state.state != S.RECONCILIATION_REQUIRED)
+                        reconciliation_ok=self.state.state != S.RECONCILIATION_REQUIRED,
+                        account_id=acct.account_id_masked, environment=acct.environment)
 
     def _clusters(self) -> list[list[str]]:
         crypto = [i for i in self.paper.get_positions() if self.book.get(i).market_type is MarketType.CRYPTO_SPOT]
@@ -303,7 +309,7 @@ class App:
             self._loop_thread.start()
 
     def _loop(self) -> None:
-        last_account = 0.0
+        last_account = last_recon = 0.0
         while not self._stop.is_set():
             t0 = time.time()
             try:
@@ -311,6 +317,11 @@ class App:
                 if time.time() - last_account > 5:
                     self.publish_account()
                     last_account = time.time()
+                if time.time() - last_recon > 300:
+                    r = self.reconcile()
+                    if not r["ok"]:
+                        self.bus.publish("reconcile", r, severity="critical")
+                    last_recon = time.time()
             except Exception as e:                    # noqa: BLE001 - the loop survives; the error is logged
                 log.error(f"trading loop error: {type(e).__name__}: {e}")
                 self.bus.publish("system.error", {"error": f"{type(e).__name__}: {e}"}, severity="error")
@@ -614,6 +625,138 @@ class App:
         self.audit("mode", f"LIVE disarmed: {reason}", severity="warning")
         return {"armed": False}
 
+    # ================================================================== research, reconciliation, charts
+    def submit_research(self, strategy_id: str, instrument_id: str, tf: str, profile: str = "STANDARD",
+                        lookback: int = 5000) -> dict:
+        sp = specs().get(strategy_id)
+        if sp is None:
+            raise ValueError(f"unknown strategy {strategy_id!r}")
+        if not sp.runnable:
+            raise ValueError(f"{strategy_id} needs data this installation does not have: {', '.join(sp.required_data)}")
+        if profile not in PROFILES:
+            raise ValueError(f"profile must be one of {', '.join(PROFILES)}")
+        if tf not in TF_MS:
+            raise ValueError(f"unknown timeframe {tf}")
+        inst = self.book.get(instrument_id)
+        market = MARKET_OF.get(inst.market_type, "crypto")
+        lookback = max(400, min(int(lookback), 20_000))
+
+        def work(progress, cancel) -> dict:
+            progress(0.0, "loading market data")
+            bars, st = self.md.bars(instrument_id, tf, lookback=lookback, max_age_s=0)
+            if len(bars) < 400:
+                raise ValueError(f"only {len(bars)} bars of {tf} data available (need 400)")
+            eid = self.ledger.start(family=sp.family, strategy_id=sp.strategy_id, hypothesis=sp.economic_hypothesis,
+                                    instrument=instrument_id, tf=tf, profile=profile, seed=7,
+                                    dataset={"provider": st.get("provider"), "bars": len(bars),
+                                             "start": int(bars.ts[0]), "end": int(bars.ts[-1]),
+                                             "sha256": bars.sha256(), "simulated": bars.simulated})
+            try:
+                res = run_research(sp, bars, inst, inst.calendar or "CRYPTO", market, profile=profile,
+                                   trials_so_far=self.ledger.family_trials(sp.family), seed=7, progress=progress,
+                                   cancel=cancel)
+            except Cancelled:
+                self.ledger.fail(eid, "cancelled by the owner")
+                raise
+            except Exception as e:                    # noqa: BLE001
+                self.ledger.fail(eid, f"{type(e).__name__}: {e}")
+                raise
+            self.ledger.finish(eid, res)
+            self.audit("research", f"{profile} research {strategy_id} on {instrument_id} {tf}: "
+                       f"{res.get('verdict') or res.get('status')}", data={"experiment_id": eid})
+            return {"experiment_id": eid, "verdict": res.get("verdict"), "status": res.get("status")}
+        return self.jobs.submit(f"{profile}: {strategy_id} on {instrument_id} {tf}", work,
+                                meta={"strategy_id": strategy_id, "instrument_id": instrument_id, "tf": tf,
+                                      "profile": profile})
+
+    def reconcile(self) -> dict:
+        """Paper: positions rebuilt from fills must equal the stored positions. Live: broker truth vs local fills.
+        Any difference moves the system to RECONCILIATION_REQUIRED (new entries blocked) until it is resolved."""
+        problems: list[str] = []
+        derived: dict[str, Decimal] = {}
+        for f in self.db.query("SELECT instrument_id, side, qty FROM fills WHERE account_id=?", (self.paper.account_id,)):
+            q = Decimal(f["qty"]) * (1 if f["side"] == "buy" else -1)
+            derived[f["instrument_id"]] = derived.get(f["instrument_id"], Decimal(0)) + q
+        stored = self.paper.get_positions()
+        for k in set(derived) | set(stored):
+            if derived.get(k, Decimal(0)) != stored.get(k, Decimal(0)):
+                problems.append(f"paper {k}: fills say {derived.get(k, 0)}, positions say {stored.get(k, 0)}")
+        inv = self.paper.invariant()
+        if not inv["ok"]:
+            problems.append(f"paper ledger fees {inv['fees_in_ledger']} vs fills {inv['fees_from_fills']}")
+        live = None
+        if self.live.get("armed"):
+            br = self.connections.get(self.live["connection_id"])
+            local: dict[str, Decimal] = {}
+            for f in self.db.query("SELECT instrument_id, side, qty FROM fills WHERE environment='live'"):
+                sym = self.broker_symbol(self.book.get(f["instrument_id"]), "live")
+                local[sym] = local.get(sym, Decimal(0)) + Decimal(f["qty"]) * (1 if f["side"] == "buy" else -1)
+            opened = {r["client_order_id"] for r in self.db.query(
+                "SELECT client_order_id FROM orders WHERE environment='live' AND status IN "
+                "('NEW','SUBMITTED','PARTIALLY_FILLED')")}
+            live = br.reconcile(local, opened) if br else {"ok": False, "problems": ["live connection missing"]}
+            problems += live["problems"]
+        ok = not problems
+        if not ok and self.state.can(S.RECONCILIATION_REQUIRED):
+            self.state.to(S.RECONCILIATION_REQUIRED, "; ".join(problems)[:300])
+        elif ok and self.state.state == S.RECONCILIATION_REQUIRED:
+            self.state.to(S.READY, "reconciliation clean")
+            self._sync_state("reconciliation clean")
+        self.audit("reconcile", "reconciliation clean" if ok else f"{len(problems)} difference(s) found",
+                   severity="info" if ok else "critical", data={"problems": problems})
+        return {"ok": ok, "problems": problems, "paper_invariant": inv, "live": live, "ts": now_ms()}
+
+    def chart(self, instrument_id: str, tf: str, n: int = 300) -> dict:
+        inst = self.book.get(instrument_id)
+        bars, st = self.md.bars(instrument_id, tf, lookback=max(50, min(int(n), 2000)), max_age_s=self.tick_seconds)
+        fills = self.db.query("SELECT ts, side, qty, price, environment FROM fills WHERE instrument_id=? "
+                              "ORDER BY ts DESC LIMIT 200", (instrument_id,))
+        return {"instrument": instrument_id, "name": inst.symbol, "tf": tf, "simulated": bars.simulated,
+                "currency": inst.currency, "status": {k: st.get(k) for k in ("provider", "fresh", "error", "note")},
+                "quality": (st.get("quality") or {}).get("score"),
+                "bars": [[int(bars.ts[i]), float(bars.open[i]), float(bars.high[i]), float(bars.low[i]),
+                          float(bars.close[i]), float(bars.volume[i])] for i in range(len(bars))],
+                "fills": fills}
+
+    def instruments_view(self) -> list[dict]:
+        out = []
+        for iid, src in self.sources.items():
+            inst = self.book.get(iid)
+            ok, why = universe.paper_tradable(inst)
+            prov = self.md.providers[src.provider]
+            out.append({"instrument_id": iid, "name": inst.symbol, "market": MARKET_OF.get(inst.market_type),
+                        "market_type": inst.market_type.value, "provider": src.provider, "symbol": src.symbol,
+                        "note": src.note, "timeframes": list(prov.timeframes) + [t for t in ("30m", "1h", "4h")
+                                                                                  if t not in prov.timeframes],
+                        "simulated": prov.simulated, "paper_tradable": ok, "why": why,
+                        "multiplier": str(inst.multiplier), "currency": inst.currency})
+        return out
+
+    def paper_trades(self, strategy_id: str, instrument_id: str) -> list[float]:
+        """Closed paper round trips for one strategy on one instrument, as net return on entry notional."""
+        rows = self.db.query("SELECT f.side, f.qty, f.price, f.fee FROM fills f JOIN orders o ON "
+                             "o.client_order_id=f.client_order_id WHERE f.environment='paper' AND o.strategy_id=? "
+                             "AND f.instrument_id=? ORDER BY f.ts", (strategy_id, instrument_id))
+        out, pos, cost, fees, entry_notional = [], Decimal(0), Decimal(0), Decimal(0), Decimal(0)
+        mult = self.book.get(instrument_id).multiplier
+        for r in rows:
+            q = Decimal(r["qty"]) * (1 if r["side"] == "buy" else -1)
+            if pos == 0:
+                cost, fees, entry_notional = Decimal(0), Decimal(0), abs(q) * Decimal(r["price"]) * mult
+            cost += q * Decimal(r["price"]) * mult
+            fees += Decimal(r["fee"])
+            pos += q
+            if pos == 0 and entry_notional > 0:
+                out.append(float((-cost - fees) / entry_notional))
+        return out
+
+    def compare(self, strategy_id: str, instrument_id: str) -> dict:
+        e = self.ledger.latest_for(strategy_id, instrument_id)
+        bt = [t["ret"] for t in ((e or {}).get("results") or {}).get("test_trades", []) if t.get("ret") is not None]
+        return dict(compare_runs(bt, self.paper_trades(strategy_id, instrument_id)),
+                    experiment_id=(e or {}).get("experiment_id"),
+                    note="returns per trade on entry notional; backtest = the out-of-sample test segment")
+
     # ================================================================== views and health
     def account_view(self) -> dict:
         br = self.broker_for(self.mode)
@@ -623,8 +766,8 @@ class App:
         fills = self.db.query("SELECT * FROM fills WHERE environment=? ORDER BY ts DESC LIMIT 50",
                               ("live" if self.mode == "live" else "paper",))
         day0 = self.risk.day_start_equity
-        realized = sum(Decimal(p.get("realized") or 0) for p in positions)
-        unreal = sum(Decimal(p["unrealized"]) for p in positions if p.get("unrealized"))
+        realized = sum((Decimal(p.get("realized") or 0) for p in positions), Decimal(0))
+        unreal = sum((Decimal(p["unrealized"]) for p in positions if p.get("unrealized")), Decimal(0))
         return {"mode": self.mode, "badge": a.source, "account": _acct(a), "positions": positions,
                 "open_orders": [asdict(o) for o in br.get_open_orders()],
                 "day_pnl": None if day0 is None or a.equity is None else str((a.equity - day0).quantize(Decimal("0.01"))),

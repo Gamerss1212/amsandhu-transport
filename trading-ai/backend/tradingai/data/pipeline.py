@@ -46,7 +46,8 @@ class MarketData:
                           "demo": Demo()}
         self.offline = offline
         self._locks: dict[tuple[str, str], threading.Lock] = {}
-        self._mem: dict[tuple[str, str], tuple[float, Bars, dict]] = {}
+        self._mem: dict[tuple[str, str], tuple[float, Bars, dict, int]] = {}    # (time, bars, status, history)
+        self._backfilled: set[tuple] = set()
         self.status_by_series: dict[str, dict] = {}
 
     def _lock(self, key: tuple[str, str]) -> threading.Lock:
@@ -60,7 +61,7 @@ class MarketData:
         key = (instrument_id, tf)
         with self._lock(key):
             cached = self._mem.get(key)
-            if cached and time.time() - cached[0] < max_age_s:
+            if cached and time.time() - cached[0] < max_age_s and cached[3] >= lookback:
                 b, st = cached[1], cached[2]
                 return b.slice(max(0, len(b) - lookback), len(b)), st
             native = tf in prov.timeframes
@@ -74,7 +75,7 @@ class MarketData:
                 st = dict(st, resampled_from=base_tf)
             else:
                 b, st = self._native(inst.calendar or "CRYPTO", src, instrument_id, tf, lookback, refresh)
-            self._mem[key] = (time.time(), b, st)
+            self._mem[key] = (time.time(), b, st, max(lookback, DEFAULT_HISTORY_BARS))
             self.status_by_series[f"{instrument_id}|{tf}"] = st
             return b.slice(max(0, len(b) - lookback), len(b)), st
 
@@ -90,6 +91,18 @@ class MarketData:
             b = prov.fetch(instrument_id, src.symbol, tf, want_from)
         else:
             last = self.store.last_ts(src.provider, src.symbol, tf)
+            first = self.store.first_ts(src.provider, src.symbol, tf)
+            bf = (src.provider, src.symbol, tf, want_from // (step * 100))
+            if refresh and not self.offline and first is not None and first > want_from + 2 * step and \
+                    bf not in self._backfilled:
+                self._backfilled.add(bf)                 # older history asked for: one attempt per window
+                try:
+                    older = prov.fetch(instrument_id, src.symbol, tf, want_from)
+                    if len(older):
+                        self.store.write(src.provider, src.symbol, older,
+                                         transforms="adjusted (Yahoo adjclose)" if older.meta.get("adjusted") else "")
+                except Exception as e:                   # noqa: BLE001
+                    log.warning(f"history backfill failed for {instrument_id} {tf}: {e}")
             if refresh and not self.offline and (last is None or last + 2 * step <= now):
                 start = want_from if last is None else last
                 try:

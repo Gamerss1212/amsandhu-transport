@@ -33,6 +33,11 @@ OPEN_STATES = ("NEW", "SUBMITTED", "PARTIALLY_FILLED")
 Quote = Callable[[str], Optional[dict]]      # -> {"price", "ts", "volume", "sigma", "range"} or None
 
 
+def _s(x: Decimal) -> str:
+    """Stored decimal text; an exact zero is always "0" (Decimal('0E-8') would read as an open position)."""
+    return "0" if x == 0 else format(x, "f")
+
+
 def _d(x) -> Decimal:
     return x if isinstance(x, Decimal) else Decimal(str(x))
 
@@ -269,7 +274,8 @@ class PaperBroker(BrokerAdapter):
         else:
             avg = avg0
         sid = order.get("strategy_id") or "manual"
-        lots[sid] = str(D(lots.get(sid, "0")) + signed_qty)
+        lots[sid] = _s(D(lots.get(sid, "0")) + signed_qty)
+        lots = {k: v for k, v in lots.items() if v != "0"}
         fill_id = new_id("F")
         with self.db.tx() as c:
             if inst.market_type in SPOT:
@@ -292,7 +298,7 @@ class PaperBroker(BrokerAdapter):
                       "strategy_lots, updated) VALUES (?,?,?,?,?,?,?,?) ON CONFLICT(account_id, instrument_id) DO "
                       "UPDATE SET qty=excluded.qty, avg_price=excluded.avg_price, realized=excluded.realized, "
                       "strategy_lots=excluded.strategy_lots, updated=excluded.updated",
-                      (acct, iid, str(new_qty), str(avg), str(realized0 + realized), inst.currency, json.dumps(lots), t))
+                      (acct, iid, _s(new_qty), _s(avg), _s(realized0 + realized), inst.currency, json.dumps(lots), t))
 
     # ------------------------------------------------------------------ owner actions and checks
     def set_balance(self, amount: Decimal, by: str) -> dict:

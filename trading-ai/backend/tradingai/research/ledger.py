@@ -40,7 +40,8 @@ class Ledger:
         status = STATUS_FOR_VERDICT.get(result.get("verdict", ""), "FAILED")
         if result.get("status") != "ok":
             status = "FAILED"
-        if status == "WEAK" and (result.get("quality") or {}).get("score", 0) >= 50:
+        if status == "WEAK" and (result.get("quality") or {}).get("score", 0) >= 50 and \
+                (result.get("test") or {}).get("trades", 0) >= 10:
             status = "PROMISING"
         reason = "; ".join(f"{c['name']} {c['value']} (need {c['need']})" for c in result.get("checks", [])
                            if not c["passed"]) or result.get("status", "")

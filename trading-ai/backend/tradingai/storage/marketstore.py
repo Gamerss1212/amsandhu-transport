@@ -120,13 +120,19 @@ class MarketStore:
         return b
 
     def last_ts(self, provider: str, symbol: str, tf: str) -> Optional[int]:
+        return self._edge(provider, symbol, tf, "max")
+
+    def first_ts(self, provider: str, symbol: str, tf: str) -> Optional[int]:
+        return self._edge(provider, symbol, tf, "min")
+
+    def _edge(self, provider: str, symbol: str, tf: str, fn: str) -> Optional[int]:
         folder = self._dir(provider, symbol, tf)
         if not folder.exists():
             return None
         with self._lock:
             con = self._con()
             try:
-                r = con.execute(f"SELECT max(ts) FROM read_parquet('{_q(folder)}/*/*/bars.parquet')").fetchone()
+                r = con.execute(f"SELECT {fn}(ts) FROM read_parquet('{_q(folder)}/*/*/bars.parquet')").fetchone()
             finally:
                 con.close()
         return int(r[0]) if r and r[0] is not None else None

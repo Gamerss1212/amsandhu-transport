@@ -15,11 +15,12 @@ from __future__ import annotations
 import threading
 import time
 from dataclasses import asdict, dataclass, field, fields
-from decimal import Decimal
+from decimal import ROUND_DOWN, Decimal
 from typing import Any, Callable, Optional
 
 RAISE_PHRASE = "RAISE MY RISK LIMITS"
 REARM_PHRASE = "RE-ARM TRADING"
+MARKETS = ("crypto", "stock", "etf", "fx", "future")
 
 
 @dataclass
@@ -82,6 +83,7 @@ class OrderRequest:
     reduces_position: bool = False
     tradable: tuple[bool, str] = (True, "ok")
     permitted: tuple[bool, str] = (True, "ok")       # broker-reported product permission (live)
+    quantity_step: Decimal = Decimal("1e-8")         # a shrunk order is rounded DOWN to the venue's step
 
 
 @dataclass
@@ -98,6 +100,8 @@ class Snapshot:
     reconciliation_ok: bool = True
     event_block: Optional[str] = None
     account_ok: bool = True
+    account_id: Optional[str] = None                 # the account the broker reports; must equal the order's
+    environment: Optional[str] = None                # paper / live, as the broker reports it
 
 
 class RiskService:
@@ -128,15 +132,25 @@ class RiskService:
             def add(name: str, ok: bool, detail: str) -> bool:
                 checks.append(Check(name, bool(ok), detail))
                 return ok
-            reduce_only = o.reduces_position
+            # "reduces the position" is verified from the broker's positions, never taken from the caller
+            held = Decimal(str(s.positions.get(o.instrument_id, {}).get("qty", 0)))
+            reduce_only = bool(o.reduces_position) and held != 0 and qty <= abs(held) and \
+                ((held > 0 and o.side == "sell") or (held < 0 and o.side == "buy"))
+            if o.reduces_position and not reduce_only:
+                add("reduce-only claim verified", False, f"order {o.side} {qty} does not reduce the held {held}")
             add("kill switch not engaged", self.kill_switch is None or reduce_only,
                 "engaged: " + self.kill_switch["reason"] if self.kill_switch else "armed")
             add("trading not locked", self.trading_locked is None or reduce_only,
                 self.trading_locked["reason"] if self.trading_locked else "open")
             add("instrument tradable", o.tradable[0], o.tradable[1])
             add("broker permits this product", o.permitted[0], o.permitted[1])
-            add("account validated", s.account_ok, "account identity confirmed" if s.account_ok else
-                "account identity or environment mismatch")
+            acct_match = s.account_id is None or o.account_id == s.account_id
+            env_match = s.environment is None or o.environment == "shadow" or o.environment == s.environment
+            add("account validated", s.account_ok and acct_match and env_match,
+                "account identity confirmed" if s.account_ok and acct_match and env_match else
+                f"account/environment mismatch (order {o.account_id}/{o.environment}, broker "
+                f"{s.account_id}/{s.environment})")
+            add("known market", o.market in MARKETS, o.market)
             add("broker connected", s.broker_ok, "ok" if s.broker_ok else "broker connection down")
             add("reconciliation clean", s.reconciliation_ok or reduce_only,
                 "ok" if s.reconciliation_ok else "RECONCILIATION_REQUIRED")
@@ -148,6 +162,7 @@ class RiskService:
             add("positive quantity", qty > 0, f"quantity {qty}")
             add("valid side", o.side in ("buy", "sell"), o.side)
             add("valid price", o.reference_price > 0, f"reference {o.reference_price}")
+            add("valid contract multiplier", o.multiplier > 0, f"multiplier {o.multiplier}")
             # fat finger
             if o.limit_price is not None and o.reference_price > 0:
                 dev = abs(float(o.limit_price / o.reference_price) - 1)
@@ -174,9 +189,11 @@ class RiskService:
                 notional = qty * px
                 max_order = eq * Decimal(str(L.max_order_pct_equity))
                 if notional > max_order:                         # shrink to the limit, never grow
-                    new_q = (max_order / px).quantize(Decimal("1e-8"))
+                    step = o.quantity_step if o.quantity_step > 0 else Decimal("1e-8")
+                    new_q = (max_order / px / step).to_integral_value(ROUND_DOWN) * step
                     if new_q < qty:
                         qty, adjusted = new_q, True
+                        add("shrunk quantity above zero", qty > 0, f"shrunk to {qty} (step {step})")
                 add("order size", qty * px <= max_order + Decimal("1e-6"),
                     f"{qty * px:,.2f} vs max {max_order:,.2f}" + (" (shrunk)" if adjusted else ""))
                 cur = s.positions.get(o.instrument_id, {})
