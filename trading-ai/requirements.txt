@@ -1,0 +1,11 @@
+# Runtime (pinned; every one has a Windows wheel and was checked under Windows emulation)
+fastapi==0.115.12
+starlette==0.46.2
+uvicorn==0.34.2
+websockets==15.0.1
+pydantic==2.11.4
+pydantic_core==2.33.2
+duckdb==1.2.2
+numpy==1.26.4
+httpx==0.28.1
+tzdata==2025.2
