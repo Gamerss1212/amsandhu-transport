@@ -1,4 +1,4 @@
-# Requirements matrix — Trading AI 1.0.0
+# Requirements matrix — Trading AI 1.1.0
 
 Status meanings:
 * **DONE**: implemented and exercised by a test or by the self-test.
@@ -7,8 +7,8 @@ Status meanings:
 * **NOT DONE**: not built.
 
 How it was verified:
-* **Unit tests**: 57 tests (`backend/tests`).
-* **Self-test**: `START_TRADING_AI.exe --selftest` runs 18 steps over HTTP and WebSocket against the real server. It passed on the built Windows exe under Wine.
+* **Unit tests**: 64 tests (`backend/tests`).
+* **Self-test**: `START_TRADING_AI.exe --selftest` runs 19 steps over HTTP and WebSocket against the real server. It passed on the built Windows exe under Wine.
 * **Real-data run**: the dashboard and API were exercised on live Coinbase, Kraken and Yahoo data.
 
 The exe has been tested under Wine on Linux, **not on a physical Windows PC**.
@@ -23,6 +23,15 @@ The exe has been tested under Wine on Linux, **not on a physical Windows PC**.
 | Single instance (a second double-click opens the running dashboard) | DONE | OS file lock + `/api/system/ping` probe; verified under Wine. |
 | Clean stop (console close, Ctrl+C, Shut down button) with state saved | DONE | Windows console handler + `/api/system/shutdown`; bots, risk state and a DB backup are saved. |
 | Code signing | NOT DONE | Unsigned: SmartScreen may warn on first run. |
+
+## Full automation
+
+| Requirement | Status | Evidence / limitation |
+|---|---|---|
+| Runs by itself after the double-click (no setup, no clicks) | DONE | The Autopilot is on by default. It screens strategies with FAST research and confirms the promising ones with STANDARD research (rate-limited, one job at a time). It then starts paper bots for strategies that are QUALIFIED (passed every gate) or on PROBATION (strict out-of-sample conditions, labelled as such), monitors them, and retires those whose paper results fall short or whose re-test on newer data fails. Covered by tests (`test_autopilot.py`) and a self-test step. |
+| Owner keeps control | DONE | START BOT turns everything on and STOP BOT turns everything off. A bot the owner stops is never restarted by the autopilot. EMERGENCY STOP blocks the autopilot, and the autopilot never re-arms. |
+| Fully automated real-money trading | NOT DONE (by design) | The autopilot is paper-only. Live trading needs the owner's separate arming, as required. |
+| Start with Windows | DONE | Optional checkbox: adds the program to this Windows user's Run list (no administrator rights needed). |
 
 ## Stack
 

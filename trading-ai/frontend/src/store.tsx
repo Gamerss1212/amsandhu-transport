@@ -15,11 +15,14 @@ export type Overview = {
   live_ack: string;
   offline: boolean;
   vault?: string;
+  autopilot?: { enabled: boolean; doing: string };
+  autostart?: { supported: boolean; enabled: boolean; reason?: string };
 };
 
 export type Bot = {
   bot_id: string; instrument_id: string; tf: string; strategy_id: string; signal_mode: string; risk_profile: string;
   max_trades_per_day: number; state: string; trades_today: number; last_bar_ts: number | null; created: number;
+  managed_by?: string; tier?: string | null; experiment_id?: string | null; note?: string;
 };
 
 type Live = {

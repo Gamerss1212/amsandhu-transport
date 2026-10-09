@@ -169,6 +169,8 @@ def banner(url: str, core) -> str:
              f"  Local server running at  {url}",
              "  Only this computer can reach it (127.0.0.1).",
              f"  Mode: {core.mode.upper()}   State: {core.state.state}",
+             "  Autopilot: " + ("ON - it researches, starts, watches and retires paper bots by itself"
+                                if core.autopilot.cfg.enabled else "off (press START BOT on the dashboard)"),
              f"  Data folder: {core.paths.base}",
              "", "  Keep this window open while you use the dashboard.",
              "  Close it (or press Ctrl+C) to stop everything safely.", "  " + "=" * 58]
@@ -234,6 +236,17 @@ def selftest(home: Optional[str], offline: bool) -> int:
                (_ for _ in ()).throw(AssertionError()))
     ok &= step("starts in PAPER mode", lambda: (api("/api/overview")["mode"] == "paper") or
                (_ for _ in ()).throw(AssertionError("not paper")))
+    def autopilot_working():
+        ap = api("/api/autopilot")
+        assert ap["config"]["enabled"], "autopilot is off on a fresh install"
+        t0 = time.time()
+        while time.time() - t0 < 60:
+            mine = [j for j in api("/api/research/jobs") if j["meta"].get("by") == "autopilot"]
+            if mine:
+                return f"on by default; started by itself: {mine[-1]['title']}"
+            time.sleep(1)
+        raise TimeoutError("the autopilot did not start any research within 60 s")
+    ok &= step("autopilot on by default and working by itself", autopilot_working)
     ok &= step("live mode refused without arming", lambda: c.post("/api/mode", headers=tok["h"],
                                                                      json={"mode": "live"}).status_code == 403 or
                (_ for _ in ()).throw(AssertionError("live was not refused")))

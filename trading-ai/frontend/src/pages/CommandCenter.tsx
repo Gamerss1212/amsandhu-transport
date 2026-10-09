@@ -42,8 +42,11 @@ export function InstrumentSelect({ value, onChange, list, tradableOnly }: {
 export default function CommandCenter() {
   const live = useLive();
   const instruments = useInstruments();
-  const [iid, setIid] = useState(() => localStorage.getItem("cc.iid") ?? "COINBASE:BTC-USD");
-  const [tf, setTf] = useState(() => localStorage.getItem("cc.tf") ?? "5m");
+  const [iid, setIid] = useState(() => {
+    try { return localStorage.getItem("cc.iid") ?? (live.overview?.offline ? "DEMO:DEMO-TREND" : "COINBASE:BTC-USD"); }
+    catch { return live.overview?.offline ? "DEMO:DEMO-TREND" : "COINBASE:BTC-USD"; }
+  });
+  const [tf, setTf] = useState(() => { try { return localStorage.getItem("cc.tf") ?? "5m"; } catch { return "5m"; } });
   const inst = instruments.find((i) => i.instrument_id === iid);
   const tfs = TF_ORDER.filter((t) => inst?.timeframes.includes(t));
   useEffect(() => {
@@ -100,12 +103,108 @@ export default function CommandCenter() {
         </div>
 
         <div className="col" style={{ gap: 14, minWidth: 0 }}>
+          <AutopilotCard />
           <BotControl instruments={instruments} iid={iid} tf={tf} />
           <RegimeAgents decision={lastDecision} iid={iid} />
           <RiskPanel />
         </div>
       </div>
     </>
+  );
+}
+
+// ---------------------------------------------------------------- autopilot
+const AP_MARKETS: [string, string][] = [["crypto", "Crypto"], ["stock", "Stocks"], ["etf", "ETFs"], ["fx", "Forex"], ["future", "Futures"]];
+
+function AutopilotCard() {
+  const live = useLive();
+  const [ap, reload] = usePoll<any>("/api/autopilot", 4000);
+  const o = live.overview!;
+  if (!ap) return <Card title="Autopilot"><Empty>Loading…</Empty></Card>;
+  const cfg = ap.config;
+  const set = async (changes: Record<string, unknown>, ok?: string) => {
+    try {
+      await api.post("/api/autopilot", changes);
+      if (ok) live.toast(ok, "ok");
+    } catch (e: any) {
+      live.toast(e.message, "error");
+    }
+    reload();
+    await live.refresh();
+  };
+  const autostart = o.autostart;
+  return (
+    <Card title="Autopilot" sub="fully automatic paper trading" right={
+      <button className={`btn ${cfg.enabled ? "go" : ""}`} onClick={() => set({ enabled: !cfg.enabled }, cfg.enabled ? "Autopilot off" : "Autopilot on")}
+        disabled={!cfg.enabled && !!o.risk.kill_switch}>{cfg.enabled ? "ON" : "OFF"}</button>
+    }>
+      <div className="col">
+        <div className={`callout ${cfg.enabled ? "good" : ""} small`}>
+          <b>{cfg.enabled ? "Now: " : "Autopilot is off. "}</b>{cfg.enabled ? ap.doing : "Press ON (or START BOT) and it researches, starts, watches and retires paper bots by itself."}
+        </div>
+        <div className="stats" style={{ gridTemplateColumns: "repeat(2, minmax(0, 1fr))" }}>
+          <Stat k="Strategies screened" v={ap.counts.screened} />
+          <Stat k="Full tests" v={ap.counts.confirmed} />
+          <Stat k="Bots running" v={`${ap.running} / ${cfg.max_bots}`} />
+          <Stat k="Retired" v={ap.counts.retired_count} />
+        </div>
+        <div className="row wrap small">
+          <label className="field" style={{ width: 120 }}>Max bots
+            <select value={cfg.max_bots} onChange={(e) => set({ max_bots: Number(e.target.value) })}>
+              {[1, 2, 3, 4, 6, 8, 10, 12].map((n) => <option key={n} value={n}>{n}</option>)}
+            </select>
+          </label>
+          <label className="row small" style={{ gap: 6, marginTop: 16 }}>
+            <input type="checkbox" checked={cfg.allow_probation} onChange={(e) => set({ allow_probation: e.target.checked })} />
+            allow PROBATION bots
+          </label>
+        </div>
+        <div className="row wrap small">
+          {AP_MARKETS.map(([m, label]) => (
+            <label key={m} className="row" style={{ gap: 5 }}>
+              <input type="checkbox" checked={cfg.markets.includes(m)}
+                onChange={(e) => set({ markets: e.target.checked ? [...cfg.markets, m] : cfg.markets.filter((x: string) => x !== m) })} />
+              {label}
+            </label>
+          ))}
+        </div>
+        <label className="row small" style={{ gap: 6 }} title={autostart?.reason}>
+          <input type="checkbox" disabled={!autostart?.supported} checked={!!autostart?.enabled}
+            onChange={async (e) => {
+              try {
+                await api.post("/api/system/autostart", { enabled: e.target.checked });
+                live.toast(e.target.checked ? "Trading AI will start when you sign in to Windows" : "Start with Windows turned off", "ok");
+              } catch (err: any) {
+                live.toast(err.message, "error");
+              }
+              await live.refresh();
+            }} />
+          Start automatically when Windows starts {!autostart?.supported && <span className="muted">(Windows program only)</span>}
+        </label>
+        {ap.candidates?.length > 0 && (
+          <div className="col" style={{ gap: 4 }}>
+            <div className="tiny muted">BEST RESEARCH RESULTS (deployed when a slot is free)</div>
+            {ap.candidates.slice(0, 4).map((c: any) => (
+              <div key={c.key} className="spread tiny">
+                <span className="mono" style={{ wordBreak: "break-all" }}>{c.strategy_id} · {c.iid} {c.tf}</span>
+                <Badge kind={c.tier === "qualified" ? "good" : "warn"}>{c.tier} {c.quality !== null ? Math.round(c.quality) : ""}</Badge>
+              </div>
+            ))}
+          </div>
+        )}
+        {ap.activity?.length > 0 && (
+          <div className="col" style={{ gap: 3 }}>
+            <div className="tiny muted">RECENT</div>
+            {ap.activity.slice(0, 6).map((a: any, i: number) => (
+              <div key={i} className="tiny"><span className="muted mono">{fmt.time(a.ts)}</span> {a.message}</div>
+            ))}
+          </div>
+        )}
+        <div className="note">Paper only: it never trades real money, never changes risk limits, never re-arms after an emergency
+          stop, and only chooses among the fixed strategy templates. PROBATION = did not pass every research gate; paper trading
+          collects real out-of-sample evidence and it is retired automatically if results fall short.</div>
+      </div>
+    </Card>
   );
 }
 
@@ -128,9 +227,9 @@ function BotControl({ instruments, iid, tf }: { instruments: Instrument[]; iid: 
     <Card title="Bots" sub={`${o.bots.length} configured · ${running} running`}>
       <div className="col">
         <div className="row">
-          <button className="btn go big grow" disabled={!o.bots.length || !!o.risk.kill_switch || running === o.bots.length}
-            onClick={() => act(() => api.post("/api/bot/start"), "All bots running")}>START BOT</button>
-          <button className="btn big grow" disabled={!running} onClick={() => act(() => api.post("/api/bot/stop"), "All bots stopped")}>STOP BOT</button>
+          <button className="btn go big grow" disabled={!!o.risk.kill_switch || (!!o.autopilot?.enabled && running === o.bots.length)}
+            onClick={() => act(() => api.post("/api/bot/start"), "Autopilot on, all bots running")}>START BOT</button>
+          <button className="btn big grow" disabled={!running && !o.autopilot?.enabled} onClick={() => act(() => api.post("/api/bot/stop"), "All bots stopped, autopilot paused")}>STOP BOT</button>
         </div>
         <div className="spread">
           <span className="dim small">Mode</span>
@@ -148,14 +247,24 @@ function BotControl({ instruments, iid, tf }: { instruments: Instrument[]; iid: 
           {o.mode === "shadow" && "Shadow: real data, the full decision pipeline, orders recorded but never sent."}
           {o.mode === "live" && "LIVE: orders go to your broker with real money, within the caps you set when arming."}
         </div>
-        {o.bots.length === 0 && <Empty>No bots yet. Add one to start paper trading.</Empty>}
+        <div className="note">START BOT turns the autopilot on and runs every bot. STOP BOT stops every bot and pauses the autopilot.</div>
+        {o.bots.length === 0 && <Empty>{o.autopilot?.enabled
+          ? "No bots yet: the autopilot starts paper bots by itself as soon as its research finds strategies that pass the checks."
+          : "No bots. Press START BOT to let the autopilot run, or add one yourself."}</Empty>}
         {o.bots.map((b) => (
           <div key={b.bot_id} className="card" style={{ background: "var(--panel-2)" }}>
             <div className="bd col" style={{ gap: 6 }}>
               <div className="spread">
                 <b className="small">{b.instrument_id} · {b.tf}</b>
-                <Badge kind={b.state === "running" ? "good" : b.state === "paused" ? "warn" : ""} dot>{b.state}</Badge>
+                <Badge kind={b.state === "running" ? "good" : b.state === "paused" || b.state === "retiring" ? "warn" : ""} dot>{b.state}</Badge>
               </div>
+              {b.managed_by === "autopilot" && (
+                <div className="row wrap">
+                  <Badge kind="info">AUTOPILOT</Badge>
+                  <Badge kind={b.tier === "qualified" ? "good" : "warn"}>{b.tier === "qualified" ? "QUALIFIED" : "PROBATION"}</Badge>
+                </div>
+              )}
+              {b.note && <div className="tiny dim">{b.note}</div>}
               <div className="small dim mono" style={{ wordBreak: "break-all" }}>{b.strategy_id}</div>
               <div className="tiny muted">{b.signal_mode} · {b.risk_profile} risk · {b.trades_today}/{b.max_trades_per_day} trades today</div>
               <div className="row">

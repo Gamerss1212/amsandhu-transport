@@ -25,12 +25,26 @@ Broker & Money      Your paper account, broker connections, what each broker sup
 Live Intelligence   Every decision the bots make and why (agent votes, risk checks, execution),
                     the live event stream, system health, the research ledger and the agent list.
 
-FIRST STEPS
------------
-1. Command Center -> "+ Add bot" -> pick a market (e.g. COINBASE:BTC-USD), a timeframe and a strategy.
-2. Press START BOT. Decisions appear on Live Intelligence each time a new candle completes.
-3. Try the Strategy lab: pick a strategy, press "Run backtest", open the result.
-   Most strategies are REJECTED after costs. That is a normal and honest result.
+IT RUNS BY ITSELF (AUTOPILOT)
+-----------------------------
+You do not need to set anything up. The Autopilot is ON from the first start and works in PAPER mode:
+
+  1. It tests strategies in the background on real market data (crypto, stocks, ETFs, forex, futures),
+     a quick screen first, then a full test for the ones that look promising.
+  2. When a strategy passes, it starts a paper bot for it by itself.
+  3. It watches every bot it runs and retires (closes and removes) the ones whose paper results fall short.
+
+The first bots can take a while (from minutes to hours): it has to download data and most strategies
+fail honestly after trading costs. Watch it work in the Autopilot panel on the Command Center and on the
+Live Intelligence page.
+
+The two big buttons control everything:
+  START BOT  = autopilot on + every bot running
+  STOP BOT   = every bot stopped + autopilot paused
+
+To have it start whenever you turn on the computer, tick "Start automatically when Windows starts"
+in the Autopilot panel. You can still add your own bots ("+ Add bot") and run your own backtests
+(Strategy lab) at any time.
 
 SAFETY
 ------

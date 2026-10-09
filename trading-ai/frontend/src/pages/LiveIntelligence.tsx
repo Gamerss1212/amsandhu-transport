@@ -199,6 +199,7 @@ function summarize(e: any): string {
     case "research.progress": return `${d.title}: ${d.stage} ${Math.round((d.progress ?? 0) * 100)}%`;
     case "research.done": return `${d.title}: ${d.state}${d.error ? ` — ${d.error}` : ""}`;
     case "agents": return `${d.votes?.length ?? 0} agent outputs for ${d.instrument}`;
+    case "autopilot": return `AUTOPILOT: ${d.message}`;
     default: return JSON.stringify(d).slice(0, 180);
   }
 }

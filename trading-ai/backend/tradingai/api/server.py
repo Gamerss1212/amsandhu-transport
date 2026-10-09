@@ -107,6 +107,17 @@ class BalanceIn(BaseModel):
     amount: Decimal = Field(gt=0, le=Decimal("1000000000"))
 
 
+class AutopilotIn(BaseModel):
+    enabled: Optional[bool] = None
+    max_bots: Optional[int] = Field(None, ge=0, le=20)
+    markets: Optional[list[str]] = None
+    allow_probation: Optional[bool] = None
+
+
+class AutostartIn(BaseModel):
+    enabled: bool
+
+
 class ResearchIn(BaseModel):
     strategy_id: str
     instrument_id: str
@@ -184,6 +195,30 @@ def create_app(core, *, token: Optional[str] = None, on_shutdown=None) -> FastAP
         out = await asyncio.to_thread(core.shutdown)
         if on_shutdown:
             asyncio.get_running_loop().call_later(0.5, on_shutdown)
+        return out
+
+    # ------------------------------------------------------------ autopilot and start with Windows
+    @api.get("/api/autopilot")
+    def autopilot():
+        return core.autopilot.view()
+
+    @api.post("/api/autopilot")
+    def autopilot_set(a: AutopilotIn):
+        changes = {k: v for k, v in a.model_dump().items() if v is not None}
+        if changes.get("enabled") and core.risk.kill_switch:
+            raise PermissionError("STOP ALL TRADING is engaged: re-arm trading first")
+        return core.autopilot.configure(changes)
+
+    @api.get("/api/system/autostart")
+    def autostart():
+        from tradingai.app import autostart_status
+        return autostart_status()
+
+    @api.post("/api/system/autostart")
+    def autostart_set(a: AutostartIn):
+        from tradingai.app import set_autostart
+        out = set_autostart(a.enabled)
+        core.audit("system", f"start with Windows turned {'on' if a.enabled else 'off'}")
         return out
 
     # ------------------------------------------------------------ Command Center

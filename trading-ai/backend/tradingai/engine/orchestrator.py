@@ -50,6 +50,10 @@ class BotConfig:
     last_bar_ts: Optional[int] = None
     trades_today: int = 0
     day: Optional[str] = None
+    managed_by: str = "owner"                # owner / autopilot
+    tier: Optional[str] = None               # autopilot: qualified / probation
+    experiment_id: Optional[str] = None      # the research run that justified this bot
+    note: str = ""
 
     def as_dict(self) -> dict:
         return dict(vars(self))

@@ -36,6 +36,7 @@ from tradingai.core.ids import new_id
 from tradingai.data.bars import TF_MS
 from tradingai.data.net import Http
 from tradingai.data.pipeline import MarketData
+from tradingai.engine.autopilot import Autopilot
 from tradingai.engine.orchestrator import BotConfig, Orchestrator
 from tradingai.execution.oms import OMS
 from tradingai.features.registry import summary as feature_summary
@@ -58,7 +59,7 @@ LIVE_ACK = "I UNDERSTAND THIS TRADES REAL MONEY"
 
 class App:
     def __init__(self, home: Optional[str] = None, *, offline: bool = False, start_loop: bool = True,
-                 tick_seconds: float = 3.0):
+                 tick_seconds: float = 3.0, autopilot: Optional[bool] = None):
         self.started = time.time()
         self.paths = config.paths(home).ensure()
         logs.setup(self.paths.logs, console=start_loop)
@@ -74,6 +75,7 @@ class App:
         self.connections: dict[str, BrokerAdapter] = {}
         self.live: dict = {"armed": False}
         self.last_tick: Optional[float] = None
+        self._autopilot_override = autopilot
         self._boot()
         if start_loop:
             self.start_loop()
@@ -103,6 +105,7 @@ class App:
         self._check("broker connections", self._load_connections)
         self._check("order management", self._oms)
         self._check("research engine", self._research)
+        self._check("autopilot", self._autopilot)
         self._check("frontend files", self._frontend)
         critical = [c for c in self.checks if not c["ok"] and c["name"] not in ("frontend files", "broker connections")]
         if critical:
@@ -188,6 +191,13 @@ class App:
         self.jobs = Jobs(self.bus, workers=max(1, min(2, (os.cpu_count() or 2) - 1)))
         return f"{self.ledger.counts()['experiments']} experiment(s) in the ledger"
 
+    def _autopilot(self) -> str:
+        self.autopilot = Autopilot(self)
+        if self._autopilot_override is not None:
+            self.autopilot.cfg.enabled = bool(self._autopilot_override)
+        return ("ON: researching and running paper bots by itself" if self.autopilot.cfg.enabled else "off") + \
+            f" (max {self.autopilot.cfg.max_bots} bots, paper only)"
+
     def _load_connections(self) -> str:
         rows = self.db.query("SELECT * FROM connections")
         for r in rows:
@@ -211,7 +221,8 @@ class App:
         for bid, b in saved.items():
             bot = BotConfig(**{k: v for k, v in b.items() if k in BotConfig.__dataclass_fields__})
             was_running = bot.state == "running"
-            bot.state = "stopped"
+            if bot.state != "retiring":
+                bot.state = "stopped"
             self.bots[bid] = bot
             if was_running and self.db.get_setting("mode", "paper") in ("paper", "shadow") and \
                     self.db.get_setting("auto_resume", True) and not self.risk.kill_switch:
@@ -308,6 +319,8 @@ class App:
         if self._loop_thread is None:
             self._loop_thread = threading.Thread(target=self._loop, name="trading-loop", daemon=True)
             self._loop_thread.start()
+            if getattr(self, "autopilot", None) is not None:
+                self.autopilot.start()
 
     def _loop(self) -> None:
         last_account = last_recon = 0.0
@@ -357,6 +370,9 @@ class App:
                 continue
             if not len(bars):
                 continue
+            inst = self.book.get(bot.instrument_id)
+            if inst.market_type is not MarketType.CRYPTO_SPOT and not session(inst.calendar or "CRYPTO", now_ms())["open"]:
+                continue        # decide on the completed bar when the market opens (fills at the open, as in backtests)
             newest = int(bars.ts[-1])
             if bot.last_bar_ts == newest:
                 continue
@@ -374,7 +390,8 @@ class App:
         self.db.set_setting("bots", {k: b.as_dict() for k, b in self.bots.items()})
 
     def create_bot(self, instrument_id: str, tf: str, strategy_id: str, signal_mode: str = "strategy+ensemble",
-                   risk_profile: str = "conservative", max_trades_per_day: int = 10) -> dict:
+                   risk_profile: str = "conservative", max_trades_per_day: int = 10, *, managed_by: str = "owner",
+                   tier: Optional[str] = None, experiment_id: Optional[str] = None, note: str = "") -> dict:
         inst = self.book.get(instrument_id)
         ok, why = universe.paper_tradable(inst)
         if not ok:
@@ -388,23 +405,33 @@ class App:
             raise ValueError(f"unknown timeframe {tf}")
         bid = new_id("BOT")
         self.bots[bid] = BotConfig(bid, instrument_id, tf, strategy_id, signal_mode, risk_profile,
-                                   int(max_trades_per_day))
+                                   int(max_trades_per_day), managed_by=managed_by, tier=tier,
+                                   experiment_id=experiment_id, note=note)
         self._save_bots()
-        self.audit("bot", f"bot {bid} created: {strategy_id} on {instrument_id} {tf}", data=self.bots[bid].as_dict())
+        self.audit("bot", f"bot {bid} created by {managed_by}: {strategy_id} on {instrument_id} {tf}",
+                   data=self.bots[bid].as_dict())
         return self.bots[bid].as_dict()
 
-    def bot_action(self, bot_id: str, action: str) -> dict:
+    def bot_action(self, bot_id: str, action: str, by: str = "owner") -> dict:
         bot = self.bots.get(bot_id)
         if bot is None:
             raise KeyError("unknown bot")
+        if bot.state == "retiring" and action != "delete":
+            raise PermissionError("the autopilot is retiring this bot (closing its position)")
         if action == "start":
             if self.risk.kill_switch:
                 raise PermissionError("STOP ALL TRADING is engaged: re-arm trading first")
             bot.state = "running"
+            if by == "owner" and bot.note == "stopped by owner":
+                bot.note = ""
         elif action == "pause":
             bot.state = "paused"
+            if by == "owner":
+                bot.note = "stopped by owner"
         elif action == "stop":
             bot.state = "stopped"
+            if by == "owner":
+                bot.note = "stopped by owner"
         elif action == "delete":
             if bot.state == "running":
                 raise PermissionError("stop the bot first")
@@ -413,25 +440,35 @@ class App:
             raise ValueError(action)
         self._save_bots()
         self._sync_state(f"bot {bot_id} {action}")
-        self.audit("bot", f"bot {bot_id}: {action}")
+        self.audit("bot", f"bot {bot_id}: {action} (by {by})")
         return {"bot_id": bot_id, "state": action}
 
     def start_all(self) -> dict:
         if self.risk.kill_switch:
             raise PermissionError("STOP ALL TRADING is engaged: re-arm trading first")
+        if not self.autopilot.cfg.enabled:
+            self.autopilot.configure({"enabled": True})
         for b in self.bots.values():
+            if b.state == "retiring":
+                continue
             b.state = "running"
+            if b.note == "stopped by owner":
+                b.note = ""
         self._save_bots()
         self._sync_state("START BOT")
         self.audit("bot", "START BOT: all bots running", data={"mode": self.mode})
         return {"running": len(self.bots)}
 
     def stop_all(self) -> dict:
+        if self.autopilot.cfg.enabled:
+            self.autopilot.configure({"enabled": False})
         for b in self.bots.values():
+            if b.state == "retiring":
+                continue
             b.state = "stopped"
         self._save_bots()
         self._sync_state("STOP BOT")
-        self.audit("bot", "STOP BOT: all bots stopped (positions kept, protective logic continues)")
+        self.audit("bot", "STOP BOT: all bots stopped and the autopilot paused (positions kept)")
         return {"stopped": len(self.bots)}
 
     def emergency_stop(self, reason: str, by: str = "owner") -> dict:
@@ -631,7 +668,7 @@ class App:
 
     # ================================================================== research, reconciliation, charts
     def submit_research(self, strategy_id: str, instrument_id: str, tf: str, profile: str = "STANDARD",
-                        lookback: int = 5000) -> dict:
+                        lookback: int = 5000, *, slim: bool = False, by: str = "owner") -> dict:
         sp = specs().get(strategy_id)
         if sp is None:
             raise ValueError(f"unknown strategy {strategy_id!r}")
@@ -665,13 +702,16 @@ class App:
             except Exception as e:                    # noqa: BLE001
                 self.ledger.fail(eid, f"{type(e).__name__}: {e}")
                 raise
+            if slim:                                  # screening runs: keep the metrics, drop the curve and trade list
+                res.pop("equity_curve", None)
+                res.pop("test_trades", None)
             self.ledger.finish(eid, res)
-            self.audit("research", f"{profile} research {strategy_id} on {instrument_id} {tf}: "
+            self.audit("research", f"{profile} research ({by}) {strategy_id} on {instrument_id} {tf}: "
                        f"{res.get('verdict') or res.get('status')}", data={"experiment_id": eid})
             return {"experiment_id": eid, "verdict": res.get("verdict"), "status": res.get("status")}
         return self.jobs.submit(f"{profile}: {strategy_id} on {instrument_id} {tf}", work,
                                 meta={"strategy_id": strategy_id, "instrument_id": instrument_id, "tf": tf,
-                                      "profile": profile})
+                                      "profile": profile, "by": by})
 
     def set_paper_balance(self, amount: Decimal) -> dict:
         out = self.paper.set_balance(amount, "owner")
@@ -830,7 +870,9 @@ class App:
                 "risk": self.risk.state(), "bots": [b.as_dict() for b in self.bots.values()],
                 "library": lib_summary(), "features": feature_summary(), "agents": _roster.roster_summary(),
                 "brokers": broker_matrix(), "live_ack": LIVE_ACK, "offline": self.offline,
-                "vault": self.vault.backend}
+                "vault": self.vault.backend, "autopilot": {"enabled": self.autopilot.cfg.enabled,
+                                                          "doing": self.autopilot.view()["doing"]},
+                "autostart": autostart_status()}
 
     # ================================================================== shutdown
     def shutdown(self) -> dict:
@@ -849,6 +891,7 @@ class App:
             except BrokerError:
                 pass
         self._stop.set()
+        self.autopilot.stop()
         self.jobs.shutdown()
         self.audit("system", "shut down" + (f"; LIVE positions still open at the broker: {live_open}" if live_open
                                             else ""), severity="warning" if live_open else "info")
@@ -899,3 +942,38 @@ def system_resources(base: Path) -> dict:
     except Exception:                                 # noqa: BLE001
         pass
     return out
+
+
+# ---------------------------------------------------------------------- start with Windows
+_RUN_KEY = r"Software\Microsoft\Windows\CurrentVersion\Run"
+
+
+def autostart_status() -> dict:
+    if os.name != "nt" or not config.FROZEN:
+        return {"supported": False, "enabled": False,
+                "reason": "only the Windows program (START_TRADING_AI.exe) can start with Windows"}
+    import winreg
+    try:
+        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, _RUN_KEY) as k:
+            v, _ = winreg.QueryValueEx(k, "TradingAI")
+        return {"supported": True, "enabled": True, "command": v}
+    except OSError:
+        return {"supported": True, "enabled": False}
+
+
+def set_autostart(enabled: bool) -> dict:
+    """Adds or removes TradingAI in this Windows user's Run list (no administrator rights needed)."""
+    st = autostart_status()
+    if not st["supported"]:
+        raise ValueError(st["reason"])
+    import sys
+    import winreg
+    with winreg.OpenKey(winreg.HKEY_CURRENT_USER, _RUN_KEY, 0, winreg.KEY_SET_VALUE) as k:
+        if enabled:
+            winreg.SetValueEx(k, "TradingAI", 0, winreg.REG_SZ, f'"{sys.executable}" --no-browser')
+        else:
+            try:
+                winreg.DeleteValue(k, "TradingAI")
+            except FileNotFoundError:
+                pass
+    return autostart_status()
