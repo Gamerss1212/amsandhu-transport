@@ -1,7 +1,7 @@
 """The 100 logical agents (section 169), in ten groups. Each reads only what the context gives it: completed bars and
 features, the regime, data-quality status, and read-only snapshots of risk, execution, research and broker state.
 
-Directional agents (votes=True) feed the ensemble. Everyone else reports metrics and flags for the Live Intelligence
+Directional agents (votes=True) feed the ensemble. Everyone else reports metrics and flags for the Agent Activity
 page; data and risk agents may set veto=True, which blocks new entries for that decision (the deterministic risk
 service still makes its own decision; agents can never loosen it).
 """

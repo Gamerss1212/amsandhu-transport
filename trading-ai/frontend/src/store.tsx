@@ -23,6 +23,7 @@ export type Bot = {
   bot_id: string; instrument_id: string; tf: string; strategy_id: string; signal_mode: string; risk_profile: string;
   max_trades_per_day: number; state: string; trades_today: number; last_bar_ts: number | null; created: number;
   managed_by?: string; tier?: string | null; experiment_id?: string | null; note?: string;
+  kind?: string; allocation?: number; pending?: Record<string, number>; rebalance_key?: string | null;
 };
 
 type Live = {

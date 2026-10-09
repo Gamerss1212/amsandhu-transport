@@ -215,3 +215,21 @@ pre.json { margin: 0; font-family: var(--mono); font-size: 11.5px; white-space: 
   .statusline { margin-left: 0; justify-content: flex-start; }
   .card > .hd select { max-width: 100%; }
 }
+
+/* ------------------------------------------------------------ assistant dock */
+.assistant { position: fixed; left: 16px; bottom: 16px; z-index: 45; display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
+.assistant-btn { display: inline-flex; align-items: center; gap: 8px; padding: 9px 14px; border-radius: 999px; border: 1px solid var(--line-2); background: var(--panel-2); color: var(--text); font-weight: 650; cursor: pointer; box-shadow: 0 6px 20px rgba(0,0,0,.35); }
+.assistant-btn .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 0 rgba(76,194,255,.6); }
+.assistant-btn.speaking .dot, .assistant-btn.listening .dot { animation: pulse 1.2s infinite; }
+.assistant-btn.listening .dot { background: var(--bad); }
+.assistant-btn.muted .dot { background: var(--muted); }
+@keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(76,194,255,.6); } 70% { box-shadow: 0 0 0 10px rgba(76,194,255,0); } 100% { box-shadow: 0 0 0 0 rgba(76,194,255,0); } }
+@media (prefers-reduced-motion: reduce) { .assistant-btn .dot { animation: none !important; } }
+.assistant-panel { width: min(420px, calc(100vw - 32px)); max-height: min(560px, 75vh); display: flex; flex-direction: column; box-shadow: 0 16px 50px rgba(0,0,0,.5); }
+.assistant-log { overflow: auto; padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; flex: 1; min-height: 140px; }
+.al { font-size: 13px; line-height: 1.45; }
+.al.you { color: var(--text-2); }
+.al.ai { color: var(--text); }
+.al.event { color: var(--accent); }
+.al.event.warning { color: var(--warn); }
+.al.event.critical, .al.event.error { color: var(--bad); }

@@ -16,6 +16,7 @@ export default function LiveIntelligence() {
 
   return (
     <>
+      <Roles />
       <MarketAnalysis />
       <div className="grid g-main">
         <div className="col" style={{ gap: 14, minWidth: 0 }}>
@@ -26,7 +27,7 @@ export default function LiveIntelligence() {
             </select>
           } flush>
             <div className="scroll" style={{ maxHeight: 330 }}>
-              {!decisions.length ? <Empty>No decisions yet. Start a bot on the Command Center.</Empty> : (
+              {!decisions.length ? <Empty>No decisions yet. The autopilot starts bots by itself; you can also add one on the AI Trading System page.</Empty> : (
                 <table className="t small">
                   <thead><tr><th>Time</th><th>Instrument</th><th>Mode</th><th>Outcome</th><th>Reason</th><th className="num">Score</th><th className="num">ms</th></tr></thead>
                   <tbody>{decisions.map((d) => (
@@ -252,7 +253,7 @@ function ResearchCenter() {
   const [open, setOpen] = useState<string | null>(null);
   return (
     <Card title="Research center" sub="the experiment ledger: every backtest, kept with its data hash and trial count" flush>
-      {!exps?.experiments?.length ? <Empty>No research yet. Run a backtest from the Strategy lab on the Command Center.</Empty> : (
+      {!exps?.experiments?.length ? <Empty>No research yet. Run a backtest from the Strategy lab on the AI Trading System page, or let the autopilot research.</Empty> : (
         <div className="scroll" style={{ maxHeight: 380 }}>
           <table className="t small">
             <thead><tr><th>When</th><th>Strategy</th><th>Data</th><th>Verdict</th><th className="num">Quality</th></tr></thead>
@@ -291,6 +292,45 @@ function AgentRoster() {
           ))}</tbody>
         </table>
       </div>
+    </Card>
+  );
+}
+
+// ---------------------------------------------------------------- the 25 logical roles (specification section 4)
+const ROLE_KIND: Record<string, "good" | "warn" | "bad" | "info" | ""> = {
+  running: "good", completed: "info", idle: "", "waiting for data": "warn", paused: "warn", blocked: "bad", degraded: "warn",
+  failed: "bad", unavailable: "",
+};
+
+function Roles() {
+  const [r] = usePoll<any>("/api/roles", 5000);
+  const [open, setOpen] = useState(false);
+  if (!r) return null;
+  const c = r.counts;
+  return (
+    <Card title="Agents and roles" sub={r.model} right={<button className="btn sm" onClick={() => setOpen((v) => !v)}>{open ? "Hide roles" : "Show all 25 roles"}</button>}>
+      <div className="stats">
+        <div className="stat"><div className="k">Configured roles</div><div className="v">{c.configured_roles}</div><div className="s">{c.agent_functions} agent functions</div></div>
+        <div className="stat"><div className="k">Running jobs</div><div className="v">{c.running_jobs}</div><div className="s">loop, autopilot, research queue</div></div>
+        <div className="stat"><div className="k">Active model calls</div><div className="v">{c.active_model_calls}</div><div className="s">no cloud AI connected</div></div>
+        <div className="stat"><div className="k">Stale feeds</div><div className="v">{r.stale_feeds}</div><div className="s">queue depth {r.queue_depth}</div></div>
+      </div>
+      {open && (
+        <div className="scroll" style={{ marginTop: 10 }}>
+          <table className="t small">
+            <thead><tr><th>#</th><th>Role</th><th>Implementation</th><th>State</th><th>Latest</th></tr></thead>
+            <tbody>{r.roles.map((x: any) => (
+              <tr key={x.id}>
+                <td className="mono muted">{x.id}</td>
+                <td><b>{x.name}</b><div className="tiny muted">{x.component}</div></td>
+                <td className="tiny">{x.implementation}{x.agent_functions ? ` · ${x.agent_functions} agents` : ""}</td>
+                <td><Badge kind={ROLE_KIND[x.state] ?? ""}>{x.state}</Badge></td>
+                <td className="tiny dim">{x.latest}{x.latest_ts ? ` · ${fmt.ago(x.latest_ts)}` : ""}</td>
+              </tr>
+            ))}</tbody>
+          </table>
+        </div>
+      )}
     </Card>
   );
 }

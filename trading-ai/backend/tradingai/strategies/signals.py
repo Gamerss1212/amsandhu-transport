@@ -485,6 +485,79 @@ def prior_session_breakout(f):
     return latch(cross_up(f.c, ph), new, cross_dn(f.c, pl), new)
 
 
+def _confirmed_swings(h: A, lo: A, k: int) -> tuple[A, A]:
+    """Last confirmed swing high/low as known at each bar: a pivot k bars back that is the extreme of the 2k+1
+    bars around it is only known k bars later, so nothing here repaints."""
+    n = len(h)
+    sh, sl = np.full(n, np.nan), np.full(n, np.nan)
+    last_h = last_l = np.nan
+    for i in range(2 * k, n):
+        j = i - k
+        if h[j] == np.max(h[j - k:i + 1]):
+            last_h = h[j]
+        if lo[j] == np.min(lo[j - k:i + 1]):
+            last_l = lo[j]
+        sh[i], sl[i] = last_h, last_l
+    return sh, sl
+
+
+@gen("structure_break", "trend", "A close beyond the last CONFIRMED swing (k bars each side, known only k bars later) "
+     "starts a move; the opposite confirmed swing invalidates it", {"k": 3}, {"k": [2, 3, 5]}, ("donchian",),
+     source="owner catalog ST031 (H): confirmed market-structure break, non-repainting definition",
+     failure="ranges with frequent small breaks; gaps through the invalidation level",
+     exits=("flip", "atr_bracket", "time", "trail"))
+def structure_break(f, k=3):
+    sh, sl = _confirmed_swings(f.h, f.l, k)
+    psh, psl = I.shift(sh, 1), I.shift(sl, 1)
+    return latch(cross_up(f.c, psh), f.c < psl, cross_dn(f.c, psl), f.c > psh)
+
+
+def _hold(long_: A, short: A, bars: int) -> A:
+    """A trigger opens a position for `bars` bars (an opposite trigger replaces it). Causal."""
+    out = np.zeros(len(long_))
+    pos, left = 0.0, 0
+    for i in range(len(long_)):
+        if long_[i]:
+            pos, left = 1.0, bars
+        elif short[i]:
+            pos, left = -1.0, bars
+        elif left > 0:
+            left -= 1
+        if left == 0:
+            pos = 0.0
+        out[i] = pos
+    return out
+
+
+@gen("sweep_reclaim", "mean_reversion", "Price briefly trades through a known level (prior n-bar low/high) by at least "
+     "x ATR and closes back inside it in the same bar: the excursion failed", {"n": 20, "x": 0.1, "hold": 10},
+     {"n": [20, 50], "x": [0.0, 0.1, 0.25], "hold": [10]}, ("donchian", "atr"),
+     source="owner catalog ST032 (H): liquidity-sweep-and-reclaim; inferred stop clusters are a hypothesis only",
+     failure="genuine breakdowns that retest and continue", exits=("atr_bracket", "time", "trail"))
+def sweep_reclaim(f, n=20, x=0.1, hold=10):
+    lo_lvl, hi_lvl = I.shift(I.rmin(f.l, n), 1), I.shift(I.rmax(f.h, n), 1)
+    a = I.shift(I.atr(f.h, f.l, f.c, 14), 1)
+    long_ = np.nan_to_num((f.l < lo_lvl - x * a) & (f.c > lo_lvl)).astype(bool)
+    short = np.nan_to_num((f.h > hi_lvl + x * a) & (f.c < hi_lvl)).astype(bool)
+    return _hold(long_, short, int(hold))
+
+
+@gen("failed_breakout", "mean_reversion", "A break of a known n-bar range that closes back inside within m bars is a "
+     "failed breakout: trade back toward the range middle, invalidated beyond the excursion", {"n": 20, "m": 3},
+     {"n": [20, 50], "m": [1, 3, 5]}, ("donchian",),
+     source="owner catalog ST026 (H): failed-breakout reversal, confirmation on a completed bar",
+     failure="trend continuation after a retest", exits=("flip", "atr_bracket", "time"))
+def failed_breakout(f, n=20, m=3):
+    up, dn = I.shift(I.rmax(f.h, n), m + 1), I.shift(I.rmin(f.l, n), m + 1)       # range known before the excursion
+    mid = (up + dn) / 2
+    broke_up = I.rmax(f.h, m) > up
+    broke_dn = I.rmin(f.l, m) < dn
+    exc_hi, exc_lo = I.rmax(f.h, m), I.rmin(f.l, m)
+    short = broke_up & (f.c < up) & (I.shift(f.c, 1) >= I.shift(up, 1))
+    long_ = broke_dn & (f.c > dn) & (I.shift(f.c, 1) <= I.shift(dn, 1))
+    return latch(long_, (f.c >= mid) | (f.c < exc_lo), short, (f.c <= mid) | (f.c > exc_hi))
+
+
 @gen("vol_breakout", "breakout", "A move beyond k ATR from the session open is a breakout", {"k": 0.6},
      {"k": [0.4, 0.6, 1.0]}, ("atr",), grade="C", source="volatility breakout (Larry Williams, industry, C)",
      exits=("time", "atr_bracket"))

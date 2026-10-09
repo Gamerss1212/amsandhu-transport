@@ -1,10 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { api, fmt, tone } from "../api";
 import { PriceChart, type Bar, type Fill } from "../components/charts";
-import { Badge, Card, Diverge, Empty, Meter, PhraseConfirm, Stat } from "../components/ui";
+import { Badge, Card, Diverge, Empty, Meter, Modal, PhraseConfirm, Stat } from "../components/ui";
 import { useLive, usePoll } from "../store";
 import { go } from "../App";
 import StrategyLab from "./StrategyLab";
+import { CatalogCard } from "./Catalog";
+import { EquityChart } from "../components/charts";
+import { Drawer } from "../components/ui";
 
 export type Instrument = {
   instrument_id: string; name: string; market: string; market_type: string; provider: string; symbol: string;
@@ -98,7 +101,9 @@ export default function CommandCenter() {
             </div>
           </Card>
 
+          <EquityCard />
           <Positions />
+          <CatalogCard />
           <StrategyLab instruments={instruments} defaultInstrument={iid} />
         </div>
 
@@ -239,7 +244,7 @@ function BotControl({ instruments, iid, tf }: { instruments: Instrument[]; iid: 
                 {m === "paper" ? "Paper" : "Shadow"}
               </button>
             ))}
-            <button className={o.mode === "live" ? "on" : ""} onClick={() => go("/broker")} title="Live trading is armed on the Broker & Money page">Live…</button>
+            <button className={o.mode === "live" ? "on" : ""} onClick={() => go("/broker")} title="Live trading is armed on the Brokers & Accounts page">Live…</button>
           </div>
         </div>
         <div className="note">
@@ -248,6 +253,7 @@ function BotControl({ instruments, iid, tf }: { instruments: Instrument[]; iid: 
           {o.mode === "live" && "LIVE: orders go to your broker with real money, within the caps you set when arming."}
         </div>
         <div className="note">START BOT turns the autopilot on and runs every bot. STOP BOT stops every bot and pauses the autopilot.</div>
+        <Controls />
         {o.bots.length === 0 && <Empty>{o.autopilot?.enabled
           ? "No bots yet: the autopilot starts paper bots by itself as soon as its research finds strategies that pass the checks."
           : "No bots. Press START BOT to let the autopilot run, or add one yourself."}</Empty>}
@@ -265,7 +271,10 @@ function BotControl({ instruments, iid, tf }: { instruments: Instrument[]; iid: 
                 </div>
               )}
               {b.note && <div className="tiny dim">{b.note}</div>}
-              <div className="small dim mono" style={{ wordBreak: "break-all" }}>{b.strategy_id}</div>
+              <div className="small dim mono" style={{ wordBreak: "break-all" }}>{b.strategy_id}{b.kind === "portfolio" ? ` · portfolio · ${Math.round((b.allocation ?? 0) * 100)}% of equity` : ""}</div>
+              {b.kind === "portfolio" && b.pending && Object.keys(b.pending).length > 0 && (
+                <div className="tiny warn" style={{ color: "var(--warn)" }}>rebalancing: {Object.entries(b.pending).map(([k, v]) => `${k.split(":")[1]} ${Math.round(Number(v) * 100)}%`).join(", ")} (waits for each market to open)</div>
+              )}
               <div className="tiny muted">{b.signal_mode} · {b.risk_profile} risk · {b.trades_today}/{b.max_trades_per_day} trades today</div>
               <div className="row">
                 {b.state !== "running"
@@ -494,5 +503,113 @@ function RiskPanel() {
           onConfirm={(typed) => save(raise.key, raise.value, typed)} onClose={() => setRaise(null)} />
       )}
     </Card>
+  );
+}
+
+// ---------------------------------------------------------------- controls (specification section 7)
+function Controls() {
+  const live = useLive();
+  const o = live.overview!;
+  const [flat, setFlat] = useState<any>(null);
+  const [confirm, setConfirm] = useState(false);
+  const paused = !!o.risk?.entries_paused;
+  return (
+    <div className="col" style={{ gap: 6 }}>
+      <div className="row">
+        <button className={`btn grow ${paused ? "primary" : ""}`} onClick={async () => {
+          try { await api.post("/api/controls/pause-entries", { paused: !paused, reason: "owner" }); live.toast(paused ? "New entries allowed" : "New entries paused: exits keep running", "ok"); } catch (e: any) { live.toast(e.message, "error"); }
+          await live.refresh();
+        }}>{paused ? "Resume new entries" : "Pause new entries"}</button>
+        <button className="btn grow" onClick={() => setConfirm(true)}>Flatten all…</button>
+      </div>
+      <div className="tiny muted">Pause new entries: nothing new opens; exits and position management continue. Flatten: closes every paper position through the risk service (markets that are closed are reported, not faked). Emergency stop (top right) latches everything.</div>
+      {confirm && (
+        <Modal title="Flatten every paper position?" onClose={() => setConfirm(false)}>
+          <div className="dim">Sends closing orders for all paper positions now. Positions in closed markets cannot be closed until they open; the result lists exactly what happened.</div>
+          <div className="row" style={{ justifyContent: "flex-end" }}>
+            <button className="btn ghost" onClick={() => setConfirm(false)}>Cancel</button>
+            <button className="btn danger" onClick={async () => {
+              setConfirm(false);
+              try { setFlat(await api.post("/api/controls/flatten")); } catch (e: any) { live.toast(e.message, "error"); }
+              await live.refresh();
+            }}>Flatten all</button>
+          </div>
+        </Modal>
+      )}
+      {flat && (
+        <div className={`callout ${flat.complete ? "good" : "warn"} small`}>
+          {flat.closed}/{flat.requested} position(s) closed{flat.cancelled_orders ? `, ${flat.cancelled_orders} working order(s) cancelled` : ""}.
+          {flat.results.filter((r: any) => r.status !== "FILLED").map((r: any) => <div key={r.instrument + r.strategy}>{r.instrument}: {r.status} — {r.detail}</div>)}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------- equity and drawdown, session report
+function EquityCard() {
+  const [hours, setHours] = useState(168);
+  const [eq] = usePoll<any>(`/api/equity?hours=${hours}`, 60000, [hours]);
+  const [report, setReport] = useState(false);
+  return (
+    <Card title="Equity" sub={eq?.simulated ? "paper account (simulated money)" : undefined} right={
+      <div className="row">
+        <div className="seg">{[[24, "1D"], [168, "1W"], [720, "1M"], [8760, "1Y"]].map(([h, l]) => <button key={h} className={hours === h ? "on" : ""} onClick={() => setHours(Number(h))}>{l}</button>)}</div>
+        <button className="btn sm" onClick={() => setReport(true)}>Session report</button>
+      </div>
+    } flush>
+      {!eq || eq.equity.length < 2 ? <Empty>The equity curve is recorded every minute while the program runs; it appears after a few minutes.</Empty> : (
+        <>
+          <EquityChart points={eq.equity} height={200} />
+          <div className="row wrap small" style={{ padding: "6px 14px", borderTop: "1px solid var(--line)" }}>
+            <span className="dim">Max drawdown in view</span><b className="mono">{fmt.pct(Math.min(...eq.drawdown.map((d: any) => d[1])))}</b>
+            {eq.adjustments.length > 0 && <span className="muted tiny">{eq.adjustments.length} balance adjustment(s) in this period are not trading results</span>}
+          </div>
+        </>
+      )}
+      {report && <SessionReport onClose={() => setReport(false)} />}
+    </Card>
+  );
+}
+
+function SessionReport({ onClose }: { onClose: () => void }) {
+  const [r] = usePoll<any>("/api/report/session", 0);
+  const download = () => {
+    const blob = new Blob([JSON.stringify(r, null, 2)], { type: "application/json" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `trading-ai-session-${r.label.startsWith("PAPER") ? "paper" : "live"}-${new Date().toISOString().slice(0, 16).replace(":", "")}.json`;
+    a.click();
+  };
+  return (
+    <Drawer title="Session report" onClose={onClose} right={r && <button className="btn sm" onClick={download}>Export JSON</button>}>
+      {!r ? <Empty>Loading…</Empty> : (
+        <>
+          <div className="row wrap"><Badge kind={r.simulated ? "sim" : "bad"}>{r.label}</Badge><span className="dim small">{fmt.datetime(r.since)} → {fmt.datetime(r.until)}</span></div>
+          <div className="stats">
+            <Stat k="Fills" v={r.trades} /><Stat k="Fees" v={fmt.money(r.fees)} /><Stat k="Blocked by risk" v={r.decisions.RISK_REJECT ?? 0} />
+            <Stat k="Orders" v={r.decisions.ORDER ?? 0} /><Stat k="No-trade decisions" v={r.decisions.NO_TRADE ?? 0} /><Stat k="Equity" v={fmt.money(r.equity)} />
+          </div>
+          <Card title="Attribution by strategy" sub={r.attribution.note} flush>
+            {!r.attribution.by_strategy.length ? <Empty>No fills yet.</Empty> : (
+              <table className="t small"><thead><tr><th>Strategy</th><th className="num">Fills</th><th className="num">Net P&amp;L</th><th className="num">Fees</th><th className="num">Slippage</th><th className="num">Open value</th></tr></thead>
+                <tbody>{r.attribution.by_strategy.map((x: any) => (
+                  <tr key={x.name}><td className="mono tiny">{x.name}</td><td className="num">{x.fills}</td><td className={`num mono ${tone(x.net_pnl)}`}>{fmt.signed(x.net_pnl)}</td><td className="num mono">{fmt.money(x.fees)}</td><td className="num mono">{fmt.money(x.slippage_vs_decision)}</td><td className="num mono">{fmt.money(x.open_value)}{x.unpriced ? " *" : ""}</td></tr>
+                ))}</tbody></table>
+            )}
+          </Card>
+          <Card title="Attribution by market" flush>
+            {!r.attribution.by_market.length ? <Empty>No fills yet.</Empty> : (
+              <table className="t small"><thead><tr><th>Market</th><th className="num">Fills</th><th className="num">Net P&amp;L</th><th className="num">Fees</th></tr></thead>
+                <tbody>{r.attribution.by_market.map((x: any) => <tr key={x.name}><td>{x.name}</td><td className="num">{x.fills}</td><td className={`num mono ${tone(x.net_pnl)}`}>{fmt.signed(x.net_pnl)}</td><td className="num mono">{fmt.money(x.fees)}</td></tr>)}</tbody></table>
+            )}
+          </Card>
+          <Card title="Strategy changes"><div className="col" style={{ gap: 4 }}>{r.strategy_changes.length ? r.strategy_changes.map((c: any, i: number) => <div key={i} className="small"><span className="muted mono tiny">{fmt.datetime(c.ts)}</span> {c.message}</div>) : <span className="muted small">None this session.</span>}</div></Card>
+          <Card title="Blocked decisions"><div className="col" style={{ gap: 4 }}>{r.blocked.length ? r.blocked.map((b: any, i: number) => <div key={i} className="small"><span className="muted mono tiny">{fmt.datetime(b.ts)}</span> {b.instrument_id}: {b.reason}</div>) : <span className="muted small">None.</span>}</div></Card>
+          <Card title="Incidents (warnings and above)"><div className="col" style={{ gap: 4 }}>{r.incidents.length ? r.incidents.map((c: any, i: number) => <div key={i} className="small"><span className="muted mono tiny">{fmt.datetime(c.ts)}</span> [{c.severity}] {c.message}</div>) : <span className="muted small">None.</span>}</div></Card>
+          <div className="note">Remaining exposure: {r.remaining_exposure.length} position(s), {r.open_orders.length} working order(s).</div>
+        </>
+      )}
+    </Drawer>
   );
 }

@@ -178,6 +178,8 @@ class Autopilot:
     def _retire_reason(self, b) -> Optional[str]:
         if b.state == "retiring":
             return b.note or "retiring"
+        if b.kind == "portfolio":
+            return self._portfolio_retire_reason(b)
         paper = self.app.paper_trades(b.strategy_id, b.instrument_id)
         if len(paper) >= 15 and sum(paper) < -0.10:
             return f"early stop: {len(paper)} paper trades lost {sum(paper):.1%} of traded notional"
@@ -190,7 +192,7 @@ class Autopilot:
                 return f"{len(paper)} paper trades: mean {mean:+.3%} per trade, below the backtest's range or not positive"
         last = self.app.db.one("SELECT json_extract(results, '$.verdict') AS v, created FROM experiments WHERE "
                                "strategy_id=? AND json_extract(dataset, '$.instrument')=? AND json_extract(dataset, "
-                               "'$.tf')=? AND profile IN ('STANDARD','DEEP') AND status!='RUNNING' ORDER BY created "
+                               "'$.tf')=? AND profile IN ('STANDARD','DEEP','PORTFOLIO') AND status!='RUNNING' ORDER BY created "
                                "DESC LIMIT 1", (b.strategy_id, b.instrument_id, b.tf))
         if last and last["created"] > b.created and last["v"] == "REJECT":
             return "re-test on newer data: REJECT"
@@ -198,10 +200,37 @@ class Autopilot:
             self._queue("revalidate", b.strategy_id, b.instrument_id, b.tf, "STANDARD")
         return None
 
+    def _portfolio_retire_reason(self, b) -> Optional[str]:
+        from tradingai.engine.portfolio_bot import strategy_pnl
+        last = self.app.db.one("SELECT json_extract(results, '$.verdict') AS v, created FROM experiments WHERE "
+                               "strategy_id=? AND profile='PORTFOLIO' AND status!='RUNNING' ORDER BY created DESC "
+                               "LIMIT 1", (b.strategy_id,))
+        if last and last["created"] > b.created and last["v"] == "REJECT":
+            return "re-test on newer data: REJECT"
+        budget = (self.app.paper.get_balance().equity or Decimal(0)) * Decimal(str(b.allocation))
+        pnl = strategy_pnl(self.app, b.strategy_id)
+        if budget > 0 and pnl < -Decimal("0.15") * budget:
+            return f"loss stop: the portfolio lost {pnl:,.2f} (more than 15% of its allocation)"
+        if now_ms() - b.created > 14 * DAY and (not last or now_ms() - last["created"] > 14 * DAY):
+            self._queue("revalidate", b.strategy_id, b.instrument_id, "1d", "PORTFOLIO")
+        return None
+
     def _retire(self, b, why: str) -> bool:
-        """Close this strategy's paper position through the risk service, then remove the bot."""
+        """Close this strategy's paper position(s) through the risk service, then remove the bot."""
         app = self.app
         b.state, b.note = "retiring", why
+        if b.kind == "portfolio":
+            from tradingai.engine.portfolio_bot import held_lots
+            open_lots = held_lots(app, b.strategy_id)
+            if open_lots:
+                b.pending = {iid: 0.0 for iid in open_lots}
+                from tradingai.engine.portfolio_bot import _execute
+                _execute(app, b, "paper")
+                if held_lots(app, b.strategy_id):
+                    self.doing = f"retiring {b.strategy_id}: closing its holdings when markets open"
+                    app._save_bots()
+                    return False
+            return self._remove(b, why)
         lots = {p["instrument_id"]: p for p in app.paper.positions_detail()}.get(b.instrument_id)
         held = Decimal((lots or {}).get("strategy_lots", {}).get(b.strategy_id, "0"))
         if held != 0:
@@ -225,6 +254,10 @@ class Autopilot:
                 self.doing = f"retiring {b.instrument_id}: close order {res.get('status')} ({res['risk']['reason']})"
                 app._save_bots()
                 return False
+        return self._remove(b, why)
+
+    def _remove(self, b, why: str) -> bool:
+        app = self.app
         key = self._key(b.strategy_id, b.instrument_id, b.tf)
         self.mem["retired"][key] = now_ms() + 30 * DAY
         self.mem["retired_count"] += 1
@@ -244,8 +277,9 @@ class Autopilot:
             "json_extract(results, '$.test.total_return') AS test_ret, "
             "json_extract(results, '$.walk_forward.oos_sharpe') AS wf, "
             "json_extract(results, '$.cost_stress.\"2.0x\".sharpe') AS sh2x, "
-            "json_extract(results, '$.reproducibility.simulated_data') AS sim "
-            "FROM experiments WHERE profile IN ('STANDARD','DEEP') AND status!='RUNNING' AND created>? "
+            "json_extract(results, '$.reproducibility.simulated_data') AS sim, "
+            "json_extract(results, '$.beats_benchmark') AS beats "
+            "FROM experiments WHERE profile IN ('STANDARD','DEEP','PORTFOLIO') AND status!='RUNNING' AND created>? "
             "ORDER BY created DESC", (now_ms() - 30 * DAY,))
         seen, out = set(), []
         for r in rows:
@@ -261,6 +295,8 @@ class Autopilot:
                 tier = "probation"
             if tier is None or self.mem["retired"].get(k, 0) > now_ms():
                 continue
+            if (r["iid"] or "").startswith("PORTFOLIO:") and not r["beats"]:
+                continue                       # a portfolio must also beat simply holding its universe (held out)
             if bool(r["sim"]) != bool(self.app.offline):    # real data online, DEMO only when offline
                 continue
             out.append(dict(r, tier=tier, key=k))
@@ -282,17 +318,40 @@ class Autopilot:
         free = self.cfg.max_bots - len(mine)
         if free <= 0:
             return []
-        used_inst = {b.instrument_id for b in app.bots.values()}
+        used_inst = {b.instrument_id for b in app.bots.values() if b.kind != "portfolio"}
         used_keys = {self._key(b.strategy_id, b.instrument_id, b.tf) for b in app.bots.values()}
         per_market: dict[str, int] = {}
         for b in mine:
-            m = MARKET_OF.get(app.book.get(b.instrument_id).market_type)
+            m = "portfolio" if b.kind == "portfolio" else MARKET_OF.get(app.book.get(b.instrument_id).market_type)
             per_market[m] = per_market.get(m, 0) + 1
         made = []
         for c in self.candidates():
             if len(made) >= free:
                 break
-            if c["key"] in used_keys or c["iid"] in used_inst or c["iid"] not in app.sources:
+            if c["key"] in used_keys or c["iid"] in used_inst:
+                continue
+            if c["iid"].startswith("PORTFOLIO:"):
+                from tradingai.engine.portfolio_bot import deployable
+                if not deployable(app, c["strategy_id"])[0] or per_market.get("portfolio", 0) >= 2:
+                    continue
+                alloc = 0.15 if c["tier"] == "qualified" else 0.10
+                try:
+                    bot = app.create_portfolio_bot(c["strategy_id"], experiment_id=c["experiment_id"], allocation=alloc,
+                                                   managed_by="autopilot", tier=c["tier"],
+                                                   note=f"{c['tier'].upper()}: portfolio research {c['verdict']}, "
+                                                        f"quality {c['quality']}, {alloc:.0%} of equity")
+                    app.bot_action(bot["bot_id"], "start", by="autopilot")
+                except (ValueError, PermissionError) as e:
+                    self._note(f"could not start portfolio {c['strategy_id']}: {e}", "warning")
+                    continue
+                made.append(bot["bot_id"])
+                used_keys.add(c["key"])
+                per_market["portfolio"] = per_market.get("portfolio", 0) + 1
+                self.mem["deployed"] += 1
+                self._note(f"started a {c['tier'].upper()} paper PORTFOLIO bot: {c['strategy_id']} with {alloc:.0%} of "
+                           f"equity (research {c['verdict']}, quality {c['quality']})", bot_id=bot["bot_id"])
+                continue
+            if c["iid"] not in app.sources:
                 continue
             inst = app.book.get(c["iid"])
             m = MARKET_OF.get(inst.market_type)
@@ -323,7 +382,7 @@ class Autopilot:
                 continue
             self.jobs.pop(jid)
             if j["state"] != "done":
-                if "bars of" in (j.get("error") or "") or "HttpError" in (j.get("error") or ""):
+                if any(x in (j.get("error") or "") for x in ("bars of", "HttpError", "no daily data")):
                     self.mem["unavailable"][f"{meta['iid']}|{meta['tf']}"] = now_ms() + DAY // 4
                 continue
             eid = (j.get("result") or {}).get("experiment_id")
@@ -336,7 +395,7 @@ class Autopilot:
                         ((r.get("quality") or {}).get("score") or 0) >= 30:
                     self._queue("confirm", meta["sid"], meta["iid"], meta["tf"], "STANDARD")
                     self._note(f"screen passed: {meta['sid']} on {meta['iid']} {meta['tf']} → full test queued")
-            elif meta["kind"] in ("confirm", "revalidate"):
+            elif meta["kind"] in ("confirm", "revalidate", "portfolio"):
                 self.mem["confirmed"] += 1
                 self._note(f"{meta['kind']}: {meta['sid']} on {meta['iid']} {meta['tf']} → {r.get('verdict')}",
                            "info" if r.get("verdict") != "REJECT" else "warning")
@@ -363,6 +422,10 @@ class Autopilot:
         if pend and self._allowed("confirm"):
             p = pend.pop(0)
             return self._submit(p["kind"], p["sid"], p["iid"], p["tf"], p["profile"])
+        if not app.offline and self._allowed("confirm"):
+            due = self._portfolio_due()
+            if due:
+                return self._submit("portfolio", due, f"PORTFOLIO:{due}", "1d", "PORTFOLIO")
         if not self._allowed("screen"):
             self.doing = f"research paused for the hour (screening limit {self.cfg.screens_per_hour}/hour)"
             return None
@@ -372,16 +435,31 @@ class Autopilot:
             return None
         return self._submit("screen", *nxt, "FAST")
 
+    def _portfolio_due(self) -> Optional[str]:
+        from tradingai.research.portfolio import PORTFOLIOS
+        for sid in PORTFOLIOS:
+            if self.mem["unavailable"].get(f"PORTFOLIO:{sid}|1d", 0) > now_ms():
+                continue
+            r = self.app.db.one("SELECT created FROM experiments WHERE strategy_id=? AND profile='PORTFOLIO' "
+                                "ORDER BY created DESC LIMIT 1", (sid,))
+            if not r or now_ms() - r["created"] > 7 * DAY:
+                return sid
+        return None
+
     def _submit(self, kind: str, sid: str, iid: str, tf: str, profile: str) -> Optional[dict]:
         try:
-            j = self.app.submit_research(sid, iid, tf, profile, LOOKBACK.get(tf, 3000), slim=(kind == "screen"),
-                                         by="autopilot")
+            if profile == "PORTFOLIO":
+                j = self.app.submit_portfolio(sid, by="autopilot")
+            else:
+                j = self.app.submit_research(sid, iid, tf, profile, LOOKBACK.get(tf, 3000), slim=(kind == "screen"),
+                                             by="autopilot")
         except ValueError as e:
             self._note(f"skipped {sid} on {iid} {tf}: {e}", "warning")
             return None
         self.jobs[j["job_id"]] = {"kind": kind, "sid": sid, "iid": iid, "tf": tf}
         self._rate["screen" if kind == "screen" else "confirm"].append(time.time())
-        label = {"screen": "screening", "confirm": "full test", "revalidate": "re-testing on newer data"}[kind]
+        label = {"screen": "screening", "confirm": "full test", "revalidate": "re-testing on newer data",
+                 "portfolio": "portfolio backtest"}[kind]
         self.doing = f"{label}: {sid} on {iid} {tf}"
         return {"kind": kind, "job_id": j["job_id"]}
 

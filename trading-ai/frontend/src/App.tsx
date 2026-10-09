@@ -5,11 +5,12 @@ import { useLive } from "./store";
 import CommandCenter from "./pages/CommandCenter";
 import BrokerMoney from "./pages/BrokerMoney";
 import LiveIntelligence from "./pages/LiveIntelligence";
+import Assistant from "./components/Assistant";
 
 const PAGES = [
-  ["/", "Command Center"],
-  ["/broker", "Broker & Money"],
-  ["/intelligence", "Live Intelligence"],
+  ["/", "AI Trading System"],
+  ["/intelligence", "Agent Activity"],
+  ["/broker", "Brokers & Accounts"],
 ] as const;
 
 export function go(path: string) {
@@ -78,7 +79,7 @@ export default function App() {
             <div className="callout bad"><b>Trading is locked</b>: {locked.reason}. Only orders that reduce positions are allowed until you re-arm.</div>
           )}
           {o.state.state === "RECONCILIATION_REQUIRED" && (
-            <div className="callout bad"><b>Reconciliation required.</b> Local records and the broker disagree. New entries are blocked. Open Broker &amp; Money → Reconcile to see the differences.</div>
+            <div className="callout bad"><b>Reconciliation required.</b> Local records and the broker disagree. New entries are blocked. Open Brokers &amp; Accounts → Reconcile now to see the differences.</div>
           )}
           {page === "/" && <CommandCenter />}
           {page === "/broker" && <BrokerMoney />}
@@ -115,6 +116,7 @@ export default function App() {
           }}
           onClose={() => setRearm(false)} />
       )}
+      {o && <Assistant />}
       <div className="toasts" aria-live="polite">
         {live.toasts.map((t) => <div key={t.id} className={`toast ${t.kind}`}>{t.msg}</div>)}
       </div>

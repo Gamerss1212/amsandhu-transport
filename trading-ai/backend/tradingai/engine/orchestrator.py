@@ -54,6 +54,11 @@ class BotConfig:
     tier: Optional[str] = None               # autopilot: qualified / probation
     experiment_id: Optional[str] = None      # the research run that justified this bot
     note: str = ""
+    kind: str = "single"                     # single (one instrument) / portfolio (a catalog portfolio template)
+    allocation: float = 0.0                  # portfolio bots: share of account equity they may hold
+    pending: dict = field(default_factory=dict)        # portfolio bots: target weights not yet traded
+    rebalance_key: Optional[str] = None      # portfolio bots: the month/week of the last rebalance
+    checked_at: float = 0.0
 
     def as_dict(self) -> dict:
         return dict(vars(self))

@@ -123,7 +123,8 @@ export function ExperimentDrawer({ eid, onClose }: { eid: string; onClose: () =>
       {!e && <Empty>Loading…</Empty>}
       {e && !r && <div className="callout bad">This run did not finish: {e.status} {e.reason}</div>}
       {e && r && r.status !== "ok" && <div className="callout warn">Result: {r.status} {r.bars ? `(${r.bars} bars, need ${r.needed})` : ""}</div>}
-      {e && r && r.status === "ok" && (
+      {e && r && r.status === "ok" && r.kind === "portfolio" && <PortfolioResult r={r} />}
+      {e && r && r.status === "ok" && r.kind !== "portfolio" && (
         <>
           <div className="row wrap small">
             <Badge kind={r.reproducibility?.simulated_data ? "sim" : "info"}>{r.reproducibility?.simulated_data ? "SIMULATED DATA" : "REAL HISTORICAL DATA"}</Badge>
@@ -282,5 +283,37 @@ function Compare({ c }: { c: any }) {
       </div>
       <div className="note">{c.rule}. {c.note}</div>
     </div>
+  );
+}
+
+function PortfolioResult({ r }: { r: any }) {
+  const rows: [string, string, (v: any) => string][] = [["total_return", "Net return", fmt.pct], ["cagr", "CAGR", fmt.pct],
+    ["vol", "Volatility", fmt.pct], ["sharpe", "Sharpe", (v) => fmt.num(v, 2)], ["max_drawdown", "Max drawdown", fmt.pct], ["years", "Years", (v) => fmt.num(v, 1)]];
+  return (
+    <>
+      <div className="callout small"><b>{r.name}</b> · rebalance {r.rebalance === "M" ? "monthly" : "weekly"} · {r.universe.length} instruments · chosen parameters <span className="mono">{JSON.stringify(r.params_chosen)}</span>
+        <div className="note" style={{ marginTop: 4 }}>{r.note}. {r.reproducibility.execution}. {r.language_note}</div></div>
+      {r.limitations?.length > 0 && <div className="callout warn small">Limitations: {r.limitations.join("; ")}</div>}
+      {r.reason_codes?.length > 0 && <div className="row wrap">{r.reason_codes.map((c: string) => <Badge key={c} kind="warn">{c}</Badge>)}</div>}
+      <Card title="Equity (full history, net of costs) vs equal-weight holding" flush>
+        <EquityChart points={r.equity_curve ?? []} start={1} />
+      </Card>
+      <Card title="Held-out period vs benchmark" sub={`held out from ${fmt.datetime(r.split_day)}`} flush>
+        <table className="t small"><thead><tr><th>Metric</th><th className="num">Strategy (held out)</th><th className="num">Equal weight (held out)</th><th className="num">Strategy, 2x costs</th><th className="num">Strategy (full)</th></tr></thead>
+          <tbody>{rows.map(([k, label, f]) => (
+            <tr key={k}><td className="dim">{label}</td>{[r.test, r.benchmark_test, r.cost_2x_test, r.full].map((m: any, i: number) => <td key={i} className="num mono">{m?.[k] === null || m?.[k] === undefined ? "—" : f(m[k])}</td>)}</tr>
+          ))}
+            <tr><td className="dim">Turnover / year</td><td className="num mono">{fmt.num(r.turnover_per_year, 2)}</td><td /><td /><td /></tr>
+          </tbody></table>
+      </Card>
+      <Card title="Gates">{r.checks.map((c: any) => <Check key={c.name} ok={c.passed} name={<>{c.name} {!c.required && <span className="muted tiny">(advisory)</span>}</>}
+        detail={`value ${c.value === null || c.value === undefined ? "—" : typeof c.value === "number" ? fmt.num(c.value, 3) : String(c.value)} · need ${c.need}${c.code ? " · " + c.code : ""}`} />)}</Card>
+      <Card title="Statistics (held-out daily returns)"><div className="kv small">
+        <div>Probabilistic Sharpe</div><div className="mono">{fmt.num(r.statistics.psr, 3)}</div>
+        <div>Deflated Sharpe</div><div className="mono">{fmt.num(r.statistics.dsr, 3)} ({r.statistics.trials_charged} trials)</div>
+        <div>Sharpe 95% interval</div><div className="mono">{r.statistics.sharpe_ci95 ? `${fmt.num(r.statistics.sharpe_ci95[0], 2)} … ${fmt.num(r.statistics.sharpe_ci95[1], 2)}` : "—"}</div>
+        <div>Weights now</div><div className="mono tiny">{r.weights_now ? Object.entries(r.weights_now.weights).map(([k, v]) => `${k.split(":")[1]} ${fmt.pct(v as number, 0)}`).join(", ") || "cash" : "—"}</div>
+      </div></Card>
+    </>
   );
 }

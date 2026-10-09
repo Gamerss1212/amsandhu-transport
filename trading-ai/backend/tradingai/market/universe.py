@@ -26,7 +26,10 @@ CRYPTO = [("COINBASE", "BTC-USD", "coinbase", "BTC-USD"), ("COINBASE", "ETH-USD"
           ("COINBASE", "SOL-USD", "coinbase", "SOL-USD"), ("KRAKEN", "XBTUSD", "kraken", "XBTUSD"),
           ("KRAKEN", "ETHUSD", "kraken", "ETHUSD")]
 STOCKS = ["AAPL", "MSFT", "NVDA", "AMZN", "TSLA", "JPM", "XOM"]
-ETFS = ["SPY", "QQQ", "IWM", "DIA", "TLT", "GLD", "XLE"]
+ETFS = ["SPY", "QQQ", "IWM", "DIA", "TLT", "GLD", "XLE",
+        # added for the catalog's portfolio templates (ST001-E, ST004, ST005, ST010, ST017): sector SPDRs, international
+        # equity, bonds, commodities and REITs, all liquid US-listed ETFs with long daily histories
+        "XLK", "XLF", "XLV", "XLY", "XLP", "XLI", "XLB", "XLU", "EFA", "EEM", "IEF", "SHY", "DBC", "VNQ"]
 FX = ["EURUSD", "GBPUSD", "USDJPY", "USDCAD", "AUDUSD"]
 INDICES = {"SPX": "^GSPC", "NDX": "^NDX", "DJI": "^DJI", "RUT": "^RUT"}
 FUTURES = {"ES": "ES=F", "MES": "MES=F", "NQ": "NQ=F", "MNQ": "MNQ=F", "YM": "YM=F", "RTY": "RTY=F",

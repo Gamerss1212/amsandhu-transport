@@ -116,6 +116,7 @@ export default function BrokerMoney() {
         )}
       </Card>
 
+      <Coverage />
       <OrdersFills />
 
       {adding && brokers && <AddConnection adapters={brokers.adapters} onClose={() => setAdding(false)} onSaved={() => { setAdding(false); reload(); }} />}
@@ -300,6 +301,26 @@ function OrdersFills() {
           </table>
         ))}
       </div>
+    </Card>
+  );
+}
+
+function Coverage() {
+  const [rows] = usePoll<any[]>("/api/coverage", 0);
+  return (
+    <Card title="Market coverage" sub="research, data, paper and live execution are separate states" flush>
+      {!rows ? <Empty>Loading…</Empty> : (
+        <div className="scroll">
+          <table className="t small">
+            <thead><tr><th>Market</th><th className="num">Instruments</th><th>Research</th><th>Historical data</th><th>Live data</th><th>Paper execution</th><th>Live execution</th></tr></thead>
+            <tbody>{rows.map((r) => (
+              <tr key={r.market}><td><b>{r.market}</b></td><td className="num">{r.instruments}</td><td>{r.research}</td><td>{r.historical_data}</td>
+                <td className="tiny">{r.live_data}</td><td className="tiny">{r.paper_execution}</td>
+                <td className="tiny">{String(r.live_execution).startsWith("adapter verified") ? <Badge kind="good">verified</Badge> : <span className="dim">{r.live_execution}</span>}</td></tr>
+            ))}</tbody>
+          </table>
+        </div>
+      )}
     </Card>
   );
 }

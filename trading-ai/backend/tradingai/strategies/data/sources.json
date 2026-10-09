@@ -1,0 +1,331 @@
+{
+ "S01": {
+  "code": "S01",
+  "title": "Moskowitz, Ooi, and Pedersen — Time Series Momentum",
+  "url": "https://www.aqr.com/Insights/Research/Journal-Article/Time-Series-Momentum",
+  "access": "A",
+  "scope": "A; source family and horizon"
+ },
+ "S02": {
+  "code": "S02",
+  "title": "Asness, Moskowitz, and Pedersen — Value and Momentum Everywhere",
+  "url": "https://www.aqr.com/insights/research/journal-article/value-and-momentum-everywhere",
+  "access": "A",
+  "scope": "A; cross-market evidence"
+ },
+ "S03": {
+  "code": "S03",
+  "title": "Moreira and Muir — Volatility Managed Portfolios",
+  "url": "https://www.nber.org/papers/w22208",
+  "access": "A",
+  "scope": "A; portfolio-level evidence"
+ },
+ "S04": {
+  "code": "S04",
+  "title": "Koijen, Moskowitz, Pedersen, and Vrugt — Carry",
+  "url": "https://www.aqr.com/insights/research/journal-article/carry",
+  "access": "A",
+  "scope": "A; conditional carry and risk"
+ },
+ "S05": {
+  "code": "S05",
+  "title": "Daniel and Moskowitz — Momentum Crashes",
+  "url": "https://www.nber.org/papers/w20439",
+  "access": "A",
+  "scope": "A; adverse regimes"
+ },
+ "S06": {
+  "code": "S06",
+  "title": "Kenneth French — Fama/French Five Factors construction",
+  "url": "https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/Data_Library/f-f_5_factors_2x3.html",
+  "access": "M",
+  "scope": "M; factor definitions"
+ },
+ "S07": {
+  "code": "S07",
+  "title": "Asness, Frazzini, and Pedersen — Quality Minus Junk",
+  "url": "https://www.aqr.com/Insights/Research/Working-Paper/Quality-Minus-Junk",
+  "access": "A",
+  "scope": "A; quality family"
+ },
+ "S08": {
+  "code": "S08",
+  "title": "Frazzini and Pedersen — Betting Against Beta",
+  "url": "https://www.aqr.com/insights/research/journal-article/betting-against-beta",
+  "access": "A",
+  "scope": "A; beta-scaled portfolios"
+ },
+ "S09": {
+  "code": "S09",
+  "title": "Kenneth French — Data Library, including short-term reversal",
+  "url": "https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/data_library.html",
+  "access": "M",
+  "scope": "M; published factor datasets"
+ },
+ "S10": {
+  "code": "S10",
+  "title": "Bernard and Thomas — Post-Earnings-Announcement Drift: Delayed Price Response or Risk Premium?",
+  "url": "https://www.jstor.org/stable/2491062",
+  "access": "B",
+  "scope": "B; article identified through publisher issue listing"
+ },
+ "S11": {
+  "code": "S11",
+  "title": "Mitchell and Pulvino — Characteristics of Risk and Return in Risk Arbitrage",
+  "url": "https://www.aqr.com/Insights/Research/Journal-Article/Characteristics-of-Risk-and-Return-in-Risk-Arbitrage",
+  "access": "A",
+  "scope": "A; merger-arbitrage evidence"
+ },
+ "S12": {
+  "code": "S12",
+  "title": "Holmberg, Lönnbark, and Lundström — Assessing the Profitability of Intraday Opening Range Breakout Strategies",
+  "url": "https://swopec.hhs.se/umnees/abs/umnees0845.htm",
+  "access": "A",
+  "scope": "A; crude-oil threshold method"
+ },
+ "S13": {
+  "code": "S13",
+  "title": "Gao, Han, Li, and Zhou — Market Intraday Momentum",
+  "url": "https://www.sciencedirect.com/science/article/pii/S0304405X18301351",
+  "access": "A",
+  "scope": "A; abstract and article excerpts"
+ },
+ "S14": {
+  "code": "S14",
+  "title": "Avellaneda, Reed, and Stoikov — Forecasting Prices from Level-I Quotes in the Presence of Hidden Liquidity",
+  "url": "https://math.nyu.edu/faculty/avellane/hiddenliquidity.pdf",
+  "access": "P",
+  "scope": "P; short-horizon price relationship"
+ },
+ "S15": {
+  "code": "S15",
+  "title": "Gatev, Goetzmann, and Rouwenhorst — Pairs Trading: Performance of a Relative-Value Arbitrage Rule",
+  "url": "https://academic.oup.com/rfs/article-abstract/19/3/797/1646694",
+  "access": "A",
+  "scope": "A; historical distance-based pairs"
+ },
+ "S16": {
+  "code": "S16",
+  "title": "Avellaneda and Lee — Statistical Arbitrage in the U.S. Equities Market",
+  "url": "https://math.nyu.edu/inmemoriam/avellaneda/AvellanedaLeeStatArb20090616.pdf",
+  "access": "P",
+  "scope": "P; ETF/PCA residual methods"
+ },
+ "S17": {
+  "code": "S17",
+  "title": "SEC — Exchange-Traded Funds investor bulletin",
+  "url": "https://www.sec.gov/investor/alerts/etfs.pdf",
+  "access": "M",
+  "scope": "M; creation/redemption access"
+ },
+ "S18": {
+  "code": "S18",
+  "title": "Brunnermeier, Nagel, and Pedersen — Carry Trades and Currency Crashes",
+  "url": "https://www.nber.org/papers/w14473",
+  "access": "A",
+  "scope": "A; currency carry downside"
+ },
+ "S19": {
+  "code": "S19",
+  "title": "Menkhoff, Sarno, Schmeling, and Schrimpf — Currency Momentum Strategies",
+  "url": "https://www.bis.org/publications/working-paper-366-currency-momentum-strategies",
+  "access": "A",
+  "scope": "A; costs and limits to capture"
+ },
+ "S20": {
+  "code": "S20",
+  "title": "Liu and Tsyvinski — Risks and Returns of Cryptocurrency",
+  "url": "https://www.nber.org/papers/w24877",
+  "access": "A",
+  "scope": "A; sampled crypto evidence"
+ },
+ "S21": {
+  "code": "S21",
+  "title": "Liu, Tsyvinski, and Wu — Common Risk Factors in Cryptocurrency",
+  "url": "https://www.nber.org/papers/w25882",
+  "access": "A",
+  "scope": "A; shared crypto factors"
+ },
+ "S22": {
+  "code": "S22",
+  "title": "BIS — Crypto Carry",
+  "url": "https://www.bis.org/publications/working-paper-1087-crypto-carry",
+  "access": "A",
+  "scope": "A; dated-futures basis research"
+ },
+ "S23": {
+  "code": "S23",
+  "title": "Makarov and Schoar — Trading and Arbitrage in Cryptocurrency Markets",
+  "url": "https://mitsloan.mit.edu/cfi/trading-and-arbitrage-cryptocurrency-markets",
+  "access": "A",
+  "scope": "A; venue segmentation"
+ },
+ "S24": {
+  "code": "S24",
+  "title": "Gorton, Hayashi, and Rouwenhorst — The Fundamentals of Commodity Futures Returns",
+  "url": "https://www.nber.org/papers/w13249",
+  "access": "A",
+  "scope": "A; inventory and curve research"
+ },
+ "S25": {
+  "code": "S25",
+  "title": "CME Group — Why Smart Money Trades Spreads",
+  "url": "https://www.cmegroup.com/education/articles-and-reports/why-smart-money-trades-spreads-a-three-part-series",
+  "access": "M",
+  "scope": "M; spread mechanics"
+ },
+ "S26": {
+  "code": "S26",
+  "title": "CME Group — Calibrating Treasury Link: DV01-Weighted Spreads",
+  "url": "https://www.cmegroup.com/articles/2026/calibrating-treasury-link-dv01-weighted-spreads.html",
+  "access": "M",
+  "scope": "M; rate-sensitivity sizing"
+ },
+ "S27": {
+  "code": "S27",
+  "title": "CME Group — Beyond the Basis Trade: Spreading Cash and Futures Using Treasury Link",
+  "url": "https://www.cmegroup.com/articles/2026/beyond-the-basis-trade-spreading-cash-and-futures-using-treasury-link.html",
+  "access": "M",
+  "scope": "M; cash/futures construction"
+ },
+ "S28": {
+  "code": "S28",
+  "title": "Options Industry Council — Covered Call",
+  "url": "https://www.optionseducation.org/strategies/all-strategies/covered-call-buy-write",
+  "access": "M",
+  "scope": "M; position mechanics"
+ },
+ "S29": {
+  "code": "S29",
+  "title": "Cboe — BuyWrite Indices Methodology",
+  "url": "https://cdn.cboe.com/api/global/us_indices/governance/BXM_Methodology.pdf",
+  "access": "M",
+  "scope": "M; index construction, not achieved investor returns"
+ },
+ "S30": {
+  "code": "S30",
+  "title": "Options Industry Council — Cash-Secured Put",
+  "url": "https://www.optionseducation.org/strategies/all-strategies/cash-secured-put",
+  "access": "M",
+  "scope": "M; assignment and funding"
+ },
+ "S31": {
+  "code": "S31",
+  "title": "Options Industry Council — Protective Put",
+  "url": "https://www.optionseducation.org/strategies/all-strategies/protective-put-married-put",
+  "access": "M",
+  "scope": "M; protective structure"
+ },
+ "S32": {
+  "code": "S32",
+  "title": "Options Industry Council — Collar",
+  "url": "https://www.optionseducation.org/strategies/all-strategies/collar-protective-collar",
+  "access": "M",
+  "scope": "M; protective structure"
+ },
+ "S33": {
+  "code": "S33",
+  "title": "Options Industry Council — Bull Call Spread",
+  "url": "https://www.optionseducation.org/strategies/all-strategies/bull-call-spread-debit-call-spread",
+  "access": "M",
+  "scope": "M; standard payoff"
+ },
+ "S34": {
+  "code": "S34",
+  "title": "Options Industry Council — Bear Put Spread",
+  "url": "https://www.optionseducation.org/strategies/all-strategies/bear-put-spread",
+  "access": "M",
+  "scope": "M; standard payoff"
+ },
+ "S35": {
+  "code": "S35",
+  "title": "Options Industry Council — The Wheel Strategy and Credit Spreads",
+  "url": "https://www.optionseducation.org/news/june-key-takeaways-the-wheel-strategy-and-credit-spreads",
+  "access": "M",
+  "scope": "M; credit spread constructions"
+ },
+ "S36": {
+  "code": "S36",
+  "title": "Options Industry Council — Short Condor (Iron Condor)",
+  "url": "https://www.optionseducation.org/strategies/all-strategies/short-condor",
+  "access": "M",
+  "scope": "M; four-leg structure"
+ },
+ "S37": {
+  "code": "S37",
+  "title": "Options Industry Council — Long Straddle",
+  "url": "https://www.optionseducation.org/strategies/all-strategies/long-straddle",
+  "access": "M",
+  "scope": "M; premium and movement"
+ },
+ "S38": {
+  "code": "S38",
+  "title": "Options Industry Council — Long Call Calendar Spread",
+  "url": "https://www.optionseducation.org/strategies/all-strategies/long-call-calendar-spread-call-horizontal",
+  "access": "M",
+  "scope": "M; expiration mismatch"
+ },
+ "S39": {
+  "code": "S39",
+  "title": "Bollerslev, Tauchen, and Zhou — Expected Stock Returns and Variance Risk Premia",
+  "url": "https://www.federalreserve.gov/econres/feds/expected-stock-returns-and-variance-risk-premia.htm",
+  "access": "A",
+  "scope": "A; equity-return research context"
+ },
+ "S40": {
+  "code": "S40",
+  "title": "Asvanunt, Brooks, and Richardson — Style Investing in Fixed Income Markets",
+  "url": "https://www.aqr.com/-/media/AQR/Documents/Insights/Journal-Article/Style-Investing-in-Fixed-Income-Markets.pdf",
+  "access": "P",
+  "scope": "P; fixed-income style overview"
+ },
+ "S41": {
+  "code": "S41",
+  "title": "AQR — Systematic Credit Investing",
+  "url": "https://www.aqr.com/-/media/AQR/Documents/Insights/White-Papers/Systematic-Credit-Investing.pdf",
+  "access": "P",
+  "scope": "P; credit style research"
+ },
+ "S42": {
+  "code": "S42",
+  "title": "AQR — Systematic Investing in Emerging Market Debt",
+  "url": "https://www.aqr.com/-/media/AQR/Documents/Journal-Articles/AQRJFIFall20SystematicInvestinginEmergingMarketDebt.pdf?sc_lang=en",
+  "access": "P",
+  "scope": "P; hard-currency sovereign evidence"
+ },
+ "S43": {
+  "code": "S43",
+  "title": "Avellaneda and Stoikov — High-Frequency Trading in a Limit Order Book",
+  "url": "https://math.nyu.edu/inmemoriam/avellaneda/HighFrequencyTrading.pdf",
+  "access": "P",
+  "scope": "P; theoretical market-making model"
+ },
+ "S44": {
+  "code": "S44",
+  "title": "Gu, Kelly, and Xiu — Empirical Asset Pricing via Machine Learning",
+  "url": "https://www.nber.org/papers/w25398",
+  "access": "A",
+  "scope": "A; statistical model evidence"
+ },
+ "S45": {
+  "code": "S45",
+  "title": "Bailey and López de Prado — The Deflated Sharpe Ratio",
+  "url": "https://www.davidhbailey.com/dhbpapers/deflated-sharpe.pdf",
+  "access": "P",
+  "scope": "P; selection-bias methodology"
+ },
+ "S46": {
+  "code": "S46",
+  "title": "CME Group — Introduction to Crack Spreads",
+  "url": "https://www.cmegroup.com/education/articles-and-reports/introduction-to-crack-spreads",
+  "access": "M",
+  "scope": "M; refining ratios and units"
+ },
+ "S47": {
+  "code": "S47",
+  "title": "CME Group — Soybean Crush Spreads",
+  "url": "https://www.cmegroup.com/trading/agricultural/grain-and-oilseed/soybean-crush-spreads.html",
+  "access": "M",
+  "scope": "M; processing ratios and units"
+ }
+}

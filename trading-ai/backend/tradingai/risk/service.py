@@ -18,6 +18,8 @@ from dataclasses import asdict, dataclass, field, fields
 from decimal import ROUND_DOWN, Decimal
 from typing import Any, Callable, Optional
 
+from tradingai.core.reasons import code_for  # noqa: E402
+
 RAISE_PHRASE = "RAISE MY RISK LIMITS"
 REARM_PHRASE = "RE-ARM TRADING"
 MARKETS = ("crypto", "stock", "etf", "fx", "future")
@@ -62,9 +64,14 @@ class RiskDecision:
     adjusted: bool = False
     ts: int = 0
 
+    @property
+    def reason_codes(self) -> list[str]:
+        return sorted({code_for(c.name) or "PORTFOLIO_LIMIT" for c in self.checks if not c.passed})
+
     def as_dict(self) -> dict:
         return {"approved": self.approved, "quantity": str(self.quantity), "adjusted": self.adjusted,
-                "reason": self.reason, "ts": self.ts, "checks": [asdict(c) for c in self.checks]}
+                "reason": self.reason, "reason_codes": self.reason_codes, "ts": self.ts,
+                "checks": [dict(asdict(c), code=None if c.passed else code_for(c.name)) for c in self.checks]}
 
 
 @dataclass
@@ -111,6 +118,7 @@ class RiskService:
         self._lock = threading.RLock()
         self.kill_switch: Optional[dict] = None
         self.trading_locked: Optional[dict] = None
+        self.entries_paused: Optional[dict] = None
         self.day_start_equity: Optional[Decimal] = None
         self.week_start_equity: Optional[Decimal] = None
         self.peak_equity: Optional[Decimal] = None
@@ -142,6 +150,8 @@ class RiskService:
                 "engaged: " + self.kill_switch["reason"] if self.kill_switch else "armed")
             add("trading not locked", self.trading_locked is None or reduce_only,
                 self.trading_locked["reason"] if self.trading_locked else "open")
+            add("new entries allowed", self.entries_paused is None or reduce_only,
+                f"paused by {self.entries_paused['by']}" if self.entries_paused else "allowed")
             add("instrument tradable", o.tradable[0], o.tradable[1])
             add("broker permits this product", o.permitted[0], o.permitted[1])
             acct_match = s.account_id is None or o.account_id == s.account_id
@@ -339,6 +349,14 @@ class RiskService:
                    severity="warning" if raising else "info", data={"changes": changes})
         return asdict(self.limits)
 
+    def pause_entries(self, on: bool, by: str, reason: str = "") -> Optional[dict]:
+        """Pause new entries: every order that would open or add exposure is denied; exits still pass."""
+        with self._lock:
+            self.entries_paused = {"by": by, "reason": reason[:200], "ts": int(time.time() * 1000)} if on else None
+        self.audit("risk", ("new entries PAUSED" if on else "new entries resumed") + f" by {by}",
+                   severity="warning" if on else "info", data={"reason": reason})
+        return self.entries_paused
+
     def rebase(self, equity: Decimal, reason: str) -> None:
         """An owner deposit/withdrawal or a paper balance change is not a profit or loss: the loss and drawdown
         references move to the new equity (locks already engaged stay engaged)."""
@@ -353,6 +371,7 @@ class RiskService:
 
     def state(self) -> dict:
         return {"kill_switch": self.kill_switch, "trading_locked": self.trading_locked,
+                "entries_paused": self.entries_paused,
                 "limits": asdict(self.limits), "counters": dict(self.counters),
                 "day_start_equity": str(self.day_start_equity) if self.day_start_equity else None,
                 "peak_equity": str(self.peak_equity) if self.peak_equity else None,
@@ -366,6 +385,7 @@ class RiskService:
                 self.limits = Limits(**{k: v for k, v in saved["limits"].items() if k in known})
             self.kill_switch = saved.get("kill_switch")
             self.trading_locked = saved.get("trading_locked")
+            self.entries_paused = saved.get("entries_paused")
             # loss references survive a restart, so restarting cannot reset the daily loss allowance
             refs = saved.get("references") or {}
             d = lambda v: None if v in (None, "") else Decimal(str(v))      # noqa: E731

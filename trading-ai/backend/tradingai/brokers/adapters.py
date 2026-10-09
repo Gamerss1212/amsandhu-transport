@@ -53,7 +53,7 @@ class _Http(BrokerAdapter):
     def _check_creds(self) -> None:
         missing = [k for k in self.needs if not self.credentials.get(k)]
         if missing:
-            raise RequiresConnection(f"{self.label}: add {', '.join(missing)} on the Broker & Money page")
+            raise RequiresConnection(f"{self.label}: add {', '.join(missing)} on the Brokers & Accounts page")
 
     def _req(self, method: str, path: str, **kw) -> dict | list:
         self._check_creds()

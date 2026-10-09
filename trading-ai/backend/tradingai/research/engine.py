@@ -36,6 +36,7 @@ from tradingai.data.bars import Bars
 from tradingai.features.registry import FeatureFrame
 from tradingai.market.instruments import Instrument
 from tradingai.regime.detect import detect
+from tradingai.core.reasons import code_for
 from tradingai.research import stats as S
 from tradingai.strategies.library import Strategy, StrategySpec
 
@@ -108,7 +109,7 @@ def run_research(spec: StrategySpec, bars: Bars, inst: Instrument, calendar: str
 
     n = len(bars)
     if n < 400:
-        return {"status": "insufficient_data", "bars": n, "needed": 400}
+        return {"status": "insufficient_data", "bars": n, "needed": 400, "reason_codes": ["INSUFFICIENT_DATA"]}
     ff_all = FeatureFrame(bars, calendar, market)
     ppy = ff_all.ppy
     a, b = int(n * 0.6), int(n * 0.8)
@@ -285,12 +286,15 @@ def run_research(spec: StrategySpec, bars: Bars, inst: Instrument, calendar: str
     check(0.96, "verdict")
     checks = _gates(rep_test, stat, wf_sh, wf_ratio, stability, stress, remove, placebo)
     score = _quality(rep_test, stat, wf_sh, wf_ratio, stability, stress, rep_full, placebo, test)
+    for c in checks:
+        c["code"] = None if c["passed"] else code_for(c["name"])
+    reason_codes = sorted({c["code"] for c in checks if c["code"] and c["required"]})
     passed = all(c["passed"] for c in checks if c["required"])
     # a handful of test trades proves nothing either way: below 10 the verdict is REJECT (insufficient sample)
     promising = sum(1 for c in checks if c["passed"]) >= len(checks) * 0.6 and rep_test["trades"] >= 10
     verdict = "PAPER TEST" if passed else ("RESEARCH FURTHER" if promising else "REJECT")
     return {
-        "status": "ok", "verdict": verdict, "strategy_id": spec.strategy_id, "instrument": inst.instrument_id,
+        "status": "ok", "verdict": verdict, "reason_codes": reason_codes, "strategy_id": spec.strategy_id, "instrument": inst.instrument_id,
         "profile": profile, "params_chosen": grid[best], "grid": heat, "segments": {
             k: [int(bars.ts[v[0]]), int(bars.ts[v[1] - 1])] for k, v in seg.items()},
         "train": M.report(train_runs[best], ppy), "validation": M.report(val, ppy), "test": rep_test,

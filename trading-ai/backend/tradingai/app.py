@@ -36,6 +36,7 @@ from tradingai.core.ids import new_id
 from tradingai.data.bars import TF_MS
 from tradingai.data.net import Http
 from tradingai.data.pipeline import MarketData
+from tradingai.engine import portfolio_bot, reports
 from tradingai.engine.autopilot import Autopilot
 from tradingai.engine.orchestrator import BotConfig, Orchestrator
 from tradingai.execution.oms import OMS
@@ -106,6 +107,7 @@ class App:
         self._check("order management", self._oms)
         self._check("research engine", self._research)
         self._check("autopilot", self._autopilot)
+        self._check("assistant", self._assistant)
         self._check("frontend files", self._frontend)
         critical = [c for c in self.checks if not c["ok"] and c["name"] not in ("frontend files", "broker connections")]
         if critical:
@@ -175,6 +177,7 @@ class App:
         st = self.risk.state()
         self.db.set_setting("risk_state", {"limits": st["limits"], "kill_switch": st["kill_switch"],
                                            "trading_locked": st["trading_locked"],
+                                           "entries_paused": st["entries_paused"],
                                            "references": self.risk.references()})
 
     def _paper(self) -> str:
@@ -197,6 +200,11 @@ class App:
             self.autopilot.cfg.enabled = bool(self._autopilot_override)
         return ("ON: researching and running paper bots by itself" if self.autopilot.cfg.enabled else "off") + \
             f" (max {self.autopilot.cfg.max_bots} bots, paper only)"
+
+    def _assistant(self) -> str:
+        from tradingai.engine.assistant import Assistant
+        self.assistant = Assistant(self)
+        return "typed intents over verified state; browser speech; no cloud AI model connected"
 
     def _load_connections(self) -> str:
         rows = self.db.query("SELECT * FROM connections")
@@ -321,9 +329,11 @@ class App:
             self._loop_thread.start()
             if getattr(self, "autopilot", None) is not None:
                 self.autopilot.start()
+            if getattr(self, "assistant", None) is not None:
+                self.assistant.start()
 
     def _loop(self) -> None:
-        last_account = last_recon = 0.0
+        last_account = last_recon = last_equity = 0.0
         while not self._stop.is_set():
             t0 = time.time()
             try:
@@ -331,6 +341,9 @@ class App:
                 if time.time() - last_account > 5:
                     self.publish_account()
                     last_account = time.time()
+                if time.time() - last_equity > 60:
+                    reports.record_equity(self)
+                    last_equity = time.time()
                 if time.time() - last_recon > 300:
                     r = self.reconcile()
                     if not r["ok"]:
@@ -363,6 +376,17 @@ class App:
             day = d.strftime("%Y-%m-%d")
             if bot.day != day:
                 bot.day, bot.trades_today = day, 0
+            if bot.kind == "portfolio":
+                mode = "shadow" if self.mode == "shadow" else "paper"
+                try:
+                    r = portfolio_bot.step(self, bot, mode)
+                except Exception as e:                # noqa: BLE001 - one bot's data problem must not stop the loop
+                    self.bus.publish("data.error", {"bot": bot.bot_id, "error": f"{type(e).__name__}: {e}"},
+                                     severity="warning")
+                    r = None
+                if r:
+                    out.append(r)
+                continue
             try:
                 bars, _ = self.md.bars(bot.instrument_id, bot.tf, lookback=3, max_age_s=self.tick_seconds)
             except Exception as e:                    # noqa: BLE001
@@ -493,6 +517,53 @@ class App:
                         self.audit("kill_switch", f"flatten {iid} failed: {e}", severity="critical")
         self.bus.publish("kill_switch", {"engaged": True, "reason": reason}, severity="critical")
 
+    def pause_entries(self, on: bool, by: str = "owner", reason: str = "") -> dict:
+        self.risk.pause_entries(on, by, reason)
+        self._persist_risk()
+        self.bus.publish("risk.entries", {"paused": on, "by": by}, severity="warning" if on else "info")
+        return {"entries_paused": self.risk.entries_paused}
+
+    def flatten_all(self, by: str = "owner") -> dict:
+        """Close every paper position through the risk service (reduce-only orders). A request is not a completed
+        action: each instrument reports what actually happened (filled, blocked because the market is closed...)."""
+        from tradingai.risk.service import OrderRequest
+        br = self.broker_for(self.mode)
+        if br is not self.paper:
+            raise PermissionError("flatten from this page works on the paper account; close live positions at the "
+                                  "broker or with EMERGENCY STOP (flatten policy)")
+        cancelled = self.oms.cancel_all(br, f"flatten all by {by}")
+        out = []
+        acct = br.get_balance()
+        for p in br.positions_detail():
+            inst = self.book.get(p["instrument_id"])
+            q = self.quote(inst.instrument_id)
+            if q is None:
+                out.append({"instrument": inst.instrument_id, "status": "NO_PRICE", "detail": "no fresh price"})
+                continue
+            held = Decimal(p["qty"])
+            for sid, lot in (p.get("strategy_lots") or {"manual": p["qty"]}).items():
+                lq = Decimal(str(lot))
+                if lq == 0:
+                    continue
+                bars, st = self.md.bars(inst.instrument_id, "1d" if "1d" in self.md.providers[
+                    self.sources[inst.instrument_id].provider].timeframes else "1h", lookback=3)
+                snap = self.risk_snapshot(inst, bars, st, self.mode)
+                req = OrderRequest(client_order_id="", instrument_id=inst.instrument_id,
+                                   market=MARKET_OF.get(inst.market_type, "crypto"), side="sell" if lq > 0 else "buy",
+                                   quantity=abs(lq), reference_price=Decimal(str(q["price"])), limit_price=None,
+                                   multiplier=inst.multiplier, environment="paper", account_id=acct.account_id_masked,
+                                   reduces_position=abs(lq) <= abs(held), quantity_step=inst.quantity_step)
+                res = self.oms.place(decision_id=new_id("FLAT"), req=req, snapshot=snap, broker=br,
+                                     broker_symbol=inst.symbol, mode="paper", strategy_id=None if sid == "manual"
+                                     else sid, decided_at=time.time())
+                out.append({"instrument": inst.instrument_id, "strategy": sid, "qty": str(lq),
+                            "status": res.get("status"), "detail": res["risk"]["reason"]})
+        done = all(o["status"] == "FILLED" for o in out)
+        self.audit("flatten", f"flatten all by {by}: {sum(o['status'] == 'FILLED' for o in out)}/{len(out)} closed",
+                   severity="warning", data={"results": out, "cancelled_orders": cancelled})
+        return {"requested": len(out), "closed": sum(o["status"] == "FILLED" for o in out), "complete": done,
+                "cancelled_orders": cancelled, "results": out}
+
     def rearm(self, phrase: str) -> dict:
         out = self.risk.rearm(phrase, "owner")
         self._persist_risk()
@@ -501,7 +572,7 @@ class App:
 
     def set_mode(self, mode: str) -> dict:
         if mode not in ("paper", "shadow"):
-            raise PermissionError("LIVE is entered only through the arming steps on the Broker & Money page")
+            raise PermissionError("LIVE is entered only through the arming steps on the Brokers & Accounts page")
         if self.mode == "live":
             self.disarm_live("owner switched to " + mode)
         self.mode = mode
@@ -713,6 +784,111 @@ class App:
                                 meta={"strategy_id": strategy_id, "instrument_id": instrument_id, "tf": tf,
                                       "profile": profile, "by": by})
 
+    # ------------------------------------------------------------------ catalog and portfolio templates
+    def submit_portfolio(self, sid: str, by: str = "owner") -> dict:
+        from tradingai.research.portfolio import PORTFOLIOS, load_panel, run_portfolio
+        spec = PORTFOLIOS.get(sid)
+        if spec is None:
+            raise ValueError(f"unknown portfolio template {sid!r}")
+        if self.offline:
+            raise ValueError("portfolio templates need real daily data: not available offline")
+        family = "portfolio-" + sid.split("-")[0]
+
+        def work(progress, cancel) -> dict:
+            progress(0.0, f"loading daily data for {len(spec.universe)} instruments")
+            panel = load_panel(self.md, self.book, spec.universe)
+            days = panel["days"]
+            eid = self.ledger.start(family=family, strategy_id=sid, hypothesis=spec.name, instrument=f"PORTFOLIO:{sid}",
+                                    tf="1d", profile="PORTFOLIO", seed=7,
+                                    dataset={"universe": spec.universe, "start": int(days[0]) * 86_400_000,
+                                             "end": int(days[-1]) * 86_400_000, "simulated": False,
+                                             "provider": "yahoo/coinbase", "bars": int(len(days))})
+            try:
+                res = run_portfolio(spec, panel, self.book, trials_so_far=self.ledger.family_trials(family),
+                                    progress=progress, cancel=cancel)
+            except Exception as e:                    # noqa: BLE001
+                self.ledger.fail(eid, f"{type(e).__name__}: {e}")
+                raise
+            if res.get("status") != "ok":
+                res.setdefault("verdict", None)
+            self.ledger.finish(eid, res)
+            self.audit("research", f"portfolio research ({by}) {sid}: {res.get('verdict') or res.get('status')}",
+                       data={"experiment_id": eid, "reason_codes": res.get("reason_codes")})
+            return {"experiment_id": eid, "verdict": res.get("verdict"), "status": res.get("status")}
+        return self.jobs.submit(f"PORTFOLIO: {sid} {spec.name}", work, meta={"strategy_id": sid, "instrument_id":
+                                f"PORTFOLIO:{sid}", "tf": "1d", "profile": "PORTFOLIO", "by": by})
+
+    def create_portfolio_bot(self, sid: str, *, experiment_id: Optional[str] = None, allocation: float = 0.2,
+                             managed_by: str = "owner", tier: Optional[str] = None, note: str = "") -> dict:
+        ok, why = portfolio_bot.deployable(self, sid)
+        if not ok:
+            raise ValueError(why)
+        if not 0 < allocation <= 0.5:
+            raise ValueError("allocation must be above 0 and at most 50% of equity")
+        if any(b.kind == "portfolio" and b.strategy_id == sid for b in self.bots.values()):
+            raise ValueError(f"a {sid} portfolio bot already exists")
+        bid = new_id("BOT")
+        self.bots[bid] = BotConfig(bid, f"PORTFOLIO:{sid}", "1d", sid, "strategy", "conservative", 50,
+                                   managed_by=managed_by, tier=tier, experiment_id=experiment_id, note=note,
+                                   kind="portfolio", allocation=float(allocation))
+        self._save_bots()
+        self.audit("bot", f"portfolio bot {bid} created by {managed_by}: {sid} with {allocation:.0%} of equity",
+                   data=self.bots[bid].as_dict())
+        return self.bots[bid].as_dict()
+
+    def catalog_view(self) -> dict:
+        from tradingai.core.reasons import REASON_CODES
+        from tradingai.strategies import catalog
+        rows = self.db.query("SELECT experiment_id, strategy_id, created, status, json_extract(results, '$.verdict') "
+                             "AS verdict, json_extract(results, '$.quality.score') AS quality, "
+                             "json_extract(dataset, '$.instrument') AS instrument, json_extract(dataset, '$.tf') AS tf "
+                             "FROM experiments WHERE status!='RUNNING'")
+        retired = {k.split("|")[0] for k, until in self.autopilot.mem["retired"].items() if until > now_ms()}
+        deployed = {b.strategy_id for b in self.bots.values() if b.state == "running"}
+        cards = catalog.view(rows, retired, deployed)
+        data = catalog.load()
+        counts: dict[str, int] = {}
+        for c in cards:
+            counts[c["state"]] = counts.get(c["state"], 0) + 1
+        return {"cards": cards, "groups": data["groups"], "sources": data["sources"], "states": counts,
+                "reason_codes": REASON_CODES, "spec": "docs/specs/AI_Trading_System_Master_Prompt.md (revision 3)",
+                "evidence_labels": {"R": "research-supported family (the cited study reports evidence in its sample)",
+                                    "C": "documented construction (mechanics only, not a positive expected return)",
+                                    "H": "hypothesis or adaptation (not established by the cited sources)"},
+                "access_labels": {"A": "abstract or author summary reviewed", "P": "paper text or excerpts reviewed",
+                                  "M": "mechanics or methodology documentation", "B": "bibliographic record only"},
+                "note": "Published evidence (R/C/H, from the specification's source register) is kept separate from "
+                        "this installation's own research results. None of these guarantees future returns."}
+
+    def coverage(self) -> list[dict]:
+        """Market coverage matrix (specification 5B): research, historical data, live data, paper and live execution
+        are separate states."""
+        from tradingai.brokers.adapters import ADAPTERS
+        rows = []
+        live_by = {"crypto": ["kraken", "coinbase"], "stock": ["alpaca", "ibkr"], "etf": ["alpaca", "ibkr"],
+                   "fx": ["oanda", "ibkr"], "future": ["ibkr"]}
+        for m, label in (("crypto", "Crypto spot"), ("stock", "US stocks"), ("etf", "US ETFs"), ("fx", "Forex"),
+                         ("future", "Futures"), ("index", "Indices")):
+            iids = [i for i in self.sources if MARKET_OF.get(self.book.get(i).market_type) == m and
+                    self.sources[i].provider != "demo"]
+            provs = sorted({self.sources[i].provider for i in iids})
+            verified = [b for b in live_by.get(m, []) if getattr(ADAPTERS.get(b), "verified", False)]
+            rows.append({"market": label, "instruments": len(iids), "research": "yes" if iids else "no",
+                         "historical_data": ", ".join(provs) or "none",
+                         "live_data": "free public candles (completed bars; not an exchange feed)" if iids else "none",
+                         "paper_execution": "reference only (not tradable)" if m == "index" else
+                         ("simulated (continuous series; equity-index roll window)" if m == "future" else "simulated"),
+                         "live_execution": "not applicable" if m == "index" else (
+                             "adapter verified" if verified else "REQUIRES CONNECTION: " + ", ".join(
+                                 ADAPTERS[b].label for b in live_by.get(m, []) if b in ADAPTERS) + " (unverified)")})
+        for label, why in (("Options", "PRODUCT_UNSUPPORTED: no option chains or option-order adapter"),
+                           ("Bonds and credit", "PRODUCT_UNSUPPORTED: no issue-level bond data"),
+                           ("Commodity spreads / rates", "INSUFFICIENT_DATA: no contract-month curves"),
+                           ("Crypto derivatives", "PRODUCT_UNSUPPORTED: not available to Canadian residents on Kraken")):
+            rows.append({"market": label, "instruments": 0, "research": "catalog only", "historical_data": "none",
+                         "live_data": "none", "paper_execution": "none", "live_execution": why})
+        return rows
+
     def set_paper_balance(self, amount: Decimal) -> dict:
         out = self.paper.set_balance(amount, "owner")
         if self.mode != "live":
@@ -892,6 +1068,7 @@ class App:
                 pass
         self._stop.set()
         self.autopilot.stop()
+        self.assistant.stop()
         self.jobs.shutdown()
         self.audit("system", "shut down" + (f"; LIVE positions still open at the broker: {live_open}" if live_open
                                             else ""), severity="warning" if live_open else "info")

@@ -84,6 +84,12 @@ MIGRATIONS: list[str] = [
     ALTER TABLE decisions ADD COLUMN simulated INTEGER;
     CREATE INDEX decisions_instrument ON decisions(instrument_id, ts);
     """,
+    # 3: equity history for the equity / drawdown chart and session reports
+    """
+    CREATE TABLE equity_history (ts INTEGER NOT NULL, mode TEXT NOT NULL, equity TEXT, cash TEXT, realized TEXT,
+        unrealized TEXT, fees TEXT, positions INTEGER, simulated INTEGER NOT NULL);
+    CREATE INDEX equity_history_ts ON equity_history(ts);
+    """,
 ]
 
 GENESIS = "0" * 64

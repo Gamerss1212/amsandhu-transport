@@ -118,6 +118,21 @@ class AutostartIn(BaseModel):
     enabled: bool
 
 
+class PauseIn(BaseModel):
+    paused: bool
+    reason: str = ""
+
+
+class PortfolioBotIn(BaseModel):
+    strategy_id: str
+    allocation: float = Field(0.15, gt=0, le=0.5)
+
+
+class AskIn(BaseModel):
+    text: str = Field(min_length=1, max_length=500)
+    command_id: Optional[str] = Field(None, max_length=64)
+
+
 class ResearchIn(BaseModel):
     strategy_id: str
     instrument_id: str
@@ -197,6 +212,61 @@ def create_app(core, *, token: Optional[str] = None, on_shutdown=None) -> FastAP
             asyncio.get_running_loop().call_later(0.5, on_shutdown)
         return out
 
+    # ------------------------------------------------------------ catalog, portfolio templates, reports, roles
+    @api.get("/api/catalog")
+    def catalog():
+        return core.catalog_view()
+
+    @api.post("/api/catalog/{sid}/research")
+    def catalog_research(sid: str):
+        from tradingai.research.portfolio import PORTFOLIOS
+        if sid in PORTFOLIOS:
+            return core.submit_portfolio(sid)
+        raise ValueError("single-market templates are tested from the Strategy lab (pick the template there)")
+
+    @api.post("/api/portfolio-bots")
+    def portfolio_bot(b: PortfolioBotIn):
+        row = core.db.one("SELECT experiment_id FROM experiments WHERE strategy_id=? AND profile='PORTFOLIO' AND "
+                          "status!='RUNNING' ORDER BY created DESC LIMIT 1", (b.strategy_id,))
+        return core.create_portfolio_bot(b.strategy_id, experiment_id=row["experiment_id"] if row else None,
+                                         allocation=b.allocation)
+
+    @api.post("/api/controls/pause-entries")
+    def pause_entries(p: PauseIn):
+        return core.pause_entries(p.paused, "owner", p.reason)
+
+    @api.post("/api/controls/flatten")
+    def flatten():
+        return core.flatten_all("owner")
+
+    @api.get("/api/equity")
+    def equity(hours: float = 168):
+        from tradingai.engine.reports import equity_series
+        return equity_series(core, min(max(hours, 1), 24 * 365))
+
+    @api.get("/api/report/session")
+    def session_report(since: int = 0):
+        from tradingai.engine.reports import session_report as sr
+        return sr(core, since or None)
+
+    @api.get("/api/report/attribution")
+    def attribution(since: int = 0):
+        from tradingai.engine.reports import attribution as at
+        return at(core, since or None)
+
+    @api.get("/api/roles")
+    def roles():
+        from tradingai.engine.roles import view
+        return view(core)
+
+    @api.get("/api/coverage")
+    def coverage():
+        return core.coverage()
+
+    @api.post("/api/assistant/ask")
+    def ask(a: AskIn):
+        return core.assistant.ask(a.text, a.command_id)
+
     # ------------------------------------------------------------ autopilot and start with Windows
     @api.get("/api/autopilot")
     def autopilot():
@@ -221,7 +291,7 @@ def create_app(core, *, token: Optional[str] = None, on_shutdown=None) -> FastAP
         core.audit("system", f"start with Windows turned {'on' if a.enabled else 'off'}")
         return out
 
-    # ------------------------------------------------------------ Command Center
+    # ------------------------------------------------------------ AI Trading System page
     @api.get("/api/instruments")
     def instruments():
         return core.instruments_view()
@@ -316,7 +386,7 @@ def create_app(core, *, token: Optional[str] = None, on_shutdown=None) -> FastAP
             raise KeyError(strategy_id)
         return sp.as_dict()
 
-    # ------------------------------------------------------------ research (Command Center strategy lab)
+    # ------------------------------------------------------------ research (strategy lab on the AI Trading System page)
     @api.post("/api/research")
     def research(r: ResearchIn):
         return core.submit_research(r.strategy_id, r.instrument_id, r.tf, r.profile, r.lookback)
@@ -351,7 +421,7 @@ def create_app(core, *, token: Optional[str] = None, on_shutdown=None) -> FastAP
     def compare(strategy_id: str, instrument: str):
         return core.compare(strategy_id, instrument)
 
-    # ------------------------------------------------------------ Broker & Money
+    # ------------------------------------------------------------ Brokers & Accounts page
     @api.get("/api/brokers")
     def brokers():
         return {"matrix": broker_matrix(), "adapters": {k: {"label": v.label, "environments": v.environments,
@@ -405,7 +475,7 @@ def create_app(core, *, token: Optional[str] = None, on_shutdown=None) -> FastAP
     def fills(limit: int = 100):
         return core.oms.fills(min(limit, 1000))
 
-    # ------------------------------------------------------------ Live Intelligence
+    # ------------------------------------------------------------ Agent Activity page
     @api.get("/api/decisions")
     def decisions(limit: int = 50, instrument: str = ""):
         """Same shape as the live "decision" event, so a reloaded page shows exactly what it showed before."""
