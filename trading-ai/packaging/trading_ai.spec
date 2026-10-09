@@ -12,6 +12,8 @@ datas = [
     (os.path.join(ROOT, "frontend", "dist"), os.path.join("frontend", "dist")),
     (os.path.join(PKG, "market", "data", "contract_specs.json"), os.path.join("tradingai", "market", "data")),
     (os.path.join(PKG, "strategies", "library_cache.json"), os.path.join("tradingai", "strategies")),
+    # the owner's 80-template catalog and its source register
+    (os.path.join(PKG, "strategies", "data"), os.path.join("tradingai", "strategies", "data")),
 ]
 datas += collect_data_files("tzdata")                      # Windows has no time-zone database of its own
 

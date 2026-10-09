@@ -46,7 +46,7 @@ packaging/         PyInstaller spec, Windows build script (runs under Wine on Li
 python -m venv .venv && .venv/bin/pip install -r requirements-dev.txt
 cd frontend && npm ci && npm run build && cd ..
 cd backend && ../.venv/bin/python -m tradingai.launcher            # add --offline to use stored + DEMO data only
-../.venv/bin/python -m pytest -q tests                              # 87 tests
+../.venv/bin/python -m pytest -q tests                              # 88 tests
 ../.venv/bin/python -m tradingai.launcher --selftest --offline      # end-to-end test over HTTP and WebSocket
 ```
 
