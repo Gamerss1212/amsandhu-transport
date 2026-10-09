@@ -165,7 +165,7 @@ def i_bots(a: Assistant, q: str) -> dict:
     for b in run[:6]:
         parts.append(f"{b.strategy_id.split('.')[0].replace('_', ' ')} on {b.instrument_id.split(':')[1]} "
                      f"{b.tf}{', probation' if b.tier == 'probation' else ''}.")
-    parts.append(f"The autopilot is {'on' if app.autopilot.cfg.enabled else 'off'}: {ap['doing']}.")
+    parts.append(f"The autopilot is on: {ap['doing']}." if app.autopilot.cfg.enabled else "The autopilot is off.")
     return {"intent": "bots", "answer": " ".join(parts), "facts": {"running": len(run), "bots": len(bots)}}
 
 

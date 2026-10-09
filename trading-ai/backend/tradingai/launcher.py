@@ -272,6 +272,25 @@ def selftest(home: Optional[str], offline: bool) -> int:
         wait_job(api("/api/research", "POST", json={"strategy_id": "tsmom.none.flip", "instrument_id":
                                                     "DEMO:DEMO-TREND", "tf": "1h", "profile": "FAST",
                                                     "lookback": 2000})["job_id"])))
+    def catalog_ok():
+        cat = api("/api/catalog")
+        assert len(cat["cards"]) == 80 and len(cat["sources"]) == 47, (len(cat["cards"]), len(cat["sources"]))
+        return ", ".join(f"{v} {k}" for k, v in cat["states"].items())
+    ok &= step("strategy catalog: 80 templates, 47 sources", catalog_ok)
+
+    def pause_ok():
+        assert api("/api/controls/pause-entries", "POST", json={"paused": True, "reason": "selftest"})["entries_paused"]
+        assert api("/api/controls/pause-entries", "POST", json={"paused": False})["entries_paused"] is None
+        return "paused, then resumed"
+    ok &= step("pause new entries and resume", pause_ok)
+
+    def assistant_ok():
+        a = api("/api/assistant/ask", "POST", json={"text": "What are all the bots doing?"})
+        assert a["intent"] == "bots", a
+        r = api("/api/assistant/ask", "POST", json={"text": "go live with all my money"})
+        assert r["intent"] == "refused" and api("/api/overview")["mode"] == "paper", r
+        return a["answer"][:80]
+    ok &= step("assistant answers from state and refuses money commands", assistant_ok)
     ok &= step("reconciliation", lambda: (lambda r: r["ok"] or (_ for _ in ()).throw(AssertionError(r)))(
         api("/api/reconcile", "POST")))
     ok &= step("EMERGENCY STOP engages", lambda: api("/api/emergency-stop", "POST", json={"reason": "selftest"}))

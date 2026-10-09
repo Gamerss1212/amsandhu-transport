@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import {
-  ColorType, CrosshairMode, LineStyle, createChart,
+  ColorType, CrosshairMode, LineStyle, PriceScaleMode, createChart,
   type IChartApi, type ISeriesApi, type SeriesMarker, type Time, type UTCTimestamp,
 } from "lightweight-charts";
 import { fmt } from "../api";
@@ -90,21 +90,44 @@ export function PriceChart({ bars, fills, tfMs, simulated }: { bars: Bar[]; fill
   );
 }
 
-export function EquityChart({ points, start, height = 220 }: { points: [number, number][]; start?: number; height?: number }) {
+const uniq = (pts: [number, number][]) => {
+  const seen = new Set<number>();
+  return pts.filter(([ts]) => !seen.has(ts) && seen.add(ts)).map(([ts, v]) => ({ time: t(ts), value: v }));
+};
+
+// One equity line, plus an optional benchmark line drawn from the same result (never invented here).
+export function EquityChart({ points, start, height = 220, bench, labels, log }: {
+  points: [number, number][]; start?: number; height?: number; bench?: [number, number][]; labels?: [string, string]; log?: boolean;
+}) {
   const el = useRef<HTMLDivElement>(null);
+  const two = !!bench?.length;
   useEffect(() => {
     if (!el.current || !points.length) return;
     const c = base(el.current);
+    if (log) c.priceScale("right").applyOptions({ mode: PriceScaleMode.Logarithmic });
     const s = c.addAreaSeries({
       lineColor: "#4cc2ff", topColor: "rgba(76,194,255,0.22)", bottomColor: "rgba(76,194,255,0.0)", lineWidth: 2,
       priceLineVisible: false,
     });
-    const seen = new Set<number>();
-    s.setData(points.filter(([ts]) => !seen.has(ts) && seen.add(ts)).map(([ts, v]) => ({ time: t(ts), value: v })));
+    s.setData(uniq(points));
+    if (bench?.length) {
+      const b = c.addLineSeries({ color: "#c9a2ff", lineWidth: 2, lineStyle: LineStyle.Dashed, priceLineVisible: false, lastValueVisible: true });
+      b.setData(uniq(bench));
+    }
     if (start !== undefined) s.createPriceLine({ price: start, color: "#6f7b90", lineStyle: LineStyle.Dashed, lineWidth: 1, axisLabelVisible: true, title: "start" });
     c.timeScale().fitContent();
     return () => c.remove();
-  }, [points, start]);
+  }, [points, start, bench, log]);
   if (!points.length) return <div className="empty">No equity curve in this result.</div>;
-  return <div ref={el} style={{ height, position: "relative" }} />;
+  return (
+    <div>
+      {two && (
+        <div className="row tiny dim" style={{ gap: 14, padding: "6px 10px 0" }}>
+          <span className="row" style={{ gap: 6 }}><span style={{ width: 14, height: 2, background: "#4cc2ff", display: "inline-block" }} />{labels?.[0] ?? "Strategy"}</span>
+          <span className="row" style={{ gap: 6 }}><span style={{ width: 14, height: 0, borderTop: "2px dashed #c9a2ff", display: "inline-block" }} />{labels?.[1] ?? "Benchmark"}</span>
+        </div>
+      )}
+      <div ref={el} style={{ height, position: "relative" }} />
+    </div>
+  );
 }

@@ -14,12 +14,13 @@ from tradingai.research.portfolio import PORTFOLIOS            # noqa: E402
 from tradingai.strategies.library import specs                 # noqa: E402
 
 DAILY = ["CME:ES", "COMEX:GC", "NYMEX:CL", "CBOT:ZN", "FX:EURUSD", "COINBASE:BTC-USD", "US:SPY", "US:QQQ", "US:GLD"]
+MICRO = [("CME:MES", "1d")]   # one ES contract is larger than a 100,000 account's sized position; the micro is 1/10th
 PLAN = {   # card -> generator -> (instrument, timeframe) list, chosen by each card's native horizon
-    "ST001": {"tsmom": [(i, "1d") for i in DAILY]},
-    "ST002": {"sma_cross": [(i, "1d") for i in DAILY], "ema_cross": [(i, "1d") for i in DAILY[:6]]},
-    "ST003": {"donchian_trend": [(i, "1d") for i in DAILY]},
+    "ST001": {"tsmom": [(i, "1d") for i in DAILY] + MICRO},
+    "ST002": {"sma_cross": [(i, "1d") for i in DAILY] + MICRO, "ema_cross": [(i, "1d") for i in DAILY[:6]] + MICRO},
+    "ST003": {"donchian_trend": [(i, "1d") for i in DAILY] + MICRO},
     "ST006": {"trend_pullback": [("US:SPY", "1h"), ("COINBASE:BTC-USD", "1h"), ("FX:EURUSD", "1h"), ("US:QQQ", "1d")]},
-    "ST021": {"orb": [("US:SPY", "15m"), ("US:QQQ", "15m"), ("CME:ES", "15m")]},
+    "ST021": {"orb": [("US:SPY", "15m"), ("US:QQQ", "15m"), ("CME:ES", "15m"), ("CME:MES", "15m")]},
     "ST022": {"first_hour_momentum": [("US:SPY", "30m"), ("US:QQQ", "30m")]},
     "ST023": {"price_above_vwap": [("US:SPY", "15m"), ("COINBASE:BTC-USD", "1h")]},
     "ST024": {"vwap_reversion": [("US:SPY", "15m"), ("COINBASE:BTC-USD", "1h")]},

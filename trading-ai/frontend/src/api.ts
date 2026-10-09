@@ -117,6 +117,10 @@ export const fmt = {
     if (!ms) return "—";
     return new Date(ms).toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
   },
+  date(ms: number | null | undefined) {
+    if (!ms) return "—";
+    return new Date(ms).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+  },
   ago(ms: number | null | undefined) {
     if (!ms) return "—";
     const s = Math.max(0, (Date.now() - ms) / 1000);

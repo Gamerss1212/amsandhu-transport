@@ -117,7 +117,8 @@ export function ExperimentDrawer({ eid, onClose }: { eid: string; onClose: () =>
   const [e] = usePoll<any>(`/api/research/experiments/${eid}`, 0, [eid]);
   const [tab, setTab] = useState<"summary" | "robust" | "trades" | "compare">("summary");
   const r = e?.results;
-  const [cmp] = usePoll<any>(e ? `/api/research/compare?strategy_id=${encodeURIComponent(e.strategy_id)}&instrument=${encodeURIComponent(e.dataset?.instrument ?? "")}` : null, 0, [e?.experiment_id]);
+  const single = e && r?.kind !== "portfolio";                 // a portfolio run has rebalances, not per-trade returns to compare
+  const [cmp] = usePoll<any>(single ? `/api/research/compare?strategy_id=${encodeURIComponent(e.strategy_id)}&instrument=${encodeURIComponent(e.dataset?.instrument ?? "")}` : null, 0, [e?.experiment_id]);
   return (
     <Drawer title={e ? e.strategy_id : "Loading…"} onClose={onClose} right={r && <Verdict v={r.verdict} />}>
       {!e && <Empty>Loading…</Empty>}
@@ -128,13 +129,15 @@ export function ExperimentDrawer({ eid, onClose }: { eid: string; onClose: () =>
         <>
           <div className="row wrap small">
             <Badge kind={r.reproducibility?.simulated_data ? "sim" : "info"}>{r.reproducibility?.simulated_data ? "SIMULATED DATA" : "REAL HISTORICAL DATA"}</Badge>
-            <span className="dim">{e.dataset?.instrument} {e.dataset?.tf} · {r.reproducibility?.bars} bars · {fmt.datetime(r.reproducibility?.start)} → {fmt.datetime(r.reproducibility?.end)}</span>
+            <span className="dim">{e.dataset?.instrument} {e.dataset?.tf} · {r.reproducibility?.bars} bars · {fmt.date(r.reproducibility?.start)} → {fmt.date(r.reproducibility?.end)}</span>
             <span className="dim">· {r.profile} · {r.runtime_s}s · seed {r.reproducibility?.seed}</span>
           </div>
           <div className="callout small">
             Quality score <b>{fmt.num(r.quality?.score, 0)}/100</b> · trials charged <b>{r.statistics?.trials_charged}</b> · chosen parameters <span className="mono">{JSON.stringify(r.params_chosen)}</span>
             <div className="note" style={{ marginTop: 4 }}>{r.language_note}</div>
           </div>
+          {r.reason_codes?.length > 0 && <div className="row wrap">{r.reason_codes.map((c: string) => <Badge key={c} kind="warn">{c}</Badge>)}</div>}
+          {r.test?.flags?.length > 0 && <div className="callout warn small">Test period: {r.test.flags.join("; ")}.</div>}
           <Tabs tabs={[["summary", "Summary"], ["robust", "Robustness"], ["trades", "Test trades"], ["compare", "Backtest vs paper"]]} on={tab} set={setTab} />
           {tab === "summary" && (
             <>
@@ -295,10 +298,11 @@ function PortfolioResult({ r }: { r: any }) {
         <div className="note" style={{ marginTop: 4 }}>{r.note}. {r.reproducibility.execution}. {r.language_note}</div></div>
       {r.limitations?.length > 0 && <div className="callout warn small">Limitations: {r.limitations.join("; ")}</div>}
       {r.reason_codes?.length > 0 && <div className="row wrap">{r.reason_codes.map((c: string) => <Badge key={c} kind="warn">{c}</Badge>)}</div>}
-      <Card title="Equity (full history, net of costs) vs equal-weight holding" flush>
-        <EquityChart points={r.equity_curve ?? []} start={1} />
+      <Card title="Growth of 1 (full history, net of costs) vs equal-weight holding" sub="log scale" flush>
+        <EquityChart points={r.equity_curve ?? []} bench={r.benchmark_curve ?? []} start={1} log
+          labels={[`${r.strategy_id ?? "Strategy"} (net of costs)`, "Equal weight, same universe"]} />
       </Card>
-      <Card title="Held-out period vs benchmark" sub={`held out from ${fmt.datetime(r.split_day)}`} flush>
+      <Card title="Held-out period vs benchmark" sub={`held out from ${fmt.date(r.split_day)}`} flush>
         <table className="t small"><thead><tr><th>Metric</th><th className="num">Strategy (held out)</th><th className="num">Equal weight (held out)</th><th className="num">Strategy, 2x costs</th><th className="num">Strategy (full)</th></tr></thead>
           <tbody>{rows.map(([k, label, f]) => (
             <tr key={k}><td className="dim">{label}</td>{[r.test, r.benchmark_test, r.cost_2x_test, r.full].map((m: any, i: number) => <td key={i} className="num mono">{m?.[k] === null || m?.[k] === undefined ? "—" : f(m[k])}</td>)}</tr>

@@ -44,6 +44,7 @@ cp -r "$WORK/dist/TradingAI" "$OUT/TradingAI"
 echo "== 5/6 documents"
 cp "$ROOT/docs/START_HERE.txt" "$OUT/TradingAI/START_HERE.txt"
 cp "$ROOT/docs/REQUIREMENTS_MATRIX.md" "$OUT/TradingAI/REQUIREMENTS_MATRIX.md"
+cp "$ROOT/docs/CATALOG_BACKTEST_REPORT.md" "$OUT/TradingAI/CATALOG_BACKTEST_REPORT.md"
 cp "$ROOT/README.md" "$OUT/TradingAI/README.md"
 
 echo "== 6/6 self-test of the built exe (fresh data folder, offline: no network needed)"

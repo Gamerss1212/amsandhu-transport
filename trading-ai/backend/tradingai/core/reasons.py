@@ -25,6 +25,8 @@ REASON_CODES = {
     "MARKET_CLOSED": "the market is closed",
     "RECONCILIATION_REQUIRED": "local records and the broker disagree; new exposure is frozen",
     "INVALID_ORDER": "the order itself is malformed (quantity, side, price, account or duplicate)",
+    "CONTRACT_TOO_LARGE": "one contract (or lot) is bigger than the position this capital and sizing allow, so "
+                          "signals could not be traded; a micro contract or more capital is needed",
 }
 
 # risk-service checks and research gates -> reason code

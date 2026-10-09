@@ -226,17 +226,21 @@ function Health() {
         </div>
         <div className="small"><b>Data providers</b></div>
         {Object.keys(c.market_feed.http).length === 0 ? <div className="note">No requests yet{h.mode && c.market_feed.status === "offline" ? " (offline mode)" : ""}.</div> : (
-          <table className="t small"><thead><tr><th>Host</th><th className="num">Requests</th><th className="num">Errors</th><th className="num">429</th><th className="num">p50 ms</th></tr></thead>
-            <tbody>{Object.entries(c.market_feed.http).map(([host, s]: any) => (
-              <tr key={host}><td className="mono tiny">{host}</td><td className="num mono">{s.requests}</td><td className="num mono">{s.errors}</td><td className="num mono">{s.http_429}</td><td className="num mono">{s.p50_ms ?? "—"}</td></tr>
-            ))}</tbody></table>
+          <div className="scroll">
+            <table className="t small"><thead><tr><th>Host</th><th className="num">Requests</th><th className="num">Errors</th><th className="num">429</th><th className="num">p50 ms</th></tr></thead>
+              <tbody>{Object.entries(c.market_feed.http).map(([host, s]: any) => (
+                <tr key={host}><td className="mono tiny">{host}</td><td className="num mono">{s.requests}</td><td className="num mono">{s.errors}</td><td className="num mono">{s.http_429}</td><td className="num mono">{s.p50_ms ?? "—"}</td></tr>
+              ))}</tbody></table>
+          </div>
         )}
         {series.length > 0 && (
-          <table className="t small"><thead><tr><th>Series</th><th>Fresh</th><th className="num">Quality</th><th className="num">Age</th></tr></thead>
-            <tbody>{series.slice(-10).map(([k, s]: any) => (
-              <tr key={k}><td className="mono tiny">{k}</td><td>{s.simulated ? <Badge kind="sim">sim</Badge> : s.fresh ? <Badge kind="good">yes</Badge> : <Badge kind="warn">no</Badge>}</td>
-                <td className="num mono">{fmt.num(s.quality, 0)}</td><td className="num mono">{s.age_s !== null && s.age_s !== undefined ? `${Math.round(s.age_s)}s` : "—"}</td></tr>
-            ))}</tbody></table>
+          <div className="scroll">
+            <table className="t small"><thead><tr><th>Series</th><th>Fresh</th><th className="num">Quality</th><th className="num">Age</th></tr></thead>
+              <tbody>{series.slice(-10).map(([k, s]: any) => (
+                <tr key={k}><td className="mono tiny">{k}</td><td>{s.simulated ? <Badge kind="sim">sim</Badge> : s.fresh ? <Badge kind="good">yes</Badge> : <Badge kind="warn">no</Badge>}</td>
+                  <td className="num mono">{fmt.num(s.quality, 0)}</td><td className="num mono">{s.age_s !== null && s.age_s !== undefined ? `${Math.round(s.age_s)}s` : "—"}</td></tr>
+              ))}</tbody></table>
+          </div>
         )}
         <details>
           <summary className="small dim" style={{ cursor: "pointer" }}>Start-up checks</summary>

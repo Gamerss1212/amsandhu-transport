@@ -86,7 +86,7 @@ def report(r: BTResult, ppy: float, regimes: Optional[dict[str, np.ndarray]] = N
                   "model": costs.get("model")},
         "time_under_water_bars": longest, "time_under_water_share": _f(float(np.mean(dd < -1e-12))),
         "tail_loss_worst_bar": _f(-tail[0]) if len(tail) else None, "var95_bar": _f(var95), "cvar95_bar": _f(cvar95),
-        "ruined": r.ruined, "partial_fills": r.partial_fills, "missed_fills": r.missed_fills, "flags": r.flags,
+        "ruined": r.ruined, "partial_fills": r.partial_fills, "missed_fills": r.missed_fills, "undersized_signals": r.undersized, "flags": r.flags,
         "exit_reasons": {k: sum(1 for t in tr if t.exit_reason == k) for k in sorted({t.exit_reason for t in tr})},
     }
     if regimes:

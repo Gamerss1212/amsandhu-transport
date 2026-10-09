@@ -87,6 +87,7 @@ class BTResult:
     ruined: bool = False
     partial_fills: int = 0
     missed_fills: int = 0
+    undersized: int = 0          # entry signals skipped because one contract/lot is bigger than the sized position
 
 
 def _fx_to_account(inst: Instrument, price: float) -> float:
@@ -153,7 +154,9 @@ def run(bars: Bars, signal: np.ndarray, inst: Instrument, cfg: BTConfig | None =
     trades: list[Trade] = []
     flags: list[str] = []
     ruined = False
-    partial = missed = 0
+    partial = missed = undersized = 0
+    smallest_unit = 0.0                      # notional of one contract/lot at the last undersized signal
+    last_under = -2                          # bar of the last undersized signal (consecutive bars count once)
 
     def mark(i: int) -> float:
         px = c[i]
@@ -302,6 +305,10 @@ def run(bars: Bars, signal: np.ndarray, inst: Instrument, cfg: BTConfig | None =
                 if q >= min_qty:
                     sched = want_dir * q
                     reason = "entry" if pos == 0 else "reverse"
+                elif cfg.fixed_qty is None and notional > 0:
+                    undersized += last_under != i - 1
+                    last_under = i
+                    smallest_unit = min_qty * c[i] * mult * fx
         if sched is not None:
             pending, pending_reason = sched, reason
         equity[i] = eq
@@ -321,10 +328,13 @@ def run(bars: Bars, signal: np.ndarray, inst: Instrument, cfg: BTConfig | None =
         flags.append("no volume data: no participation cap")
     if "continuous_provider_series" in inst.tags:
         flags.append("futures on a continuous provider series: flat in roll windows")
+    if undersized:
+        flags.append(f"{undersized} entry signal(s) skipped: one contract/lot (about {smallest_unit:,.0f} USD notional) is "
+                     f"larger than the position this capital and sizing allow")
     return BTResult(inst.instrument_id, equity, rets, exposure, trades, bars.ts,
                     {"fees": t_fees, "spread": t_spread, "slippage": t_slip, "funding": t_fund,
                      "model": {"market": cm.market, "labels": cm.labels, "note": cm.note, "x": cfg.cost_mult}},
                     flags, {"exit_model": cfg.exit_model, "exit_params": ep, "capital": cfg.capital,
                             "risk_per_trade": cfg.risk_per_trade, "vol_target": cfg.vol_target,
                             "max_leverage": lev, "allow_short": shortable, "cost_mult": cfg.cost_mult},
-                    ruined, partial, missed)
+                    ruined, partial, missed, undersized)

@@ -18,12 +18,32 @@ TRADING AI - START HERE
 
 THE THREE PAGES
 ---------------
-Command Center      Chart, START BOT / STOP BOT, your bots, positions, profit and loss, market regime,
-                    what the agents think, risk limits, and the Strategy lab (backtesting).
-Broker & Money      Your paper account, broker connections, what each broker supports, live-trading
-                    readiness and arming, orders and fills, reconciliation.
-Live Intelligence   Every decision the bots make and why (agent votes, risk checks, execution),
-                    the live event stream, system health, the research ledger and the agent list.
+AI Trading System   Chart, START BOT / STOP BOT, Pause New Entries, Flatten All, your bots, positions,
+                    equity chart and session report, profit and loss, market regime, what the agents
+                    think, risk limits, the strategy catalog and the Strategy lab (backtesting).
+Agent Activity      Every decision the bots make and why (agent votes, risk checks, execution),
+                    the live event stream, the 25 roles and what each is doing, system health and
+                    the research ledger.
+Brokers & Accounts  Your paper account, broker connections, what each broker supports, which markets
+                    are covered, live-trading readiness and arming, orders and fills, reconciliation.
+
+THE ASSISTANT
+-------------
+The "Assistant" button (bottom left, on every page) answers questions from the system's real state:
+"What are all the bots doing?", "Why are you not trading?", "How much did fees cost today?",
+"Which strategies are under review?", "Explain my current exposure", "Show my broker connection".
+Say or type "pause new entries" and it does that. It refuses anything about real money, going live
+or permissions: those stay on the pages, behind their own confirmations.
+Tick "voice" to hear answers (British English voice if Windows has one) and "speak events" to have it
+announce important events by itself. "Mic" lets you ask by voice where the browser supports it.
+It uses no cloud AI.
+
+THE STRATEGY CATALOG
+--------------------
+"Open catalog" on the AI Trading System page lists the 80 strategy templates from your specification
+with their sources. Each one shows whether this software can run it, and if not, why (a reason code
+such as PRODUCT_UNSUPPORTED for options). For portfolio templates you can run a backtest or add a
+paper bot. CATALOG_BACKTEST_REPORT.md (next to this file) has the results of backtesting them on real data.
 
 IT RUNS BY ITSELF (AUTOPILOT)
 -----------------------------
@@ -35,8 +55,8 @@ You do not need to set anything up. The Autopilot is ON from the first start and
   3. It watches every bot it runs and retires (closes and removes) the ones whose paper results fall short.
 
 The first bots can take a while (from minutes to hours): it has to download data and most strategies
-fail honestly after trading costs. Watch it work in the Autopilot panel on the Command Center and on the
-Live Intelligence page.
+fail honestly after trading costs. Watch it work in the Autopilot panel on the AI Trading System page and on the
+Agent Activity page.
 
 The two big buttons control everything:
   START BOT  = autopilot on + every bot running
@@ -48,9 +68,11 @@ in the Autopilot panel. You can still add your own bots ("+ Add bot") and run yo
 
 SAFETY
 ------
+- PAUSE NEW ENTRIES stops new trades but lets bots close what they hold. Resume undoes it.
+- FLATTEN ALL closes every paper position now (each one reports whether it really closed).
 - EMERGENCY STOP (top right) stops every bot, cancels working orders and blocks new orders.
 - Risk limits are checked on every order by fixed rules. No agent can raise them.
-- Real-money trading stays OFF. It can only be armed on Broker & Money with a verified live broker
+- Real-money trading stays OFF. It can only be armed on Brokers & Accounts with a verified live broker
   connection, every readiness check passing, your caps, and a typed confirmation. In this version no
   broker adapter has passed a live acceptance test yet, so live arming stays locked.
 - Never give this program (or anyone) a key with withdrawal permission.

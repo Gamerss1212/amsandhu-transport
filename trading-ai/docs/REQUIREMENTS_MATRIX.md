@@ -1,4 +1,4 @@
-# Requirements matrix — Trading AI 1.1.0
+# Requirements matrix — Trading AI 1.2.0
 
 Status meanings:
 * **DONE**: implemented and exercised by a test or by the self-test.
@@ -7,8 +7,8 @@ Status meanings:
 * **NOT DONE**: not built.
 
 How it was verified:
-* **Unit tests**: 64 tests (`backend/tests`).
-* **Self-test**: `START_TRADING_AI.exe --selftest` runs 19 steps over HTTP and WebSocket against the real server. It passed on the built Windows exe under Wine.
+* **Unit tests**: 87 tests (`backend/tests`).
+* **Self-test**: `START_TRADING_AI.exe --selftest` runs 22 steps over HTTP and WebSocket against the real server. It passed on the built Windows exe under Wine.
 * **Real-data run**: the dashboard and API were exercised on live Coinbase, Kraken and Yahoo data.
 
 The exe has been tested under Wine on Linux, **not on a physical Windows PC**.
@@ -19,7 +19,7 @@ The exe has been tested under Wine on Linux, **not on a physical Windows PC**.
 |---|---|---|
 | One launcher `START_TRADING_AI.exe`, no command prompt, npm or Python for the user | DONE | PyInstaller one-folder build (`packaging/trading_ai.spec`); Python, libraries and the compiled dashboard are inside `_internal/`. |
 | Starts backend on 127.0.0.1, auto-selects a free port from 8000 | DONE | `launcher.free_port`; never binds 0.0.0.0. |
-| Starts DB, trading engine, agents, WebSocket, risk, frontend; opens the browser | DONE | 15 start-up checks shown on `/health`; all 15 passed in the exe under Wine. |
+| Starts DB, trading engine, agents, WebSocket, risk, frontend; opens the browser | DONE | 17 start-up checks shown on `/health` (including the autopilot and the assistant). |
 | Single instance (a second double-click opens the running dashboard) | DONE | OS file lock + `/api/system/ping` probe; verified under Wine. |
 | Clean stop (console close, Ctrl+C, Shut down button) with state saved | DONE | Windows console handler + `/api/system/shutdown`; bots, risk state and a DB backup are saved. |
 | Code signing | NOT DONE | Unsigned: SmartScreen may warn on first run. |
@@ -32,6 +32,25 @@ The exe has been tested under Wine on Linux, **not on a physical Windows PC**.
 | Owner keeps control | DONE | START BOT turns everything on and STOP BOT turns everything off. A bot the owner stops is never restarted by the autopilot. EMERGENCY STOP blocks the autopilot, and the autopilot never re-arms. |
 | Fully automated real-money trading | NOT DONE (by design) | The autopilot is paper-only. Live trading needs the owner's separate arming, as required. |
 | Start with Windows | DONE | Optional checkbox: adds the program to this Windows user's Run list (no administrator rights needed). |
+
+## Owner's master prompt (docs/specs/AI_Trading_System_Master_Prompt.md)
+
+| Requirement (section) | Status | Evidence / limitation |
+|---|---|---|
+| 80-template catalog with its source register (5C) | DONE | All 80 cards (ST001-ST080) and 47 sources are loaded from the specification into `strategies/data/`. Each card shows its published evidence label (R/C/H), its sources with access labels, how this software implements it, the lifecycle state and this installation's own backtests (catalog drawer on the AI Trading System page). Test: `test_catalog_has_all_80_cards_and_47_sources_mapped`. |
+| Turn templates into executable specifications (5D) | PARTIAL | 25 of 80 templates are runnable here: 10 as multi-asset portfolio templates (ST001, ST001-E, ST004, ST005, ST009, ST010, ST017, ST018, ST040, ST045, ST046) and the rest as single-market generators (three new ones: structure break ST031, sweep and reclaim ST032, failed breakout ST026). The other 55 say what blocks them with a reason code: 25 need data this build does not have (fundamentals, point-in-time membership, order books, news), 23 need products it does not support (options, bonds, dated contracts), and 7 need borrow, funding, account permissions or a tested pair relationship. |
+| What "best" and "working" mean (5A) | DONE | Held-out period never used for tuning; benchmark comparison; costs and 2× costs; walk-forward; Deflated Sharpe charged with every trial in the family; PBO; placebo. Verdicts are REJECT, RESEARCH FURTHER or PAPER TEST only. Survivorship-biased templates are capped at RESEARCH FURTHER. |
+| Portfolio templates, no look-ahead, next-day execution | DONE | Weights decided at a rebalance close, filled at the next day's close; gross exposure capped at 1. Tests: look-ahead test for every portfolio template, execution and cost test. |
+| Backtests of the catalog on real data | DONE | `scripts/catalog_batch.py` then `scripts/catalog_report.py` write `docs/CATALOG_BACKTEST_REPORT.md`. No template reached PAPER TEST; see that report for every number and caveat. |
+| Automatic selection and continuous review (5F) | DONE | The autopilot also tests portfolio templates weekly and can run up to two portfolio paper bots (15% of the account if qualified, 10% on probation; only if they beat equal weight held out). Portfolio bots retire at a 15% loss of their allocation or when a re-test fails; every bot is re-validated every 14 days. |
+| Reason codes (5F) | DONE | The 14 codes in the specification plus 7 used by this software (ENTRIES_PAUSED, KILL_SWITCH, TRADING_LOCKED, MARKET_CLOSED, RECONCILIATION_REQUIRED, INVALID_ORDER, CONTRACT_TOO_LARGE). Every risk check and research gate maps to one; they appear on orders, decisions, research results and catalog cards. |
+| Page 1 controls: Start, Pause New Entries, Stop, Emergency Stop (8) | DONE | Pause New Entries blocks new exposure but lets exits and reduce-only orders through, and survives a restart (test). Flatten All closes paper positions with reduce-only orders through the risk service and reports each instrument's real outcome. |
+| Equity and drawdown chart; session report; exports (8) | DONE | Equity is recorded every 60 s (1D/1W/1M/1Y views). The session report lists trades, costs, blocked decisions, incidents, strategy changes and remaining exposure, with a JSON export labelled paper or live. |
+| Attribution by strategy, market and costs (role 23) | DONE | Net P&L, fees and slippage against the decision price, per strategy and per market, from the fills ledger. |
+| Page 2 Agent Activity: every role and what it is doing (4, 8) | PARTIAL | All 25 roles with implementation, live state (running, waiting for data, idle, blocked...) and latest result; counts of roles, agent functions, running jobs, queue depth, stale feeds and model calls (0: no cloud AI). There is no per-agent detail drawer and no filter by team or asset class yet. |
+| Page 3 Brokers & Accounts: capability matrix, market coverage (8, 9, 5B) | DONE / NOT DONE | Capability matrix and a market-coverage card. **Add Funds is not built**: this software does not link to any broker's funding page. |
+| Speaking assistant (10) | PARTIAL | On every page. Answers come only from verified system state (no cloud AI). Speech uses the browser's own voices, preferring a British English one; the microphone uses the browser's recognizer where available. Proactive announcements carry an id, category, severity, subject, creation and expiry time and a deduplication key; old ones are not spoken; fills are batched; asking or pressing the microphone stops speech. Not built: a cloud voice API or WebRTC, quiet hours, volume control (browser volume only), the full announcement lifecycle, latency measurements. |
+| Voice tools and permissions (11) | PARTIAL | Typed intents answer all eight example questions. Pause New Entries is the only control the assistant may perform; going live, raising capital or leverage, moving money and flattening are refused and sent to the page. Command ids make a retried command a no-op. The transcript lives only in the open page and is not stored. Not built: resolving "that bot" from page context. |
 
 ## Stack
 
@@ -106,10 +125,10 @@ The exe has been tested under Wine on Linux, **not on a physical Windows PC**.
 
 | Requirement | Status | Evidence / limitation |
 |---|---|---|
-| Exactly three pages | DONE | Command Center, Broker & Money, Live Intelligence. Details open in drawers and dialogs. |
-| Command Center | DONE | Candlestick chart with fills; START/STOP BOT; paper/shadow mode; bots; positions; profit and loss; regime and agents; risk meters and editable limits; Strategy lab. |
-| Broker & Money | DONE | Account and balances; paper balance setting; connections (vault, test, remove); capability matrix; live readiness and arming; orders and fills; reconciliation. |
-| Live Intelligence | DONE | Decision feed with agent votes, conflicts, vetoes, risk checks, execution and audit trail; live event stream; system health; research ledger; agent roster. |
+| Exactly three pages | DONE | AI Trading System, Agent Activity, Brokers & Accounts (the names in the specification). Details open in drawers and dialogs. |
+| AI Trading System | DONE | Candlestick chart with fills; START/STOP BOT; Pause New Entries; Flatten All; paper/shadow mode; autopilot; bots; positions; equity chart and session report; profit and loss; regime and agents; risk meters and editable limits; strategy catalog; Strategy lab. |
+| Brokers & Accounts | DONE | Account and balances; paper balance setting; connections (vault, test, remove); capability matrix; market coverage; live readiness and arming; orders and fills; reconciliation. |
+| Agent Activity | DONE | Decision feed with agent votes, conflicts, vetoes, risk checks, execution and audit trail; live event stream; the 25 roles; system health; research ledger; agent roster. |
 | SIMULATED labels | DONE | Paper balances, DEMO prices and backtests on simulated data are labelled on every page. |
 | Works at phone width | DONE | No horizontal scrolling at 390 px (checked in Chromium). |
 
@@ -124,3 +143,6 @@ The exe has been tested under Wine on Linux, **not on a physical Windows PC**.
 7. FX financing is not modelled.
 8. The program is not code-signed.
 9. No GPU acceleration.
+10. 55 of the 80 catalog templates cannot run here (see the catalog for each reason code).
+11. The assistant uses browser speech; no cloud voice provider is connected.
+12. Add Funds is not built.

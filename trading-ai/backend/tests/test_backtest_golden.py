@@ -67,6 +67,21 @@ def test_futures_pnl_uses_the_multiplier():
     assert r.equity[-1] == pytest.approx(100_000 + 1016)
 
 
+def test_a_contract_bigger_than_the_sized_position_is_reported_not_hidden():
+    # 1 ES at 6700 is 335,000 USD; a 15% vol target on 100,000 sizes about 100,000 of exposure: zero contracts
+    n = 80
+    rng = np.random.default_rng(3)
+    c = 6700 * np.cumprod(1 + rng.normal(0, 0.01, n))
+    b = bars(c, c * 1.005, c * 0.995, c)
+    sig = np.r_[np.zeros(30), np.ones(20), np.zeros(10), np.ones(20)]       # two separate long signals
+    cm = CostModel("future", fee_per_contract=2.25, **ZERO)
+    r = run(b, sig, es(), BTConfig(capital=100_000, cost=cm, flat_in_roll_window=False))
+    assert r.trades == [] and r.undersized == 2                              # two signals, each counted once
+    assert any("larger than the position" in f for f in r.flags)
+    big = run(b, sig, es(), BTConfig(capital=2_000_000, cost=cm, flat_in_roll_window=False))
+    assert big.trades and big.undersized == 0                                # enough capital: the same signals trade
+
+
 def test_stop_fills_at_the_stop_and_a_gap_fills_at_the_open():
     n = 30
     b = flat_bars(n)                                                       # ATR(14) = 2.0 exactly

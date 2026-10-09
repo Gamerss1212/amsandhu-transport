@@ -288,7 +288,10 @@ def run_research(spec: StrategySpec, bars: Bars, inst: Instrument, calendar: str
     score = _quality(rep_test, stat, wf_sh, wf_ratio, stability, stress, rep_full, placebo, test)
     for c in checks:
         c["code"] = None if c["passed"] else code_for(c["name"])
-    reason_codes = sorted({c["code"] for c in checks if c["code"] and c["required"]})
+    reason_codes = {c["code"] for c in checks if c["code"] and c["required"]}
+    if rep_test.get("undersized_signals") and rep_test["trades"] < 30:
+        reason_codes.add("CONTRACT_TOO_LARGE")       # too few trades because the contract is too big, not the signal
+    reason_codes = sorted(reason_codes)
     passed = all(c["passed"] for c in checks if c["required"])
     # a handful of test trades proves nothing either way: below 10 the verdict is REJECT (insufficient sample)
     promising = sum(1 for c in checks if c["passed"]) >= len(checks) * 0.6 and rep_test["trades"] >= 10
