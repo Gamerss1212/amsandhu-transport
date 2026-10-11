@@ -256,7 +256,7 @@ def selftest(home: Optional[str], offline: bool) -> int:
     bot = {}
     ok &= step("create a paper bot", lambda: bot.update(api("/api/bots", "POST", json={
         "instrument_id": "DEMO:DEMO-TREND", "tf": "5m", "strategy_id": "tsmom.none.flip"})) or bot["bot_id"])
-    ok &= step("START BOT", lambda: api("/api/bot/start", "POST"))
+    ok &= step("Start System", lambda: api("/api/bot/start", "POST"))
 
     def decided():
         t0 = time.time()
@@ -267,16 +267,25 @@ def selftest(home: Optional[str], offline: bool) -> int:
             time.sleep(0.5)
         raise TimeoutError("no decision written")
     ok &= step("trading loop writes a decision", decided)
-    ok &= step("STOP BOT", lambda: api("/api/bot/stop", "POST"))
-    ok &= step("backtest (FAST research job on DEMO 1h)", lambda: (lambda j: f"{j['state']}: {j['result']}")(
-        wait_job(api("/api/research", "POST", json={"strategy_id": "tsmom.none.flip", "instrument_id":
-                                                    "DEMO:DEMO-TREND", "tf": "1h", "profile": "FAST",
-                                                    "lookback": 2000})["job_id"])))
+    ok &= step("Stop", lambda: api("/api/bot/stop", "POST"))
+    def research_recorded():
+        mine = [j for j in api("/api/research/jobs") if j["meta"].get("by") == "autopilot"]
+        assert mine, "the autopilot started no research"
+        j = wait_job(mine[0]["job_id"])
+        n = api("/api/research/experiments?limit=5")["counts"]["experiments"]
+        assert n >= 1, "nothing recorded in the research ledger"
+        return f"{j['title']}: {j['state']}; {n} experiment(s) in the ledger"
+    ok &= step("automatic research finishes and is recorded", research_recorded)
+    ok &= step("no manual backtest route", lambda: c.post("/api/research", headers=tok["h"], json={
+        "strategy_id": "tsmom.none.flip", "instrument_id": "DEMO:DEMO-TREND"}).status_code in (404, 405) or
+        (_ for _ in ()).throw(AssertionError("POST /api/research still exists")))
+
     def catalog_ok():
         cat = api("/api/catalog")
-        assert len(cat["cards"]) == 80 and len(cat["sources"]) == 47, (len(cat["cards"]), len(cat["sources"]))
-        return ", ".join(f"{v} {k}" for k, v in cat["states"].items())
-    ok &= step("strategy catalog: 80 templates, 47 sources", catalog_ok)
+        assert len(cat["cards"]) == 124 and len(cat["sources"]) == 98 and len(cat["index"]) == 212, \
+            (len(cat["cards"]), len(cat["sources"]), len(cat["index"]))
+        return f"qualifying {cat['qualifying']['count']}; " + ", ".join(f"{v} {k}" for k, v in cat["research_states"].items())
+    ok &= step("strategy catalog: 124 templates, 98 sources, 212 index entries", catalog_ok)
 
     def pause_ok():
         assert api("/api/controls/pause-entries", "POST", json={"paused": True, "reason": "selftest"})["entries_paused"]

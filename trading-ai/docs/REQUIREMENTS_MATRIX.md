@@ -1,4 +1,4 @@
-# Requirements matrix — Trading AI 1.2.0
+# Requirements matrix — Trading AI 1.3.0
 
 Status meanings:
 * **DONE**: implemented and exercised by a test or by the self-test.
@@ -7,8 +7,8 @@ Status meanings:
 * **NOT DONE**: not built.
 
 How it was verified:
-* **Unit tests**: 88 tests (`backend/tests`).
-* **Self-test**: `START_TRADING_AI.exe --selftest` runs 22 steps over HTTP and WebSocket against the real server. It passed on the built Windows exe under Wine.
+* **Unit tests**: 98 tests (`backend/tests`).
+* **Self-test**: `START_TRADING_AI.exe --selftest` runs 23 steps over HTTP and WebSocket against the real server. It passed on the built Windows exe under Wine.
 * **Real-data run**: the dashboard and API were exercised on live Coinbase, Kraken and Yahoo data.
 
 The exe has been tested under Wine on Linux, **not on a physical Windows PC**.
@@ -28,29 +28,37 @@ The exe has been tested under Wine on Linux, **not on a physical Windows PC**.
 
 | Requirement | Status | Evidence / limitation |
 |---|---|---|
-| Runs by itself after the double-click (no setup, no clicks) | DONE | The Autopilot is on by default. It screens strategies with FAST research and confirms the promising ones with STANDARD research (rate-limited, one job at a time). It then starts paper bots for strategies that are QUALIFIED (passed every gate) or on PROBATION (strict out-of-sample conditions, labelled as such), monitors them, and retires those whose paper results fall short or whose re-test on newer data fails. Covered by tests (`test_autopilot.py`) and a self-test step. |
-| Owner keeps control | DONE | START BOT turns everything on and STOP BOT turns everything off. A bot the owner stops is never restarted by the autopilot. EMERGENCY STOP blocks the autopilot, and the autopilot never re-arms. |
+| Runs by itself after the double-click (no setup, no clicks) | DONE | The Autopilot is on by default. It screens strategies with FAST research and confirms the promising ones with STANDARD research (rate-limited, one job at a time). It starts paper bots only for strategies that QUALIFIED (passed every gate), monitors them, and retires those whose paper results fall short or whose re-test on newer data fails. While nothing qualifies it stays in cash and keeps researching (revision 13). Covered by tests (`test_autopilot.py`) and self-test steps. |
+| Owner keeps control | DONE | Start System turns everything on (the program does this by itself when it opens) and Stop turns everything off. A bot the owner stops is never restarted by the autopilot. EMERGENCY STOP blocks the autopilot, and the autopilot never re-arms. |
 | Fully automated real-money trading | NOT DONE (by design) | The autopilot is paper-only. Live trading needs the owner's separate arming, as required. |
 | Start with Windows | DONE | Optional checkbox: adds the program to this Windows user's Run list (no administrator rights needed). |
 
-## Owner's master prompt (docs/specs/AI_Trading_System_Master_Prompt.md)
+## Owner's master prompt, revision 13 (docs/specs/)
+
+The two owner documents are stored unchanged: `docs/specs/AI_Trading_System_Master_Prompt.md` (revision 13) and
+`docs/specs/Backtested_Working_Strategies.md`. `scripts/import_master_prompt.py` imports the registry from the first.
 
 | Requirement (section) | Status | Evidence / limitation |
 |---|---|---|
-| 80-template catalog with its source register (5C) | DONE | All 80 cards (ST001-ST080) and 47 sources are loaded from the specification into `strategies/data/`. Each card shows its published evidence label (R/C/H), its sources with access labels, how this software implements it, the lifecycle state and this installation's own backtests (catalog drawer on the AI Trading System page). Test: `test_catalog_has_all_80_cards_and_47_sources_mapped`. |
-| Turn templates into executable specifications (5D) | PARTIAL | 25 of 80 templates are runnable here: 10 as multi-asset portfolio templates (ST001, ST001-E, ST004, ST005, ST009, ST010, ST017, ST018, ST040, ST045, ST046) and the rest as single-market generators (three new ones: structure break ST031, sweep and reclaim ST032, failed breakout ST026). The other 55 say what blocks them with a reason code: 25 need data this build does not have (fundamentals, point-in-time membership, order books, news), 23 need products it does not support (options, bonds, dated contracts), and 7 need borrow, funding, account permissions or a tested pair relationship. |
-| What "best" and "working" mean (5A) | DONE | Held-out period never used for tuning; benchmark comparison; costs and 2× costs; walk-forward; Deflated Sharpe charged with every trial in the family; PBO; placebo. Verdicts are REJECT, RESEARCH FURTHER or PAPER TEST only. Survivorship-biased templates are capped at RESEARCH FURTHER. |
-| Portfolio templates, no look-ahead, next-day execution | DONE | Weights decided at a rebalance close, filled at the next day's close; gross exposure capped at 1. Tests: look-ahead test for every portfolio template, execution and cost test. |
-| Backtests of the catalog on real data | DONE | `scripts/catalog_batch.py` then `scripts/catalog_report.py` write `docs/CATALOG_BACKTEST_REPORT.md`. No template reached PAPER TEST; see that report for every number and caveat. |
-| Automatic selection and continuous review (5F) | DONE | The autopilot also tests portfolio templates weekly and can run up to two portfolio paper bots (15% of the account if qualified, 10% on probation; only if they beat equal weight held out). Portfolio bots retire at a 15% loss of their allocation or when a re-test fails; every bot is re-validated every 14 days. |
-| Reason codes (5F) | DONE | The 14 codes in the specification plus 7 used by this software (ENTRIES_PAUSED, KILL_SWITCH, TRADING_LOCKED, MARKET_CLOSED, RECONCILIATION_REQUIRED, INVALID_ORDER, CONTRACT_TOO_LARGE). Every risk check and research gate maps to one; they appear on orders, decisions, research results and catalog cards. |
-| Page 1 controls: Start, Pause New Entries, Stop, Emergency Stop (8) | DONE | Pause New Entries blocks new exposure but lets exits and reduce-only orders through, and survives a restart (test). Flatten All closes paper positions with reduce-only orders through the risk service and reports each instrument's real outcome. |
-| Equity and drawdown chart; session report; exports (8) | DONE | Equity is recorded every 60 s (1D/1W/1M/1Y views). The session report lists trades, costs, blocked decisions, incidents, strategy changes and remaining exposure, with a JSON export labelled paper or live. |
-| Attribution by strategy, market and costs (role 23) | DONE | Net P&L, fees and slippage against the decision price, per strategy and per market, from the fills ledger. |
-| Page 2 Agent Activity: every role and what it is doing (4, 8) | PARTIAL | All 25 roles with implementation, live state (running, waiting for data, idle, blocked...) and latest result; counts of roles, agent functions, running jobs, queue depth, stale feeds and model calls (0: no cloud AI). There is no per-agent detail drawer and no filter by team or asset class yet. |
-| Page 3 Brokers & Accounts: capability matrix, market coverage (8, 9, 5B) | DONE / NOT DONE | Capability matrix and a market-coverage card. **Add Funds is not built**: this software does not link to any broker's funding page. |
-| Speaking assistant (10) | PARTIAL | On every page. Answers come only from verified system state (no cloud AI). Speech uses the browser's own voices, preferring a British English one; the microphone uses the browser's recognizer where available. Proactive announcements carry an id, category, severity, subject, creation and expiry time and a deduplication key; old ones are not spoken; fills are batched; asking or pressing the microphone stops speech. Not built: a cloud voice API or WebRTC, quiet hours, volume control (browser volume only), the full announcement lifecycle, latency measurements. |
-| Voice tools and permissions (11) | PARTIAL | Typed intents answer all eight example questions. Pause New Entries is the only control the assistant may perform; going live, raising capital or leverage, moving money and flattening are refused and sent to the page. Command ids make a retried command a no-op. The transcript lives only in the open page and is not stored. Not built: resolving "that bot" from page context. |
+| Install the strategies that work, leave the ones that don't | DONE | Backtested_Working_Strategies.md lists **0 qualifying strategies**, so no strategy is installed as tradeable. Every card is installed in the catalog with its true state: 30 of 124 can run here and are tested automatically; 94 are blocked with a reason code (49 PRODUCT_UNSUPPORTED, 36 INSUFFICIENT_DATA, 3 PERMISSION_MISSING, 2 FUNDING_UNFAVORABLE, 2 BORROW_UNAVAILABLE, 1 RELATIONSHIP_BROKEN, 1 rules incomplete). |
+| 124-card catalog, 98 sources, 212-entry research index, one registry for every agent (5C, 5I) | DONE | Imported verbatim (ST001-ST080 re-import identically to before). Each card shows evidence labels, sources with access labels (A, P, M, B, K, D), implementation, reason code, lifecycle state and research state. The 212 index entries are discovery records (stage "discovered", DATA_BLOCKED: they need a point-in-time stock universe). Test: `test_catalog_has_all_124_cards_98_sources_and_212_index_entries_mapped`. |
+| New cards this software can run (ST082, ST083, ST121, ST122, ST123) | DONE | ST082 residual momentum and ST083 52-week-high distance (portfolio templates on seven large US stocks, survivorship-biased, capped at RESEARCH FURTHER), ST123 multi-horizon crypto channel ensemble (portfolio template), ST121 intraday noise-band momentum and ST122 activity-filtered opening-range breakout (new single-market generators). Look-ahead tests cut the data at several points and check no earlier signal changes. |
+| Owner's batches recorded as rejected evidence (revisions 11-13) | DONE | Batch 01 (48 configurations), Batch 02 (36) and Batch 03 (6): 0 positive after base costs, validation not opened. Shown per card and in a "Your batches" tab, separate from this installation's tests; not re-run here. |
+| Research states (revision 12) | DONE | DATA_BLOCKED, RULES_INCOMPLETE, IMPLEMENTED_RESEARCH_ONLY, TEST_COMPLETE, REJECTED_UNDER_TEST, VALIDATION_PENDING (DISCOVERED for index entries), computed from the mapping and the research ledger. |
+| No backtest button, test forms or manual training (2, 6) | DONE | Removed from the interface: the Strategy lab form, the catalog's Backtest and Add-paper-bot buttons, job cancel. Removed routes: POST /api/research, POST /api/catalog/{id}/research, POST /api/portfolio-bots, POST /api/research/jobs/{id}/cancel. The research evidence stays visible read-only. Self-test checks the route is gone. |
+| Entries blocked until a strategy qualifies; safe idle in cash (revision 12, 5F) | DONE | Deterministic risk check "strategy qualified" (reason code STRATEGY_NOT_QUALIFIED) on every strategy order; the bot and portfolio-bot loops also abstain early and may still exit. Qualified = latest finished research run on the same market and timeframe has verdict PAPER TEST and the autopilot has not retired it. The PROBATION tier is removed and old probation bots retire. Tests: `test_entries_wait_in_cash_until_a_strategy_qualifies`, `test_a_bot_whose_strategy_says_buy_waits_until_the_strategy_qualifies`, `test_risk_service_blocks_unqualified_entries_but_never_exits`, `test_unqualified_portfolio_bot_buys_nothing`. |
+| Same decision code in research and live; intraday flat by the close (4, 5F) | PARTIAL | The new intraday generators and the ST022 first-half-hour generator now take the session close from the New York clock, not from later bars (they used to look at the session's last bar, which a live bot cannot know; ST022 also held overnight in research). Early closes and other exchanges are not modelled; other strategies do not yet declare entry windows and flattening deadlines. |
+| Three pages with the specified names (2, 8) | DONE | AI Trading System · AI Supercomputer — Agent Activity · Brokers & Accounts. |
+| Start System, Pause New Entries, Stop, Emergency Stop (2, 8) | DONE | Start System is what the program does when it opens; the button shows it running. Pause New Entries blocks new exposure but lets exits through and survives a restart. Flatten All closes paper positions through the risk service. |
+| Colour palette (8A) | PARTIAL | The specified design tokens (midnight navy, cyan, violet, teal, magenta, gold, coral) are applied across the pages and charts. **The video-based layout is not built**: no core/vortex view, node network, KPI strip or 5:7 split. The video file is not available to this build. |
+| 320 independent trading agents A001-A320 with a Supercomputer Brain (3, 4) | NOT DONE | The system runs up to six single-market paper bots plus two portfolio bots chosen by the autopilot, with 102 agents advising each decision. No 320 independent trading workers, market partitions, ownership leases or capital reservations per agent exist. Page 2 shows the real counts, not 320. |
+| 50 shared capabilities C01-C50 (4) | PARTIAL | Page 2 lists the 25 roles of the previous revision with their real state; the revision 13 list of 50 capabilities is not mapped one by one. |
+| Global stock, crypto and meme-coin coverage across chains and venues (3) | NOT DONE | 55 instruments from Coinbase, Kraken and Yahoo. No exchange-wide discovery, no on-chain data, no DEX or launchpad adapters, no meme-coin taxonomy. |
+| Equity and drawdown chart; session report; exports (8) | DONE | Equity recorded every 60 s (1D/1W/1M/1Y); session report with a JSON export labelled paper or live. |
+| Attribution by strategy, market and costs | DONE | Net P&L, fees and slippage against the decision price, per strategy and per market. |
+| Page 2 detail drawers and filters (8) | PARTIAL | 25 roles with state and latest result; no per-agent drawer, team/asset filters or network view. |
+| Page 3 Brokers & Accounts (8, 9, 5B) | DONE / NOT DONE | Capability matrix and market coverage. **Add Funds is not built.** |
+| Speaking assistant and voice tools (10, 11) | PARTIAL | Answers from verified state; explains that the system waits in cash while nothing qualifies; British English browser voice; proactive events with expiry and de-duplication; pause new entries is its only control; money and live commands refused. Not built: cloud voice or WebRTC, quiet hours, volume, announcement lifecycle, latency measurements, "that bot" references. |
 
 ## Stack
 
@@ -90,7 +98,7 @@ The exe has been tested under Wine on Linux, **not on a physical Windows PC**.
 | Confidence / probabilities | DONE (by design) | No probability is shown unless a calibrated model passes evaluation. None has passed, so none is shown. |
 | Machine learning | PARTIAL | Logistic regression, boosted stumps, Platt calibration, triple-barrier labels and purged walk-forward exist in `ml/`. On real BTC data no model beat the base rate (AUC 0.51), so ML is not used in live decisions and has no page. |
 
-## Research engine (Strategy lab)
+## Research engine (automatic; results read-only)
 
 | Requirement | Status | Evidence / limitation |
 |---|---|---|
@@ -125,10 +133,10 @@ The exe has been tested under Wine on Linux, **not on a physical Windows PC**.
 
 | Requirement | Status | Evidence / limitation |
 |---|---|---|
-| Exactly three pages | DONE | AI Trading System, Agent Activity, Brokers & Accounts (the names in the specification). Details open in drawers and dialogs. |
-| AI Trading System | DONE | Candlestick chart with fills; START/STOP BOT; Pause New Entries; Flatten All; paper/shadow mode; autopilot; bots; positions; equity chart and session report; profit and loss; regime and agents; risk meters and editable limits; strategy catalog; Strategy lab. |
+| Exactly three pages | DONE | AI Trading System, AI Supercomputer — Agent Activity, Brokers & Accounts (the names in the specification). Details open in drawers and dialogs. |
+| AI Trading System | DONE | Candlestick chart with fills; Start System / Stop; Pause New Entries; Flatten All; paper/shadow mode; autopilot; bots; positions; equity chart and session report; profit and loss; regime and agents; risk meters and editable limits; strategy catalog; read-only research evidence. |
 | Brokers & Accounts | DONE | Account and balances; paper balance setting; connections (vault, test, remove); capability matrix; market coverage; live readiness and arming; orders and fills; reconciliation. |
-| Agent Activity | DONE | Decision feed with agent votes, conflicts, vetoes, risk checks, execution and audit trail; live event stream; the 25 roles; system health; research ledger; agent roster. |
+| AI Supercomputer — Agent Activity | DONE | Decision feed with agent votes, conflicts, vetoes, risk checks, execution and audit trail; live event stream; the 25 roles; system health; research ledger; agent roster. |
 | SIMULATED labels | DONE | Paper balances, DEMO prices and backtests on simulated data are labelled on every page. |
 | Works at phone width | DONE | No horizontal scrolling at 390 px (checked in Chromium). |
 
@@ -143,6 +151,7 @@ The exe has been tested under Wine on Linux, **not on a physical Windows PC**.
 7. FX financing is not modelled.
 8. The program is not code-signed.
 9. No GPU acceleration.
-10. 55 of the 80 catalog templates cannot run here (see the catalog for each reason code).
+10. 94 of the 124 catalog templates cannot run here (see the catalog for each reason code); 0 strategies qualify, so no trade is opened until one does.
 11. The assistant uses browser speech; no cloud voice provider is connected.
 12. Add Funds is not built.
+13. Revision 13's 320-agent fleet, global and meme-coin coverage and video-based layout are not built (see the revision 13 table).

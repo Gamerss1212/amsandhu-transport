@@ -848,15 +848,24 @@ class App:
         cards = catalog.view(rows, retired, deployed)
         data = catalog.load()
         counts: dict[str, int] = {}
+        rcounts: dict[str, int] = {}
         for c in cards:
             counts[c["state"]] = counts.get(c["state"], 0) + 1
+            rcounts[c["research_state"]] = rcounts.get(c["research_state"], 0) + 1
+        owner = catalog.owner_research()
         return {"cards": cards, "groups": data["groups"], "sources": data["sources"], "states": counts,
-                "reason_codes": REASON_CODES, "spec": "docs/specs/AI_Trading_System_Master_Prompt.md (revision 3)",
+                "research_states": rcounts, "research_state_labels": catalog.RESEARCH_STATES,
+                "index": catalog.research_index(), "owner_research": owner,
+                "qualifying": {"count": owner["qualifying_count"], "note": owner["qualifying_note"],
+                               "document": "docs/specs/Backtested_Working_Strategies.md"},
+                "reason_codes": REASON_CODES, "spec": "docs/specs/AI_Trading_System_Master_Prompt.md (revision 13)",
                 "evidence_labels": {"R": "research-supported family (the cited study reports evidence in its sample)",
                                     "C": "documented construction (mechanics only, not a positive expected return)",
                                     "H": "hypothesis or adaptation (not established by the cited sources)"},
                 "access_labels": {"A": "abstract or author summary reviewed", "P": "paper text or excerpts reviewed",
-                                  "M": "mechanics or methodology documentation", "B": "bibliographic record only"},
+                                  "M": "mechanics or methodology documentation", "B": "bibliographic record only",
+                                  "K": "author-project code inspected (not reproduced)",
+                                  "D": "dataset metadata inspected"},
                 "note": "Published evidence (R/C/H, from the specification's source register) is kept separate from "
                         "this installation's own research results. None of these guarantees future returns."}
 
@@ -976,6 +985,30 @@ class App:
             if pos == 0 and entry_notional > 0:
                 out.append(float((-cost - fees) / entry_notional))
         return out
+
+    def qualification(self, strategy_id: str, instrument_id: str, tf: Optional[str] = None) -> tuple[bool, str]:
+        """Whether this strategy version may open trades on this market (owner's specification, revision 12/13: entries
+        stay blocked until a version qualifies; no unverified fallback). Qualified = its latest finished research run on
+        the same market and timeframe passed every gate (verdict PAPER TEST) and the autopilot has not retired it since.
+        Portfolio templates use their portfolio run. Exits are never blocked by this."""
+        from tradingai.research.portfolio import PORTFOLIOS
+        if strategy_id in PORTFOLIOS:
+            instrument_id, tf = f"PORTFOLIO:{strategy_id}", None
+        sql = ("SELECT experiment_id, created, json_extract(results, '$.verdict') AS verdict FROM experiments "
+               "WHERE strategy_id=? AND json_extract(dataset, '$.instrument')=? AND status!='RUNNING'")
+        args: list = [strategy_id, instrument_id]
+        if tf:
+            sql += " AND json_extract(dataset, '$.tf')=?"
+            args.append(tf)
+        r = self.db.one(sql + " ORDER BY created DESC LIMIT 1", tuple(args))
+        if r is None:
+            return False, "not tested on this market yet: no trade until a version qualifies"
+        if r["verdict"] != "PAPER TEST":
+            return False, f"latest research verdict {r['verdict'] or 'none'} ({r['experiment_id']}): not qualified"
+        retired = self.autopilot.mem.get("retired", {})
+        if any(k.startswith(f"{strategy_id}|{instrument_id}|") and until > now_ms() for k, until in retired.items()):
+            return False, "retired by the autopilot after falling short in paper trading"
+        return True, f"qualified by {r['experiment_id']}"
 
     def compare(self, strategy_id: str, instrument_id: str) -> dict:
         e = self.ledger.latest_for(strategy_id, instrument_id)

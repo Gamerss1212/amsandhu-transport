@@ -1,7 +1,8 @@
 """Portfolio (multi-asset) research for the catalog templates that are defined on a universe, not one chart:
 time-series momentum across assets (ST001), relative + absolute momentum (ST004), volatility-managed exposure (ST005),
 cross-sectional equity momentum (ST009), sector rotation (ST010), low volatility (ST017), short-term reversal (ST018),
-currency momentum (ST040), crypto time-series and cross-sectional momentum (ST045, ST046).
+currency momentum (ST040), crypto time-series and cross-sectional momentum (ST045, ST046), residual momentum (ST082),
+distance from the 52-week high (ST083) and a multi-horizon crypto channel ensemble (ST123).
 
 Method, the same for every template:
 * Daily closes (provider-adjusted where the provider adjusts) aligned by trading day; gaps are forward-filled for at
@@ -241,6 +242,80 @@ def st040(c, r, t, ppy, lookback=126, k=1):
            limitations=["spot long/flat: shorting is not available for spot crypto here", "three coins"])
 def st045(c, r, t, ppy, lookback=28, target=0.30):
     sig = np.where(_ret(c, t, lookback) > 0, 1.0, 0.0)
+    vol = _vol(r, t, 30, ppy)
+    n = max(1, int(np.isfinite(vol).sum()))
+    with np.errstate(divide="ignore", invalid="ignore"):
+        w = sig * (target / math.sqrt(n)) / vol
+    return _cap_gross(np.clip(np.nan_to_num(w), 0, 1.0 / n * 2))
+
+
+@portfolio("ST082", "Residual momentum against the market (long-only)", STOCKS + ["US:SPY"], "M",
+           {"window": 252, "skip": 21, "k": 2}, {"window": [252], "skip": [21], "k": [2, 3]},
+           note="each stock's daily returns regressed on SPY over the past year (to one month before the decision); "
+                "rank the summed residuals divided by their volatility; hold the top k. SPY is the factor, never held",
+           limitations=["SURVIVORSHIP BIAS: today's large companies, no point-in-time membership or delistings",
+                        "one-factor model (market only), not the source's factor model", "long-only adaptation",
+                        "seven stocks only; the equal-weight benchmark also includes SPY"],
+           max_verdict="RESEARCH FURTHER")
+def st082(c, r, t, ppy, window=252, skip=21, k=2):
+    n = c.shape[1] - 1                                   # last column: SPY, the market factor
+    w = np.zeros(c.shape[1])
+    if t - window < 1:
+        return w
+    seg = r[t - window + 1:t - skip + 1]
+    m = seg[:, n]
+    score = np.full(n, np.nan)
+    for j in range(n):
+        y = seg[:, j]
+        ok = np.isfinite(y) & np.isfinite(m)
+        if ok.sum() < int(len(y) * 0.8):
+            continue
+        beta, alpha = np.polyfit(m[ok], y[ok], 1)
+        e = y[ok] - (alpha + beta * m[ok])
+        sd = float(np.std(e, ddof=1))
+        if sd > 0:
+            score[j] = float(np.sum(e)) / (sd * math.sqrt(len(e)))
+    w[:n] = _top(score, k)
+    return w
+
+
+@portfolio("ST083", "Distance from the 52-week high (long-only)", STOCKS, "M",
+           {"window": 252, "k": 2}, {"window": [252], "k": [2, 3]},
+           note="rank each stock's close divided by its highest close of the past 252 days (known at the decision); "
+                "hold the k closest to their high",
+           limitations=["SURVIVORSHIP BIAS: today's large companies, no point-in-time membership or delistings",
+                        "provider split/dividend-adjusted closes; the card's adjustment discrepancy is not resolved",
+                        "long-only adaptation", "seven stocks only"],
+           max_verdict="RESEARCH FURTHER")
+def st083(c, r, t, ppy, window=252, k=2):
+    if t - window + 1 < 0:
+        return np.zeros(c.shape[1])
+    hi = np.nanmax(c[t - window + 1:t + 1], axis=0)
+    with np.errstate(divide="ignore", invalid="ignore"):
+        score = c[t] / hi
+    return _top(score, k)
+
+
+@portfolio("ST123", "Multi-horizon crypto channel ensemble (long/flat, volatility-scaled, weekly)", CRYPTO, "W",
+           {"horizons": (10, 20, 40, 80), "target": 0.30},
+           {"horizons": [(10, 20, 40, 80)], "target": [0.20, 0.30]},
+           note="for each coin, where its close sits inside the high-low channel of the past 10, 20, 40 and 80 days "
+                "(0 at the midpoint or below, 1 at the top), averaged over the four horizons and sized by its own "
+                "30-day volatility",
+           limitations=["spot long/flat: shorting is not available for spot crypto here",
+                        "today's three coins: no historically reconstructed universe (survivorship)",
+                        "daily bars; the card's five-minute adaptation is not tested"])
+def st123(c, r, t, ppy, horizons=(10, 20, 40, 80), target=0.30):
+    sig = np.zeros(c.shape[1])
+    for h in horizons:
+        if t - h + 1 < 0:
+            return np.zeros(c.shape[1])
+        win = c[t - h + 1:t + 1]
+        hi, lo = np.nanmax(win, axis=0), np.nanmin(win, axis=0)
+        mid, half = (hi + lo) / 2, (hi - lo) / 2
+        with np.errstate(divide="ignore", invalid="ignore"):
+            sig += np.clip(np.nan_to_num((c[t] - mid) / half), 0.0, 1.0)
+    sig /= len(horizons)
     vol = _vol(r, t, 30, ppy)
     n = max(1, int(np.isfinite(vol).sum()))
     with np.errstate(divide="ignore", invalid="ignore"):

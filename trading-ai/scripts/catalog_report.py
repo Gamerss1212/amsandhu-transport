@@ -73,7 +73,8 @@ def main(home, out):
                                         for c in r["results"]["checks"]))
     best = max(ok, key=lambda r: r["results"]["statistics"].get("dsr") or 0, default=None)
     head = ", ".join(f"{v} {k}" for k, v in verdicts.most_common()) + ". "
-    head += ("No template reached PAPER TEST. " if not verdicts.get("PAPER TEST") else "")
+    head += ("No template reached PAPER TEST, so under the owner's rules none may open trades. "
+             if not verdicts.get("PAPER TEST") else "")
     head += (f"{dsr_fail} of {len(ok)} completed runs failed the Deflated Sharpe gate (≥ 0.95), which charges every "
              f"parameter set ever tried in the same family. ")
     if best:
@@ -168,19 +169,36 @@ def main(home, out):
     w("")
 
     # ------------------------------------------------------------------ catalog coverage
-    view = catalog.view([], set(), set())
-    w("## All 80 templates: what this software can and cannot test")
+    ledger_rows = [{"experiment_id": r["experiment_id"], "strategy_id": r["strategy_id"], "created": r["created"],
+                    "status": r["status"], "verdict": (r["results"] or {}).get("verdict"),
+                    "quality": ((r["results"] or {}).get("quality") or {}).get("score"),
+                    "instrument": r["dataset"].get("instrument"), "tf": r["dataset"].get("tf")} for r in rows]
+    view = catalog.view(ledger_rows, set(), set())
+    w(f"## All {len(view)} templates: what this software can and cannot test")
     w("")
-    states = Counter(c["state"] for c in view)
-    w("States before any backtest: " + ", ".join(f"{v} {k}" for k, v in states.most_common()) + ". "
-      "\"documented\" and \"specified\" templates need data or products this installation does not have; the "
-      "reason code says which.")
+    rstates = Counter(c["research_state"] for c in view)
+    w("Research states after this batch: " + ", ".join(f"{v} {k}" for k, v in rstates.most_common()) + ". "
+      "DATA_BLOCKED templates need data, products or permissions this installation does not have; the reason code "
+      "says which.")
     w("")
-    w("| ID | Template | Published | Implemented by | Blocked by |")
-    w("|---|---|---|---|---|")
+    w("| ID | Template | Published | Implemented by | Blocked by | Research state |")
+    w("|---|---|---|---|---|---|")
     for c in view:
         w(f"| {c['id']} | {c['name']} | {c['evidence']} | {', '.join(c['implementations']) or '—'} "
-          f"| {c['blocked'] or ''} |")
+          f"| {c['blocked'] or ''} | {c['research_state']} |")
+    w("")
+
+    owner = catalog.owner_research()
+    w("## Your own batches (from the specification, not re-run here)")
+    w("")
+    w(f"Qualifying strategies in Backtested_Working_Strategies.md: **{owner['qualifying_count']}**. "
+      + owner["qualifying_note"])
+    w("")
+    w("| Batch | Market | Configurations | Positive after costs | Result | Validation |")
+    w("|---|---|---|---|---|---|")
+    for b in owner["batches"]:
+        w(f"| {b['id']} | {b['market']} | {b['configurations']} | {b['positive_full_year_after_costs']} "
+          f"| {b['result']} | {b['validation']} |")
     w("")
 
     w("## Caveats that apply to every number above")

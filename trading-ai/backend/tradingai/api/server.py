@@ -123,22 +123,9 @@ class PauseIn(BaseModel):
     reason: str = ""
 
 
-class PortfolioBotIn(BaseModel):
-    strategy_id: str
-    allocation: float = Field(0.15, gt=0, le=0.5)
-
-
 class AskIn(BaseModel):
     text: str = Field(min_length=1, max_length=500)
     command_id: Optional[str] = Field(None, max_length=64)
-
-
-class ResearchIn(BaseModel):
-    strategy_id: str
-    instrument_id: str
-    tf: str = "1h"
-    profile: str = Field("STANDARD", pattern="^(FAST|STANDARD|DEEP)$")
-    lookback: int = Field(5000, ge=400, le=20000)
 
 
 # ---------------------------------------------------------------- the app
@@ -217,19 +204,8 @@ def create_app(core, *, token: Optional[str] = None, on_shutdown=None) -> FastAP
     def catalog():
         return core.catalog_view()
 
-    @api.post("/api/catalog/{sid}/research")
-    def catalog_research(sid: str):
-        from tradingai.research.portfolio import PORTFOLIOS
-        if sid in PORTFOLIOS:
-            return core.submit_portfolio(sid)
-        raise ValueError("single-market templates are tested from the Strategy lab (pick the template there)")
-
-    @api.post("/api/portfolio-bots")
-    def portfolio_bot(b: PortfolioBotIn):
-        row = core.db.one("SELECT experiment_id FROM experiments WHERE strategy_id=? AND profile='PORTFOLIO' AND "
-                          "status!='RUNNING' ORDER BY created DESC LIMIT 1", (b.strategy_id,))
-        return core.create_portfolio_bot(b.strategy_id, experiment_id=row["experiment_id"] if row else None,
-                                         allocation=b.allocation)
+    # No manual test or deployment routes (owner's specification, revision 13, section 2): research runs only inside
+    # the autopilot, and portfolio bots are created only by the autopilot for strategies that qualify.
 
     @api.post("/api/controls/pause-entries")
     def pause_entries(p: PauseIn):
@@ -387,10 +363,6 @@ def create_app(core, *, token: Optional[str] = None, on_shutdown=None) -> FastAP
         return sp.as_dict()
 
     # ------------------------------------------------------------ research (strategy lab on the AI Trading System page)
-    @api.post("/api/research")
-    def research(r: ResearchIn):
-        return core.submit_research(r.strategy_id, r.instrument_id, r.tf, r.profile, r.lookback)
-
     @api.get("/api/research/jobs")
     def jobs():
         return core.jobs.list()
@@ -401,10 +373,6 @@ def create_app(core, *, token: Optional[str] = None, on_shutdown=None) -> FastAP
         if v is None:
             raise KeyError(job_id)
         return v
-
-    @api.post("/api/research/jobs/{job_id}/cancel")
-    def cancel(job_id: str):
-        return {"cancelled": core.jobs.cancel(job_id)}
 
     @api.get("/api/research/experiments")
     def experiments(limit: int = 100):

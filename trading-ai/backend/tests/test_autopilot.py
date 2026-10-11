@@ -38,16 +38,57 @@ def test_on_by_default_and_paper_only(app):
     app.mode = "paper"
 
 
-def test_deploys_qualified_and_probation_but_never_rejected(app):
+def test_deploys_only_qualified_strategies(app):
     record(app, "tsmom.none.flip", "DEMO:DEMO-TREND", "1h", result("PAPER TEST"))
-    record(app, "tsmom.none.trail", "DEMO:DEMO-RANGE", "1h", result("RESEARCH FURTHER", quality=50))
-    record(app, "tsmom.none.time", "DEMO:DEMO-VOLATILE", "1h", result("REJECT", quality=90))
+    record(app, "tsmom.none.trail", "DEMO:DEMO-RANGE", "1h", result("RESEARCH FURTHER", quality=50))   # strong, but
+    record(app, "tsmom.none.time", "DEMO:DEMO-VOLATILE", "1h", result("REJECT", quality=90))          # not qualified
     app.autopilot.cycle()
     bots = {b.instrument_id: b for b in app.autopilot.bots()}
     assert bots["DEMO:DEMO-TREND"].tier == "qualified" and bots["DEMO:DEMO-TREND"].state == "running"
-    assert bots["DEMO:DEMO-RANGE"].tier == "probation"
-    assert "DEMO:DEMO-VOLATILE" not in bots
+    assert set(bots) == {"DEMO:DEMO-TREND"}                  # no probation tier: no unverified fallback
     assert app.state.state == "PAPER_RUNNING"
+
+
+def test_entries_wait_in_cash_until_a_strategy_qualifies(app):
+    ok, why = app.qualification("tsmom.none.flip", "DEMO:DEMO-TREND", "1h")
+    assert not ok and "not tested" in why
+    record(app, "tsmom.none.flip", "DEMO:DEMO-TREND", "1h", result("RESEARCH FURTHER"))
+    assert app.qualification("tsmom.none.flip", "DEMO:DEMO-TREND", "1h")[0] is False
+    assert app.qualification("tsmom.none.flip", "DEMO:DEMO-TREND", "5m")[0] is False     # another timeframe: untested
+    record(app, "tsmom.none.flip", "DEMO:DEMO-TREND", "1h", result("PAPER TEST"))
+    assert app.qualification("tsmom.none.flip", "DEMO:DEMO-TREND", "1h")[0] is True
+
+
+def test_a_bot_whose_strategy_says_buy_waits_until_the_strategy_qualifies(app, monkeypatch):
+    from tradingai.engine import orchestrator as O
+    monkeypatch.setattr(O.Strategy, "generate_signal", lambda self: O.Signal(1, 0, "tsmom.none.flip"))
+    app.autopilot.cfg.enabled = False
+    bot = app.create_bot("DEMO:DEMO-TREND", "1h", "tsmom.none.flip", signal_mode="strategy")
+    app.bot_action(bot["bot_id"], "start")
+    app.tick()
+    assert app.paper.get_positions() == {}
+    last = app.db.one("SELECT outcome, reason FROM decisions WHERE bot_id=? ORDER BY ts DESC LIMIT 1", (bot["bot_id"],))
+    assert last["outcome"] == "NO_TRADE" and last["reason"].startswith("STRATEGY_NOT_QUALIFIED"), dict(last)
+    record(app, "tsmom.none.flip", "DEMO:DEMO-TREND", "1h", result("PAPER TEST"))
+    rec = app.orch.decide(app.bots[bot["bot_id"]], "paper")              # the next bar's decision
+    assert rec["outcome"] not in ("NO_TRADE",) and "STRATEGY_NOT_QUALIFIED" not in rec.get("reason", ""), rec
+    app.paper.process()
+    assert app.paper.get_positions().get("DEMO:DEMO-TREND", 0) > 0     # qualified: the same signal now trades
+
+
+def test_risk_service_blocks_unqualified_entries_but_never_exits():
+    from decimal import Decimal as D
+    from tradingai.risk.service import OrderRequest, RiskService, Snapshot
+    rs = RiskService()
+    base = dict(instrument_id="DEMO:X", market="crypto", quantity=D(1), reference_price=D(100), limit_price=None,
+                multiplier=D(1), environment="paper", account_id="P", qualified=(False, "not qualified"))
+    entry = rs.check(OrderRequest(client_order_id="Q1", side="buy", sized_target=D(1), **base),
+                     Snapshot(equity=D(100_000), positions={}, data_age_s=1))
+    assert not entry.approved and "STRATEGY_NOT_QUALIFIED" in entry.reason_codes
+    held = {"DEMO:X": {"qty": D(1), "price": D(100), "multiplier": D(1), "market": "crypto"}}
+    ex = rs.check(OrderRequest(client_order_id="Q2", side="sell", reduces_position=True, **base),
+                  Snapshot(equity=D(100_000), positions=held, data_age_s=1))
+    assert ex.approved
 
 
 def test_weak_research_is_not_deployed(app):
@@ -71,9 +112,9 @@ def test_owner_stop_is_respected_and_stop_bot_pauses_autopilot(app):
     app.bot_action(b.bot_id, "stop")                    # the owner stops one bot
     app.autopilot.cycle()
     assert b.state == "stopped"                          # not restarted behind the owner's back
-    app.stop_all()                                       # STOP BOT turns the autopilot off
+    app.stop_all()                                       # Stop turns the autopilot off
     assert not app.autopilot.cfg.enabled
-    app.start_all()                                      # START BOT turns it back on
+    app.start_all()                                      # Start System turns it back on
     assert app.autopilot.cfg.enabled and b.state == "running"
 
 

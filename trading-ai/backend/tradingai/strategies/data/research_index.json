@@ -1,0 +1,1750 @@
+[
+ {
+  "id": "RP001",
+  "key": "AbnormalAccruals",
+  "category": "accruals",
+  "authors": "Xie (2001)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP002",
+  "key": "Accruals",
+  "category": "accruals",
+  "authors": "Sloan (1996)",
+  "relation": "ST081",
+  "cards": [
+   "ST081"
+  ]
+ },
+ {
+  "id": "RP003",
+  "key": "AccrualsBM",
+  "category": "valuation",
+  "authors": "Bartov and Kim (2004)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP004",
+  "key": "Activism1",
+  "category": "other",
+  "authors": "Cremers and Nair (2005)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP005",
+  "key": "Activism2",
+  "category": "ownership",
+  "authors": "Cremers and Nair (2005)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP006",
+  "key": "AdExp",
+  "category": "R&D",
+  "authors": "Chan, Lakonishok and Sougiannis (2001)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP007",
+  "key": "AgeIPO",
+  "category": "other",
+  "authors": "Ritter (1991)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP008",
+  "key": "AM",
+  "category": "valuation",
+  "authors": "Fama and French (1992)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP009",
+  "key": "AnalystRevision",
+  "category": "earnings forecast",
+  "authors": "Hawkins, Chamberlin, Daniel (1984)",
+  "relation": "ST088",
+  "cards": [
+   "ST088"
+  ]
+ },
+ {
+  "id": "RP010",
+  "key": "AnalystValue",
+  "category": "valuation",
+  "authors": "Frankel and Lee (1998)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP011",
+  "key": "AnnouncementReturn",
+  "category": "earnings event",
+  "authors": "Chan, Jegadeesh and Lakonishok (1996)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP012",
+  "key": "AOP",
+  "category": "other",
+  "authors": "Frankel and Lee (1998)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP013",
+  "key": "AssetGrowth",
+  "category": "investment",
+  "authors": "Cooper, Gulen and Schill (2008)",
+  "relation": "ST015 family",
+  "cards": [
+   "ST015"
+  ]
+ },
+ {
+  "id": "RP014",
+  "key": "Beta",
+  "category": "risk",
+  "authors": "Fama and MacBeth (1973)",
+  "relation": "ST016 input; not equivalent",
+  "cards": [
+   "ST016"
+  ]
+ },
+ {
+  "id": "RP015",
+  "key": "BetaFP",
+  "category": "other",
+  "authors": "Frazzini and Pedersen (2014)",
+  "relation": "ST016 related",
+  "cards": [
+   "ST016"
+  ]
+ },
+ {
+  "id": "RP016",
+  "key": "BetaLiquidityPS",
+  "category": "liquidity",
+  "authors": "Pastor and Stambaugh (2003)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP017",
+  "key": "BetaTailRisk",
+  "category": "risk",
+  "authors": "Kelly and Jiang (2014)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP018",
+  "key": "betaVIX",
+  "category": "volatility",
+  "authors": "Ang et al. (2006)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP019",
+  "key": "BidAskSpread",
+  "category": "liquidity",
+  "authors": "Amihud and Mendelson (1986)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP020",
+  "key": "BM",
+  "category": "valuation",
+  "authors": "Stattman (1980)",
+  "relation": "ST011",
+  "cards": [
+   "ST011"
+  ]
+ },
+ {
+  "id": "RP021",
+  "key": "BMdec",
+  "category": "valuation",
+  "authors": "Fama and French (1992)",
+  "relation": "ST011 variant",
+  "cards": [
+   "ST011"
+  ]
+ },
+ {
+  "id": "RP022",
+  "key": "BookLeverage",
+  "category": "leverage",
+  "authors": "Fama and French (1992)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP023",
+  "key": "BPEBM",
+  "category": "leverage",
+  "authors": "Penman, Richardson and Tuna (2007)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP024",
+  "key": "BrandInvest",
+  "category": "investment alt",
+  "authors": "Belo, Lin and Vitorino (2014)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP025",
+  "key": "Cash",
+  "category": "asset composition",
+  "authors": "Palazzo (2012)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP026",
+  "key": "CashProd",
+  "category": "profitability alt",
+  "authors": "Chandrashekar and Rao (2009)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP027",
+  "key": "CBOperProf",
+  "category": "profitability",
+  "authors": "Ball et al. (2016)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP028",
+  "key": "CF",
+  "category": "valuation",
+  "authors": "Lakonishok, Shleifer, Vishny (1994)",
+  "relation": "ST012 family",
+  "cards": [
+   "ST012"
+  ]
+ },
+ {
+  "id": "RP029",
+  "key": "cfp",
+  "category": "valuation",
+  "authors": "Desai, Rajgopal, Venkatachalam (2004)",
+  "relation": "ST012 family",
+  "cards": [
+   "ST012"
+  ]
+ },
+ {
+  "id": "RP030",
+  "key": "ChangeInRecommendation",
+  "category": "recommendation",
+  "authors": "Jegadeesh et al. (2004)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP031",
+  "key": "ChAssetTurnover",
+  "category": "sales growth",
+  "authors": "Soliman (2008)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP032",
+  "key": "ChEQ",
+  "category": "investment",
+  "authors": "Lockwood and Prombutr (2010)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP033",
+  "key": "ChForecastAccrual",
+  "category": "earnings forecast",
+  "authors": "Barth and Hutton (2004)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP034",
+  "key": "ChInv",
+  "category": "investment alt",
+  "authors": "Thomas and Zhang (2002)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP035",
+  "key": "ChInvIA",
+  "category": "investment growth",
+  "authors": "Abarbanell and Bushee (1998)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP036",
+  "key": "ChNAnalyst",
+  "category": "earnings event",
+  "authors": "Scherbina (2008)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP037",
+  "key": "ChNNCOA",
+  "category": "investment alt",
+  "authors": "Soliman (2008)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP038",
+  "key": "ChNWC",
+  "category": "investment alt",
+  "authors": "Soliman (2008)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP039",
+  "key": "ChTax",
+  "category": "other",
+  "authors": "Thomas and Zhang (2011)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP040",
+  "key": "CitationsRD",
+  "category": "profitability alt",
+  "authors": "Hirschleifer, Hsu and Li (2013)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP041",
+  "key": "CompEquIss",
+  "category": "external financing",
+  "authors": "Daniel and Titman (2006)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP042",
+  "key": "CompositeDebtIssuance",
+  "category": "external financing",
+  "authors": "Lyandres, Sun and Zhang (2008)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP043",
+  "key": "ConsRecomm",
+  "category": "recommendation",
+  "authors": "Barber et al. (2001)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP044",
+  "key": "ConvDebt",
+  "category": "external financing",
+  "authors": "Valta (2016)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP045",
+  "key": "CoskewACX",
+  "category": "risk",
+  "authors": "Ang, Chen and Xing (2006)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP046",
+  "key": "Coskewness",
+  "category": "risk",
+  "authors": "Harvey and Siddique (2000)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP047",
+  "key": "CPVolSpread",
+  "category": "optionrisk",
+  "authors": "Bali and Hovakimian (2009)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP048",
+  "key": "CredRatDG",
+  "category": "other",
+  "authors": "Dichev and Piotroski (2001)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP049",
+  "key": "CustomerMomentum",
+  "category": "lead lag",
+  "authors": "Cohen and Frazzini (2008)",
+  "relation": "ST084",
+  "cards": [
+   "ST084"
+  ]
+ },
+ {
+  "id": "RP050",
+  "key": "dCPVolSpread",
+  "category": "informed trading",
+  "authors": "An, Ang, Bali, Cakici (2014)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP051",
+  "key": "DebtIssuance",
+  "category": "external financing",
+  "authors": "Spiess and Affleck-Graves (1999)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP052",
+  "key": "DelBreadth",
+  "category": "ownership",
+  "authors": "Chen, Hong and Stein (2002)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP053",
+  "key": "DelCOA",
+  "category": "investment alt",
+  "authors": "Richardson et al. (2005)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP054",
+  "key": "DelCOL",
+  "category": "external financing",
+  "authors": "Richardson et al. (2005)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP055",
+  "key": "DelDRC",
+  "category": "investment alt",
+  "authors": "Prakash and Sinha (2013)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP056",
+  "key": "DelEqu",
+  "category": "investment",
+  "authors": "Richardson et al. (2005)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP057",
+  "key": "DelFINL",
+  "category": "external financing",
+  "authors": "Richardson et al. (2005)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP058",
+  "key": "DelLTI",
+  "category": "investment",
+  "authors": "Richardson et al. (2005)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP059",
+  "key": "DelNetFin",
+  "category": "investment alt",
+  "authors": "Richardson et al. (2005)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP060",
+  "key": "DivInit",
+  "category": "payout indicator",
+  "authors": "Michaely, Thaler and Womack (1995)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP061",
+  "key": "DivOmit",
+  "category": "payout indicator",
+  "authors": "Michaely, Thaler and Womack (1995)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP062",
+  "key": "DivSeason",
+  "category": "payout indicator",
+  "authors": "Hartzmark and Salomon (2013)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP063",
+  "key": "DivYieldST",
+  "category": "valuation",
+  "authors": "Litzenberger and Ramaswamy (1979)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP064",
+  "key": "dNoa",
+  "category": "investment",
+  "authors": "Hirshleifer, Hou, Teoh, Zhang (2004)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP065",
+  "key": "DolVol",
+  "category": "volume",
+  "authors": "Brennan, Chordia, Subra (1998)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP066",
+  "key": "DownRecomm",
+  "category": "earnings forecast",
+  "authors": "Barber et al. (2001)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP067",
+  "key": "dVolCall",
+  "category": "informed trading",
+  "authors": "An, Ang, Bali, Cakici (2014)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP068",
+  "key": "dVolPut",
+  "category": "informed trading",
+  "authors": "An, Ang, Bali, Cakici (2014)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP069",
+  "key": "EarningsConsistency",
+  "category": "earnings growth",
+  "authors": "Alwathainani (2009)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP070",
+  "key": "EarningsForecastDisparity",
+  "category": "earnings forecast",
+  "authors": "Da and Warachka (2011)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP071",
+  "key": "EarningsStreak",
+  "category": "earnings growth",
+  "authors": "Loh and Warachka (2012)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP072",
+  "key": "EarningsSurprise",
+  "category": "earnings growth",
+  "authors": "Foster, Olsen and Shevlin (1984)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP073",
+  "key": "EarnSupBig",
+  "category": "lead lag",
+  "authors": "Hou (2007)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP074",
+  "key": "EBM",
+  "category": "valuation",
+  "authors": "Penman, Richardson and Tuna (2007)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP075",
+  "key": "EntMult",
+  "category": "valuation",
+  "authors": "Loughran and Wellman (2011)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP076",
+  "key": "EP",
+  "category": "valuation",
+  "authors": "Basu (1977)",
+  "relation": "ST012 family",
+  "cards": [
+   "ST012"
+  ]
+ },
+ {
+  "id": "RP077",
+  "key": "EquityDuration",
+  "category": "valuation",
+  "authors": "Dechow, Sloan and Soliman (2004)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP078",
+  "key": "ExchSwitch",
+  "category": "other",
+  "authors": "Dharan and Ikenberry (1995)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP079",
+  "key": "ExclExp",
+  "category": "composite accounting",
+  "authors": "Doyle, Lundholm and Soliman (2003)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP080",
+  "key": "FEPS",
+  "category": "profitability",
+  "authors": "Cen, Wei, and Zhang (2006)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP081",
+  "key": "fgr5yrLag",
+  "category": "earnings forecast",
+  "authors": "La Porta (1996)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP082",
+  "key": "FirmAge",
+  "category": "info proxy",
+  "authors": "Barry and Brown (1984)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP083",
+  "key": "FirmAgeMom",
+  "category": "momentum",
+  "authors": "Zhang (2006)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP084",
+  "key": "ForecastDispersion",
+  "category": "volatility",
+  "authors": "Diether, Malloy and Scherbina (2002)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP085",
+  "key": "FR",
+  "category": "composite accounting",
+  "authors": "Franzoni and Marin (2006)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP086",
+  "key": "Frontier",
+  "category": "valuation",
+  "authors": "Nguyen and Swanson (2009)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP087",
+  "key": "Governance",
+  "category": "other",
+  "authors": "Gompers, Ishii and Metrick (2003)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP088",
+  "key": "GP",
+  "category": "profitability",
+  "authors": "Novy-Marx (2013)",
+  "relation": "ST014 related",
+  "cards": [
+   "ST014"
+  ]
+ },
+ {
+  "id": "RP089",
+  "key": "GrAdExp",
+  "category": "investment alt",
+  "authors": "Lou (2014)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP090",
+  "key": "grcapx",
+  "category": "investment growth",
+  "authors": "Anderson and Garcia-Feijoo (2006)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP091",
+  "key": "grcapx3y",
+  "category": "investment growth",
+  "authors": "Anderson and Garcia-Feijoo (2006)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP092",
+  "key": "GrLTNOA",
+  "category": "investment",
+  "authors": "Fairfield, Whisenant and Yohn (2003)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP093",
+  "key": "GrSaleToGrInv",
+  "category": "sales growth",
+  "authors": "Abarbanell and Bushee (1998)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP094",
+  "key": "GrSaleToGrOverhead",
+  "category": "sales growth",
+  "authors": "Abarbanell and Bushee (1998)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP095",
+  "key": "Herf",
+  "category": "other",
+  "authors": "Hou and Robinson (2006)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP096",
+  "key": "HerfAsset",
+  "category": "other",
+  "authors": "Hou and Robinson (2006)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP097",
+  "key": "HerfBE",
+  "category": "other",
+  "authors": "Hou and Robinson (2006)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP098",
+  "key": "High52",
+  "category": "momentum",
+  "authors": "George and Hwang (2004)",
+  "relation": "ST083",
+  "cards": [
+   "ST083"
+  ]
+ },
+ {
+  "id": "RP099",
+  "key": "hire",
+  "category": "investment alt",
+  "authors": "Bazdresch, Belo and Lin (2014)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP100",
+  "key": "IdioVol3F",
+  "category": "volatility",
+  "authors": "Ang et al. (2006)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP101",
+  "key": "IdioVolAHT",
+  "category": "volatility",
+  "authors": "Ali, Hwang, and Trombley (2003)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP102",
+  "key": "Illiquidity",
+  "category": "liquidity",
+  "authors": "Amihud (2002)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP103",
+  "key": "IndIPO",
+  "category": "external financing",
+  "authors": "Ritter (1991)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP104",
+  "key": "IndMom",
+  "category": "momentum",
+  "authors": "Grinblatt and Moskowitz (1999)",
+  "relation": "ST010 related",
+  "cards": [
+   "ST010"
+  ]
+ },
+ {
+  "id": "RP105",
+  "key": "IndRetBig",
+  "category": "lead lag",
+  "authors": "Hou (2007)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP106",
+  "key": "IntanBM",
+  "category": "long term reversal",
+  "authors": "Daniel and Titman (2006)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP107",
+  "key": "IntanCFP",
+  "category": "long term reversal",
+  "authors": "Daniel and Titman (2006)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP108",
+  "key": "IntanEP",
+  "category": "long term reversal",
+  "authors": "Daniel and Titman (2006)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP109",
+  "key": "IntanSP",
+  "category": "long term reversal",
+  "authors": "Daniel and Titman (2006)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP110",
+  "key": "IntMom",
+  "category": "momentum",
+  "authors": "Novy-Marx (2012)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP111",
+  "key": "Investment",
+  "category": "investment",
+  "authors": "Titman, Wei and Xie (2004)",
+  "relation": "ST015 family",
+  "cards": [
+   "ST015"
+  ]
+ },
+ {
+  "id": "RP112",
+  "key": "InvestPPEInv",
+  "category": "investment",
+  "authors": "Lyandres, Sun and Zhang (2008)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP113",
+  "key": "InvGrowth",
+  "category": "profitability",
+  "authors": "Belo and Lin (2012)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP114",
+  "key": "IO_ShortInterest",
+  "category": "ownership",
+  "authors": "Asquith Pathak and Ritter (2005)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP115",
+  "key": "iomom_cust",
+  "category": "lead lag",
+  "authors": "Menzly and Ozbas (2010)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP116",
+  "key": "iomom_supp",
+  "category": "lead lag",
+  "authors": "Menzly and Ozbas (2010)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP117",
+  "key": "Leverage",
+  "category": "leverage",
+  "authors": "Bhandari (1988)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP118",
+  "key": "LRreversal",
+  "category": "long term reversal",
+  "authors": "De Bondt and Thaler (1985)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP119",
+  "key": "MaxRet",
+  "category": "volatility",
+  "authors": "Bali, Cakici, and Whitelaw (2011)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP120",
+  "key": "MeanRankRevGrowth",
+  "category": "sales growth",
+  "authors": "Lakonishok, Shleifer, Vishny (1994)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP121",
+  "key": "Mom12m",
+  "category": "momentum",
+  "authors": "Jegadeesh and Titman (1993)",
+  "relation": "ST009 variant",
+  "cards": [
+   "ST009"
+  ]
+ },
+ {
+  "id": "RP122",
+  "key": "Mom12mOffSeason",
+  "category": "other",
+  "authors": "Heston and Sadka (2008)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP123",
+  "key": "Mom6m",
+  "category": "momentum",
+  "authors": "Jegadeesh and Titman (1993)",
+  "relation": "ST009 variant",
+  "cards": [
+   "ST009"
+  ]
+ },
+ {
+  "id": "RP124",
+  "key": "Mom6mJunk",
+  "category": "momentum",
+  "authors": "Avramov et al (2007)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP125",
+  "key": "MomOffSeason",
+  "category": "other",
+  "authors": "Heston and Sadka (2008)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP126",
+  "key": "MomOffSeason06YrPlus",
+  "category": "other",
+  "authors": "Heston and Sadka (2008)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP127",
+  "key": "MomOffSeason11YrPlus",
+  "category": "other",
+  "authors": "Heston and Sadka (2008)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP128",
+  "key": "MomOffSeason16YrPlus",
+  "category": "other",
+  "authors": "Heston and Sadka (2008)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP129",
+  "key": "MomRev",
+  "category": "momentum",
+  "authors": "Chan and Ko (2006)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP130",
+  "key": "MomSeason",
+  "category": "other",
+  "authors": "Heston and Sadka (2008)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP131",
+  "key": "MomSeason06YrPlus",
+  "category": "other",
+  "authors": "Heston and Sadka (2008)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP132",
+  "key": "MomSeason11YrPlus",
+  "category": "other",
+  "authors": "Heston and Sadka (2008)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP133",
+  "key": "MomSeason16YrPlus",
+  "category": "other",
+  "authors": "Heston and Sadka (2008)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP134",
+  "key": "MomSeasonShort",
+  "category": "other",
+  "authors": "Heston and Sadka (2008)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP135",
+  "key": "MomVol",
+  "category": "momentum",
+  "authors": "Lee and Swaminathan (2000)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP136",
+  "key": "MRreversal",
+  "category": "long term reversal",
+  "authors": "De Bondt and Thaler (1985)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP137",
+  "key": "MS",
+  "category": "composite accounting",
+  "authors": "Mohanram (2005)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP138",
+  "key": "NetDebtFinance",
+  "category": "external financing",
+  "authors": "Bradshaw, Richardson, Sloan (2006)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP139",
+  "key": "NetDebtPrice",
+  "category": "leverage",
+  "authors": "Penman, Richardson and Tuna (2007)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP140",
+  "key": "NetEquityFinance",
+  "category": "external financing",
+  "authors": "Bradshaw, Richardson, Sloan (2006)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP141",
+  "key": "NetPayoutYield",
+  "category": "valuation",
+  "authors": "Boudoukh et al. (2007)",
+  "relation": "ST086",
+  "cards": [
+   "ST086"
+  ]
+ },
+ {
+  "id": "RP142",
+  "key": "NOA",
+  "category": "asset composition",
+  "authors": "Hirshleifer et al. (2004)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP143",
+  "key": "NumEarnIncrease",
+  "category": "earnings growth",
+  "authors": "Loh and Warachka (2012)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP144",
+  "key": "OperProf",
+  "category": "profitability",
+  "authors": "Fama and French (2006)",
+  "relation": "ST014 family",
+  "cards": [
+   "ST014"
+  ]
+ },
+ {
+  "id": "RP145",
+  "key": "OperProfRD",
+  "category": "profitability",
+  "authors": "Ball et al. (2016)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP146",
+  "key": "OPLeverage",
+  "category": "other",
+  "authors": "Novy-Marx (2011)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP147",
+  "key": "OptionVolume1",
+  "category": "volume",
+  "authors": "Johnson and So (2012)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP148",
+  "key": "OptionVolume2",
+  "category": "volume",
+  "authors": "Johnson and So (2012)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP149",
+  "key": "OrderBacklog",
+  "category": "sales growth",
+  "authors": "Rajgopal, Shevlin, Venkatachalam (2003)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP150",
+  "key": "OrderBacklogChg",
+  "category": "accruals",
+  "authors": "Baik and Ahn (2007)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP151",
+  "key": "OrgCap",
+  "category": "R&D",
+  "authors": "Eisfeldt and Papanikolaou (2013)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP152",
+  "key": "OScore",
+  "category": "default risk",
+  "authors": "Dichev (1998)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP153",
+  "key": "PatentsRD",
+  "category": "profitability alt",
+  "authors": "Hirschleifer, Hsu and Li (2013)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP154",
+  "key": "PayoutYield",
+  "category": "valuation",
+  "authors": "Boudoukh et al. (2007)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP155",
+  "key": "PctAcc",
+  "category": "accruals",
+  "authors": "Hafzalla, Lundholm, Van Winkle (2011)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP156",
+  "key": "PctTotAcc",
+  "category": "accruals",
+  "authors": "Hafzalla, Lundholm, Van Winkle (2011)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP157",
+  "key": "PredictedFE",
+  "category": "earnings forecast",
+  "authors": "Frankel and Lee (1998)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP158",
+  "key": "Price",
+  "category": "other",
+  "authors": "Blume and Husic (1973)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP159",
+  "key": "PriceDelayRsq",
+  "category": "lead lag",
+  "authors": "Hou and Moskowitz (2005)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP160",
+  "key": "PriceDelaySlope",
+  "category": "lead lag",
+  "authors": "Hou and Moskowitz (2005)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP161",
+  "key": "PriceDelayTstat",
+  "category": "lead lag",
+  "authors": "Hou and Moskowitz (2005)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP162",
+  "key": "ProbInformedTrading",
+  "category": "liquidity",
+  "authors": "Easley, Hvidkjaer and O'Hara (2002)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP163",
+  "key": "PS",
+  "category": "composite accounting",
+  "authors": "Piotroski (2000)",
+  "relation": "ST085",
+  "cards": [
+   "ST085"
+  ]
+ },
+ {
+  "id": "RP164",
+  "key": "RD",
+  "category": "R&D",
+  "authors": "Chan, Lakonishok and Sougiannis (2001)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP165",
+  "key": "RDAbility",
+  "category": "other",
+  "authors": "Cohen, Diether and Malloy (2013)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP166",
+  "key": "RDcap",
+  "category": "asset composition",
+  "authors": "Li (2011)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP167",
+  "key": "RDIPO",
+  "category": "R&D",
+  "authors": "Gou, Lev and Shi (2006)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP168",
+  "key": "RDS",
+  "category": "composite accounting",
+  "authors": "Landsman et al. (2011)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP169",
+  "key": "realestate",
+  "category": "asset composition",
+  "authors": "Tuzel (2010)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP170",
+  "key": "RealizedVol",
+  "category": "volatility",
+  "authors": "Ang et al. (2006)",
+  "relation": "ST017 input; not equivalent",
+  "cards": [
+   "ST017"
+  ]
+ },
+ {
+  "id": "RP171",
+  "key": "Recomm_ShortInterest",
+  "category": "recommendation",
+  "authors": "Drake, Rees and Swanson (2011)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP172",
+  "key": "ResidualMomentum",
+  "category": "momentum",
+  "authors": "Blitz, Huij and Martens (2011)",
+  "relation": "ST082",
+  "cards": [
+   "ST082"
+  ]
+ },
+ {
+  "id": "RP173",
+  "key": "retConglomerate",
+  "category": "lead lag",
+  "authors": "Cohen and Lou (2012)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP174",
+  "key": "ReturnSkew",
+  "category": "risk",
+  "authors": "Bali, Engle and Murray (2015)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP175",
+  "key": "ReturnSkew3F",
+  "category": "risk",
+  "authors": "Bali, Engle and Murray (2015)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP176",
+  "key": "REV6",
+  "category": "earnings forecast",
+  "authors": "Chan, Jegadeesh and Lakonishok (1996)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP177",
+  "key": "RevenueSurprise",
+  "category": "sales growth",
+  "authors": "Jegadeesh and Livnat (2006)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP178",
+  "key": "RIO_Disp",
+  "category": "short sale constraints",
+  "authors": "Nagel (2005)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP179",
+  "key": "RIO_MB",
+  "category": "short sale constraints",
+  "authors": "Nagel (2005)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP180",
+  "key": "RIO_Turnover",
+  "category": "short sale constraints",
+  "authors": "Nagel (2005)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP181",
+  "key": "RIO_Volatility",
+  "category": "short sale constraints",
+  "authors": "Nagel (2005)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP182",
+  "key": "RIVolSpread",
+  "category": "optionrisk",
+  "authors": "Bali and Hovakimian (2009)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP183",
+  "key": "roaq",
+  "category": "profitability",
+  "authors": "Balakrishnan, Bartov and Faurel (2010)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP184",
+  "key": "RoE",
+  "category": "profitability",
+  "authors": "Haugen and Baker (1996)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP185",
+  "key": "sfe",
+  "category": "valuation",
+  "authors": "Elgers, Lo and Pfeiffer (2001)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP186",
+  "key": "ShareIss1Y",
+  "category": "external financing",
+  "authors": "Pontiff and Woodgate (2008)",
+  "relation": "ST087",
+  "cards": [
+   "ST087"
+  ]
+ },
+ {
+  "id": "RP187",
+  "key": "ShareIss5Y",
+  "category": "external financing",
+  "authors": "Daniel and Titman (2006)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP188",
+  "key": "ShareRepurchase",
+  "category": "payout indicator",
+  "authors": "Ikenberry, Lakonishok, Vermaelen (1995)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP189",
+  "key": "ShareVol",
+  "category": "volume",
+  "authors": "Datar, Naik and Radcliffe (1998)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP190",
+  "key": "ShortInterest",
+  "category": "short sale constraints",
+  "authors": "Dechow et al. (2001)",
+  "relation": "ST089",
+  "cards": [
+   "ST089"
+  ]
+ },
+ {
+  "id": "RP191",
+  "key": "sinAlgo",
+  "category": "other",
+  "authors": "Hong and Kacperczyk (2009)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP192",
+  "key": "Size",
+  "category": "size",
+  "authors": "Banz (1981)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP193",
+  "key": "skew1",
+  "category": "optionrisk",
+  "authors": "Xing, Zhang and Zhao (2010)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP194",
+  "key": "SmileSlope",
+  "category": "optionrisk",
+  "authors": "Yan (2011)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP195",
+  "key": "SP",
+  "category": "valuation",
+  "authors": "Barbee, Mukherji and Raines (1996)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP196",
+  "key": "Spinoff",
+  "category": "other",
+  "authors": "Cusatis, Miles and Woolridge (1993)",
+  "relation": "ST090",
+  "cards": [
+   "ST090"
+  ]
+ },
+ {
+  "id": "RP197",
+  "key": "std_turn",
+  "category": "liquidity",
+  "authors": "Chordia, Subra, Anshuman (2001)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP198",
+  "key": "STreversal",
+  "category": "short-term reversal",
+  "authors": "Jegadeesh (1990)",
+  "relation": "ST018",
+  "cards": [
+   "ST018"
+  ]
+ },
+ {
+  "id": "RP199",
+  "key": "SurpriseRD",
+  "category": "R&D",
+  "authors": "Eberhart, Maxwell and Siddique (2004)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP200",
+  "key": "tang",
+  "category": "asset composition",
+  "authors": "Hahn and Lee (2009)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP201",
+  "key": "Tax",
+  "category": "other",
+  "authors": "Lev and Nissim (2004)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP202",
+  "key": "TotalAccruals",
+  "category": "investment alt",
+  "authors": "Richardson et al. (2005)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP203",
+  "key": "TrendFactor",
+  "category": "momentum",
+  "authors": "Han, Zhou, Zhu (2016)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP204",
+  "key": "UpRecomm",
+  "category": "earnings forecast",
+  "authors": "Barber et al. (2001)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP205",
+  "key": "VarCF",
+  "category": "cash flow risk",
+  "authors": "Haugen and Baker (1996)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP206",
+  "key": "VolMkt",
+  "category": "volume",
+  "authors": "Haugen and Baker (1996)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP207",
+  "key": "VolSD",
+  "category": "liquidity",
+  "authors": "Chordia, Subra, Anshuman (2001)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP208",
+  "key": "VolumeTrend",
+  "category": "volume",
+  "authors": "Haugen and Baker (1996)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP209",
+  "key": "XFIN",
+  "category": "external financing",
+  "authors": "Bradshaw, Richardson, Sloan (2006)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP210",
+  "key": "zerotrade12M",
+  "category": "liquidity",
+  "authors": "Liu (2006)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP211",
+  "key": "zerotrade1M",
+  "category": "liquidity",
+  "authors": "Liu (2006)",
+  "relation": "Overlap review pending",
+  "cards": []
+ },
+ {
+  "id": "RP212",
+  "key": "zerotrade6M",
+  "category": "liquidity",
+  "authors": "Liu (2006)",
+  "relation": "Overlap review pending",
+  "cards": []
+ }
+]

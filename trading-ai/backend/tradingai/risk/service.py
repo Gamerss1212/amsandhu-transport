@@ -91,6 +91,8 @@ class OrderRequest:
     tradable: tuple[bool, str] = (True, "ok")
     permitted: tuple[bool, str] = (True, "ok")       # broker-reported product permission (live)
     quantity_step: Decimal = Decimal("1e-8")         # a shrunk order is rounded DOWN to the venue's step
+    # strategy orders carry whether their strategy version qualified in research (None = not a strategy order)
+    qualified: Optional[tuple[bool, str]] = None
 
 
 @dataclass
@@ -152,6 +154,8 @@ class RiskService:
                 self.trading_locked["reason"] if self.trading_locked else "open")
             add("new entries allowed", self.entries_paused is None or reduce_only,
                 f"paused by {self.entries_paused['by']}" if self.entries_paused else "allowed")
+            if o.qualified is not None:
+                add("strategy qualified", o.qualified[0] or reduce_only, o.qualified[1])
             add("instrument tradable", o.tradable[0], o.tradable[1])
             add("broker permits this product", o.permitted[0], o.permitted[1])
             acct_match = s.account_id is None or o.account_id == s.account_id

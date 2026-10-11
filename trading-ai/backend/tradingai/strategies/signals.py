@@ -803,21 +803,126 @@ def overnight_drift(f):
 
 
 @gen("first_hour_momentum", "seasonality", "The first half-hour's direction predicts the last half-hour",
-     {}, {}, ("bar_in_session",), markets=("stock", "etf", "future"), timeframes=("5m", "15m", "30m"), grade="A",
+     {}, {}, ("bar_in_session",), markets=("stock", "etf"), timeframes=("5m", "15m"), grade="A",
      source="Gao, Han, Li & Zhou (2018), Market intraday momentum, JFE", exits=("time", "flip"))
 def first_hour_momentum(f):
-    bars = max(1, int(1_800_000 // f.b.step))
+    """The sign of the move from the session open to 10:00 New York (the source also includes the overnight move; this
+    adaptation uses the regular session only) is held over the last half hour, entering at the 15:30 open and leaving
+    before the close. The window comes from the clock, not from later bars, so backtest and live decide alike; with
+    next-open fills the last bar itself cannot be held. US regular sessions only; early closes are not modelled."""
+    step = int(f.b.step // 60_000)
+    minute = _ny_minute(f)
+    late = _near_us_close(f)
+    starts, ends = _sessions(f)
+    out = np.zeros(len(f.c))
+    for s, e in zip(starts, ends):
+        if minute[s] != 9 * 60 + 30:
+            continue                                         # the session's first bar is not the 09:30 open
+        sig = 0.0
+        for i in range(s, e + 1):
+            if minute[i] + step == 10 * 60:
+                sig = float(np.sign(f.c[i] / f.o[s] - 1))  # first half hour complete at this bar's close
+            if minute[i] + step >= 15 * 60 + 30 and not late[i]:
+                out[i] = sig                                 # decided at a close from 15:30 on: filled from 15:30
+    return out
+
+
+def _sessions(f) -> tuple[A, A]:
     n = len(f.c)
     starts = np.flatnonzero(np.r_[True, f.session[1:] != f.session[:-1]])
-    ends = np.r_[starts[1:] - 1, n - 1]
-    out = np.zeros(n)
+    return starts, np.r_[starts[1:] - 1, n - 1]
+
+
+def _ny_minute(f) -> A:
+    """Minute of the New York day at which each bar opens."""
+    from datetime import datetime, timezone
+    from zoneinfo import ZoneInfo
+    ny = ZoneInfo("America/New_York")
+    ts = f.b.ts
+    days = ts // 86_400_000
+    minute = np.empty(len(ts), dtype=np.int64)
+    for d in np.unique(days):
+        m = days == d
+        off = datetime.fromtimestamp(int(d) * 86400 + 43200, tz=timezone.utc).astimezone(ny).utcoffset()
+        minute[m] = ((ts[m] + int(off.total_seconds() * 1000)) // 60_000) % 1440
+    return minute
+
+
+def _near_us_close(f) -> A:
+    """True for a bar whose close leaves less than one more bar before the 16:00 New York close: a decision there would
+    fill in the session's last bar, so intraday strategies are flat from it. Taken from the clock, never from later
+    bars (a live bot does not know which bar will be the last). Early-close days are not modelled."""
+    return _ny_minute(f) + 2 * int(f.b.step // 60_000) >= 16 * 60
+
+
+@gen("noise_band_momentum", "seasonality", "A move beyond the usual same-time-of-day range from the open, on the "
+     "VWAP's side, tends to continue for the rest of the session (catalog ST121)", {"n": 14, "m": 1.0},
+     {"n": [10, 14, 20], "m": [1.0]}, ("bar_in_session", "vwap"), markets=("stock", "etf"),
+     timeframes=("15m", "30m"), grade="B", source="Zarattini, Aziz & Barbon, noise-area intraday momentum (author "
+     "tutorial S94); this is an adaptation, not the authors' method", exits=("time", "flip"),
+     failure="range days; gap days; short intraday history from the free provider")
+def noise_band_momentum(f, n=14, m=1.0):
+    """Band at the k-th bar of a session = mean |close/open - 1| at the k-th bar of the previous n sessions (known
+    before the session starts). Long above the band and the session VWAP, short below both; leave when price crosses
+    back through the VWAP; flat before the 16:00 New York close."""
+    vw = I.vwap_session(f.h, f.l, f.c, f.v, f.session)
+    late = _near_us_close(f)
+    starts, ends = _sessions(f)
+    out = np.zeros(len(f.c))
+    moves: list[A] = []                                     # previous sessions' |close/open - 1| by bar index
     for s, e in zip(starts, ends):
-        if e - s + 1 < 3 * bars:
+        o = f.o[s]
+        if len(moves) >= n and o > 0:
+            hist = moves[-n:]
+            width = min(len(h) for h in hist)
+            band = m * np.mean([h[:width] for h in hist], axis=0)
+            pos = 0.0
+            for j in range(min(width, e - s + 1)):
+                i = s + j
+                if late[i]:
+                    break                                     # flat into the close; no new entry this session
+                up, dn = o * (1 + band[j]), o * (1 - band[j])
+                if pos > 0 and f.c[i] < vw[i] or pos < 0 and f.c[i] > vw[i]:
+                    pos = 0.0
+                if pos == 0 and f.c[i] > up and f.c[i] > vw[i]:
+                    pos = 1.0
+                elif pos == 0 and f.c[i] < dn and f.c[i] < vw[i]:
+                    pos = -1.0
+                out[i] = pos
+        if o > 0:
+            moves.append(np.abs(f.c[s:e + 1] / o - 1))
+    return out
+
+
+@gen("active_orb", "breakout", "An opening-range breakout is more likely to follow through on a day the opening range "
+     "trades unusually heavily (catalog ST122)", {"bars": 2, "rv": 1.5, "n": 14},
+     {"bars": [1, 2], "rv": [1.5, 2.0], "n": [14]}, ("opening_range", "relvol"), markets=("stock", "etf"),
+     timeframes=("5m", "15m"), grade="B", source="Zarattini, Barbon & Aziz, ORB on stocks in play (S95); "
+     "single-instrument adaptation: the opening range's volume against its own past sessions, not a ranked universe",
+     exits=("time", "atr_bracket"), failure="no activity days; high costs at short timeframes")
+def active_orb(f, bars=2, rv=1.5, n=14):
+    late = _near_us_close(f)
+    starts, ends = _sessions(f)
+    out = np.zeros(len(f.c))
+    past: list[float] = []
+    for s, e in zip(starts, ends):
+        if e - s + 1 < bars:
+            continue                                         # the opening range is not complete (yet)
+        vol = float(np.sum(f.v[s:s + bars]))
+        active = len(past) >= n and np.mean(past[-n:]) > 0 and vol >= rv * np.mean(past[-n:])
+        past.append(vol)
+        if not active:
             continue
-        first = f.c[s + bars - 1] / f.o[s] - 1
-        # hold over the last half hour only: from the bar that closes `bars` before the session's last bar
-        a = max(s + bars, e - bars)
-        out[a:e] = np.sign(first)
+        hi, lo = float(np.max(f.h[s:s + bars])), float(np.min(f.l[s:s + bars]))
+        pos = 0.0
+        for i in range(s + bars, e + 1):                     # decided from completed bars only
+            if late[i]:
+                break                                        # flat into the close
+            if pos == 0 and f.c[i] > hi:
+                pos = 1.0
+            elif pos == 0 and f.c[i] < lo:
+                pos = -1.0
+            out[i] = pos
     return out
 
 

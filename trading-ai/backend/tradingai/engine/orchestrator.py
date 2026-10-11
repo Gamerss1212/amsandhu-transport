@@ -169,6 +169,14 @@ class Orchestrator:
         tradable = paper_tradable(inst)
         cur = int(np.sign(pos_qty))
         entering = want != 0 and want != cur
+        if entering:
+            # owner's rule: no new exposure until this strategy version qualifies; exits always stay allowed
+            ok, why_q = app.qualification(bot.strategy_id, inst.instrument_id, bot.tf)
+            if not ok:
+                rec["qualification"] = why_q
+                if cur == 0:
+                    return self._finish(rec, "NO_TRADE", f"STRATEGY_NOT_QUALIFIED: {why_q}", lat, t_start)
+                want, entering = 0, False                    # may still close what it holds, never reverse into new risk
         if entering and ens["vetoes"]:
             return self._finish(rec, "NO_TRADE", "vetoed: " + "; ".join(v["name"] + " (" + v["message"] + ")"
                                                                          for v in ens["vetoes"]), lat, t_start)
@@ -203,7 +211,8 @@ class Orchestrator:
                            sized_target=abs(target) if target != 0 else abs(delta),
                            reduces_position=abs(target) < abs(pos_qty) and np.sign(target) in (0, np.sign(pos_qty)),
                            tradable=tradable,
-                           permitted=app.permission(inst, mode), quantity_step=inst.quantity_step)
+                           permitted=app.permission(inst, mode), quantity_step=inst.quantity_step,
+                           qualified=app.qualification(bot.strategy_id, inst.instrument_id, bot.tf))
         t = time.perf_counter()
         res = app.oms.place(decision_id=did, req=req, snapshot=snap, broker=app.broker_for(mode),
                             broker_symbol=app.broker_symbol(inst, mode), mode=mode, strategy_id=bot.strategy_id,

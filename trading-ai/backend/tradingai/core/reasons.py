@@ -25,6 +25,8 @@ REASON_CODES = {
     "MARKET_CLOSED": "the market is closed",
     "RECONCILIATION_REQUIRED": "local records and the broker disagree; new exposure is frozen",
     "INVALID_ORDER": "the order itself is malformed (quantity, side, price, account or duplicate)",
+    "STRATEGY_NOT_QUALIFIED": "this strategy version has not passed every research gate, so it may not open trades "
+                              "(the system waits in cash)",
     "CONTRACT_TOO_LARGE": "one contract (or lot) is bigger than the position this capital and sizing allow, so "
                           "signals could not be traded; a micro contract or more capital is needed",
 }
@@ -43,7 +45,7 @@ _BY_CHECK = {
     "valid price": "INVALID_ORDER", "price within band": "INVALID_ORDER", "quantity matches the sized target":
     "INVALID_ORDER", "not a duplicate": "INVALID_ORDER", "order rate": "PORTFOLIO_LIMIT", "positive equity":
     "PORTFOLIO_LIMIT", "valid contract multiplier": "INVALID_ORDER", "reduce-only claim verified": "INVALID_ORDER",
-    "shrunk quantity above zero": "PORTFOLIO_LIMIT", "held-out rebalances": "INSUFFICIENT_DATA", "test trades": "INSUFFICIENT_DATA",
+    "shrunk quantity above zero": "PORTFOLIO_LIMIT", "strategy qualified": "STRATEGY_NOT_QUALIFIED", "held-out rebalances": "INSUFFICIENT_DATA", "test trades": "INSUFFICIENT_DATA",
     "held-out net return positive": "EDGE_UNCERTAIN", "test net return positive": "EDGE_UNCERTAIN",
     "deflated Sharpe": "EDGE_UNCERTAIN", "deflated Sharpe (held-out)": "EDGE_UNCERTAIN",
     "held-out Sharpe at 2x costs": "COSTS_TOO_HIGH", "Sharpe at 2x costs": "COSTS_TOO_HIGH",

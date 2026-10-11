@@ -1,0 +1,62 @@
+{
+ "source": "docs/specs/AI_Trading_System_Master_Prompt.md (revision 13, research appendix) and docs/specs/Backtested_Working_Strategies.md, October 10 2026",
+ "note": "The owner's own research batches, copied from the specification. They were run outside this software on Binance Vision data (personal non-production research, CC BY-NC-SA 4.0 derived outputs). This software did not re-run them. Card links for Batches 02 and 03 are this software's mapping by strategy family; the batches themselves name no card.",
+ "qualifying_count": 0,
+ "qualifying_note": "No configuration passed the complete development and separate validation requirements. An empty qualifying list is a valid result.",
+ "batches": [
+  {
+   "id": "Batch 01",
+   "status": "REJECTED_UNDER_TEST",
+   "market": "Binance spot BTC, ETH, SOL, DOGE, SHIB, PEPE against USDT",
+   "period": "calendar 2025 (development)",
+   "bars": "5 and 15 minutes",
+   "costs": "base: 0.10% fee + 0.02% adverse slippage per side (assumptions, not measured account costs)",
+   "configurations": 48,
+   "positive_full_year_after_costs": 0,
+   "result": "All 48 base-cost configurations had negative full-year returns; 24 were positive before costs.",
+   "validation": "not opened",
+   "models": [
+    {"model": "ST002_EMA20_50", "cards": ["ST002"], "configurations": 12},
+    {"model": "ST003_DONCHIAN20_10", "cards": ["ST003"], "configurations": 12},
+    {"model": "ST024_UTC_VWAP_REVERSION", "cards": ["ST024"], "configurations": 12},
+    {"model": "ST021_UTC_ORB15", "cards": ["ST021"], "configurations": 12}
+   ]
+  },
+  {
+   "id": "Batch 02",
+   "status": "REJECTED_UNDER_TEST",
+   "market": "the same six Binance spot pairs",
+   "period": "calendar 2025 (development); 2026 validation not opened",
+   "bars": "15 minutes; at most two entries per UTC day, four-bar cooldown, four-hour maximum hold",
+   "costs": "base 10 bps fee + 2 bps slippage per side; stress 10 + 10 bps; one extra bar of delay",
+   "configurations": 36,
+   "positive_full_year_after_costs": 0,
+   "result": "No model had a positive median; 0 of 36 base configurations were positive for the full year.",
+   "validation": "NOT_OPENED",
+   "models": [
+    {"model": "B02_EMA_CONTROL", "cards": ["ST002", "ST006"], "median_net_pct": -7.47, "positive_assets": 0, "median_trades": 386.5, "median_drawdown_pct": 7.72},
+    {"model": "B02_EMA_FILTERED", "cards": ["ST002", "ST006"], "median_net_pct": -3.71, "positive_assets": 0, "median_trades": 242.5, "median_drawdown_pct": 4.54},
+    {"model": "B02_CHANNEL_CONTROL", "cards": ["ST003"], "median_net_pct": -10.43, "positive_assets": 0, "median_trades": 444.0, "median_drawdown_pct": 11.68},
+    {"model": "B02_CHANNEL_FILTERED", "cards": ["ST003"], "median_net_pct": -5.0, "positive_assets": 0, "median_trades": 191.0, "median_drawdown_pct": 5.5},
+    {"model": "B02_VWAP_CONTROL", "cards": ["ST024"], "median_net_pct": -8.67, "positive_assets": 0, "median_trades": 270.0, "median_drawdown_pct": 8.79},
+    {"model": "B02_VWAP_FILTERED", "cards": ["ST024"], "median_net_pct": -1.19, "positive_assets": 0, "median_trades": 38.0, "median_drawdown_pct": 1.74}
+   ]
+  },
+  {
+   "id": "Batch 03",
+   "status": "REJECTED_UNDER_TEST",
+   "market": "Binance USD-M perpetual futures BTC, ETH, SOL (actual futures and mark-price bars plus funding events)",
+   "period": "calendar 2025 (development); 2026 validation not opened",
+   "bars": "15 minutes, symmetric long/short",
+   "costs": "base 10 bps fee + 2 bps slippage per side; funding approximated at 15-minute resolution; liquidation model incomplete",
+   "configurations": 6,
+   "positive_full_year_after_costs": 0,
+   "result": "No model had a positive median; 0 of 6 base configurations were positive for the full year.",
+   "validation": "NOT_OPENED",
+   "models": [
+    {"model": "B03_EMA_LONG_SHORT", "cards": ["ST002"], "median_net_pct": -6.24, "positive_assets": 0, "median_trades": 400.0, "median_drawdown_pct": 7.16},
+    {"model": "B03_CHANNEL_LONG_SHORT", "cards": ["ST003"], "median_net_pct": -7.76, "positive_assets": 0, "median_trades": 373.0, "median_drawdown_pct": 8.29}
+   ]
+  }
+ ]
+}

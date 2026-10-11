@@ -10,7 +10,8 @@ on real market data, an authenticated broker connection, or clearly labelled sim
 
 Beginners: read [`docs/START_HERE.txt`](docs/START_HERE.txt). What is done and what is not:
 [`docs/REQUIREMENTS_MATRIX.md`](docs/REQUIREMENTS_MATRIX.md). The owner's specification is in
-[`docs/specs/`](docs/specs/AI_Trading_System_Master_Prompt.md); its 80 strategy templates were backtested on real data in
+[`docs/specs/`](docs/specs/AI_Trading_System_Master_Prompt.md) (revision 13, with `Backtested_Working_Strategies.md`); its runnable
+strategy templates were tested on real data in
 [`docs/CATALOG_BACKTEST_REPORT.md`](docs/CATALOG_BACKTEST_REPORT.md).
 
 ## Architecture
@@ -23,8 +24,9 @@ START_TRADING_AI.exe (launcher.py)
      ├─ data       Coinbase / Kraken / Yahoo / DEMO providers, completed bars only, quality checks, provenance hashes
      ├─ market     55 instruments, NYSE/CME/FX/crypto calendars, futures specs and roll windows
      ├─ features   226 causal features (123 functions), regime detection (rules + HMM + CUSUM)
-     ├─ strategies 1,478 templates (1,463 runnable): 103 generators × filters × exits, near-duplicates pruned;
-     │             the owner's 80-template catalog (ST001-ST080) mapped onto them, with 47 sources and reason codes
+     ├─ strategies 1,502 templates (1,487 runnable): 106 generators × filters × exits, near-duplicates pruned;
+     │             the owner's 124-template catalog (ST001-ST124) and 212-entry research index mapped onto them, with
+     │             98 sources, reason codes and the owner's own batch results; entries only once a strategy qualifies
      ├─ agents     102 agents in 10 groups; ensemble averages by information cluster; vetoes; no fake probabilities
      ├─ autopilot  on by default, paper only: screens → full tests → starts bots → reviews → retires (engine/autopilot.py)
      ├─ assistant  deterministic intents over verified state; proactive voice events; refuses money commands
@@ -36,7 +38,7 @@ START_TRADING_AI.exe (launcher.py)
      │             portfolio templates (rebalanced, next-day execution, equal-weight benchmark) and portfolio bots
      ├─ portfolio  Ledoit-Wolf, inverse vol, risk parity, min variance, HRP, mean-variance
      └─ api        FastAPI REST + one WebSocket; Host / token / Origin guard; serves the compiled React dashboard
-frontend/          React + TypeScript + Vite: AI Trading System · Agent Activity · Brokers & Accounts
+frontend/          React + TypeScript + Vite: AI Trading System · AI Supercomputer — Agent Activity · Brokers & Accounts
 packaging/         PyInstaller spec, Windows build script (runs under Wine on Linux), icon, version info
 ```
 
@@ -46,7 +48,7 @@ packaging/         PyInstaller spec, Windows build script (runs under Wine on Li
 python -m venv .venv && .venv/bin/pip install -r requirements-dev.txt
 cd frontend && npm ci && npm run build && cd ..
 cd backend && ../.venv/bin/python -m tradingai.launcher            # add --offline to use stored + DEMO data only
-../.venv/bin/python -m pytest -q tests                              # 88 tests
+../.venv/bin/python -m pytest -q tests                              # 98 tests
 ../.venv/bin/python -m tradingai.launcher --selftest --offline      # end-to-end test over HTTP and WebSocket
 ```
 
@@ -57,6 +59,7 @@ Backtest the whole catalog and regenerate its report (about 6 minutes, downloads
 ```bash
 .venv/bin/python scripts/catalog_batch.py /tmp/catalog-home
 .venv/bin/python scripts/catalog_report.py /tmp/catalog-home     # writes docs/CATALOG_BACKTEST_REPORT.md
+.venv/bin/python scripts/import_master_prompt.py              # re-imports the registry from docs/specs/
 ```
 
 ## Build the Windows folder
@@ -79,3 +82,5 @@ experiments), `data/market/` (Parquet), `data/secrets/` (DPAPI-encrypted credent
 * Credentials go into the vault, are masked everywhere, and are never logged. Withdrawal permission is never requested.
 * External text (news, provider messages) is data, never an instruction.
 * A backtest can recommend PAPER TEST at most. Every backtest is recorded and counted as a trial.
+* No strategy order may open exposure unless that strategy version qualified (PAPER TEST on the same market and
+  timeframe); otherwise the system waits in cash. There is no manual backtest route; the agents test by themselves.

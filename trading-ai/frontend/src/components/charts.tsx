@@ -12,10 +12,10 @@ const t = (ms: number) => (Math.floor(ms / 1000) + TZ) as UTCTimestamp;
 const base = (el: HTMLElement): IChartApi =>
   createChart(el, {
     autoSize: true,
-    layout: { background: { type: ColorType.Solid, color: "transparent" }, textColor: "#8792a6", fontSize: 11 },
-    grid: { vertLines: { color: "rgba(34,44,61,0.55)" }, horzLines: { color: "rgba(34,44,61,0.55)" } },
-    rightPriceScale: { borderColor: "#222c3d" },
-    timeScale: { borderColor: "#222c3d", timeVisible: true, secondsVisible: false },
+    layout: { background: { type: ColorType.Solid, color: "transparent" }, textColor: "#a9b8ce", fontSize: 11 },
+    grid: { vertLines: { color: "rgba(42,59,85,0.55)" }, horzLines: { color: "rgba(42,59,85,0.55)" } },
+    rightPriceScale: { borderColor: "#2a3b55" },
+    timeScale: { borderColor: "#2a3b55", timeVisible: true, secondsVisible: false },
     crosshair: { mode: CrosshairMode.Normal },
   });
 
@@ -34,7 +34,7 @@ export function PriceChart({ bars, fills, tfMs, simulated }: { bars: Bar[]; fill
     if (!el.current) return;
     const c = base(el.current);
     candles.current = c.addCandlestickSeries({
-      upColor: "#33c481", downColor: "#ff5d5d", borderVisible: false, wickUpColor: "#33c481", wickDownColor: "#ff5d5d",
+      upColor: "#35d6a3", downColor: "#ff7a8a", borderVisible: false, wickUpColor: "#35d6a3", wickDownColor: "#ff7a8a",
     });
     vol.current = c.addHistogramSeries({ priceScaleId: "", priceFormat: { type: "volume" }, lastValueVisible: false, priceLineVisible: false });
     vol.current.priceScale().applyOptions({ scaleMargins: { top: 0.84, bottom: 0 } });
@@ -54,7 +54,7 @@ export function PriceChart({ bars, fills, tfMs, simulated }: { bars: Bar[]; fill
   useEffect(() => {
     if (!candles.current || !vol.current) return;
     candles.current.setData(bars.map((b) => ({ time: t(b[0]), open: b[1], high: b[2], low: b[3], close: b[4] })));
-    vol.current.setData(bars.map((b) => ({ time: t(b[0]), value: b[5], color: b[4] >= b[1] ? "rgba(51,196,129,0.35)" : "rgba(255,93,93,0.35)" })));
+    vol.current.setData(bars.map((b) => ({ time: t(b[0]), value: b[5], color: b[4] >= b[1] ? "rgba(53,214,163,0.35)" : "rgba(255,122,138,0.35)" })));
     const first = bars.length ? bars[0][0] : null;
     if (first !== lastFirst.current) chart.current?.timeScale().fitContent();
     lastFirst.current = first;
@@ -67,7 +67,7 @@ export function PriceChart({ bars, fills, tfMs, simulated }: { bars: Bar[]; fill
           const barTs = Math.floor(f.ts / tfMs) * tfMs;
           const buy = f.side === "buy";
           return {
-            time: t(barTs), position: buy ? "belowBar" : "aboveBar", color: buy ? "#4cc2ff" : "#f2b33d",
+            time: t(barTs), position: buy ? "belowBar" : "aboveBar", color: buy ? "#3dd9ff" : "#f5c76b",
             shape: buy ? "arrowUp" : "arrowDown", text: `${buy ? "B" : "S"} ${fmt.num(f.qty, 4)}`,
           } as SeriesMarker<Time>;
         })
@@ -106,15 +106,15 @@ export function EquityChart({ points, start, height = 220, bench, labels, log }:
     const c = base(el.current);
     if (log) c.priceScale("right").applyOptions({ mode: PriceScaleMode.Logarithmic });
     const s = c.addAreaSeries({
-      lineColor: "#4cc2ff", topColor: "rgba(76,194,255,0.22)", bottomColor: "rgba(76,194,255,0.0)", lineWidth: 2,
+      lineColor: "#3dd9ff", topColor: "rgba(61,217,255,0.22)", bottomColor: "rgba(61,217,255,0.0)", lineWidth: 2,
       priceLineVisible: false,
     });
     s.setData(uniq(points));
     if (bench?.length) {
-      const b = c.addLineSeries({ color: "#c9a2ff", lineWidth: 2, lineStyle: LineStyle.Dashed, priceLineVisible: false, lastValueVisible: true });
+      const b = c.addLineSeries({ color: "#f08cda", lineWidth: 2, lineStyle: LineStyle.Dashed, priceLineVisible: false, lastValueVisible: true });
       b.setData(uniq(bench));
     }
-    if (start !== undefined) s.createPriceLine({ price: start, color: "#6f7b90", lineStyle: LineStyle.Dashed, lineWidth: 1, axisLabelVisible: true, title: "start" });
+    if (start !== undefined) s.createPriceLine({ price: start, color: "#8091ab", lineStyle: LineStyle.Dashed, lineWidth: 1, axisLabelVisible: true, title: "start" });
     c.timeScale().fitContent();
     return () => c.remove();
   }, [points, start, bench, log]);
@@ -123,8 +123,8 @@ export function EquityChart({ points, start, height = 220, bench, labels, log }:
     <div>
       {two && (
         <div className="row tiny dim" style={{ gap: 14, padding: "6px 10px 0" }}>
-          <span className="row" style={{ gap: 6 }}><span style={{ width: 14, height: 2, background: "#4cc2ff", display: "inline-block" }} />{labels?.[0] ?? "Strategy"}</span>
-          <span className="row" style={{ gap: 6 }}><span style={{ width: 14, height: 0, borderTop: "2px dashed #c9a2ff", display: "inline-block" }} />{labels?.[1] ?? "Benchmark"}</span>
+          <span className="row" style={{ gap: 6 }}><span style={{ width: 14, height: 2, background: "#3dd9ff", display: "inline-block" }} />{labels?.[0] ?? "Strategy"}</span>
+          <span className="row" style={{ gap: 6 }}><span style={{ width: 14, height: 0, borderTop: "2px dashed #f08cda", display: "inline-block" }} />{labels?.[1] ?? "Benchmark"}</span>
         </div>
       )}
       <div ref={el} style={{ height, position: "relative" }} />

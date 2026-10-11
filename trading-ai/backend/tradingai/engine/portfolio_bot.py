@@ -105,8 +105,14 @@ def step(app: "App", bot, mode: str) -> Optional[dict]:
         for iid in held_lots(app, bot.strategy_id):                     # holdings no longer wanted go to zero
             bot.pending.setdefault(iid, 0.0)
         bot.rebalance_key = cur
-        rec = _record(app, bot, mode, "REBALANCE", f"new {('month' if spec.rebalance == 'M' else 'week')}: targets "
-                      + ", ".join(f"{k.split(':')[1]} {v:.0%}" for k, v in bot.pending.items() if v), bot.pending)
+        ok, why_q = app.qualification(bot.strategy_id, "")
+        if ok:
+            rec = _record(app, bot, mode, "REBALANCE", f"new {('month' if spec.rebalance == 'M' else 'week')}: targets "
+                          + ", ".join(f"{k.split(':')[1]} {v:.0%}" for k, v in bot.pending.items() if v), bot.pending)
+        else:                                  # owner's rule: no new exposure until the template qualifies; exits only
+            bot.pending = {iid: 0.0 for iid in held_lots(app, bot.strategy_id)}
+            rec = _record(app, bot, mode, "NO_TRADE", f"STRATEGY_NOT_QUALIFIED: {why_q}; targets not applied",
+                          bot.pending)
         app._save_bots()
     _execute(app, bot, mode)
     return rec
@@ -139,7 +145,8 @@ def _execute(app: "App", bot, mode: str) -> None:
                            multiplier=inst.multiplier, environment=mode if mode != "shadow" else "paper",
                            account_id=acct.account_id_masked, sized_target=abs(delta),
                            reduces_position=abs(target) < abs(cur) and (target == 0 or (target > 0) == (cur > 0)),
-                           tradable=paper_tradable(inst), quantity_step=inst.quantity_step)
+                           tradable=paper_tradable(inst), quantity_step=inst.quantity_step,
+                           qualified=app.qualification(bot.strategy_id, iid))
         did = new_id("PF")
         res = app.oms.place(decision_id=did, req=req, snapshot=snap, broker=app.broker_for(mode),
                             broker_symbol=inst.symbol, mode=mode, strategy_id=bot.strategy_id, decided_at=time.time())
@@ -150,7 +157,9 @@ def _execute(app: "App", bot, mode: str) -> None:
             if status in ("FILLED", "PARTIALLY_FILLED"):
                 bot.trades_today += 1
         _record(app, bot, mode, "ORDER" if status not in ("BLOCKED_BY_RISK", "REJECTED") else "RISK_REJECT",
-                f"{side} {abs(delta)} {iid} toward {w:.0%} ({status})", {"instrument": iid, "target_qty": str(target),
+                f"{side} {abs(delta)} {iid} toward {w:.0%} ({status}"
+                + (": " + ", ".join(res["risk"].get("reason_codes", [])) if status == "BLOCKED_BY_RISK" else "") + ")",
+                {"instrument": iid, "target_qty": str(target),
                                                                        "held": str(cur), "order": res}, did, iid)
     app._save_bots()
 

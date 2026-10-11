@@ -104,7 +104,7 @@ export default function CommandCenter() {
           <EquityCard />
           <Positions />
           <CatalogCard />
-          <StrategyLab instruments={instruments} defaultInstrument={iid} />
+          <StrategyLab />
         </div>
 
         <div className="col" style={{ gap: 14, minWidth: 0 }}>
@@ -145,7 +145,7 @@ function AutopilotCard() {
     }>
       <div className="col">
         <div className={`callout ${cfg.enabled ? "good" : ""} small`}>
-          <b>{cfg.enabled ? "Now: " : "Autopilot is off. "}</b>{cfg.enabled ? ap.doing : "Press ON (or START BOT) and it researches, starts, watches and retires paper bots by itself."}
+          <b>{cfg.enabled ? "Now: " : "Autopilot is off. "}</b>{cfg.enabled ? ap.doing : "Press ON (or Start System) and it researches by itself, and starts, watches and retires paper bots for strategies that qualify."}
         </div>
         <div className="stats" style={{ gridTemplateColumns: "repeat(2, minmax(0, 1fr))" }}>
           <Stat k="Strategies screened" v={ap.counts.screened} />
@@ -158,10 +158,6 @@ function AutopilotCard() {
             <select value={cfg.max_bots} onChange={(e) => set({ max_bots: Number(e.target.value) })}>
               {[1, 2, 3, 4, 6, 8, 10, 12].map((n) => <option key={n} value={n}>{n}</option>)}
             </select>
-          </label>
-          <label className="row small" style={{ gap: 6, marginTop: 16 }}>
-            <input type="checkbox" checked={cfg.allow_probation} onChange={(e) => set({ allow_probation: e.target.checked })} />
-            allow PROBATION bots
           </label>
         </div>
         <div className="row wrap small">
@@ -188,7 +184,7 @@ function AutopilotCard() {
         </label>
         {ap.candidates?.length > 0 && (
           <div className="col" style={{ gap: 4 }}>
-            <div className="tiny muted">BEST RESEARCH RESULTS (deployed when a slot is free)</div>
+            <div className="tiny muted">QUALIFIED (deployed when a slot is free)</div>
             {ap.candidates.slice(0, 4).map((c: any) => (
               <div key={c.key} className="spread tiny">
                 <span className="mono" style={{ wordBreak: "break-all" }}>{c.strategy_id} · {c.iid} {c.tf}</span>
@@ -206,8 +202,8 @@ function AutopilotCard() {
           </div>
         )}
         <div className="note">Paper only: it never trades real money, never changes risk limits, never re-arms after an emergency
-          stop, and only chooses among the fixed strategy templates. PROBATION = did not pass every research gate; paper trading
-          collects real out-of-sample evidence and it is retired automatically if results fall short.</div>
+          stop, and only chooses among the fixed strategy templates. Only strategies that passed every research gate are traded;
+          while none qualifies it stays in cash and keeps researching. A bot whose paper results fall short is retired automatically.</div>
       </div>
     </Card>
   );
@@ -233,8 +229,8 @@ function BotControl({ instruments, iid, tf }: { instruments: Instrument[]; iid: 
       <div className="col">
         <div className="row">
           <button className="btn go big grow" disabled={!!o.risk.kill_switch || (!!o.autopilot?.enabled && running === o.bots.length)}
-            onClick={() => act(() => api.post("/api/bot/start"), "Autopilot on, all bots running")}>START BOT</button>
-          <button className="btn big grow" disabled={!running && !o.autopilot?.enabled} onClick={() => act(() => api.post("/api/bot/stop"), "All bots stopped, autopilot paused")}>STOP BOT</button>
+            onClick={() => act(() => api.post("/api/bot/start"), "System started: autopilot on, all bots running")}>Start System</button>
+          <button className="btn big grow" disabled={!running && !o.autopilot?.enabled} onClick={() => act(() => api.post("/api/bot/stop"), "All bots stopped, autopilot paused")}>Stop</button>
         </div>
         <div className="spread">
           <span className="dim small">Mode</span>
@@ -252,11 +248,12 @@ function BotControl({ instruments, iid, tf }: { instruments: Instrument[]; iid: 
           {o.mode === "shadow" && "Shadow: real data, the full decision pipeline, orders recorded but never sent."}
           {o.mode === "live" && "LIVE: orders go to your broker with real money, within the caps you set when arming."}
         </div>
-        <div className="note">START BOT turns the autopilot on and runs every bot. STOP BOT stops every bot and pauses the autopilot.</div>
+        <div className="note">The program does Start System by itself when it opens (the button shows it is running). Stop stops every bot and pauses the autopilot.
+          A bot opens trades only for a strategy that qualified in research; otherwise it waits in cash.</div>
         <Controls />
         {o.bots.length === 0 && <Empty>{o.autopilot?.enabled
-          ? "No bots yet: the autopilot starts paper bots by itself as soon as its research finds strategies that pass the checks."
-          : "No bots. Press START BOT to let the autopilot run, or add one yourself."}</Empty>}
+          ? "No bots yet: the autopilot starts paper bots by itself only when its research finds a strategy that passes every gate. None has qualified so far, so the system stays in cash."
+          : "No bots. Press Start System to let the autopilot run."}</Empty>}
         {o.bots.map((b) => (
           <div key={b.bot_id} className="card" style={{ background: "var(--panel-2)" }}>
             <div className="bd col" style={{ gap: 6 }}>
@@ -351,7 +348,7 @@ function NewBot({ instruments, iid, tf, done }: { instruments: Instrument[]; iid
         setBusy(true);
         try {
           await api.post("/api/bots", { instrument_id: inst, tf: t, strategy_id: sid, signal_mode: mode, risk_profile: risk, max_trades_per_day: cap });
-          live.toast("Bot added (stopped). Press START BOT to run it.", "ok");
+          live.toast("Bot added (stopped). It opens trades only if its strategy qualifies.", "ok");
           await live.refresh();
           done();
         } catch (e: any) {

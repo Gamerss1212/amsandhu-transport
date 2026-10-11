@@ -256,8 +256,8 @@ function ResearchCenter() {
   const [exps] = usePoll<any>("/api/research/experiments?limit=20", 10000);
   const [open, setOpen] = useState<string | null>(null);
   return (
-    <Card title="Research center" sub="the experiment ledger: every backtest, kept with its data hash and trial count" flush>
-      {!exps?.experiments?.length ? <Empty>No research yet. Run a backtest from the Strategy lab on the AI Trading System page, or let the autopilot research.</Empty> : (
+    <Card title="Research center" sub="the experiment ledger: every automatic test, kept with its data hash and trial count" flush>
+      {!exps?.experiments?.length ? <Empty>No research yet. The agents start testing by themselves after Start System.</Empty> : (
         <div className="scroll" style={{ maxHeight: 380 }}>
           <table className="t small">
             <thead><tr><th>When</th><th>Strategy</th><th>Data</th><th>Verdict</th><th className="num">Quality</th></tr></thead>

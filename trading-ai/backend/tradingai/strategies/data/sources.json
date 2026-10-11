@@ -327,5 +327,362 @@
   "url": "https://www.cmegroup.com/trading/agricultural/grain-and-oilseed/soybean-crush-spreads.html",
   "access": "M",
   "scope": "M; processing ratios and units"
+ },
+ "S48": {
+  "code": "S48",
+  "title": "Chen and Zimmermann — Open Source Asset Pricing data release",
+  "url": "https://www.openassetpricing.com/data/",
+  "access": "M",
+  "scope": "M; release metadata; historical research data, not a live feed"
+ },
+ "S49": {
+  "code": "S49",
+  "title": "Chen and Zimmermann — SignalDoc research metadata",
+  "url": "https://github.com/OpenSourceAP/CrossSection/blob/master/SignalDoc.csv",
+  "access": "D",
+  "scope": "D; 331 metadata rows inspected: 212 Predictor, 114 Placebo, 5 Drop; definitions not independently replicated"
+ },
+ "S50": {
+  "code": "S50",
+  "title": "Open Source Asset Pricing — Accruals signal implementation",
+  "url": "https://raw.githubusercontent.com/OpenSourceAP/CrossSection/master/Signals/pyCode/Predictors/Accruals.py",
+  "access": "K",
+  "scope": "K; author-project code downloaded and construction excerpts inspected; original paper not independently reproduced"
+ },
+ "S51": {
+  "code": "S51",
+  "title": "Open Source Asset Pricing — High52 signal implementation",
+  "url": "https://raw.githubusercontent.com/OpenSourceAP/CrossSection/master/Signals/pyCode/Predictors/High52.py",
+  "access": "K",
+  "scope": "K; author-project code downloaded and construction excerpts inspected; original paper not independently reproduced"
+ },
+ "S52": {
+  "code": "S52",
+  "title": "Open Source Asset Pricing — CustomerMomentum signal implementation",
+  "url": "https://raw.githubusercontent.com/OpenSourceAP/CrossSection/master/Signals/pyCode/Predictors/CustomerMomentum.py",
+  "access": "K",
+  "scope": "K; author-project code downloaded and construction excerpts inspected; original paper not independently reproduced"
+ },
+ "S53": {
+  "code": "S53",
+  "title": "Open Source Asset Pricing — PS signal implementation",
+  "url": "https://raw.githubusercontent.com/OpenSourceAP/CrossSection/master/Signals/pyCode/Predictors/PS.py",
+  "access": "K",
+  "scope": "K; author-project code downloaded and construction excerpts inspected; original paper not independently reproduced"
+ },
+ "S54": {
+  "code": "S54",
+  "title": "Open Source Asset Pricing — NetPayoutYield signal implementation",
+  "url": "https://raw.githubusercontent.com/OpenSourceAP/CrossSection/master/Signals/pyCode/Predictors/NetPayoutYield.py",
+  "access": "K",
+  "scope": "K; author-project code downloaded and construction excerpts inspected; original paper not independently reproduced"
+ },
+ "S55": {
+  "code": "S55",
+  "title": "Open Source Asset Pricing — ShareIss1Y signal implementation",
+  "url": "https://raw.githubusercontent.com/OpenSourceAP/CrossSection/master/Signals/pyCode/Predictors/ShareIss1Y.py",
+  "access": "K",
+  "scope": "K; author-project code downloaded and construction excerpts inspected; original paper not independently reproduced"
+ },
+ "S56": {
+  "code": "S56",
+  "title": "Open Source Asset Pricing — AnalystRevision signal implementation",
+  "url": "https://raw.githubusercontent.com/OpenSourceAP/CrossSection/master/Signals/pyCode/Predictors/AnalystRevision.py",
+  "access": "K",
+  "scope": "K; author-project code downloaded and construction excerpts inspected; original paper not independently reproduced"
+ },
+ "S57": {
+  "code": "S57",
+  "title": "Open Source Asset Pricing — ShortInterest signal implementation",
+  "url": "https://raw.githubusercontent.com/OpenSourceAP/CrossSection/master/Signals/pyCode/Predictors/ShortInterest.py",
+  "access": "K",
+  "scope": "K; author-project code downloaded and construction excerpts inspected; original paper not independently reproduced"
+ },
+ "S58": {
+  "code": "S58",
+  "title": "Open Source Asset Pricing — Spinoff signal implementation",
+  "url": "https://raw.githubusercontent.com/OpenSourceAP/CrossSection/master/Signals/pyCode/Predictors/Spinoff.py",
+  "access": "K",
+  "scope": "K; author-project code downloaded and construction excerpts inspected; original paper not independently reproduced"
+ },
+ "S59": {
+  "code": "S59",
+  "title": "Options Industry Council — Debit butterfly",
+  "url": "https://www.optionseducation.org/strategies/all-strategies/long-call-butterfly",
+  "access": "M",
+  "scope": "M; construction page; no empirical profitability claim"
+ },
+ "S60": {
+  "code": "S60",
+  "title": "Options Industry Council — Short iron butterfly",
+  "url": "https://www.optionseducation.org/strategies/all-strategies/short-iron-butterfly",
+  "access": "M",
+  "scope": "M; construction page; no empirical profitability claim"
+ },
+ "S61": {
+  "code": "S61",
+  "title": "Options Industry Council — Long iron butterfly",
+  "url": "https://www.optionseducation.org/strategies/all-strategies/long-iron-butterfly",
+  "access": "M",
+  "scope": "M; construction page; no empirical profitability claim"
+ },
+ "S62": {
+  "code": "S62",
+  "title": "Options Industry Council — Debit condor",
+  "url": "https://www.optionseducation.org/strategies/all-strategies/long-call-condor",
+  "access": "M",
+  "scope": "M; construction page; no empirical profitability claim"
+ },
+ "S63": {
+  "code": "S63",
+  "title": "Options Industry Council — Reverse iron condor",
+  "url": "https://www.optionseducation.org/strategies/all-strategies/long-iron-condor",
+  "access": "M",
+  "scope": "M; construction page; no empirical profitability claim"
+ },
+ "S64": {
+  "code": "S64",
+  "title": "Options Industry Council — Call backspread",
+  "url": "https://www.optionseducation.org/strategies/all-strategies/long-ratio-call-spread",
+  "access": "M",
+  "scope": "M; construction page; no empirical profitability claim"
+ },
+ "S65": {
+  "code": "S65",
+  "title": "Options Industry Council — Put backspread",
+  "url": "https://www.optionseducation.org/strategies/all-strategies/long-ratio-put-spread",
+  "access": "M",
+  "scope": "M; construction page; no empirical profitability claim"
+ },
+ "S66": {
+  "code": "S66",
+  "title": "Options Industry Council — Synthetic long stock",
+  "url": "https://www.optionseducation.org/strategies/all-strategies/synthetic-long-stock",
+  "access": "M",
+  "scope": "M; construction page; no empirical profitability claim"
+ },
+ "S67": {
+  "code": "S67",
+  "title": "Options Industry Council — Synthetic short stock",
+  "url": "https://www.optionseducation.org/strategies/all-strategies/synthetic-short-stock",
+  "access": "M",
+  "scope": "M; construction page; no empirical profitability claim"
+ },
+ "S68": {
+  "code": "S68",
+  "title": "Options Industry Council — Stock repair",
+  "url": "https://www.optionseducation.org/strategies/all-strategies/stock-repair",
+  "access": "M",
+  "scope": "M; construction page; no empirical profitability claim"
+ },
+ "S69": {
+  "code": "S69",
+  "title": "Uniswap — Concentrated Liquidity",
+  "url": "https://developers.uniswap.org/docs/get-started/concepts/liquidity-providers/concentrated-liquidity",
+  "access": "M",
+  "scope": "M; protocol mechanics"
+ },
+ "S70": {
+  "code": "S70",
+  "title": "Aave — V3 Overview",
+  "url": "https://aave.com/docs/aave-v3/overview",
+  "access": "M",
+  "scope": "M; supply, borrowing, and liquidation mechanics; deployment parameters must be queried"
+ },
+ "S71": {
+  "code": "S71",
+  "title": "Ethereum — Staking withdrawals",
+  "url": "https://ethereum.org/staking/withdrawals/",
+  "access": "M",
+  "scope": "M; withdrawal mechanics, not a hedged-return study"
+ },
+ "S72": {
+  "code": "S72",
+  "title": "Ethereum — Validator FAQs",
+  "url": "https://launchpad.ethereum.org/en/faq",
+  "access": "M",
+  "scope": "M; reward and validator mechanics"
+ },
+ "S73": {
+  "code": "S73",
+  "title": "BIS — Covered interest parity lost",
+  "url": "https://www.bis.org/publications/qr-201609/covered-interest-parity-lost-understanding-cross-currency-basis",
+  "access": "A",
+  "scope": "A; funding frictions and basis context"
+ },
+ "S74": {
+  "code": "S74",
+  "title": "CME — Swap Futures",
+  "url": "https://www.cmegroup.com/markets/interest-rates/swap-futures.html",
+  "access": "M",
+  "scope": "M; swap-spread instrument construction"
+ },
+ "S75": {
+  "code": "S75",
+  "title": "CME — SOFR futures and options",
+  "url": "https://www.cmegroup.com/sofr",
+  "access": "M",
+  "scope": "M; current instrument family; exact contract schedule requires implementation review"
+ },
+ "S76": {
+  "code": "S76",
+  "title": "New York Fed — Exploring the TIPS–Treasury Valuation Puzzle",
+  "url": "https://libertystreeteconomics.newyorkfed.org/2024/07/exploring-the-tips-treasury-valuation-puzzle/",
+  "access": "A",
+  "scope": "A; inflation basis and frictions"
+ },
+ "S77": {
+  "code": "S77",
+  "title": "BIS — Arbitrage costs and the persistent non-zero CDS–bond basis",
+  "url": "https://www.bis.org/publ/work631.htm",
+  "access": "A",
+  "scope": "A; abstract; sovereign basis study, not all corporate credits"
+ },
+ "S78": {
+  "code": "S78",
+  "title": "CME — Equity Index Dividend Futures: A Primer",
+  "url": "https://www.cmegroup.com/articles/2024/equity-index-dividend-futures-a-primer.html",
+  "access": "M",
+  "scope": "M; dividend market and curve mechanics"
+ },
+ "S79": {
+  "code": "S79",
+  "title": "CME — Calculating Fair Value",
+  "url": "https://www.cmegroup.com/trading/equity-index/fairvalue.html",
+  "access": "M",
+  "scope": "M; stock-index futures financing and dividend relationship"
+ },
+ "S80": {
+  "code": "S80",
+  "title": "CME — Trading Energy Calendar Spread Options",
+  "url": "https://www.cmegroup.com/articles/whitepapers/trading-energy-calendar-spread-options.html",
+  "access": "M",
+  "scope": "M; options on futures time spreads"
+ },
+ "S81": {
+  "code": "S81",
+  "title": "EIA — Spark Spread",
+  "url": "https://www.eia.gov/todayinenergy/includes/sparkspread_explain.php",
+  "access": "M",
+  "scope": "M; generation margin definition"
+ },
+ "S82": {
+  "code": "S82",
+  "title": "CME — Overview of Weather Markets",
+  "url": "https://www.cmegroup.com/education/lessons/overview-of-weather-markets",
+  "access": "M",
+  "scope": "M; temperature-index contract mechanics"
+ },
+ "S83": {
+  "code": "S83",
+  "title": "Cboe — Volatility Trading",
+  "url": "https://www.cboe.com/tradable-products/volatility-trading/",
+  "access": "M",
+  "scope": "M; volatility instruments and product risks"
+ },
+ "S84": {
+  "code": "S84",
+  "title": "NYSE — Holidays and Trading Hours",
+  "url": "https://www.nyse.com/markets/hours-calendars",
+  "access": "M",
+  "scope": "M; exchange calendar; no assumption of continuous stock execution"
+ },
+ "S85": {
+  "code": "S85",
+  "title": "Coinbase — Advanced Trade WebSocket Endpoints",
+  "url": "https://docs.cdp.coinbase.com/coinbase-app/advanced-trade-apis/websocket/websocket-endpoints",
+  "access": "M",
+  "scope": "M; stream types, heartbeat, and channel update distinctions"
+ },
+ "S86": {
+  "code": "S86",
+  "title": "Solana — Token Extensions",
+  "url": "https://solana.com/docs/tokens/extensions",
+  "access": "M",
+  "scope": "M; extension discovery and compatibility; current program behavior must be decoded."
+ },
+ "S87": {
+  "code": "S87",
+  "title": "Solana — Permanent Delegate",
+  "url": "https://solana.com/docs/tokens/extensions/permanent-delegate",
+  "access": "M",
+  "scope": "M; mint-level transfer and burn authority; no blanket safety conclusion."
+ },
+ "S88": {
+  "code": "S88",
+  "title": "Uniswap — Token Integration Issues",
+  "url": "https://developers.uniswap.org/docs/protocols/v3/concepts/unsupported-tokens",
+  "access": "M",
+  "scope": "M; version-specific fee-on-transfer and rebasing compatibility."
+ },
+ "S89": {
+  "code": "S89",
+  "title": "Raydium — LaunchLab Overview",
+  "url": "https://docs.raydium.io/products/launchlab/overview",
+  "access": "M",
+  "scope": "M; bonding-curve lifecycle and migration; inspect deployment-specific configuration."
+ },
+ "S90": {
+  "code": "S90",
+  "title": "Adams, Chan, Markovich, and Wan — Don't Let MEV Slip: The Costs of Swapping on the Uniswap Protocol",
+  "url": "https://arxiv.org/abs/2309.13648",
+  "access": "A",
+  "scope": "A; authors' abstract; USDC/ETH and PEPE/ETH execution-cost study, not broad strategy profitability."
+ },
+ "S91": {
+  "code": "S91",
+  "title": "Binance — Public market-data archive documentation",
+  "url": "https://github.com/binance/binance-public-data",
+  "access": "M",
+  "scope": "M; archive schema, timestamps, and checksum method inspected; data downloaded for Batch 01."
+ },
+ "S92": {
+  "code": "S92",
+  "title": "Binance — Public-data terms",
+  "url": "https://github.com/binance/binance-public-data/blob/master/TERMS_AND_CONDITIONS.md",
+  "access": "M",
+  "scope": "M; personal non-production research and CC BY-NC-SA 4.0 terms inspected October 10, 2026; no production license inferred."
+ },
+ "S93": {
+  "code": "S93",
+  "title": "Mongardini and Mei — A Midsummer Meme’s Dream",
+  "url": "https://arxiv.org/html/2507.01963v2",
+  "access": "P",
+  "scope": "P; manipulation study; does not establish a profitable meme-coin strategy."
+ },
+ "S94": {
+  "code": "S94",
+  "title": "Concretum — Intraday SPY methodology and code",
+  "url": "https://concretumgroup.com/backtesting-7-years-of-free-data-beat-the-market-an-effective-intraday-momentum-strategy-for-the-sp500-etf-spy/",
+  "access": "K",
+  "scope": "K; author tutorial inspected; stock results not reproduced here."
+ },
+ "S95": {
+  "code": "S95",
+  "title": "Zarattini, Barbon, and Aziz — Stock opening-range study",
+  "url": "https://concretumgroup.com/a-profitable-day-trading-strategy-for-the-u-s-equity-market/",
+  "access": "A",
+  "scope": "A; author research summary; independent replication pending."
+ },
+ "S96": {
+  "code": "S96",
+  "title": "Zarattini, Pagani, and Barbon — Catching Crypto Trends",
+  "url": "https://concretumgroup.com/catching-crypto-trends-a-tactical-approach-for-bitcoin-and-altcoins/",
+  "access": "A",
+  "scope": "A; author summary; no inference of intraday profitability."
+ },
+ "S97": {
+  "code": "S97",
+  "title": "Pagani and Zarattini — Fast-alpha timing overlay",
+  "url": "https://concretumgroup.com/quantip-improving-performance-with-fast-alphas-a-tactical-overlay-for-intraday-trend-trading/",
+  "access": "A",
+  "scope": "A; author research summary; proposed extension unverified."
+ },
+ "S98": {
+  "code": "S98",
+  "title": "Binance — USD-M futures market-data documentation",
+  "url": "https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/rest-api/market-data",
+  "access": "M",
+  "scope": "M; funding timestamps, associated marks, and mark-price candle mechanics inspected October 10, 2026; no production performance endorsement."
  }
 }

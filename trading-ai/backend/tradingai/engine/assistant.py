@@ -164,7 +164,7 @@ def i_bots(a: Assistant, q: str) -> dict:
     parts = [f"{len(run)} of {len(bots)} bots are running in {app.mode} mode."]
     for b in run[:6]:
         parts.append(f"{b.strategy_id.split('.')[0].replace('_', ' ')} on {b.instrument_id.split(':')[1]} "
-                     f"{b.tf}{', probation' if b.tier == 'probation' else ''}.")
+                     f"{b.tf}.")
     parts.append(f"The autopilot is on: {ap['doing']}." if app.autopilot.cfg.enabled else "The autopilot is off.")
     return {"intent": "bots", "answer": " ".join(parts), "facts": {"running": len(run), "bots": len(bots)}}
 
@@ -180,8 +180,11 @@ def i_why_not(a: Assistant, q: str) -> dict:
     elif app.state.state == "RECONCILIATION_REQUIRED":
         why = "Reconciliation is required: new exposure is frozen until local records match the account."
     elif not any(b.state == "running" for b in app.bots.values()):
-        why = "No bot is running. " + ("The autopilot is still researching: " + app.autopilot.view()["doing"] + "."
-                                        if app.autopilot.cfg.enabled else "Press START BOT to let the autopilot run.")
+        none_qualified = not app.autopilot.candidates()
+        why = ("No strategy has qualified yet, so the system stays in cash by design while it keeps researching. "
+               if none_qualified else "No bot is running. ") + (
+            "Right now: " + app.autopilot.view()["doing"] + "." if app.autopilot.cfg.enabled
+            else "Press Start System to let the autopilot run.")
     else:
         last = app.db.one("SELECT outcome, reason, instrument_id FROM decisions ORDER BY ts DESC LIMIT 1")
         why = ("Bots are running; the latest decision was " + f"{last['outcome'].replace('_', ' ').lower()} on "
@@ -212,12 +215,16 @@ def i_fees(a: Assistant, q: str) -> dict:
 
 def i_review(a: Assistant, q: str) -> dict:
     app = a.app
-    prob = [b for b in app.bots.values() if b.tier == "probation"]
+    cat = app.catalog_view()
+    rs = cat["research_states"]
     cands = app.autopilot.candidates()[:3]
-    txt = f"{len(prob)} running bot{'s are' if len(prob) != 1 else ' is'} on probation."
+    txt = (f"Of {len(cat['cards'])} catalog strategies, {cat['qualifying']['count']} qualify. "
+           f"{rs.get('IMPLEMENTED_RESEARCH_ONLY', 0)} are waiting for their first test, "
+           f"{rs.get('TEST_COMPLETE', 0)} need more research and {rs.get('REJECTED_UNDER_TEST', 0)} were rejected; "
+           f"{rs.get('DATA_BLOCKED', 0)} are blocked by missing data or products.")
     if cands:
-        txt += " Best waiting research results: " + "; ".join(f"{c['strategy_id'].split('.')[0].replace('_', ' ')} on "
-                                                               f"{c['iid'].split(':')[1]}" for c in cands) + "."
+        txt += " Qualified and waiting for a slot: " + "; ".join(f"{c['strategy_id'].split('.')[0].replace('_', ' ')} on "
+                                                                f"{c['iid'].split(':')[1]}" for c in cands) + "."
     pend = app.autopilot.mem.get("pending", [])
     if pend:
         txt += f" {len(pend)} full test{'s are' if len(pend) != 1 else ' is'} queued."
@@ -292,7 +299,7 @@ def i_navigate(a: Assistant, q: str) -> dict:
     if "broker" in q or "account" in q:
         return {"intent": "navigate", "answer": "Opening Brokers & Accounts.", "navigate": "/broker"}
     if "agent" in q or "activity" in q:
-        return {"intent": "navigate", "answer": "Opening Agent Activity.", "navigate": "/intelligence"}
+        return {"intent": "navigate", "answer": "Opening the AI Supercomputer page.", "navigate": "/intelligence"}
     return {"intent": "navigate", "answer": "Opening the AI Trading System page.", "navigate": "/"}
 
 

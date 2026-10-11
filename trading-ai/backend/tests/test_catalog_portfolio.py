@@ -21,15 +21,20 @@ def app(tmp_path):
 
 
 # ---------------------------------------------------------------- catalog
-def test_catalog_has_all_80_cards_and_47_sources_mapped():
+def test_catalog_has_all_124_cards_98_sources_and_212_index_entries_mapped():
     d = catalog.load()
-    assert len(d["cards"]) == 80 and len(d["sources"]) == 47
-    assert {c["id"] for c in d["cards"]} == {f"ST{n:03d}" for n in range(1, 81)}
+    assert len(d["cards"]) == 124 and len(d["sources"]) == 98
+    assert {c["id"] for c in d["cards"]} == {f"ST{n:03d}" for n in range(1, 125)}
     for c in d["cards"]:
         m = catalog.implementation(c["id"])
         assert m["implementations"] or m["blocked"], c["id"]          # every card is implemented or says why not
+        assert c["id"] in catalog.MAP, c["id"]                        # no card falls through to "not mapped"
         for s in c["sources"]:
             assert s in d["sources"]
+    idx = catalog.research_index()
+    assert len(idx) == 212 and all(r["stage"] == "discovered" for r in idx)     # index entries are not strategies
+    owner = catalog.owner_research()
+    assert owner["qualifying_count"] == 0 and sum(b["configurations"] for b in owner["batches"]) == 90
 
 
 def test_catalog_view_states(app):
@@ -80,8 +85,32 @@ def test_futures_portfolios_are_research_only(app):
     assert portfolio_bot.deployable(app, "ST004")[0] is True
 
 
+def qualify_portfolio(app, sid):
+    eid = app.ledger.start(family="test", strategy_id=sid, hypothesis="test", instrument=f"PORTFOLIO:{sid}", tf="1d",
+                           profile="PORTFOLIO", seed=7, dataset={"simulated": True})
+    app.ledger.finish(eid, {"status": "ok", "verdict": "PAPER TEST", "checks": []})
+    return eid
+
+
+def test_unqualified_portfolio_bot_buys_nothing(app, monkeypatch):
+    spec = P.PORTFOLIOS["ST045"]
+    pan = synthetic_panel(n=3, drift=0.004, sd=0.004)
+    pan["status"] = {i: {"bars": 1200} for i in spec.universe}
+    monkeypatch.setattr(portfolio_bot, "load_panel", lambda md, book, uni, lookback=400: pan)
+    monkeypatch.setattr(app, "quote", lambda iid: {"price": 100.0, "ts": 0, "volume": None, "sigma": 0.0, "range": 0.0,
+                                                   "simulated": True, "tf": "1m", "fresh": True, "currency": "USD"})
+    app.paper.quote = app.quote
+    bot = app.create_portfolio_bot("ST045", allocation=0.2)
+    app.bot_action(bot["bot_id"], "start")
+    portfolio_bot.step(app, app.bots[bot["bot_id"]], "paper")
+    assert portfolio_bot.held_lots(app, "ST045") == {}
+    rows = app.db.query("SELECT reason FROM decisions WHERE bot_id=?", (bot["bot_id"],))
+    assert any("not qualified" in (r["reason"] or "") or "STRATEGY_NOT_QUALIFIED" in (r["reason"] or "") for r in rows)
+
+
 def test_portfolio_bot_rebalances_through_the_risk_service(app, monkeypatch):
     spec = P.PORTFOLIOS["ST045"]
+    qualify_portfolio(app, "ST045")
     pan = synthetic_panel(n=3, drift=0.004, sd=0.004)                   # every coin trending up: the template buys
     pan["status"] = {i: {"bars": 1200} for i in spec.universe}
     monkeypatch.setattr(portfolio_bot, "load_panel", lambda md, book, uni, lookback=400: pan)
@@ -100,6 +129,35 @@ def test_portfolio_bot_rebalances_through_the_risk_service(app, monkeypatch):
     assert 0 < value <= 0.2 * 100_000 * 1.001                           # within the bot's allocation
     assert not b.pending                                                # every target was traded or refused
     assert portfolio_bot.step(app, b, "paper") is None                  # nothing new until the next week
+
+
+def intraday_bars(sessions=30, seed=3, minutes=15):
+    from tradingai.data.bars import Bars
+    rng = np.random.default_rng(seed)
+    per = 390 // minutes
+    t0 = 1704205800000                                                   # 2024-01-02 14:30 UTC = 09:30 New York
+    ts = np.concatenate([t0 + d * 86_400_000 + np.arange(per) * minutes * 60_000 for d in range(sessions)])
+    c = 100 * np.cumprod(1 + rng.normal(0, 0.003, len(ts)))
+    o = np.r_[100.0, c[:-1]]
+    v = rng.integers(1_000, 5_000, len(ts)).astype(float)
+    v[::per] *= rng.choice([1.0, 3.0], sessions)                         # some unusually active openings
+    return Bars("US:SPY", f"{minutes}m", ts, o, np.maximum(o, c) * 1.001, np.minimum(o, c) * 0.999, c, v)
+
+
+@pytest.mark.parametrize("key", ["noise_band_momentum", "active_orb", "first_hour_momentum"])
+def test_intraday_generators_never_use_later_bars_and_are_flat_at_the_close(key):
+    from tradingai.data.bars import Bars
+    from tradingai.features.registry import FeatureFrame
+    from tradingai.strategies.signals import GEN, _near_us_close
+    g = GEN[key]
+    b = intraday_bars()
+    full = g.fn(FeatureFrame(b, "XNYS", "etf"), **g.params)
+    assert np.any(full != 0), key                                        # the synthetic data does produce trades
+    for cut in (17 * 26 + 5, 22 * 26 + 13, 25 * 26 + 25, 29 * 26 + 1):
+        part = Bars(b.instrument_id, b.tf, b.ts[:cut], b.open[:cut], b.high[:cut], b.low[:cut], b.close[:cut],
+                    b.volume[:cut])
+        assert np.array_equal(g.fn(FeatureFrame(part, "XNYS", "etf"), **g.params), full[:cut]), (key, cut)
+    assert not np.any(full[_near_us_close(FeatureFrame(b, "XNYS", "etf"))]), key   # no position into the close
 
 
 # ---------------------------------------------------------------- controls and reason codes

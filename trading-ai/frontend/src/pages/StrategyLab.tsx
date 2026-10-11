@@ -1,9 +1,8 @@
 import { useState } from "react";
-import { api, fmt, tone } from "../api";
+import { fmt, tone } from "../api";
 import { EquityChart } from "../components/charts";
 import { Badge, Card, Check, Drawer, Empty, Tabs } from "../components/ui";
-import { useLive, usePoll } from "../store";
-import { InstrumentSelect, StrategyPicker, type Instrument } from "./CommandCenter";
+import { usePoll } from "../store";
 
 const VERDICT_KIND: Record<string, "good" | "warn" | "bad" | ""> = { "PAPER TEST": "good", "RESEARCH FURTHER": "warn", REJECT: "bad" };
 
@@ -12,73 +11,31 @@ export function Verdict({ v }: { v?: string | null }) {
   return <Badge kind={VERDICT_KIND[v] ?? ""}>{v}</Badge>;
 }
 
-export default function StrategyLab({ instruments, defaultInstrument }: { instruments: Instrument[]; defaultInstrument: string }) {
-  const live = useLive();
-  const [iid, setIid] = useState(defaultInstrument);
-  const inst = instruments.find((i) => i.instrument_id === iid);
-  const [tf, setTf] = useState("1h");
-  const [sid, setSid] = useState("");
-  const [profile, setProfile] = useState("STANDARD");
-  const [lookback, setLookback] = useState(5000);
-  const [jobs, reloadJobs] = usePoll<any[]>("/api/research/jobs", 2500);
+// Read-only research evidence. The agents run every test themselves in the background (owner's specification,
+// revision 13, sections 2 and 6): there is no backtest button, test form, date range or parameter search here.
+export default function StrategyLab() {
+  const [jobs] = usePoll<any[]>("/api/research/jobs", 4000);
   const [exps, reloadExps] = usePoll<any>("/api/research/experiments?limit=60", 8000);
   const [open, setOpen] = useState<string | null>(null);
   const running = (jobs ?? []).filter((j) => j.state === "running" || j.state === "queued");
 
   return (
-    <Card title="Strategy lab · backtesting" sub="chronological train / validation / test, walk-forward, Monte Carlo, cost stress, deflated Sharpe">
+    <Card title="Research evidence" sub="tested automatically by the agents: chronological train / validation / test, walk-forward, cost stress, deflated Sharpe">
       <div className="col">
-        <div className="grid g-3" style={{ gap: 10 }}>
-          <label className="field">Instrument<InstrumentSelect value={iid} onChange={setIid} list={instruments} /></label>
-          <label className="field">Timeframe
-            <select value={tf} onChange={(e) => setTf(e.target.value)}>
-              {["5m", "15m", "30m", "1h", "4h", "1d"].filter((t) => inst?.timeframes.includes(t)).map((t) => <option key={t}>{t}</option>)}
-            </select>
-          </label>
-          <div className="row">
-            <label className="field grow">Depth
-              <select value={profile} onChange={(e) => setProfile(e.target.value)}>
-                <option value="FAST">FAST (1 parameter set)</option>
-                <option value="STANDARD">STANDARD (9 sets, 200 Monte Carlo)</option>
-                <option value="DEEP">DEEP (27 sets, 1000 MC, capacity)</option>
-              </select>
-            </label>
-            <label className="field" style={{ width: 96 }}>Bars<input type="number" min={400} max={20000} step={100} value={lookback} onChange={(e) => setLookback(Number(e.target.value))} /></label>
-          </div>
-        </div>
-        {inst && <label className="field">Strategy template<StrategyPicker market={inst.market} value={sid} onChange={setSid} /></label>}
-        <div className="row wrap">
-          <button className="btn primary" disabled={!sid} onClick={async () => {
-            try {
-              await api.post("/api/research", { strategy_id: sid, instrument_id: iid, tf, profile, lookback });
-              live.toast("Research job queued", "ok");
-              reloadJobs();
-            } catch (e: any) {
-              live.toast(e.message, "error");
-            }
-          }}>Run backtest</button>
-          <span className="note">Every run is recorded in the research ledger and counts as a trial for multiple-testing correction. A backtest can recommend PAPER TEST at most, never live trading.</span>
-        </div>
-
+        <div className="note">Read-only. The autopilot chooses what to test and records every run in the research ledger, where it
+          counts as a trial for multiple-testing correction. A test can make a strategy eligible for paper trading at most, never for live trading.</div>
         {running.length > 0 && (
           <div className="col" style={{ gap: 6 }}>
             {running.map((j) => (
               <div key={j.job_id} className="col" style={{ gap: 4 }}>
                 <div className="spread small"><span>{j.title}</span><span className="dim">{j.stage} · {Math.round(j.progress * 100)}%</span></div>
-                <div className="row">
-                  <div className="bar grow"><i style={{ width: `${j.progress * 100}%` }} /></div>
-                  <button className="btn sm ghost" onClick={() => api.post(`/api/research/jobs/${j.job_id}/cancel`).then(reloadJobs)}>Cancel</button>
-                </div>
+                <div className="bar"><i style={{ width: `${j.progress * 100}%` }} /></div>
               </div>
             ))}
           </div>
         )}
-        {(jobs ?? []).filter((j) => j.state === "failed").slice(0, 3).map((j) => (
-          <div key={j.job_id} className="callout bad small">{j.title}: {j.error}</div>
-        ))}
-
         <div className="scroll" style={{ maxHeight: 340 }}>
-          {!exps?.experiments?.length ? <Empty>No backtests yet.</Empty> : (
+          {!exps?.experiments?.length ? <Empty>No research results yet. The agents start testing by themselves after Start System.</Empty> : (
             <table className="t">
               <thead><tr><th>When</th><th>Strategy</th><th>Data</th><th>Depth</th><th>Verdict</th><th className="num">Quality</th><th className="num">Trials</th></tr></thead>
               <tbody>
@@ -138,7 +95,7 @@ export function ExperimentDrawer({ eid, onClose }: { eid: string; onClose: () =>
           </div>
           {r.reason_codes?.length > 0 && <div className="row wrap">{r.reason_codes.map((c: string) => <Badge key={c} kind="warn">{c}</Badge>)}</div>}
           {r.test?.flags?.length > 0 && <div className="callout warn small">Test period: {r.test.flags.join("; ")}.</div>}
-          <Tabs tabs={[["summary", "Summary"], ["robust", "Robustness"], ["trades", "Test trades"], ["compare", "Backtest vs paper"]]} on={tab} set={setTab} />
+          <Tabs tabs={[["summary", "Summary"], ["robust", "Robustness"], ["trades", "Test trades"], ["compare", "Research vs paper"]]} on={tab} set={setTab} />
           {tab === "summary" && (
             <>
               <Card title="Equity (full history, net of modelled costs)" flush>

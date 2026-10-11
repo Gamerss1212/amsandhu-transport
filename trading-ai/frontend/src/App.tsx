@@ -9,7 +9,7 @@ import Assistant from "./components/Assistant";
 
 const PAGES = [
   ["/", "AI Trading System"],
-  ["/intelligence", "Agent Activity"],
+  ["/intelligence", "AI Supercomputer — Agent Activity"],
   ["/broker", "Brokers & Accounts"],
 ] as const;
 
@@ -41,7 +41,7 @@ export default function App() {
     <div className="shell">
       <header className="topbar">
         <div className="brand">
-          <svg viewBox="0 0 32 32" aria-hidden><rect width="32" height="32" rx="7" fill="#161e2d" /><path d="M6 22l6-7 5 4 9-11" fill="none" stroke="#4cc2ff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" /></svg>
+          <svg viewBox="0 0 32 32" aria-hidden><rect width="32" height="32" rx="7" fill="#17243a" /><path d="M6 22l6-7 5 4 9-11" fill="none" stroke="#3dd9ff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" /></svg>
           Trading AI
         </div>
         <nav className="nav">

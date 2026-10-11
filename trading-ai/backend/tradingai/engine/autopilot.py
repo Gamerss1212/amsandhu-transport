@@ -60,7 +60,7 @@ class APConfig:
     enabled: bool = True
     max_bots: int = 6
     markets: list = field(default_factory=lambda: list(MARKETS))
-    allow_probation: bool = True
+    allow_probation: bool = False        # fixed off: the owner's rules allow no unverified fallback (revision 12/13)
     screens_per_hour: int = 60
     confirms_per_hour: int = 12
     risk_profile: str = "conservative"
@@ -72,6 +72,7 @@ class Autopilot:
         saved = app.db.get_setting("autopilot", {}) or {}
         known = APConfig.__dataclass_fields__
         self.cfg = APConfig(**{k: v for k, v in (saved.get("config") or {}).items() if k in known})
+        self.cfg.allow_probation = False                    # an older saved setting cannot turn it back on
         self.mem: dict[str, Any] = {"retired": {}, "cursor": {}, "slot_cursor": 0, "unavailable": {},
                                     "screened": 0, "confirmed": 0, "deployed": 0, "retired_count": 0}
         self.mem.update({k: v for k, v in (saved.get("memory") or {}).items() if k in self.mem})
@@ -121,8 +122,6 @@ class Autopilot:
                 self.cfg.max_bots = max(0, min(20, int(changes["max_bots"])))
             if "markets" in changes:
                 self.cfg.markets = [m for m in changes["markets"] if m in MARKETS]
-            if "allow_probation" in changes:
-                self.cfg.allow_probation = bool(changes["allow_probation"])
             self._save()
         self.app.audit("autopilot", f"autopilot settings changed: {changes}", data=asdict(self.cfg))
         if "enabled" in changes:
@@ -178,6 +177,8 @@ class Autopilot:
     def _retire_reason(self, b) -> Optional[str]:
         if b.state == "retiring":
             return b.note or "retiring"
+        if b.tier == "probation":
+            return "probation is no longer allowed: the strategy never qualified (owner's rules, revision 13)"
         if b.kind == "portfolio":
             return self._portfolio_retire_reason(b)
         paper = self.app.paper_trades(b.strategy_id, b.instrument_id)
@@ -290,9 +291,6 @@ class Autopilot:
             tier = None
             if r["verdict"] == "PAPER TEST":
                 tier = "qualified"
-            elif r["verdict"] == "RESEARCH FURTHER" and self.cfg.allow_probation and (r["trades"] or 0) >= 20 and \
-                    (r["test_ret"] or 0) > 0 and (r["wf"] or 0) > 0 and (r["sh2x"] or 0) > 0 and (r["quality"] or 0) >= 45:
-                tier = "probation"
             if tier is None or self.mem["retired"].get(k, 0) > now_ms():
                 continue
             if (r["iid"] or "").startswith("PORTFOLIO:") and not r["beats"]:

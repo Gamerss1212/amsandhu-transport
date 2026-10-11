@@ -8,7 +8,11 @@
   "F": "Crypto Spot, Futures, Funding, And Venues",
   "G": "Commodities, Futures Spreads, And Rates",
   "H": "Options And Volatility Structures",
-  "I": "Bonds, Credit, And Emerging-Market Debt"
+  "I": "Bonds, Credit, And Emerging-Market Debt",
+  "J": "Additional Equity Signal Specifications",
+  "K": "Additional Options Structures",
+  "L": "Crypto And On-Chain Research Extensions",
+  "M": "Additional Institutional And Specialty Methods"
  },
  "cards": [
   {
@@ -1248,6 +1252,709 @@
    "markets_text": "eligible sovereign bonds and supported hedges",
    "scope_text": "months",
    "card": "Evidence R for the source's hard-currency debt research [S42]. Markets: eligible sovereign bonds and supported hedges; scope: months. Specify value, momentum, carry, or defensive variants with country caps. Do not infer local-currency results from hard-currency evidence. Restructuring, capital controls, political events, and sparse quotes require separate modeling."
+  },
+  {
+   "id": "ST081",
+   "name": "Accrual quality",
+   "group": "J",
+   "evidence": "H",
+   "evidence_labels": [
+    "H"
+   ],
+   "evidence_text": "Evidence H [S50]",
+   "sources": [
+    "S50"
+   ],
+   "markets_text": "equities with point-in-time accounts",
+   "scope_text": "months",
+   "card": "Evidence H [S50]. Markets: equities with point-in-time accounts; scope: months. Rank low versus high working-capital accrual intensity using a versioned accounting definition. Specify publication lags, missing-tax treatment, and sector exclusions before formation. Rebalance on a fixed schedule. Accounting restatements, mergers, thin trading, and correlated value exposure can distort the result. The reviewed code is a research construction, not a verified executable strategy."
+  },
+  {
+   "id": "ST082",
+   "name": "Residual momentum",
+   "group": "J",
+   "evidence": "H",
+   "evidence_labels": [
+    "H"
+   ],
+   "evidence_text": "Evidence H [S49]",
+   "sources": [
+    "S49"
+   ],
+   "markets_text": "equities",
+   "scope_text": "monthly",
+   "card": "Evidence H [S49]. Markets: equities; scope: monthly. Estimate returns unexplained by a declared market-factor model using past observations, then rank standardized residual strength. Define estimation and ranking windows, skipped observations, and exposure limits. Rebalance when scheduled rather than every tick. Model changes, factor crowding, turnover, and unstable residual estimates can overwhelm a gross signal. The metadata method was inspected; the corresponding Python path was unavailable."
+  },
+  {
+   "id": "ST083",
+   "name": "Distance from the 52-week high",
+   "group": "J",
+   "evidence": "H",
+   "evidence_labels": [
+    "H"
+   ],
+   "evidence_text": "Evidence H [S51]",
+   "sources": [
+    "S51"
+   ],
+   "markets_text": "equities",
+   "scope_text": "weeks to months",
+   "card": "Evidence H [S51]. Markets: equities; scope: weeks to months. Rank closeness to a trailing high using only information known at formation. This is a cross-sectional ranking, distinct from buying an intraday high breakout. Specify corporate-action treatment explicitly: the inspected code and metadata differ on adjustment descriptions. Resolve that discrepancy before promotion. Define reranking exits and liquidity limits; sharp reversals remain possible."
+  },
+  {
+   "id": "ST084",
+   "name": "Customer-to-supplier information diffusion",
+   "group": "J",
+   "evidence": "H",
+   "evidence_labels": [
+    "H"
+   ],
+   "evidence_text": "Evidence H [S52]",
+   "sources": [
+    "S52"
+   ],
+   "markets_text": "equities with historical customer links",
+   "scope_text": "monthly",
+   "card": "Evidence H [S52]. Markets: equities with historical customer links; scope: monthly. Use lagged returns of disclosed major customers as a candidate predictor for supplier returns. Freeze relationship membership at its public availability date and reject ambiguous company matches. Exit on scheduled reranking or link invalidation. Stale disclosures, look-ahead in entity matching, concentrated customers, and common industry exposure are principal failure modes."
+  },
+  {
+   "id": "ST085",
+   "name": "Piotroski-style financial-strength selection",
+   "group": "J",
+   "evidence": "H",
+   "evidence_labels": [
+    "H"
+   ],
+   "evidence_text": "Evidence H [S53]",
+   "sources": [
+    "S53"
+   ],
+   "markets_text": "value equities with complete accounts",
+   "scope_text": "months",
+   "card": "Evidence H [S53]. Markets: value equities with complete accounts; scope: months. Form a documented multi-component score of profitability, financing, and operating improvement within the declared valuation universe. Preserve the original universe constraint when attempting replication; broad-universe adaptations are different versions. Define missing-component handling and periodic exits. Statement revisions, sector accounting differences, and distressed-stock trading costs can change conclusions."
+  },
+  {
+   "id": "ST086",
+   "name": "Net payout yield",
+   "group": "J",
+   "evidence": "H",
+   "evidence_labels": [
+    "H"
+   ],
+   "evidence_text": "Evidence H [S54]",
+   "sources": [
+    "S54"
+   ],
+   "markets_text": "equities",
+   "scope_text": "months",
+   "card": "Evidence H [S54]. Markets: equities; scope: months. Compare dividends and repurchases net of equity issuance with a declared lagged market-value denominator. Use actual reported activity rather than assuming an announced repurchase will occur. Define exclusions, currency treatment, and rebalance dates. Exit on reranking or data failure. Financing changes, one-off distributions, and value traps can produce misleadingly attractive scores."
+  },
+  {
+   "id": "ST087",
+   "name": "Net share issuance anomaly",
+   "group": "J",
+   "evidence": "H",
+   "evidence_labels": [
+    "H"
+   ],
+   "evidence_text": "Evidence H [S55]",
+   "sources": [
+    "S55"
+   ],
+   "markets_text": "equities",
+   "scope_text": "months",
+   "card": "Evidence H [S55]. Markets: equities; scope: months. Rank lower versus higher historical issuance using point-in-time share counts and a documented split convention. Reconcile the metadata and code adjustment conventions before claiming replication. Distinguish compensation dilution, acquisitions, and financing transactions. Use scheduled reranking and borrow checks. Small-stock exposure, buyback timing, and distressed issuers can dominate realized outcomes."
+  },
+  {
+   "id": "ST088",
+   "name": "Analyst earnings revisions",
+   "group": "J",
+   "evidence": "H",
+   "evidence_labels": [
+    "H"
+   ],
+   "evidence_text": "Evidence H [S56]",
+   "sources": [
+    "S56"
+   ],
+   "markets_text": "equities with licensed estimate histories",
+   "scope_text": "weeks to months",
+   "card": "Evidence H [S56]. Markets: equities with licensed estimate histories; scope: weeks to months. Rank changes in comparable forward earnings estimates after their actual publication. Match forecast fiscal periods so a year rollover cannot masquerade as a revision. Define zero/negative denominators, coverage requirements, and expiry. Exit on reranking or invalid estimates. Vendor revision histories, low coverage, and rapid information incorporation are important limitations."
+  },
+  {
+   "id": "ST089",
+   "name": "Short-interest information signal",
+   "group": "J",
+   "evidence": "H",
+   "evidence_labels": [
+    "H"
+   ],
+   "evidence_text": "Evidence H [S57]",
+   "sources": [
+    "S57"
+   ],
+   "markets_text": "equities with timestamped short-interest reports",
+   "scope_text": "weeks to months",
+   "card": "Evidence H [S57]. Markets: equities with timestamped short-interest reports; scope: weeks to months. Evaluate reported short interest relative to available shares as an information signal, with a predeclared direction. Publication date differs from measurement date. Do not automatically reinterpret high short interest as a squeeze-buy signal. Rerank after fresh publications; borrowing costs, recall risk, stale reports, and squeezes can invalidate the trade."
+  },
+  {
+   "id": "ST090",
+   "name": "Public spin-off event selection",
+   "group": "J",
+   "evidence": "H",
+   "evidence_labels": [
+    "H"
+   ],
+   "evidence_text": "Evidence H [S58]",
+   "sources": [
+    "S58"
+   ],
+   "markets_text": "publicly traded spin-offs",
+   "scope_text": "months after eligible separation",
+   "card": "Evidence H [S58]. Markets: publicly traded spin-offs; scope: months after eligible separation. Build a point-in-time event universe, track parent and child identities, and define a finite holding age and liquidity screen. Use public corporate-action terms to handle distributions and delistings. Exit at deadline or invalidation. Forced selling is a hypothesis, not a guaranteed catalyst; leverage, business quality, and sparse new-company history matter."
+  },
+  {
+   "id": "ST091",
+   "name": "Debit butterfly",
+   "group": "K",
+   "evidence": "C",
+   "evidence_labels": [
+    "C"
+   ],
+   "evidence_text": "Evidence C [S59]",
+   "sources": [
+    "S59"
+   ],
+   "markets_text": "compatible listed options",
+   "scope_text": "a specified expiry",
+   "card": "Evidence C [S59]. Markets: compatible listed options; scope: a specified expiry. For the call version, buy lower and upper strikes and sell twice the middle strike, with equal wing widths. Put implementation belongs to the same payoff family. Define target, debit ceiling, and early close policy. The expiry payoff is bounded, but assignments, pin risk, and broken-leg execution need separate handling. No price-target accuracy is implied."
+  },
+  {
+   "id": "ST092",
+   "name": "Short iron butterfly",
+   "group": "K",
+   "evidence": "C",
+   "evidence_labels": [
+    "C"
+   ],
+   "evidence_text": "Evidence C [S60]",
+   "sources": [
+    "S60"
+   ],
+   "markets_text": "compatible listed options",
+   "scope_text": null,
+   "card": "Evidence C [S60]. Markets: compatible listed options. Sell a call and put at a common middle strike and buy protective outer wings. Record relation to ST091: a closely related expiry-payoff family, with different funding and exercise mechanics. Size from complete-position stress and define closure before uncertain assignment. Credit is not profit; commissions and movement away from the center reduce the economic case."
+  },
+  {
+   "id": "ST093",
+   "name": "Long iron butterfly",
+   "group": "K",
+   "evidence": "C",
+   "evidence_labels": [
+    "C"
+   ],
+   "evidence_text": "Evidence C [S61]",
+   "sources": [
+    "S61"
+   ],
+   "markets_text": "compatible listed options",
+   "scope_text": null,
+   "card": "Evidence C [S61]. Markets: compatible listed options. Buy the center call and put, then sell farther outer call and put wings at the same expiry. This expresses a sufficiently large movement while capping the payoff. Define maximum debit, event timing, and close deadline. Link it to the same butterfly family for dependency counting. Timing error, premium decay, and assignment can defeat the thesis."
+  },
+  {
+   "id": "ST094",
+   "name": "Debit condor",
+   "group": "K",
+   "evidence": "C",
+   "evidence_labels": [
+    "C"
+   ],
+   "evidence_text": "Evidence C [S62]",
+   "sources": [
+    "S62"
+   ],
+   "markets_text": "compatible calls or puts with four ordered strikes and one expiry",
+   "scope_text": null,
+   "card": "Evidence C [S62]. Markets: compatible calls or puts with four ordered strikes and one expiry. The call implementation buys the two outer strikes and sells the two inner strikes. Require matched wing widths for the standard bounded structure. Link it to the condor family including ST070, rather than counting it as independent alpha. Define net-debit and exit rules; four-leg liquidity and assignment costs matter."
+  },
+  {
+   "id": "ST095",
+   "name": "Reverse iron condor",
+   "group": "K",
+   "evidence": "C",
+   "evidence_labels": [
+    "C"
+   ],
+   "evidence_text": "Evidence C [S63]",
+   "sources": [
+    "S63"
+   ],
+   "markets_text": "compatible put and call debit spreads",
+   "scope_text": null,
+   "card": "Evidence C [S63]. Markets: compatible put and call debit spreads. Buy an inner put and call and sell the farther outer wings, seeking a sufficiently large move before expiry. Record its relation to ST070 and ST094. Evaluate both break-even regions and combined costs before entry. Exit as a complete structure by deadline; restrained movement or poor timing can lose the premium."
+  },
+  {
+   "id": "ST096",
+   "name": "Call ratio backspread",
+   "group": "K",
+   "evidence": "C",
+   "evidence_labels": [
+    "C"
+   ],
+   "evidence_text": "Evidence C [S64]",
+   "sources": [
+    "S64"
+   ],
+   "markets_text": "compatible same-expiry calls",
+   "scope_text": null,
+   "card": "Evidence C [S64]. Markets: compatible same-expiry calls. Sell one lower-strike call and buy two higher-strike calls for a strong upward-move thesis. This is the long-ratio orientation; do not silently reverse it into uncovered short-call exposure. Evaluate the loss trough around the long strike, net premium, and assignment path. Close by a specified deadline and prevent repeated averaging into the trough."
+  },
+  {
+   "id": "ST097",
+   "name": "Put ratio backspread",
+   "group": "K",
+   "evidence": "C",
+   "evidence_labels": [
+    "C"
+   ],
+   "evidence_text": "Evidence C [S65]",
+   "sources": [
+    "S65"
+   ],
+   "markets_text": "compatible same-expiry puts",
+   "scope_text": null,
+   "card": "Evidence C [S65]. Markets: compatible same-expiry puts. Sell one higher-strike put and buy two lower-strike puts for a large downward-move thesis. This is the downside implementation of the backspread family. Model the intermediate loss region, assignment funding, and the underlying price floor. Gains on ordinary equity puts are finite as price approaches zero; never label them unlimited. Close the entire position by policy."
+  },
+  {
+   "id": "ST098",
+   "name": "Synthetic long equity exposure",
+   "group": "K",
+   "evidence": "C",
+   "evidence_labels": [
+    "C"
+   ],
+   "evidence_text": "Evidence C [S66]",
+   "sources": [
+    "S66"
+   ],
+   "markets_text": "matching listed call and put",
+   "scope_text": null,
+   "card": "Evidence C [S66]. Markets: matching listed call and put. Buy the call and sell the put at the same strike and expiry to create stock-like directional exposure. Treat this as an implementation and financing alternative, not new alpha. Reserve settlement capacity and account for dividends, interest, and exercise style. Exit or roll under a declared policy; a small initial premium does not imply small economic exposure."
+  },
+  {
+   "id": "ST099",
+   "name": "Synthetic short equity exposure",
+   "group": "K",
+   "evidence": "C",
+   "evidence_labels": [
+    "C"
+   ],
+   "evidence_text": "Evidence C [S67]",
+   "sources": [
+    "S67"
+   ],
+   "markets_text": "matching listed put and call",
+   "scope_text": null,
+   "card": "Evidence C [S67]. Markets: matching listed put and call. Buy the put and sell the call at the same strike and expiry. Treat this as a short-exposure implementation with potentially unbounded loss as the underlying rises. Keep excluded from routine live eligibility unless the account policy explicitly permits this exposure and its margin management. Assignment, distributions, financing, and squeeze risk require full-position monitoring."
+  },
+  {
+   "id": "ST100",
+   "name": "Covered ratio stock repair",
+   "group": "K",
+   "evidence": "C",
+   "evidence_labels": [
+    "C"
+   ],
+   "evidence_text": "Evidence C [S68]",
+   "sources": [
+    "S68"
+   ],
+   "markets_text": "an existing eligible stock holding plus compatible calls",
+   "scope_text": null,
+   "card": "Evidence C [S68]. Markets: an existing eligible stock holding plus compatible calls. Buy a lower-strike call and write twice as many higher-strike calls, with the holding covering one short call and the long call covering the other. Quantity matching is mandatory. This changes future payoff and caps recovery upside; it does not erase the original loss. Require an explicit exit horizon and assignment plan."
+  },
+  {
+   "id": "ST101",
+   "name": "Inventory-aware two-sided market making",
+   "group": "L",
+   "evidence": "H",
+   "evidence_labels": [
+    "H"
+   ],
+   "evidence_text": "Evidence H [S43]",
+   "sources": [
+    "S43"
+   ],
+   "markets_text": "eligible crypto or equity order books",
+   "scope_text": "seconds to minutes",
+   "card": "Evidence H [S43]. Markets: eligible crypto or equity order books; scope: seconds to minutes. Quote bid and ask around a declared reference, skewing prices and size with inventory, volatility, and measured fill risk. Cancel stale quotes and impose hard inventory and order-rate limits. Source S43 supplies a theoretical model, not a current venue edge. Queue priority, adverse selection, outages, and fees can overwhelm spreads."
+  },
+  {
+   "id": "ST102",
+   "name": "Concentrated-liquidity provision",
+   "group": "L",
+   "evidence": "C",
+   "evidence_labels": [
+    "C"
+   ],
+   "evidence_text": "Evidence C [S69]",
+   "sources": [
+    "S69"
+   ],
+   "markets_text": "explicitly supported AMM pools and chain deployments",
+   "scope_text": null,
+   "card": "Evidence C [S69]. Markets: explicitly supported AMM pools and chain deployments. Allocate liquidity to a defined price interval with declared fee tier and capital budget. Track token inventory, fee accrual, and whether liquidity is active; define repositioning or withdrawal rules. Fee income must be evaluated against inventory losses, gas, and adverse selection. The protocol mechanism alone provides no profitability evidence; contract and token behavior require separate review."
+  },
+  {
+   "id": "ST103",
+   "name": "Hedged AMM liquidity provision",
+   "group": "L",
+   "evidence": "H",
+   "evidence_labels": [
+    "H"
+   ],
+   "evidence_text": "Evidence H [S69]",
+   "sources": [
+    "S69"
+   ],
+   "markets_text": "a supported liquidity pool and a separately executable hedge instrument",
+   "scope_text": null,
+   "card": "Evidence H [S69]. Markets: a supported liquidity pool and a separately executable hedge instrument. Combine the ST102 inventory with a bounded, periodically adjusted hedge derived from actual pool state. This is a strategy variant within the liquidity-provision family. Define hedge thresholds, funding assumptions, and withdrawal conditions. Discrete rehedging, basis shifts, chain delays, liquidation, and divergent venue availability can leave substantial residual exposure."
+  },
+  {
+   "id": "ST104",
+   "name": "Unlevered on-chain lending allocation",
+   "group": "L",
+   "evidence": "C",
+   "evidence_labels": [
+    "C"
+   ],
+   "evidence_text": "Evidence C [S70]",
+   "sources": [
+    "S70"
+   ],
+   "markets_text": "individually approved assets and lending-pool deployments",
+   "scope_text": null,
+   "card": "Evidence C [S70]. Markets: individually approved assets and lending-pool deployments. Supply owned assets under fixed protocol and asset caps, and monitor utilization, withdrawal availability, and realized interest. Define exit conditions before allocating. This is a yield-allocation mechanism, not a directional prediction. Variable rates, smart-contract failure, collateral loss, frozen liquidity, and asset depegging can outweigh accrued interest. No recursive borrowing is implied."
+  },
+  {
+   "id": "ST105",
+   "name": "Protocol liquidation execution",
+   "group": "L",
+   "evidence": "C",
+   "evidence_labels": [
+    "C"
+   ],
+   "evidence_text": "Evidence C [S70]",
+   "sources": [
+    "S70"
+   ],
+   "markets_text": "explicitly supported protocol deployments",
+   "scope_text": null,
+   "card": "Evidence C [S70]. Markets: explicitly supported protocol deployments. Observe eligible positions, calculate collateral received against debt repayment at current deployment parameters, and submit only when simulated transaction economics exceed costs and the approved reserve. The liquidation trigger and bonus are contract-specific. Gas competition, oracle changes, failed transactions, and collateral price moves can erase an apparent spread. Never hardcode one close factor for every deployment."
+  },
+  {
+   "id": "ST106",
+   "name": "Staking with a price hedge",
+   "group": "L",
+   "evidence": "H",
+   "evidence_labels": [
+    "H"
+   ],
+   "evidence_text": "Evidence H [S71, S72]",
+   "sources": [
+    "S71",
+    "S72"
+   ],
+   "markets_text": "approved proof-of-stake assets with reliable validator or staking access and an eligible hedge",
+   "scope_text": null,
+   "card": "Evidence H [S71, S72]. Markets: approved proof-of-stake assets with reliable validator or staking access and an eligible hedge. Compare expected rewards with hedge funding, fees, and capital usage. Maintain a bounded hedge against actual exposure, and plan withdrawal delays before entry. This adaptation is not established by staking documentation. Slashing, validator downtime, price-basis mismatch, and hedge liquidation can exceed rewards."
+  },
+  {
+   "id": "ST107",
+   "name": "Staking-token redemption discount",
+   "group": "L",
+   "evidence": "H",
+   "evidence_labels": [
+    "H"
+   ],
+   "evidence_text": "Evidence H [S71]",
+   "sources": [
+    "S71"
+   ],
+   "markets_text": "a separately specified liquid staking token and underlying asset",
+   "scope_text": null,
+   "card": "Evidence H [S71]. Markets: a separately specified liquid staking token and underlying asset. Research whether an executable discount covers fees, redemption timing, and risks; enter only after the actual token protocol and redemption path are documented. Ethereum withdrawal documentation supplies background only and does not certify any token. Exit through a verified redemption or market sale. Queues, depegging, contract exposure, and hedge costs can prevent convergence."
+  },
+  {
+   "id": "ST108",
+   "name": "Public on-chain flow signal",
+   "group": "L",
+   "evidence": "H",
+   "evidence_labels": [
+    "H"
+   ],
+   "evidence_text": "Evidence H",
+   "sources": [],
+   "markets_text": "crypto instruments with reliable public chain data",
+   "scope_text": "hours to days",
+   "card": "Evidence H. Markets: crypto instruments with reliable public chain data; scope: hours to days. Define exchange-address evidence, confirmation depth, a net-flow measure, and a directional hypothesis before evaluation. Use only address labels known at the time; internal transfers must not be treated as customer demand. Exit on signal age or invalidation. This is an unverified research proposal: attribution error, reorgs, wash activity, and anticipation can invalidate it."
+  },
+  {
+   "id": "ST109",
+   "name": "Cross-currency funding basis",
+   "group": "M",
+   "evidence": "H",
+   "evidence_labels": [
+    "H"
+   ],
+   "evidence_text": "Evidence H [S73]",
+   "sources": [
+    "S73"
+   ],
+   "markets_text": "eligible spot, forward or swap, and funding instruments",
+   "scope_text": null,
+   "card": "Evidence H [S73]. Markets: eligible spot, forward or swap, and funding instruments. Compare fully matched borrowing, lending, and currency-hedging cash flows using actual executable financing terms. Define collateral currency, settlement dates, and an unwind path. Institutional access may be necessary. Published parity deviations are not free money: balance-sheet constraints, liquidity, credit, and funding repricing can preserve or widen the basis."
+  },
+  {
+   "id": "ST110",
+   "name": "Swap-spread relative value",
+   "group": "M",
+   "evidence": "H",
+   "evidence_labels": [
+    "H"
+   ],
+   "evidence_text": "Evidence H [S74]",
+   "sources": [
+    "S74"
+   ],
+   "markets_text": "supported SOFR swap exposure and government-bond hedges",
+   "scope_text": null,
+   "card": "Evidence H [S74]. Markets: supported SOFR swap exposure and government-bond hedges. Size opposing legs by comparable rate sensitivities and evaluate the swap-versus-government spread after financing. Rebalance sensitivities and close at a declared target, deadline, or risk breach. Government specialness, collateral and settlement differences, convexity, and abrupt spread changes remain even when approximate duration is neutral."
+  },
+  {
+   "id": "ST111",
+   "name": "Short-rate meeting-path repricing",
+   "group": "M",
+   "evidence": "H",
+   "evidence_labels": [
+    "H"
+   ],
+   "evidence_text": "Evidence H [S75]",
+   "sources": [
+    "S75"
+   ],
+   "markets_text": "eligible short-rate futures or bounded options",
+   "scope_text": "scheduled policy events",
+   "card": "Evidence H [S75]. Markets: eligible short-rate futures or bounded options; scope: scheduled policy events. Translate settlement-period averages into a declared policy-path model using known meeting dates and published fixings. Enter only on a predefined discrepancy beyond costs. Exit after the event or model invalidation. Different averaging conventions, already-fixed days, risk premia, and surprise communication can make naive probability estimates wrong."
+  },
+  {
+   "id": "ST112",
+   "name": "Inflation-breakeven relative value",
+   "group": "M",
+   "evidence": "H",
+   "evidence_labels": [
+    "H"
+   ],
+   "evidence_text": "Evidence H [S76]",
+   "sources": [
+    "S76"
+   ],
+   "markets_text": "maturity-matched nominal and inflation-linked bonds with optional approved inflation hedges",
+   "scope_text": null,
+   "card": "Evidence H [S76]. Markets: maturity-matched nominal and inflation-linked bonds with optional approved inflation hedges. Model real/nominal sensitivities, indexation lag, carry, and liquidity before expressing a breakeven view. Define convergence, deadline, and stress exits. Breakeven includes risk and liquidity components; it is not a pure forecast. Seasonality, deflation floors, funding, and imperfect maturity matching can overwhelm the thesis."
+  },
+  {
+   "id": "ST113",
+   "name": "CDS–bond basis",
+   "group": "M",
+   "evidence": "H",
+   "evidence_labels": [
+    "H"
+   ],
+   "evidence_text": "Evidence H [S77]",
+   "sources": [
+    "S77"
+   ],
+   "markets_text": "eligible bonds, credit protection, and financing",
+   "scope_text": null,
+   "card": "Evidence H [S77]. Markets: eligible bonds, credit protection, and financing; institutional scope. Match issuer, seniority, currency, maturity, and credit-event terms before evaluating a basis trade. Use executable rather than indicative spreads and define unwind costs. The cited study concerns sovereign markets; corporate transfer requires separate evidence. Documentation mismatch, recovery uncertainty, counterparty exposure, and financing stress make the position imperfectly hedged."
+  },
+  {
+   "id": "ST114",
+   "name": "Dividend futures forecasting",
+   "group": "M",
+   "evidence": "H",
+   "evidence_labels": [
+    "H"
+   ],
+   "evidence_text": "Evidence H [S78]",
+   "sources": [
+    "S78"
+   ],
+   "markets_text": "approved equity-index dividend contracts",
+   "scope_text": null,
+   "card": "Evidence H [S78]. Markets: approved equity-index dividend contracts. Forecast the contract-defined dividend accumulation from point-in-time constituent information and compare it with executable pricing. Separate ordinary from special distributions according to contract rules. Exit on maturity, repricing, or forecast invalidation. Dividend cuts, index changes, currency conversion, and concentration create risks even if broad equity-price exposure differs from an index future."
+  },
+  {
+   "id": "ST115",
+   "name": "Equity-index cash/futures basis",
+   "group": "M",
+   "evidence": "C",
+   "evidence_labels": [
+    "C"
+   ],
+   "evidence_text": "Evidence C [S79]",
+   "sources": [
+    "S79"
+   ],
+   "markets_text": "an executable index basket or explicitly modeled proxy and its futures contract",
+   "scope_text": null,
+   "card": "Evidence C [S79]. Markets: an executable index basket or explicitly modeled proxy and its futures contract. Compare futures pricing with cash, financing, and dividends, then evaluate matched legs after full costs. A displayed index is not purchasable. Close through an executable convergence or roll policy. Tracking error, dividend surprises, borrow availability, asynchronous sessions, and many constituent fills can prevent capture."
+  },
+  {
+   "id": "ST116",
+   "name": "Energy calendar-spread options",
+   "group": "M",
+   "evidence": "C",
+   "evidence_labels": [
+    "C"
+   ],
+   "evidence_text": "Evidence C [S80]",
+   "sources": [
+    "S80"
+   ],
+   "markets_text": "specifically supported options whose underlying is the difference between two futures expiries",
+   "scope_text": null,
+   "card": "Evidence C [S80]. Markets: specifically supported options whose underlying is the difference between two futures expiries. Define spread direction, strike, settlement, and curve-volatility assumptions; use bounded premium exposure unless another structure is authorized. This differs from ST072, which combines separate options with different expiries. Close by thesis or expiry policy. Storage shocks, nonlinear curve changes, and sparse spread-option liquidity matter."
+  },
+  {
+   "id": "ST117",
+   "name": "Power–fuel spark spread",
+   "group": "M",
+   "evidence": "H",
+   "evidence_labels": [
+    "H"
+   ],
+   "evidence_text": "Evidence H [S81]",
+   "sources": [
+    "S81"
+   ],
+   "markets_text": "compatible electricity and natural-gas contracts with region and delivery-period matching",
+   "scope_text": null,
+   "card": "Evidence H [S81]. Markets: compatible electricity and natural-gas contracts with region and delivery-period matching. Convert fuel using an explicit heat rate and compare generation margin with a declared model; account for emissions where applicable. Use sensitivity-aware sizing and a fixed exit rule. This models a product relationship, not guaranteed power-plant profit. Load shape, congestion, outages, efficiency, and physical delivery make mismatches material."
+  },
+  {
+   "id": "ST118",
+   "name": "Weather-index forecast trade",
+   "group": "M",
+   "evidence": "H",
+   "evidence_labels": [
+    "H"
+   ],
+   "evidence_text": "Evidence H [S82]",
+   "sources": [
+    "S82"
+   ],
+   "markets_text": "verified weather futures or options tied to a specified station and index",
+   "scope_text": null,
+   "card": "Evidence H [S82]. Markets: verified weather futures or options tied to a specified station and index. Translate timestamped probabilistic forecasts into the exact settlement statistic, with exposure bounded by forecast uncertainty and liquidity. Exit on information change or settlement policy. Historical city listings do not prove current trading access. Weather-model revisions, station anomalies, thin books, and basis to economic exposure can dominate results."
+  },
+  {
+   "id": "ST119",
+   "name": "Volatility-futures term-structure trade",
+   "group": "M",
+   "evidence": "H",
+   "evidence_labels": [
+    "H"
+   ],
+   "evidence_text": "Evidence H [S83]",
+   "sources": [
+    "S83"
+   ],
+   "markets_text": "eligible volatility futures of separately identified maturities",
+   "scope_text": null,
+   "card": "Evidence H [S83]. Markets: eligible volatility futures of separately identified maturities. Trade a declared relative curve view with explicit sensitivity matching, stress scenarios, and maximum gross exposure. Define roll and close rules; do not assume a spot volatility index can be bought or that contango guarantees profit. Volatility jumps, maturity-dependent response, margin demands, and changing settlement expectations can rapidly widen losses."
+  },
+  {
+   "id": "ST120",
+   "name": "Machine-learning cross-sectional return ranking",
+   "group": "M",
+   "evidence": "H",
+   "evidence_labels": [
+    "H"
+   ],
+   "evidence_text": "Evidence H [S44]",
+   "sources": [
+    "S44"
+   ],
+   "markets_text": "equities with point-in-time feature histories",
+   "scope_text": "periodic portfolio decisions",
+   "card": "Evidence H [S44]. Markets: equities with point-in-time feature histories; scope: periodic portfolio decisions. Train a versioned prediction model under strictly time-ordered internal evaluation, then form a constrained ranking portfolio after costs. Treat the model as a signal combiner, not an additional independent economic premium. Define drift suspension and scheduled refresh. Leakage, repeated selection, unstable features, and capacity limits can defeat published average relationships."
+  },
+  {
+   "id": "ST121",
+   "name": "Intraday noise-band momentum",
+   "group": "M",
+   "evidence": "H",
+   "evidence_labels": [
+    "H"
+   ],
+   "evidence_text": "Evidence H [S94]",
+   "sources": [
+    "S94"
+   ],
+   "markets_text": "liquid stock ETFs",
+   "scope_text": null,
+   "card": "Evidence H [S94]. Markets: liquid stock ETFs. Research candidate: compare current price with time-of-day movement bands, with a VWAP filter. Freeze band estimation, decision times, dividend handling, sizing, and session exits before testing. This proposed implementation is not a replication of the author method. Requires adjusted reference prices and timestamped intraday observations. Overlaps ST022; not an independent premium."
+  },
+  {
+   "id": "ST122",
+   "name": "Activity-filtered stock opening-range breakout",
+   "group": "M",
+   "evidence": "H",
+   "evidence_labels": [
+    "H"
+   ],
+   "evidence_text": "Evidence H [S95]",
+   "sources": [
+    "S95"
+   ],
+   "markets_text": "exchange-listed stocks",
+   "scope_text": null,
+   "card": "Evidence H [S95]. Markets: exchange-listed stocks. Research candidate: apply an opening-range rule only to unusually active securities. Fix the range, relative-volume denominator, eligible universe, ranking timestamp, and costs before testing. Never rank with the completed day’s future volume. Requires historical listings, corporate actions, and executable quotes. Extends ST021; published family evidence does not validate this implementation."
+  },
+  {
+   "id": "ST123",
+   "name": "Multi-horizon crypto channel ensemble",
+   "group": "M",
+   "evidence": "H",
+   "evidence_labels": [
+    "H"
+   ],
+   "evidence_text": "Evidence H [S96]",
+   "sources": [
+    "S96"
+   ],
+   "markets_text": "liquid crypto",
+   "scope_text": null,
+   "card": "Evidence H [S96]. Markets: liquid crypto. Research candidate: combine channel signals and volatility-aware allocation across a historically reconstructed universe. Freeze horizons and turnover constraints before evaluation. It extends ST003 and ST045. Source horizons must be preserved; a five-minute adaptation needs separate evidence. Historical liquidity ranks must include later delistings. Not implemented in Batch 01."
+  },
+  {
+   "id": "ST124",
+   "name": "Fast-signal execution-timing overlay",
+   "group": "M",
+   "evidence": "H",
+   "evidence_labels": [
+    "H"
+   ],
+   "evidence_text": "Evidence H [S97]",
+   "sources": [
+    "S97"
+   ],
+   "markets_text": "liquid intraday instruments with a defined parent strategy",
+   "scope_text": null,
+   "card": "Evidence H [S97]. Markets: liquid intraday instruments with a defined parent strategy. Research candidate: use a short-horizon signal to time eligible parent orders. Compare against identical parent decisions without the overlay, including missed trades, delay, spread, and adverse selection. This is an execution overlay, not a separate alpha claim. Exact timing and fill rules remain to be specified and tested."
   }
  ]
 }

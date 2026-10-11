@@ -21,7 +21,7 @@ PLAN = {   # card -> generator -> (instrument, timeframe) list, chosen by each c
     "ST003": {"donchian_trend": [(i, "1d") for i in DAILY] + MICRO},
     "ST006": {"trend_pullback": [("US:SPY", "1h"), ("COINBASE:BTC-USD", "1h"), ("FX:EURUSD", "1h"), ("US:QQQ", "1d")]},
     "ST021": {"orb": [("US:SPY", "15m"), ("US:QQQ", "15m"), ("CME:ES", "15m"), ("CME:MES", "15m")]},
-    "ST022": {"first_hour_momentum": [("US:SPY", "30m"), ("US:QQQ", "30m")]},
+    "ST022": {"first_hour_momentum": [("US:SPY", "15m"), ("US:QQQ", "15m")]},
     "ST023": {"price_above_vwap": [("US:SPY", "15m"), ("COINBASE:BTC-USD", "1h")]},
     "ST024": {"vwap_reversion": [("US:SPY", "15m"), ("COINBASE:BTC-USD", "1h")]},
     "ST025": {"prior_session_breakout": [("US:SPY", "15m"), ("CME:ES", "15m")]},
@@ -37,6 +37,9 @@ PLAN = {   # card -> generator -> (instrument, timeframe) list, chosen by each c
     "ST044": {"asian_range_breakout": [("FX:EURUSD", "1h"), ("FX:GBPUSD", "1h")],
               "london_open_momentum": [("FX:EURUSD", "1h"), ("FX:USDJPY", "1h")]},
     "ST045": {"tsmom": [("COINBASE:BTC-USD", "1d"), ("COINBASE:ETH-USD", "1d"), ("COINBASE:SOL-USD", "1d")]},
+    # revision 13 cards this software can run (ST082, ST083 and ST123 are portfolio templates, run above)
+    "ST121": {"noise_band_momentum": [("US:SPY", "15m"), ("US:QQQ", "15m")]},
+    "ST122": {"active_orb": [("US:SPY", "5m"), ("US:QQQ", "5m"), ("US:SPY", "15m"), ("US:QQQ", "15m")]},
 }
 LOOKBACK = {"15m": 2000, "30m": 1200, "1h": 5000, "4h": 3000, "1d": 2500}
 

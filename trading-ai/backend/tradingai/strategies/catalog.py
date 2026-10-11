@@ -1,5 +1,6 @@
-"""The owner's 80-template strategy catalog (ST001-ST080) and its 47-source register, from
-docs/specs/AI_Trading_System_Master_Prompt.md (revision 3, October 9 2026), mapped onto this software.
+"""The owner's strategy catalog (ST001-ST124), its source register and the 212-entry published equity-signal index,
+from docs/specs/AI_Trading_System_Master_Prompt.md (revision 13, October 10 2026; imported by
+scripts/import_master_prompt.py), mapped onto this software.
 
 The card text, evidence labels (R research-supported family, C documented construction, H hypothesis) and source
 access labels (A abstract, P paper text, M mechanics, B bibliographic) are the specification's own; this software has
@@ -11,6 +12,10 @@ not re-read or replicated those papers. What this module adds is the honest mapp
 
 Lifecycle labels follow the specification: documented -> specified -> implemented -> evaluated -> paper_eligible ->
 live_eligible, plus suspended. live_eligible is never reached in this build: no broker adapter is verified.
+Each card also carries the research state of revision 12 (DATA_BLOCKED, RULES_INCOMPLETE, IMPLEMENTED_RESEARCH_ONLY,
+TEST_COMPLETE, REJECTED_UNDER_TEST, VALIDATION_PENDING) and the owner's own batch results, kept separate from this
+installation's results. A card in the catalog is catalog-installed; only cards with an implementation can run, and
+none may open trades until a version qualifies.
 """
 
 from __future__ import annotations
@@ -105,15 +110,87 @@ MAP: dict[str, tuple[list[str], Optional[str], str]] = {
        for n in range(63, 75)},
     **{f"ST{n:03d}": ([], "PRODUCT_UNSUPPORTED", "bonds/credit: no issue-level bond data or bond trading adapter")
        for n in range(75, 81)},
+    # revision 13 additions
+    "ST081": ([], "INSUFFICIENT_DATA", "needs point-in-time accounting statements with publication dates"),
+    "ST082": (["P:ST082"], None, "residuals against SPY on seven large US stocks: survivorship-biased, capped at "
+              "RESEARCH FURTHER; long-only adaptation"),
+    "ST083": (["P:ST083"], None, "closeness to the trailing 252-day high on seven large US stocks (adjusted closes): "
+              "survivorship-biased, capped at RESEARCH FURTHER"),
+    "ST084": ([], "INSUFFICIENT_DATA", "needs dated customer-supplier relationship histories"),
+    "ST085": ([], "INSUFFICIENT_DATA", "needs complete point-in-time accounts for a value universe"),
+    "ST086": ([], "INSUFFICIENT_DATA", "needs dividend, repurchase and issuance histories"),
+    "ST087": ([], "INSUFFICIENT_DATA", "needs point-in-time share counts and borrow data"),
+    "ST088": ([], "INSUFFICIENT_DATA", "needs licensed analyst-estimate histories"),
+    "ST089": ([], "INSUFFICIENT_DATA", "needs timestamped short-interest reports and borrow costs"),
+    "ST090": ([], "INSUFFICIENT_DATA", "needs a point-in-time spin-off event universe"),
+    **{f"ST{n:03d}": ([], "PRODUCT_UNSUPPORTED", "options: no option chains, Greeks or option-order adapter here")
+       for n in range(91, 101)},
+    "ST101": ([], "INSUFFICIENT_DATA", "needs live order-book depth, queue and fill data and a market-making adapter"),
+    "ST102": ([], "PRODUCT_UNSUPPORTED", "on-chain AMM pools: no chain adapter or wallet here"),
+    "ST103": ([], "PRODUCT_UNSUPPORTED", "on-chain AMM pools plus a hedge venue: not supported"),
+    "ST104": ([], "PRODUCT_UNSUPPORTED", "on-chain lending protocols: not supported"),
+    "ST105": ([], "PRODUCT_UNSUPPORTED", "on-chain liquidation execution: not supported"),
+    "ST106": ([], "PRODUCT_UNSUPPORTED", "staking access and a derivatives hedge: not supported"),
+    "ST107": ([], "PRODUCT_UNSUPPORTED", "liquid staking tokens and redemption paths: not supported"),
+    "ST108": ([], "INSUFFICIENT_DATA", "needs labelled public chain flow data with confirmation depth"),
+    "ST109": ([], "PERMISSION_MISSING", "needs institutional forward/swap funding access"),
+    "ST110": ([], "PRODUCT_UNSUPPORTED", "SOFR swaps and government bonds: not supported"),
+    "ST111": ([], "PRODUCT_UNSUPPORTED", "short-rate futures and published fixings: not supported"),
+    "ST112": ([], "PRODUCT_UNSUPPORTED", "nominal and inflation-linked bonds: not supported"),
+    "ST113": ([], "PRODUCT_UNSUPPORTED", "bonds, CDS and financing: not supported"),
+    "ST114": ([], "PRODUCT_UNSUPPORTED", "index dividend futures: not supported"),
+    "ST115": ([], "PRODUCT_UNSUPPORTED", "needs an executable index basket with financing and dividends"),
+    "ST116": ([], "PRODUCT_UNSUPPORTED", "calendar-spread options: not supported"),
+    "ST117": ([], "PRODUCT_UNSUPPORTED", "power and gas contracts: not supported"),
+    "ST118": ([], "PRODUCT_UNSUPPORTED", "weather futures and options: not supported"),
+    "ST119": ([], "PRODUCT_UNSUPPORTED", "volatility futures by maturity: not supported"),
+    "ST120": ([], "INSUFFICIENT_DATA", "needs point-in-time feature histories for a broad equity universe"),
+    "ST121": (["noise_band_momentum"], None, "intraday noise band from prior sessions' same-time moves, VWAP filter, "
+              "flat by the session close; the free provider's intraday history is short"),
+    "ST122": (["active_orb"], None, "opening-range breakout only when the opening range's volume is unusually high "
+              "versus its own past sessions; single-instrument adaptation (the card ranks many stocks)"),
+    "ST123": (["P:ST123"], None, "BTC/ETH/SOL long/flat, averaged channel signals over four horizons with lagged "
+              "volatility sizing; today's coins only (survivorship)"),
+    "ST124": ([], "SOURCE_METHOD_UNVERIFIED", "exact timing and fill rules are not yet specified (rules incomplete)"),
 }
 
 STATES = ["documented", "specified", "implemented", "evaluated", "paper_eligible", "live_eligible", "suspended"]
+RESEARCH_STATES = {
+    "DISCOVERED": "listed; full method not yet extracted",
+    "RULES_INCOMPLETE": "the rules are not specified precisely enough to implement",
+    "DATA_BLOCKED": "needs data, products or permissions this installation does not have",
+    "IMPLEMENTED_RESEARCH_ONLY": "implemented here, not yet tested",
+    "TEST_COMPLETE": "tested here; did not qualify (research further)",
+    "REJECTED_UNDER_TEST": "every tested configuration was rejected",
+    "VALIDATION_PENDING": "passed development; waiting for paper validation",
+}
 
 
 def load() -> dict:
     cat = json.loads((_DATA / "catalog_st.json").read_text(encoding="utf-8"))
     src = json.loads((_DATA / "sources.json").read_text(encoding="utf-8"))
     return {"groups": cat["groups"], "cards": cat["cards"], "sources": src}
+
+
+def research_index() -> list[dict]:
+    """The 212 published equity signals: discovery entries, not strategies. All need a broad point-in-time equity
+    universe (listings, delistings, accounts) that this installation does not have."""
+    rows = json.loads((_DATA / "research_index.json").read_text(encoding="utf-8"))
+    return [dict(r, stage="discovered", research_state="DATA_BLOCKED", blocked="INSUFFICIENT_DATA") for r in rows]
+
+
+def owner_research() -> dict:
+    return json.loads((_DATA / "owner_research.json").read_text(encoding="utf-8"))
+
+
+def owner_evidence_by_card() -> dict[str, list[dict]]:
+    out: dict[str, list[dict]] = {}
+    for b in owner_research()["batches"]:
+        for m in b["models"]:
+            for c in m["cards"]:
+                out.setdefault(c, []).append({"batch": b["id"], "status": b["status"], "market": b["market"],
+                                              "period": b["period"], "costs": b["costs"], **m})
+    return out
 
 
 def implementation(card_id: str) -> dict:
@@ -128,6 +205,7 @@ def view(ledger_rows: list[dict], retired: set[str], deployed: set[str]) -> list
     from tradingai.strategies.library import specs
     lib = specs()
     data = load()
+    owner = owner_evidence_by_card()
     by_strategy: dict[str, list[dict]] = {}
     for r in ledger_rows:
         by_strategy.setdefault(r["strategy_id"], []).append(r)
@@ -155,7 +233,18 @@ def view(ledger_rows: list[dict], retired: set[str], deployed: set[str]) -> list
             state = "specified"
         else:
             state = "documented"
-        out.append(dict(c, **m, templates=len(template_ids), state=state, runs=len(runs), verdicts=verdicts,
+        if m["blocked"] and not runs:
+            rstate = "RULES_INCOMPLETE" if m["blocked"] == "SOURCE_METHOD_UNVERIFIED" else "DATA_BLOCKED"
+        elif not runs:
+            rstate = "IMPLEMENTED_RESEARCH_ONLY"
+        elif verdicts.get("PAPER TEST"):
+            rstate = "VALIDATION_PENDING"
+        elif verdicts.get("RESEARCH FURTHER"):
+            rstate = "TEST_COMPLETE"
+        else:
+            rstate = "REJECTED_UNDER_TEST"
+        out.append(dict(c, **m, templates=len(template_ids), state=state, research_state=rstate,
+                        owner_evidence=owner.get(c["id"], []), runs=len(runs), verdicts=verdicts,
                         best=None if best is None else {k: best.get(k) for k in (
                             "experiment_id", "strategy_id", "verdict", "quality", "instrument", "tf", "created")}))
     return out
