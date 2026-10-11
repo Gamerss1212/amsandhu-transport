@@ -1,4 +1,4 @@
-# Requirements matrix — Trading AI 1.3.0
+# Requirements matrix — Trading AI 1.4.0
 
 Status meanings:
 * **DONE**: implemented and exercised by a test or by the self-test.
@@ -7,8 +7,8 @@ Status meanings:
 * **NOT DONE**: not built.
 
 How it was verified:
-* **Unit tests**: 98 tests (`backend/tests`).
-* **Self-test**: `START_TRADING_AI.exe --selftest` runs 23 steps over HTTP and WebSocket against the real server. It passed on the built Windows exe under Wine.
+* **Unit tests**: 121 tests (`backend/tests`).
+* **Self-test**: `START_TRADING_AI.exe --selftest` runs 28 steps over HTTP and WebSocket against the real server. It passed on the built Windows exe under Wine.
 * **Real-data run**: the dashboard and API were exercised on live Coinbase, Kraken and Yahoo data.
 
 The exe has been tested under Wine on Linux, **not on a physical Windows PC**.
@@ -28,7 +28,7 @@ The exe has been tested under Wine on Linux, **not on a physical Windows PC**.
 
 | Requirement | Status | Evidence / limitation |
 |---|---|---|
-| Runs by itself after the double-click (no setup, no clicks) | DONE | The Autopilot is on by default. It screens strategies with FAST research and confirms the promising ones with STANDARD research (rate-limited, one job at a time). It starts paper bots only for strategies that QUALIFIED (passed every gate), monitors them, and retires those whose paper results fall short or whose re-test on newer data fails. While nothing qualifies it stays in cash and keeps researching (revision 13). Covered by tests (`test_autopilot.py`) and self-test steps. |
+| Runs by itself after the double-click (no setup, no clicks) | DONE | The Autopilot is on by default. It screens strategies with FAST research on intraday bar sizes (15m and 1h; crypto also 4h) over the curated markets plus the 12 most liquid discovered crypto pairs, and confirms the promising ones with STANDARD research (rate-limited, one job at a time). It starts paper bots only for strategies that QUALIFIED (passed every gate under the day-trading rules) and only on markets that have an owning trading agent, monitors them, and retires those whose paper results fall short. While nothing qualifies it stays in cash and keeps researching. Covered by tests (`test_autopilot.py`, `test_fleet.py`) and self-test steps. |
 | Owner keeps control | DONE | Start System turns everything on (the program does this by itself when it opens) and Stop turns everything off. A bot the owner stops is never restarted by the autopilot. EMERGENCY STOP blocks the autopilot, and the autopilot never re-arms. |
 | Fully automated real-money trading | NOT DONE (by design) | The autopilot is paper-only. Live trading needs the owner's separate arming, as required. |
 | Start with Windows | DONE | Optional checkbox: adds the program to this Windows user's Run list (no administrator rights needed). |
@@ -48,18 +48,18 @@ The two owner documents are stored unchanged: `docs/specs/AI_Trading_System_Mast
 | Research states (revision 12) | DONE | DATA_BLOCKED, RULES_INCOMPLETE, IMPLEMENTED_RESEARCH_ONLY, TEST_COMPLETE, REJECTED_UNDER_TEST, VALIDATION_PENDING (DISCOVERED for index entries), computed from the mapping and the research ledger. |
 | No backtest button, test forms or manual training (2, 6) | DONE | Removed from the interface: the Strategy lab form, the catalog's Backtest and Add-paper-bot buttons, job cancel. Removed routes: POST /api/research, POST /api/catalog/{id}/research, POST /api/portfolio-bots, POST /api/research/jobs/{id}/cancel. The research evidence stays visible read-only. Self-test checks the route is gone. |
 | Entries blocked until a strategy qualifies; safe idle in cash (revision 12, 5F) | DONE | Deterministic risk check "strategy qualified" (reason code STRATEGY_NOT_QUALIFIED) on every strategy order; the bot and portfolio-bot loops also abstain early and may still exit. Qualified = latest finished research run on the same market and timeframe has verdict PAPER TEST and the autopilot has not retired it. The PROBATION tier is removed and old probation bots retire. Tests: `test_entries_wait_in_cash_until_a_strategy_qualifies`, `test_a_bot_whose_strategy_says_buy_waits_until_the_strategy_qualifies`, `test_risk_service_blocks_unqualified_entries_but_never_exits`, `test_unqualified_portfolio_bot_buys_nothing`. |
-| Same decision code in research and live; intraday flat by the close (4, 5F) | PARTIAL | The new intraday generators and the ST022 first-half-hour generator now take the session close from the New York clock, not from later bars (they used to look at the session's last bar, which a live bot cannot know; ST022 also held overnight in research). Early closes and other exchanges are not modelled; other strategies do not yet declare entry windows and flattening deadlines. |
+| Day-trading operating mode: entry window, entry cutoff, flattening deadline, crypto maximum hold (4) | DONE | `engine/daytrade.py` declares the rules per calendar with its timezone: stocks and ETFs (New York) enter from 09:35 until 30 min before the close and are flat 10 min before it (early closes included); CME futures enter until 16:15 and are flat by 16:45; forex enters until 16:30 and is flat by 16:50; crypto (UTC) holds at most 24 hours and opens nothing from 23:00 to the 00:00 daily cutoff. The SAME rules run in the backtester (every research run is stamped intraday) and in paper decisions; a sweep every 30 s closes positions past a deadline even without new bars, and when a market is shut it keeps the position and records an incident. Daily-bar methods and monthly portfolios produce no trades under these rules and stay research-only; results tested before 1.4.0 no longer qualify. Tests: `test_daytrade.py`. Limitation: CME and forex holiday hours are approximated by NYSE holidays; venue maintenance windows are not modelled. |
 | Three pages with the specified names (2, 8) | DONE | AI Trading System · AI Supercomputer — Agent Activity · Brokers & Accounts. |
 | Start System, Pause New Entries, Stop, Emergency Stop (2, 8) | DONE | Start System is what the program does when it opens; the button shows it running. Pause New Entries blocks new exposure but lets exits through and survives a restart. Flatten All closes paper positions through the risk service. |
-| Colour palette (8A) | PARTIAL | The specified design tokens (midnight navy, cyan, violet, teal, magenta, gold, coral) are applied across the pages and charts. **The video-based layout is not built**: no core/vortex view, node network, KPI strip or 5:7 split. The video file is not available to this build. |
-| 320 independent trading agents A001-A320 with a Supercomputer Brain (3, 4) | NOT DONE | The system runs up to six single-market paper bots plus two portfolio bots chosen by the autopilot, with 102 agents advising each decision. No 320 independent trading workers, market partitions, ownership leases or capital reservations per agent exist. Page 2 shows the real counts, not 320. |
-| 50 shared capabilities C01-C50 (4) | PARTIAL | Page 2 lists the 25 roles of the previous revision with their real state; the revision 13 list of 50 capabilities is not mapped one by one. |
-| Global stock, crypto and meme-coin coverage across chains and venues (3) | NOT DONE | 55 instruments from Coinbase, Kraken and Yahoo. No exchange-wide discovery, no on-chain data, no DEX or launchpad adapters, no meme-coin taxonomy. |
+| Visual design and page 1 composition (8A) | PARTIAL | Design tokens applied everywhere. Page 1 follows the written composition: slim top bar (pages, PAPER badge, account, clock, connection, system state), a pausable market strip with real changes and freshness, a KPI strip (equity, net P&L, exposure, drawdown, agent availability, trading readiness), engine summary beside the chart (5:7), equity and drawdown, measured decision activity (abstention, signal disagreement, latency), confirmed fills, and a team agent strip. The video itself is not available to this build, so the layout follows the specification's description of it, not its frames. No light theme. |
+| 320 trading agents A001-A320 with a Supercomputer Brain (3, 4) | PARTIAL | `engine/fleet.py`: 320 agents with stable ids in the specification's groups; the brain (a separate coordinating service) assigns each agent one distinct instrument with a versioned, persisted ownership plan, keeps positions with their owner, and reassigns agents of groups with no access (options, rates, specialty) to spare crypto pairs while keeping the gap visible. Agents run in a bounded pool of 8 workers with fault isolation; bot decisions run inside the owning agent's job. Budgets are zero until a strategy qualifies on that market, and their sum stays within the gross-exposure limit; the risk check "agent budget" enforces them. One order authority per account re-reads positions plus working orders inside its lock, so capital is reserved atomically (concurrency test: 16 simultaneous agents, exactly the allowed 5 orders pass). Online run: 203 of 320 agents had a distinct market and 117 were blocked with a reason (equities: no listing feed for more than the curated stocks); a cycle took 30-55 ms once data was cached. Agents are deterministic code, not language models. |
+| 50 shared capabilities C01-C50 (4) | DONE | Each capability is mapped to the code that does it, with its live state, on page 2 (Support services). Five are shown blocked because their feed or product is not connected: C16 news, C27 spread (no bid/ask feed), C29 borrowing, C30 funding, C31 event calendar. Not counted as trading agents. |
+| Global stock, crypto and meme-coin coverage across chains and venues (3) | PARTIAL | `market/discovery.py` lists every Coinbase product and Kraken pair once a day (online run: 842 and 1,460; 403 Coinbase USD pairs paper-tradable) and takes one shared price snapshot per venue each minute; delisted pairs are kept and marked. Coverage is shown with its denominator (pairs listed by the connected providers, not every market). Meme coins: a small seed list tags pairs by theme, marked unverified (a ticker is not an identity). Not covered, and listed as such: stocks beyond the curated list, options, bonds, on-chain tokens, DEXs, launchpads and other exchanges. |
 | Equity and drawdown chart; session report; exports (8) | DONE | Equity recorded every 60 s (1D/1W/1M/1Y); session report with a JSON export labelled paper or live. |
 | Attribution by strategy, market and costs | DONE | Net P&L, fees and slippage against the decision price, per strategy and per market. |
-| Page 2 detail drawers and filters (8) | PARTIAL | 25 roles with state and latest result; no per-agent drawer, team/asset filters or network view. |
-| Page 3 Brokers & Accounts (8, 9, 5B) | DONE / NOT DONE | Capability matrix and market coverage. **Add Funds is not built.** |
-| Speaking assistant and voice tools (10, 11) | PARTIAL | Answers from verified state; explains that the system waits in cash while nothing qualifies; British English browser voice; proactive events with expiry and de-duplication; pause new entries is its only control; money and live commands refused. Not built: cloud voice or WebRTC, quiet hours, volume, announcement lifecycle, latency measurements, "that bot" references. |
+| Page 2: brain, network, agent grid, drawers, filters (8, 8A) | DONE | Brain core with plan and cycle metrics; market map (sessions, venue health, what cannot be observed); network of every agent by team, where a dot pulses only when that agent received new data; virtualized, searchable agent grid with filters (team, state, asset class, meme coins) and grouping (team, asset class, venue, job); an agent drawer with assignment, data, budget, catalog access, positions, decisions, errors, dependencies, tools and assignment history. |
+| Page 3 Brokers & Accounts (8, 9, 5B) | DONE | Capability matrix, market coverage, discovery coverage with meme pairs, and Add Funds, which only opens each broker's official website (Kraken, Coinbase, Alpaca, Interactive Brokers Canada, OANDA Canada). No card or bank details are collected and a deposit never raises the trading allocation. |
+| Speaking assistant and voice tools (10, 11) | PARTIAL | Answers from verified state; British English browser voice with volume; quiet hours (only critical announcements are spoken); each announcement shows its state (queued, speaking, spoken, shown without speech and why, expired, interrupted, failed); measured event-to-speech delay; "that bot" and "the bitcoin bot" resolve to a bot; it can pause a bot and pause or resume new entries; money and live commands refused. Not built: cloud voice or WebRTC. |
 
 ## Stack
 
@@ -68,7 +68,7 @@ The two owner documents are stored unchanged: `docs/specs/AI_Trading_System_Mast
 | Python + FastAPI backend | DONE | `backend/tradingai/api/server.py` |
 | React + TypeScript frontend | DONE | `frontend/` (Vite build, strict TypeScript) |
 | WebSockets for live updates | DONE | `/ws`: catch-up of missed events on reconnect. |
-| SQLite (transactions, migrations) | DONE | WAL, synchronous=FULL, schema v2. |
+| SQLite (transactions, migrations) | DONE | WAL, synchronous=FULL, schema v4 (adds the discovered-instrument inventory). |
 | DuckDB + Parquet market store | DONE | Partitioned by provider/symbol/timeframe/year/month; provenance hashes stored. |
 
 ## Markets and data
@@ -90,7 +90,7 @@ The two owner documents are stored unchanged: `docs/specs/AI_Trading_System_Mast
 
 | Requirement | Status | Evidence / limitation |
 |---|---|---|
-| Hundreds of strategy templates | DONE | 1,418 templates: 101 generators × 6 filters × 4 exits. 26 near-duplicate templates were pruned. 1,403 can run; 15 need data that is not connected. |
+| Hundreds of strategy templates | DONE | 1,502 templates from 106 generators with filters and exits. 26 near-duplicate templates were pruned. 1,487 can run; 15 need data that is not connected. |
 | Hundreds of indicators / features | DONE | 226 registered features (123 distinct functions), all tested to use only past data. 19 need external data. |
 | Regime detection | DONE | Trend / volatility / character rules, a 2-state HMM and CUSUM change points. The HMM probability is labelled "uncalibrated". |
 | Multi-timeframe analysis | DONE | Each decision also evaluates completed higher-timeframe bars (agent T11). |
@@ -135,9 +135,9 @@ The two owner documents are stored unchanged: `docs/specs/AI_Trading_System_Mast
 | Requirement | Status | Evidence / limitation |
 |---|---|---|
 | Exactly three pages | DONE | AI Trading System, AI Supercomputer — Agent Activity, Brokers & Accounts (the names in the specification). Details open in drawers and dialogs. |
-| AI Trading System | DONE | Candlestick chart with fills; Start System / Stop; Pause New Entries; Flatten All; paper/shadow mode; autopilot; bots; positions; equity chart and session report; profit and loss; regime and agents; risk meters and editable limits; strategy catalog; read-only research evidence. |
-| Brokers & Accounts | DONE | Account and balances; paper balance setting; connections (vault, test, remove); capability matrix; market coverage; live readiness and arming; orders and fills; reconciliation. |
-| AI Supercomputer — Agent Activity | DONE | Decision feed with agent votes, conflicts, vetoes, risk checks, execution and audit trail; live event stream; the 25 roles; system health; research ledger; agent roster. |
+| AI Trading System | DONE | Market strip; KPI strip; engine summary; candlestick chart with fills; equity and drawdown; decision activity; execution stream; team agent strip; Start System / Stop; Pause New Entries; Flatten All; paper/shadow mode; autopilot; bots; positions; session report; regime and agents; risk meters with limits in a settings drawer; strategy catalog; read-only research evidence. |
+| Brokers & Accounts | DONE | Account and balances; paper balance setting; connections (vault, test, remove); capability matrix; Add Funds; market and discovery coverage; live readiness and arming; orders and fills; reconciliation. |
+| AI Supercomputer — Agent Activity | DONE | Brain and fleet (network, agent grid, drawers, C01-C50 support services); decision feed with agent votes, conflicts, vetoes, risk checks, execution and audit trail; live event stream; system health; research ledger; signal agent functions. |
 | SIMULATED labels | DONE | Paper balances, DEMO prices and backtests on simulated data are labelled on every page. |
 | Works at phone width | DONE | No horizontal scrolling at 390 px (checked in Chromium). |
 
@@ -152,7 +152,8 @@ The two owner documents are stored unchanged: `docs/specs/AI_Trading_System_Mast
 7. FX financing is not modelled.
 8. The program is not code-signed.
 9. No GPU acceleration.
-10. 94 of the 124 catalog templates cannot run here (see the catalog for each reason code); 0 strategies qualify, so no trade is opened until one does.
+10. 94 of the 124 catalog templates cannot run here (see the catalog for each reason code); 0 strategies qualify, so no trade is opened until one does. Research from before 1.4.0 was not run under the day-trading rules, so it cannot qualify a strategy.
 11. The assistant uses browser speech; no cloud voice provider is connected.
-12. Add Funds is not built.
-13. Revision 13's 320-agent fleet, global and meme-coin coverage and video-based layout are not built (see the revision 13 table).
+12. 117 of the 320 agents have no distinct market to watch (no stock listing feed, no options, bonds or on-chain adapters); they are shown blocked with the reason.
+13. Coverage stops at Coinbase, Kraken and the curated Yahoo list; meme-coin tags are unverified.
+14. The page layout follows the specification's written description of the reference video; the video itself was not available.

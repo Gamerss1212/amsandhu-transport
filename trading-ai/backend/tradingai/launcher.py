@@ -287,6 +287,41 @@ def selftest(home: Optional[str], offline: bool) -> int:
         return f"qualifying {cat['qualifying']['count']}; " + ", ".join(f"{v} {k}" for k, v in cat["research_states"].items())
     ok &= step("strategy catalog: 124 templates, 98 sources, 212 index entries", catalog_ok)
 
+    def fleet_ok():
+        f = api("/api/fleet")
+        assert f["counts"]["registered"] == 320 and len(f["agents"]) == 320, f["counts"]
+        owned = [i for a in f["agents"] for i in a["partition"]]
+        assert len(owned) == len(set(owned)), "an instrument has two owners"
+        detail = api("/api/fleet/" + f["agents"][0]["id"])
+        assert detail["id"] == f["agents"][0]["id"]
+        return (f"{f['counts']['registered']} agents, {f['counts']['assigned']} with a distinct market, "
+                f"{f['counts']['blocked']} blocked with a reason; brain plan v{f['brain']['plan_version']}")
+    ok &= step("trading fleet: 320 agents, one owner per market", fleet_ok)
+
+    def caps_ok():
+        r = api("/api/roles")
+        ids = [x["id"] for x in r["roles"]]
+        assert ids == [f"C{n:02d}" for n in range(1, 51)], ids[:3]
+        return f"{len(ids)} support services, {r['counts']['unavailable']} unavailable (no feed), model calls 0"
+    ok &= step("support services C01-C50", caps_ok)
+
+    def discovery_ok():
+        d = api("/api/coverage/discovery")
+        if d["offline"]:
+            return "offline mode: discovery off, nothing claimed"
+        return ", ".join(f"{v} {x['listed']} listed" for v, x in d["venues"].items()) + \
+            f"; {d['meme']['tagged_pairs']} meme pairs (unverified tags)"
+    ok &= step("market discovery reports its denominators", discovery_ok)
+
+    def daytrade_ok():
+        d = api("/api/daytrade")
+        assert d["mode"] == "intraday" and set(d["rules"]) == {"XNYS", "CME", "FX", "CRYPTO"}, d
+        return "intraday rules for stocks, futures, forex and crypto"
+    ok &= step("day-trading rules in force", daytrade_ok)
+    ok &= step("page 1 market strip and decision activity", lambda: (
+        f"{len(api('/api/market/strip')['items'])} strip item(s); "
+        f"{api('/api/activity')['decisions']} decision(s) in the last hour"))
+
     def pause_ok():
         assert api("/api/controls/pause-entries", "POST", json={"paused": True, "reason": "selftest"})["entries_paused"]
         assert api("/api/controls/pause-entries", "POST", json={"paused": False})["entries_paused"] is None

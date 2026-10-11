@@ -4,8 +4,9 @@ A local trading research, paper-trading and (owner-armed) live-trading system fo
 indices and futures. It runs entirely on your computer behind `http://127.0.0.1:<port>`. The Windows release is one
 folder: double-click `START_TRADING_AI.exe`, the local server starts, and the browser opens the dashboard.
 
-It starts in **PAPER** mode and runs by itself: the Autopilot researches strategies, starts paper bots for the ones
-that pass, watches them and retires the ones that fall short. It stays in paper. Nothing shown as real is invented: every number comes from a calculation
+It starts in **PAPER** mode and runs by itself: the Autopilot researches strategies under the day-trading rules, starts
+paper bots for the ones that pass, watches them and retires the ones that fall short. It stays in paper. A fleet of 320
+trading agents (A001-A320), coordinated by the Supercomputer Brain, each watches one distinct market. Nothing shown as real is invented: every number comes from a calculation
 on real market data, an authenticated broker connection, or clearly labelled simulated (DEMO) data.
 
 Beginners: read [`docs/START_HERE.txt`](docs/START_HERE.txt). What is done and what is not:
@@ -22,17 +23,23 @@ START_TRADING_AI.exe (launcher.py)
  └─ App (app.py): start-up checks → recovery → trading loop thread → research worker pool
      ├─ storage    SQLite (WAL, migrations, hash-chained audit log)  ·  DuckDB + Parquet market store  ·  DPAPI vault
      ├─ data       Coinbase / Kraken / Yahoo / DEMO providers, completed bars only, quality checks, provenance hashes
-     ├─ market     55 instruments, NYSE/CME/FX/crypto calendars, futures specs and roll windows
+     ├─ market     55 curated instruments, NYSE/CME/FX/crypto calendars, futures specs and roll windows;
+     │             discovery: every Coinbase product and Kraken pair (daily) + one shared price snapshot per minute
      ├─ features   226 causal features (123 functions), regime detection (rules + HMM + CUSUM)
      ├─ strategies 1,502 templates (1,487 runnable): 106 generators × filters × exits, near-duplicates pruned;
      │             the owner's 124-template catalog (ST001-ST124) and 212-entry research index mapped onto them, with
      │             98 sources, reason codes and the owner's own batch results; entries only once a strategy qualifies
      ├─ agents     102 agents in 10 groups; ensemble averages by information cluster; vetoes; no fake probabilities
+     ├─ fleet      320 agents A001-A320 + the Supercomputer Brain: one owner per instrument, budgets only for
+     │             qualified strategies, bounded worker pool, fault isolation (engine/fleet.py); C01-C50 support services
+     ├─ daytrade   intraday rules per calendar: entry window, cutoff, flatten deadline, crypto 24 h hold (engine/daytrade.py)
      ├─ autopilot  on by default, paper only: screens → full tests → starts bots → reviews → retires (engine/autopilot.py)
-     ├─ assistant  deterministic intents over verified state; proactive voice events; refuses money commands
+     ├─ assistant  deterministic intents over verified state; "that bot" references; proactive voice events with
+     │             quiet hours and lifecycle states; refuses money commands
      ├─ engine     orchestrator: data → features → regime → strategy → agents (incl. higher timeframe) → sizing → risk → OMS
      ├─ risk       deterministic checks (approve / shrink / deny), loss and drawdown locks, kill switch, typed phrases
-     ├─ execution  OMS with deterministic client ids, query-before-resend, UNKNOWN state, shadow mode; algos (TWAP/VWAP/POV)
+     ├─ execution  one order authority per account (capital reserved atomically), deterministic client ids,
+     │             query-before-resend, UNKNOWN state, shadow mode; algos (TWAP/VWAP/POV)
      ├─ brokers    paper broker (Decimal ledger) · Alpaca / OANDA / Kraken / IBKR adapters (UNVERIFIED) · Coinbase (REQUIRES CONNECTION)
      ├─ research   chronological train/validation/test, walk-forward, Monte Carlo, cost stress, PSR/DSR/PBO, ledger;
      │             portfolio templates (rebalanced, next-day execution, equal-weight benchmark) and portfolio bots
@@ -48,7 +55,7 @@ packaging/         PyInstaller spec, Windows build script (runs under Wine on Li
 python -m venv .venv && .venv/bin/pip install -r requirements-dev.txt
 cd frontend && npm ci && npm run build && cd ..
 cd backend && ../.venv/bin/python -m tradingai.launcher            # add --offline to use stored + DEMO data only
-../.venv/bin/python -m pytest -q tests                              # 98 tests
+../.venv/bin/python -m pytest -q tests                              # 121 tests
 ../.venv/bin/python -m tradingai.launcher --selftest --offline      # end-to-end test over HTTP and WebSocket
 ```
 
@@ -83,4 +90,8 @@ experiments), `data/market/` (Parquet), `data/secrets/` (DPAPI-encrypted credent
 * External text (news, provider messages) is data, never an instruction.
 * A backtest can recommend PAPER TEST at most. Every backtest is recorded and counted as a trial.
 * No strategy order may open exposure unless that strategy version qualified (PAPER TEST on the same market and
-  timeframe); otherwise the system waits in cash. There is no manual backtest route; the agents test by themselves.
+  timeframe, tested under the day-trading rules); otherwise the system waits in cash. There is no manual backtest
+  route; the agents test by themselves.
+* Intraday: stocks are flat 10 minutes before the close, futures and forex before 17:00 New York, crypto is held 24
+  hours at most. The same rules run in research and in paper trading.
+* Add Funds only opens the broker's own website. The program never handles card or bank details.

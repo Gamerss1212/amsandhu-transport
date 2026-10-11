@@ -18,24 +18,33 @@ TRADING AI - START HERE
 
 THE THREE PAGES
 ---------------
-AI Trading System   Chart, Start System / Stop, Pause New Entries, Flatten All, your bots, positions,
-                    equity chart and session report, profit and loss, market regime, what the agents
-                    think, risk limits, the strategy catalog and the research results (read-only).
-AI Supercomputer    Every decision the bots make and why (agent votes, risk checks, execution),
- - Agent Activity   the live event stream, the roles and what each is doing, system health and
-                    the research ledger.
-Brokers & Accounts  Your paper account, broker connections, what each broker supports, which markets
-                    are covered, live-trading readiness and arming, orders and fills, reconciliation.
+AI Trading System   From the top: live prices (Pause stops them updating), your key numbers (equity,
+                    profit and loss, exposure, drawdown, how many agents have fresh data, and whether
+                    the system is trading or waiting), what the engine is doing beside the chart,
+                    equity and drawdown, decision activity, confirmed fills, and one card per agent
+                    team. Below: Start System / Stop, Pause New Entries, Flatten All, bots, positions,
+                    risk ("Risk and capital settings..." opens the limits), the strategy catalog.
+AI Supercomputer    The Supercomputer Brain and the 320 trading agents A001-A320. "Network" shows every
+ - Agent Activity   agent around the brain (a dot grows briefly when that agent gets new market data);
+                    "Agent grid" lets you search and filter them; click any agent for its details.
+                    "Support services C01-C50" lists the 50 helper services and which ones are blocked.
+                    Below: every decision and why, the live event stream, system health, research.
+Brokers & Accounts  Your paper account, broker connections, Add Funds (opens your broker's own website),
+                    what each broker supports, which markets are covered (including meme coins), live
+                    readiness and arming, orders and fills, reconciliation.
 
 THE ASSISTANT
 -------------
 The "Assistant" button (bottom left, on every page) answers questions from the system's real state:
 "What are all the bots doing?", "Why are you not trading?", "How much did fees cost today?",
 "Which strategies are under review?", "Explain my current exposure", "Show my broker connection".
-Say or type "pause new entries" and it does that. It refuses anything about real money, going live
-or permissions: those stay on the pages, behind their own confirmations.
+You can ask about one bot by its market ("What is the bitcoin bot doing?") and then say "that bot"
+("Pause that bot"). Say or type "pause new entries" and it does that. It refuses anything about real
+money, going live or permissions: those stay on the pages, behind their own confirmations.
 Tick "voice" to hear answers (British English voice if Windows has one) and "speak events" to have it
-announce important events by itself. "Mic" lets you ask by voice where the browser supports it.
+announce important events by itself. "vol" sets the loudness; "quiet" sets hours when only critical
+events are spoken. Each announcement shows whether it was spoken, and the panel shows how long speech
+took to start after the event. "Mic" lets you ask by voice where the browser supports it.
 It uses no cloud AI.
 
 THE STRATEGY CATALOG
@@ -54,7 +63,12 @@ the first start and works in PAPER mode:
 
   1. It tests strategies in the background on real market data (crypto, stocks, ETFs, forex, futures),
      a quick screen first, then a full test for the ones that look promising.
-  2. Only when a strategy passes EVERY test does it start a paper bot for it.
+  2. Only when a strategy passes EVERY test does it start a paper bot for it, on a market that one of
+     the 320 trading agents owns.
+
+DAY TRADING: trades open and close the same day. Stocks are closed 10 minutes before the market closes,
+futures and forex before 5 pm New York time, and a crypto trade is never held more than 24 hours. The
+tests use exactly the same rules, so strategies that need to hold for days or months stay "research only".
   3. It watches every bot it runs and retires (closes and removes) the ones whose paper results fall short.
 
 IMPORTANT: your strategies file lists 0 qualifying strategies, and so far no strategy has passed every
