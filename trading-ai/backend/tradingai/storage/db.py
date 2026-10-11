@@ -90,6 +90,12 @@ MIGRATIONS: list[str] = [
         unrealized TEXT, fees TEXT, positions INTEGER, simulated INTEGER NOT NULL);
     CREATE INDEX equity_history_ts ON equity_history(ts);
     """,
+    # 4: instruments discovered from the connected public providers (listings, delistings, status history)
+    """
+    CREATE TABLE instruments_discovered (venue TEXT NOT NULL, symbol TEXT NOT NULL, base TEXT, quote TEXT,
+        kind TEXT NOT NULL, status TEXT NOT NULL, first_seen INTEGER NOT NULL, last_seen INTEGER NOT NULL,
+        delisted INTEGER, meta TEXT, PRIMARY KEY (venue, symbol));
+    """,
 ]
 
 GENESIS = "0" * 64

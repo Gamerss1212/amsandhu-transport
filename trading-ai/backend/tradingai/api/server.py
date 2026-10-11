@@ -123,6 +123,10 @@ class PauseIn(BaseModel):
     reason: str = ""
 
 
+class FleetIn(BaseModel):
+    desired: int = Field(ge=1, le=1000)
+
+
 class AskIn(BaseModel):
     text: str = Field(min_length=1, max_length=500)
     command_id: Optional[str] = Field(None, max_length=64)
@@ -238,6 +242,23 @@ def create_app(core, *, token: Optional[str] = None, on_shutdown=None) -> FastAP
     @api.get("/api/coverage")
     def coverage():
         return core.coverage()
+
+    @api.get("/api/coverage/discovery")
+    def coverage_discovery():
+        return core.discovery.coverage()
+
+    # ------------------------------------------------------------ the trading fleet A001... and its brain
+    @api.get("/api/fleet")
+    def fleet():
+        return core.fleet.view()
+
+    @api.get("/api/fleet/{agent_id}")
+    def fleet_agent(agent_id: str):
+        return core.fleet.detail(agent_id)
+
+    @api.post("/api/fleet/size")
+    def fleet_size(f: FleetIn):
+        return core.fleet.set_desired(f.desired)
 
     @api.post("/api/assistant/ask")
     def ask(a: AskIn):

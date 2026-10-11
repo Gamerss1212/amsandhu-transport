@@ -13,6 +13,7 @@
 
 from __future__ import annotations
 
+import threading
 import time
 from decimal import Decimal
 from typing import Callable, Optional
@@ -29,6 +30,10 @@ class OMS:
         self.db, self.risk, self.bus, self.audit = db, risk, bus, audit
         self.latency: dict[str, list[float]] = {"risk_ms": [], "submit_ms": [], "decision_to_submit_ms": []}
         self.shadow: list[dict] = []
+        # one logical order authority per account: concurrent agents queue here for check + submit, and inside the
+        # lock the snapshot's positions are re-read with working orders counted, so capital is reserved atomically
+        self._authority = threading.RLock()
+        self.refresh_positions: Optional[Callable[[BrokerAdapter], Optional[dict]]] = None
 
     def _lat(self, key: str, v: float) -> None:
         self.latency[key] = (self.latency[key] + [v])[-500:]
@@ -42,9 +47,17 @@ class OMS:
                       "p99": round(s[int(len(s) * 0.99) - 1], 2) if len(s) >= 100 else None}
         return out
 
-    def place(self, *, decision_id: str, req: OrderRequest, snapshot: Snapshot, broker: BrokerAdapter,
-              broker_symbol: str, mode: str, strategy_id: Optional[str], decided_at: float, leg: int = 0,
-              order_type: str = "market") -> dict:
+    def place(self, **kw) -> dict:
+        with self._authority:
+            if self.refresh_positions is not None:
+                fresh = self.refresh_positions(kw["broker"])
+                if fresh is not None:
+                    kw["snapshot"].positions = fresh
+            return self._place(**kw)
+
+    def _place(self, *, decision_id: str, req: OrderRequest, snapshot: Snapshot, broker: BrokerAdapter,
+               broker_symbol: str, mode: str, strategy_id: Optional[str], decided_at: float, leg: int = 0,
+               order_type: str = "market") -> dict:
         req.client_order_id = client_order_id(decision_id, leg)
         t0 = time.perf_counter()
         decision: RiskDecision = self.risk.check(req, snapshot)

@@ -169,6 +169,14 @@ class Orchestrator:
         tradable = paper_tradable(inst)
         cur = int(np.sign(pos_qty))
         entering = want != 0 and want != cur
+        owner = app.fleet.owner_of(inst.instrument_id)
+        if entering and owner is None:
+            rec["agent"] = None
+            if cur == 0:
+                return self._finish(rec, "NO_TRADE", "no owning trading agent for this instrument: the brain has not "
+                                    "assigned it (each instrument has exactly one owner)", lat, t_start)
+            want, entering = 0, False
+        rec["agent"] = owner
         if entering:
             # owner's rule: no new exposure until this strategy version qualifies; exits always stay allowed
             ok, why_q = app.qualification(bot.strategy_id, inst.instrument_id, bot.tf)
@@ -212,7 +220,9 @@ class Orchestrator:
                            reduces_position=abs(target) < abs(pos_qty) and np.sign(target) in (0, np.sign(pos_qty)),
                            tradable=tradable,
                            permitted=app.permission(inst, mode), quantity_step=inst.quantity_step,
-                           qualified=app.qualification(bot.strategy_id, inst.instrument_id, bot.tf))
+                           qualified=app.qualification(bot.strategy_id, inst.instrument_id, bot.tf),
+                           agent_id=owner, agent_budget=app.fleet.budget(owner) if owner else None,
+                           agent_instruments=tuple(app.fleet.agents[owner].partition) if owner else ())
         t = time.perf_counter()
         res = app.oms.place(decision_id=did, req=req, snapshot=snap, broker=app.broker_for(mode),
                             broker_symbol=app.broker_symbol(inst, mode), mode=mode, strategy_id=bot.strategy_id,

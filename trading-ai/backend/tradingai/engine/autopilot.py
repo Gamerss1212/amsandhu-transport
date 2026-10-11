@@ -52,6 +52,7 @@ DAY = 86_400_000
 MARKET_TFS = {"crypto": ("1h", "4h", "1d"), "stock": ("1d",), "etf": ("1d", "1h"), "fx": ("1h", "4h"),
               "future": ("1d",)}
 LOOKBACK = {"1h": 5000, "4h": 3000, "1d": 2500}
+DISCOVERED_RESEARCH = 12                 # discovered pairs screened: the most liquid few, not hundreds
 MARKETS = ("crypto", "stock", "etf", "fx", "future")
 
 
@@ -351,6 +352,9 @@ class Autopilot:
                 continue
             if c["iid"] not in app.sources:
                 continue
+            fleet = getattr(app, "fleet", None)
+            if fleet is not None and not fleet.owner_of(c["iid"]):
+                continue                    # every traded instrument has exactly one owning agent
             inst = app.book.get(c["iid"])
             m = MARKET_OF.get(inst.market_type)
             if m not in self.cfg.markets or per_market.get(m, 0) >= 2 or not paper_tradable(inst)[0]:
@@ -464,11 +468,15 @@ class Autopilot:
     def _slots(self) -> list[tuple[str, str, str]]:
         app = self.app
         out = []
+        disc = getattr(app, "discovery", None)
+        liquid = {f"COINBASE:{r['symbol']}" for r in disc.tradable_crypto(DISCOVERED_RESEARCH)} if disc else set()
         for iid, src in app.sources.items():
             demo = src.provider == "demo"
             if demo != bool(app.offline):
                 continue
             inst = app.book.get(iid)
+            if "discovered" in inst.tags and iid not in liquid:
+                continue                    # discovered pairs: only the most liquid few are screened (bounded work)
             m = MARKET_OF.get(inst.market_type)
             if m not in self.cfg.markets or not paper_tradable(inst)[0]:
                 continue

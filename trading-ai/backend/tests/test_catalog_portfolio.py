@@ -227,8 +227,10 @@ def test_assistant_announces_kill_switch(app):
     assert got and got[0]["data"]["severity"] == "critical" and got[0]["data"]["expires"] > got[0]["data"]["created"]
 
 
-def test_roles_view_lists_25_roles_and_no_model_calls(app):
+def test_capabilities_view_lists_c01_to_c50_and_no_model_calls(app):
     from tradingai.engine.roles import view
     v = view(app)
-    assert len(v["roles"]) == 25 and v["counts"]["active_model_calls"] == 0
-    assert {r["state"] for r in v["roles"] if r["id"] == "16"} == {"blocked"}
+    assert [r["id"] for r in v["roles"]] == [f"C{n:02d}" for n in range(1, 51)]
+    assert v["counts"]["active_model_calls"] == 0
+    blocked = {r["id"] for r in v["roles"] if r["state"] == "blocked"}
+    assert {"C16", "C27", "C29", "C30", "C31"} <= blocked          # no feed: shown blocked, never faked

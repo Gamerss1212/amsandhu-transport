@@ -93,6 +93,10 @@ class OrderRequest:
     quantity_step: Decimal = Decimal("1e-8")         # a shrunk order is rounded DOWN to the venue's step
     # strategy orders carry whether their strategy version qualified in research (None = not a strategy order)
     qualified: Optional[tuple[bool, str]] = None
+    # the owning trading agent's virtual budget and the instruments it owns (None = not an agent order)
+    agent_id: Optional[str] = None
+    agent_budget: Optional[Decimal] = None
+    agent_instruments: tuple = ()
 
 
 @dataclass
@@ -156,6 +160,19 @@ class RiskService:
                 f"paused by {self.entries_paused['by']}" if self.entries_paused else "allowed")
             if o.qualified is not None:
                 add("strategy qualified", o.qualified[0] or reduce_only, o.qualified[1])
+            if o.agent_budget is not None and not reduce_only:
+                used = Decimal(0)
+                for iid in set(o.agent_instruments) | {o.instrument_id}:
+                    p = s.positions.get(iid) or {}
+                    q = Decimal(str(p.get("qty", 0)))
+                    px = Decimal(str(p.get("price") or o.reference_price))
+                    mult = Decimal(str(p.get("multiplier", o.multiplier)))
+                    if iid == o.instrument_id:
+                        q += qty if o.side == "buy" else -qty
+                        px = o.reference_price
+                    used += abs(q * px * mult)
+                add("agent budget", used <= o.agent_budget,
+                    f"{o.agent_id}: {used:.2f} of a {o.agent_budget:.2f} budget after this order")
             add("instrument tradable", o.tradable[0], o.tradable[1])
             add("broker permits this product", o.permitted[0], o.permitted[1])
             acct_match = s.account_id is None or o.account_id == s.account_id

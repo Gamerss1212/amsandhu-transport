@@ -106,6 +106,8 @@ class App:
         self._check("broker connections", self._load_connections)
         self._check("order management", self._oms)
         self._check("research engine", self._research)
+        self._check("market discovery", self._discovery)
+        self._check("trading fleet and Supercomputer Brain", self._fleet)
         self._check("autopilot", self._autopilot)
         self._check("assistant", self._assistant)
         self._check("frontend files", self._frontend)
@@ -186,6 +188,7 @@ class App:
 
     def _oms(self) -> str:
         self.oms = OMS(self.db, self.risk, self.bus, self.audit)
+        self.oms.refresh_positions = self.reserved_positions
         self.orch = Orchestrator(self)
         return "ready"
 
@@ -200,6 +203,20 @@ class App:
             self.autopilot.cfg.enabled = bool(self._autopilot_override)
         return ("ON: researching and running paper bots by itself" if self.autopilot.cfg.enabled else "off") + \
             f" (max {self.autopilot.cfg.max_bots} bots, paper only)"
+
+    def _discovery(self) -> str:
+        from tradingai.market.discovery import Discovery
+        self.discovery = Discovery(self)
+        n = len(self.discovery.listed())
+        return ("offline: discovery off" if self.offline else
+                f"{n} listed pairs remembered; listings refresh daily, prices every minute")
+
+    def _fleet(self) -> str:
+        from tradingai.engine.fleet import Fleet
+        self.fleet = Fleet(self)
+        c = self.fleet.counts()
+        return (f"{c['registered']} agents registered (target {c['target']}), {c['assigned']} with a distinct market "
+                f"partition, {c['blocked']} blocked without one")
 
     def _assistant(self) -> str:
         from tradingai.engine.assistant import Assistant
@@ -304,6 +321,31 @@ class App:
                         reconciliation_ok=self.state.state != S.RECONCILIATION_REQUIRED,
                         account_id=acct.account_id_masked, environment=acct.environment)
 
+    def reserved_positions(self, broker) -> Optional[dict]:
+        """Positions as the risk service should see them at the moment of an order: held quantities plus working
+        orders (a pending buy reserves exposure). Paper account only; a live broker reports its own state."""
+        if broker is not self.paper:
+            return None
+        pos = {}
+        for p in self.paper.positions_detail():
+            i = self.book.get(p["instrument_id"])
+            pos[p["instrument_id"]] = {"qty": p["qty"], "price": p["price"] or p["avg_price"],
+                                       "multiplier": p["multiplier"], "market": MARKET_OF.get(i.market_type)}
+        for o in self.paper.get_open_orders():
+            if o.order_type != "market":
+                continue
+            left = (o.qty - o.filled_qty) * (1 if o.side == "buy" else -1)
+            row = pos.get(o.instrument_id)
+            if row is None:
+                i = self.book.get(o.instrument_id)
+                q = self.quote(o.instrument_id) if o.instrument_id in self.sources else None
+                if q is None:
+                    continue
+                row = pos[o.instrument_id] = {"qty": Decimal(0), "price": Decimal(str(q["price"])),
+                                              "multiplier": i.multiplier, "market": MARKET_OF.get(i.market_type)}
+            row["qty"] = Decimal(str(row["qty"])) + left
+        return pos
+
     def _clusters(self) -> list[list[str]]:
         crypto = [i for i in self.paper.get_positions() if self.book.get(i).market_type is MarketType.CRYPTO_SPOT]
         return [crypto] if len(crypto) > 1 else []
@@ -331,6 +373,10 @@ class App:
                 self.autopilot.start()
             if getattr(self, "assistant", None) is not None:
                 self.assistant.start()
+            if getattr(self, "discovery", None) is not None:
+                self.discovery.start()
+            if getattr(self, "fleet", None) is not None:
+                self.fleet.start()
 
     def _loop(self) -> None:
         last_account = last_recon = last_equity = 0.0
@@ -370,42 +416,43 @@ class App:
             self._persist_risk()
             self.oms.cancel_all(self.broker_for(self.mode), "loss breaker: " + ", ".join(fired))
             self.bus.publish("risk.locked", {"breakers": fired, "state": self.risk.trading_locked}, severity="critical")
-        for bot in list(self.bots.values()):
-            if bot.state != "running":
-                continue
-            day = d.strftime("%Y-%m-%d")
+        day = d.strftime("%Y-%m-%d")
+        running = [b for b in self.bots.values() if b.state == "running"]
+        for bot in running:
             if bot.day != day:
                 bot.day, bot.trades_today = day, 0
-            if bot.kind == "portfolio":
-                mode = "shadow" if self.mode == "shadow" else "paper"
-                try:
-                    r = portfolio_bot.step(self, bot, mode)
-                except Exception as e:                # noqa: BLE001 - one bot's data problem must not stop the loop
-                    self.bus.publish("data.error", {"bot": bot.bot_id, "error": f"{type(e).__name__}: {e}"},
-                                     severity="warning")
-                    r = None
-                if r:
-                    out.append(r)
-                continue
-            try:
-                bars, _ = self.md.bars(bot.instrument_id, bot.tf, lookback=3, max_age_s=self.tick_seconds)
-            except Exception as e:                    # noqa: BLE001
-                self.bus.publish("data.error", {"bot": bot.bot_id, "error": str(e)}, severity="warning")
-                continue
-            if not len(bars):
-                continue
-            inst = self.book.get(bot.instrument_id)
-            if inst.market_type is not MarketType.CRYPTO_SPOT and not session(inst.calendar or "CRYPTO", now_ms())["open"]:
-                continue        # decide on the completed bar when the market opens (fills at the open, as in backtests)
-            newest = int(bars.ts[-1])
-            if bot.last_bar_ts == newest:
-                continue
-            bot.last_bar_ts = newest
-            mode = "shadow" if self.mode == "shadow" else ("live" if self.mode == "live" and
-                                                           self.state.state == S.LIVE_RUNNING else "paper")
-            out.append(self.orch.decide(bot, mode))
-            self._save_bots()
+        # each bot decides inside its owning agent's job; agents run concurrently, orders go through one authority
+        out.extend(self.fleet.run_bots(running, self._bot_step))
         return out
+
+    def _bot_step(self, bot) -> Optional[dict]:
+        if bot.kind == "portfolio":
+            mode = "shadow" if self.mode == "shadow" else "paper"
+            try:
+                return portfolio_bot.step(self, bot, mode)
+            except Exception as e:                    # noqa: BLE001 - one bot's data problem must not stop the loop
+                self.bus.publish("data.error", {"bot": bot.bot_id, "error": f"{type(e).__name__}: {e}"},
+                                 severity="warning")
+                return None
+        try:
+            bars, _ = self.md.bars(bot.instrument_id, bot.tf, lookback=3, max_age_s=self.tick_seconds)
+        except Exception as e:                        # noqa: BLE001
+            self.bus.publish("data.error", {"bot": bot.bot_id, "error": str(e)}, severity="warning")
+            return None
+        if not len(bars):
+            return None
+        inst = self.book.get(bot.instrument_id)
+        if inst.market_type is not MarketType.CRYPTO_SPOT and not session(inst.calendar or "CRYPTO", now_ms())["open"]:
+            return None         # decide on the completed bar when the market opens (fills at the open, as in backtests)
+        newest = int(bars.ts[-1])
+        if bot.last_bar_ts == newest:
+            return None
+        bot.last_bar_ts = newest
+        mode = "shadow" if self.mode == "shadow" else ("live" if self.mode == "live" and
+                                                       self.state.state == S.LIVE_RUNNING else "paper")
+        rec = self.orch.decide(bot, mode)
+        self._save_bots()
+        return rec
 
     def publish_account(self) -> None:
         self.bus.publish("account", self.account_view())
@@ -965,7 +1012,8 @@ class App:
                         "note": src.note, "timeframes": list(prov.timeframes) + [t for t in ("30m", "1h", "4h")
                                                                                   if t not in prov.timeframes],
                         "simulated": prov.simulated, "paper_tradable": ok, "why": why,
-                        "multiplier": str(inst.multiplier), "currency": inst.currency})
+                        "multiplier": str(inst.multiplier), "currency": inst.currency,
+                        "discovered": "discovered" in inst.tags, "agent": self.fleet.owner_of(iid)})
         return out
 
     def paper_trades(self, strategy_id: str, instrument_id: str) -> list[float]:
@@ -1102,6 +1150,10 @@ class App:
         self._stop.set()
         self.autopilot.stop()
         self.assistant.stop()
+        if getattr(self, "discovery", None) is not None:
+            self.discovery.stop()
+        if getattr(self, "fleet", None) is not None:
+            self.fleet.stop()
         self.jobs.shutdown()
         self.audit("system", "shut down" + (f"; LIVE positions still open at the broker: {live_open}" if live_open
                                             else ""), severity="warning" if live_open else "info")
