@@ -30,6 +30,14 @@ ETFS = ["SPY", "QQQ", "IWM", "DIA", "TLT", "GLD", "XLE",
         # added for the catalog's portfolio templates (ST001-E, ST004, ST005, ST010, ST017): sector SPDRs, international
         # equity, bonds, commodities and REITs, all liquid US-listed ETFs with long daily histories
         "XLK", "XLF", "XLV", "XLY", "XLP", "XLI", "XLB", "XLU", "EFA", "EEM", "IEF", "SHY", "DBC", "VNQ"]
+# 1.4.0: more liquid US large caps and ETFs so each equities agent (A001-A096) watches a distinct real market. All were
+# checked to return Yahoo chart data on 2026-10-11. They are not part of any catalog portfolio universe.
+STOCKS_MORE = ["GOOGL", "META", "AVGO", "BRK-B", "LLY", "V", "MA", "UNH", "COST", "WMT", "HD", "PG", "JNJ", "ORCL",
+               "NFLX", "ABBV", "BAC", "KO", "PEP", "CRM", "AMD", "CVX", "MRK", "ADBE", "TMO", "CSCO", "ACN", "MCD", "ABT",
+               "WFC", "INTC", "QCOM", "TXN", "IBM", "GS", "MS", "CAT", "DIS", "VZ", "T", "PFE", "NKE", "UBER", "PYPL",
+               "BA", "GE", "HON", "AMGN", "SBUX", "LOW", "PLTR", "COIN"]
+ETFS_MORE = ["VOO", "VTI", "IVV", "SMH", "XBI", "ARKK", "HYG", "LQD", "SLV", "USO", "GDX", "KRE", "XLC", "XLRE",
+             "IBIT", "VEA"]
 FX = ["EURUSD", "GBPUSD", "USDJPY", "USDCAD", "AUDUSD"]
 INDICES = {"SPX": "^GSPC", "NDX": "^NDX", "DJI": "^DJI", "RUT": "^RUT"}
 FUTURES = {"ES": "ES=F", "MES": "MES=F", "NQ": "NQ=F", "MNQ": "MNQ=F", "YM": "YM=F", "RTY": "RTY=F",
@@ -47,8 +55,9 @@ def build() -> tuple[InstrumentBook, dict[str, DataSource]]:
                                 quantity_step=D("0.00000001"), min_quantity=D("0.00000001"), base_asset=base,
                                 quote_asset=quote, calendar="CRYPTO", data_source=prov, exchange=venue))
         src[i.instrument_id] = DataSource(prov, psym, "public exchange candles")
-    for s in STOCKS + ETFS:
-        i = book.add(Instrument(f"US:{s}", MarketType.ETF if s in ETFS else MarketType.STOCK, s, "US", "USD",
+    for s in STOCKS + ETFS + STOCKS_MORE + ETFS_MORE:
+        etf = s in ETFS or s in ETFS_MORE
+        i = book.add(Instrument(f"US:{s}", MarketType.ETF if etf else MarketType.STOCK, s, "US", "USD",
                                 tick_size=D("0.01"), quantity_step=D(1), min_quantity=D(1), calendar="XNYS",
                                 data_source="yahoo"))
         src[i.instrument_id] = DataSource("yahoo", s, "Yahoo Finance chart data (unofficial; split/dividend adjusted)")

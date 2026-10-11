@@ -284,3 +284,37 @@ def test_discovered_pairs_are_owned_by_crypto_agents_when_online(app):
 def test_discovery_is_off_in_offline_mode(app):
     app.discovery.start()
     assert app.discovery._thread is None and "offline" in app.discovery.status()
+
+
+class ManyPairs(FakeHttp):
+    def __init__(self, n=400):
+        super().__init__()
+        self.products = [{"id": f"C{k:03d}-USD", "base_currency": f"C{k:03d}", "quote_currency": "USD",
+                          "status": "online", "quote_increment": "0.01", "base_increment": "0.001"} for k in range(n)]
+
+    def get_json(self, url):
+        if url == D.COINBASE_STATS:
+            return {p["id"]: {"stats_24hour": {"last": "1", "open": "1", "volume": str(1000 + i)}}
+                    for i, p in enumerate(self.products)}
+        return super().get_json(url)
+
+
+def test_every_agent_gets_a_distinct_market_when_enough_pairs_are_listed(app):
+    app.md.http = ManyPairs()
+    app.discovery.refresh_listings()
+    app.discovery.snapshot()
+    app.offline = False
+    try:
+        app.fleet.assign()
+        f = app.fleet
+        assert all(a.partition for a in f.agents.values())                    # 320 of 320 have a market
+        owned = [i for a in f.agents.values() for i in a.partition]
+        assert len(owned) == 320 and len(set(owned)) == 320                  # all different
+        eq = [a for a in f.agents.values() if a.group == "equities"]
+        assert all(app.book.get(a.partition[0]).market_type.name in ("STOCK", "ETF") for a in eq)
+        groups = {g["group"]: g for g in f._groups()}
+        assert groups["fx"]["reassigned"] == 27 and groups["fx"]["gap"]      # moved agents keep the gap visible
+        app.fleet.cycle()
+        assert app.fleet.counts()["blocked"] == 0
+    finally:
+        app.offline = True

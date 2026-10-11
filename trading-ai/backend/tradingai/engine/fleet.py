@@ -137,8 +137,9 @@ class Fleet:
                     by_group[gid].append(iid)
         disc = getattr(app, "discovery", None)
         if disc is not None and not app.offline:
-            # crypto agents, plus agents of groups this installation cannot serve (they are reassigned, gap kept)
-            cap = sum(1 for a in self.agents.values() if a.group in ("crypto",) + NO_ACCESS)
+            # crypto agents, plus every agent whose own group has no market left (reassigned, gap kept)
+            non_crypto = sum(len(v) for g, v in by_group.items() if g != "crypto")
+            cap = max(0, len(self.agents) - non_crypto)
             for row in disc.tradable_crypto(cap + 40):
                 if len(by_group["crypto"]) >= cap:
                     break
@@ -173,8 +174,10 @@ class Fleet:
                     self._reassign(a, [i], "assigned by the brain")
                     changed += 1
             leftover = [i for v in parts.values() for i in v if i not in owner]
-            for a in (x for x in self.agents.values() if x.group in NO_ACCESS and not x.partition):
-                if not leftover:                              # second pass: idle groups reassigned, gap kept
+            idle = sorted((x for x in self.agents.values() if not x.partition),
+                          key=lambda x: (x.group not in NO_ACCESS, x.agent_id))
+            for a in idle:                                    # second pass: idle agents take spare markets, gap kept
+                if not leftover:
                     break
                 i = leftover.pop(0)
                 owner[i] = a.agent_id
@@ -395,11 +398,17 @@ class Fleet:
                            "target": len(ags), "assigned": sum(1 for a in ags if a.partition),
                            "ready": sum(1 for a in ags if a.fresh and a.partition),
                            "degraded": sum(1 for a in ags if a.runtime == "degraded"),
-                           "gap": GAP.get(gid) if gid in NO_ACCESS or any(not a.partition for a in ags) else None,
-                           "reassigned": sum(1 for a in ags if a.partition and gid in NO_ACCESS),
+                           "gap": GAP.get(gid) if gid in NO_ACCESS or any(not a.partition or self._moved(a)
+                                                                          for a in ags) else None,
+                           "reassigned": sum(1 for a in ags if a.partition and self._moved(a)),
                            "markets": list(markets), "jobs": jobs,
                            "heartbeat": max((a.heartbeat or 0 for a in ags), default=0) or None})
         return groups
+
+    def _moved(self, a: Agent) -> bool:
+        """The agent watches a market outside its own group's (reassigned to keep it useful; the gap is kept)."""
+        markets = next((g[3] for g in GROUPS if g[0] == a.group), ())
+        return bool(a.partition) and MARKET_OF.get(self.app.book.get(a.partition[0]).market_type) not in markets
 
     def _brain(self) -> dict:
         disc = getattr(self.app, "discovery", None)

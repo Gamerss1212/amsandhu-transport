@@ -23,7 +23,7 @@ START_TRADING_AI.exe (launcher.py)
  └─ App (app.py): start-up checks → recovery → trading loop thread → research worker pool
      ├─ storage    SQLite (WAL, migrations, hash-chained audit log)  ·  DuckDB + Parquet market store  ·  DPAPI vault
      ├─ data       Coinbase / Kraken / Yahoo / DEMO providers, completed bars only, quality checks, provenance hashes
-     ├─ market     55 curated instruments, NYSE/CME/FX/crypto calendars, futures specs and roll windows;
+     ├─ market     123 curated instruments, NYSE/CME/FX/crypto calendars, futures specs and roll windows;
      │             discovery: every Coinbase product and Kraken pair (daily) + one shared price snapshot per minute
      ├─ features   226 causal features (123 functions), regime detection (rules + HMM + CUSUM)
      ├─ strategies 1,502 templates (1,487 runnable): 106 generators × filters × exits, near-duplicates pruned;
