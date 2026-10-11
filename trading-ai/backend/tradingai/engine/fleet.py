@@ -82,12 +82,13 @@ class Agent:
     errors: list[dict] = field(default_factory=list)
     history: list[dict] = field(default_factory=list)
     data_at: float = 0.0
+    fresh: bool = False
 
     def compact(self) -> dict:
         return {"id": self.agent_id, "group": self.group, "partition": self.partition, "runtime": self.runtime,
                 "job": self.job, "detail": self.detail, "consumed_version": self.consumed_version,
                 "last_input_ts": self.last_input_ts, "last_price": self.last_price, "heartbeat": self.heartbeat,
-                "job_ms": self.job_ms, "eligible": len(self.eligible), "errors": len(self.errors),
+                "job_ms": self.job_ms, "eligible": len(self.eligible), "errors": len(self.errors), "fresh": self.fresh,
                 "assignment_version": self.assignment_version}
 
 
@@ -252,6 +253,7 @@ class Fleet:
         app = self.app
         try:
             if not a.partition:
+                a.fresh = False
                 a.runtime, a.job = "blocked", "idle"
                 a.detail = GAP.get(a.group, "no partition")
                 a.next_action = "waits for the brain to find a distinct eligible partition"
@@ -270,6 +272,7 @@ class Fleet:
                     a.last_input_ts, a.last_price = q["ts"], str(q["price"])
             fresh_ms = (DATA_SECONDS * 2 + 120) * 1000
             data_ok = a.last_input_ts is not None and now_ms() - a.last_input_ts < fresh_ms
+            a.fresh = data_ok
             open_ = inst.market_type.name == "CRYPTO_SPOT" or session(inst.calendar or "CRYPTO", now_ms())["open"]
             q = self._qualified_instruments()
             a.eligible = sorted({r["strategy_id"] for r in app.db.query(
@@ -371,33 +374,103 @@ class Fleet:
         return {"target": TARGET, "configured": self.desired, "registered": len(ags),
                 "assigned": sum(1 for a in ags if a.partition),
                 "running": sum(1 for a in ags if a.runtime in ("available", "degraded")),
-                "data_ready": sum(1 for a in ags if a.runtime == "available" and a.partition),
+                "data_ready": sum(1 for a in ags if a.fresh and a.partition),
+                "market_closed": sum(1 for a in ags if a.job == "market closed"),
                 "execution_eligible": sum(1 for a in ags if a.eligible),
                 "current_jobs": self.metrics["queue_depth"],
                 "with_positions": sum(1 for a in ags if any(i in held for i in a.partition)),
                 "blocked": sum(1 for a in ags if a.runtime == "blocked")}
 
-    def view(self) -> dict:
+    def _groups(self) -> list[dict]:
         groups = []
         for gid, first, last, markets, label in GROUPS + ([("overflow", TARGET + 1, self.desired, (), "Overflow")]
                                                            if self.desired > TARGET else []):
             ags = [a for a in self.agents.values() if a.group == gid]
+            jobs: dict[str, int] = {}
+            for a in ags:
+                jobs[a.job] = jobs.get(a.job, 0) + 1
             groups.append({"group": gid, "label": label, "ids": f"A{first:03d}-A{min(last, self.desired):03d}",
                            "target": len(ags), "assigned": sum(1 for a in ags if a.partition),
-                           "ready": sum(1 for a in ags if a.runtime == "available" and a.partition),
+                           "ready": sum(1 for a in ags if a.fresh and a.partition),
+                           "degraded": sum(1 for a in ags if a.runtime == "degraded"),
                            "gap": GAP.get(gid) if gid in NO_ACCESS or any(not a.partition for a in ags) else None,
                            "reassigned": sum(1 for a in ags if a.partition and gid in NO_ACCESS),
-                           "markets": list(markets)})
+                           "markets": list(markets), "jobs": jobs,
+                           "heartbeat": max((a.heartbeat or 0 for a in ags), default=0) or None})
+        return groups
+
+    def _brain(self) -> dict:
         disc = getattr(self.app, "discovery", None)
-        return {"brain": {"name": "Supercomputer Brain", "kind": "coordinating service (not counted as a trader)",
-                          "plan_version": self.plan_version, "owned_instruments": len(self.owner),
-                          "market_state_version": disc.version if disc else None,
-                          "model": "no cloud AI connected: agents are deterministic code; 0 model calls",
-                          "metrics": dict(self.metrics),
-                          "plan": (f"{len(self.owner)} instruments assigned to {len(self.owner)} agents; capital only "
-                                   f"for qualified strategies ({len(self._qualified_instruments())} instrument(s))")},
-                "counts": self.counts(), "groups": groups,
-                "agents": [a.compact() for a in sorted(self.agents.values(), key=lambda x: x.agent_id)]}
+        return {"name": "Supercomputer Brain", "kind": "coordinating service (not counted as a trader)",
+                "plan_version": self.plan_version, "owned_instruments": len(self.owner),
+                "market_state_version": disc.version if disc else None,
+                "model": "no cloud AI connected: agents are deterministic code; 0 model calls",
+                "metrics": dict(self.metrics),
+                "plan": (f"{len(self.owner)} instruments assigned to {len(self.owner)} agents; capital only "
+                         f"for qualified strategies ({len(self._qualified_instruments())} instrument(s))")}
+
+    def market_map(self) -> dict:
+        """Stock, futures and FX sessions, crypto venue health and what this installation cannot observe."""
+        t = now_ms()
+        sessions = {}
+        for cal, label in (("XNYS", "US stocks (NYSE)"), ("CME", "CME futures"), ("FX", "Forex")):
+            s = session(cal, t)
+            sessions[cal] = {"label": label, "open": s["open"], "session": s.get("session"), "note": s.get("note")}
+        sessions["CRYPTO"] = {"label": "Crypto", "open": True, "session": "24/7", "note": "trades continuously"}
+        disc = getattr(self.app, "discovery", None)
+        venues, uncovered = {}, []
+        if disc is not None:
+            cov = disc.coverage()
+            venues, uncovered = cov["venues"], cov["uncovered"]
+            for v in venues.values():
+                v["errors"] = [e for k, e in cov["errors"].items()]
+        return {"sessions": sessions, "venues": venues, "uncovered": uncovered, "offline": self.app.offline}
+
+    def summary(self) -> dict:
+        """The brain, counts and groups without the per-agent cards (for page 1)."""
+        return {"brain": self._brain(), "counts": self.counts(), "groups": self._groups()}
+
+    def view(self) -> dict:
+        per = self._per_instrument()
+        cards = []
+        for a in sorted(self.agents.values(), key=lambda x: x.agent_id):
+            c = a.compact()
+            iid = a.partition[0] if a.partition else None
+            c.update(per.get(iid, {}) if iid else {})
+            c["venue"] = iid.split(":", 1)[0] if iid else None
+            c["market"] = MARKET_OF.get(self.app.book.get(iid).market_type) if iid else None
+            c["budget"] = str(self.budget(a.agent_id).quantize(Decimal("0.01")))
+            c["next_action"] = a.next_action
+            cards.append(c)
+        return {"brain": self._brain(), "counts": self.counts(), "groups": self._groups(), "agents": cards,
+                "market_map": self.market_map()}
+
+    def _per_instrument(self) -> dict[str, dict]:
+        """What each owned instrument is doing, read from the paper account and the decision log (one query each)."""
+        app, out = self.app, {}
+
+        def row(iid: str) -> dict:
+            return out.setdefault(iid, {"strategies": [], "position": None, "unrealized": None, "realized": None,
+                                        "fees": None, "open_orders": 0, "last_decision": None})
+        for b in app.bots.values():
+            if b.state == "running" and b.kind != "portfolio":
+                row(b.instrument_id)["strategies"].append(b.strategy_id)
+        for p in app.paper.positions_detail():
+            r = row(p["instrument_id"])
+            r["position"], r["unrealized"] = p["qty"], p["unrealized"]
+        acct = app.paper.account_id
+        for r in app.db.query("SELECT instrument_id, realized FROM positions WHERE account_id=?", (acct,)):
+            row(r["instrument_id"])["realized"] = r["realized"]
+        for r in app.db.query("SELECT instrument_id, SUM(CAST(fee AS REAL)) AS fees FROM fills WHERE account_id=? "
+                              "GROUP BY instrument_id", (acct,)):
+            row(r["instrument_id"])["fees"] = f"{r['fees']:.2f}"
+        for o in app.paper.get_open_orders():
+            row(o.instrument_id)["open_orders"] += 1
+        for r in app.db.query("SELECT instrument_id, MAX(ts) AS ts, outcome, reason FROM decisions GROUP BY "
+                              "instrument_id"):
+            row(r["instrument_id"])["last_decision"] = {"ts": r["ts"], "outcome": r["outcome"],
+                                                        "reason": (r["reason"] or "")[:160]}
+        return out
 
     def detail(self, agent_id: str) -> dict:
         a = self.agents.get(agent_id)

@@ -252,6 +252,10 @@ def create_app(core, *, token: Optional[str] = None, on_shutdown=None) -> FastAP
     def fleet():
         return core.fleet.view()
 
+    @api.get("/api/fleet/summary")
+    def fleet_summary():
+        return core.fleet.summary()
+
     @api.get("/api/fleet/{agent_id}")
     def fleet_agent(agent_id: str):
         return core.fleet.detail(agent_id)
@@ -259,6 +263,16 @@ def create_app(core, *, token: Optional[str] = None, on_shutdown=None) -> FastAP
     @api.post("/api/fleet/size")
     def fleet_size(f: FleetIn):
         return core.fleet.set_desired(f.desired)
+
+    @api.get("/api/market/strip")
+    def market_strip():
+        from tradingai.engine.dashboard import market_strip as ms
+        return ms(core)
+
+    @api.get("/api/activity")
+    def activity(minutes: int = 60):
+        from tradingai.engine.dashboard import decision_activity
+        return decision_activity(core, min(max(minutes, 5), 1440))
 
     @api.post("/api/assistant/ask")
     def ask(a: AskIn):

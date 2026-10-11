@@ -8,6 +8,7 @@ import StrategyLab from "./StrategyLab";
 import { CatalogCard } from "./Catalog";
 import { EquityChart } from "../components/charts";
 import { Drawer } from "../components/ui";
+import { AgentStrip, DecisionActivity, EngineSummary, ExecutionStream, KpiStrip, MarketStrip } from "../components/Dashboard";
 
 export type Instrument = {
   instrument_id: string; name: string; market: string; market_type: string; provider: string; symbol: string;
@@ -59,54 +60,53 @@ export default function CommandCenter() {
     if (inst && !inst.timeframes.includes(tf)) setTf(inst.timeframes.includes("1h") ? "1h" : inst.timeframes[0]);
   }, [inst, tf]);
   const [chart, , chartErr] = usePoll<any>(inst ? `/api/chart?instrument=${encodeURIComponent(iid)}&tf=${tf}&n=300` : null, 5000, [iid, tf]);
-  const a = live.account;
-  const acct = a?.account;
-  const ccy = acct?.currency ?? "USD";
   const lastDecision = live.decisions.find((d) => d.instrument === iid);
 
   return (
     <>
-      <div className="stats">
-        <Stat k="Equity" v={fmt.money(acct?.equity, ccy)} s={<Badge kind={acct?.simulated ? "sim" : "bad"}>{a?.badge ?? "—"}</Badge>} />
-        <Stat k="Cash" v={fmt.money(acct?.cash, ccy)} s={`buying power ${fmt.money(acct?.buying_power, ccy)}`} />
-        <Stat k="Today P&L" v={fmt.signed(a?.day_pnl, ccy)} cls={tone(a?.day_pnl)} s="vs equity at the day's first check" />
-        <Stat k="Realized" v={fmt.signed(a?.realized, ccy)} cls={tone(a?.realized)} s={`closed trades, before ${fmt.money(a?.fees, ccy)} fees`} />
-        <Stat k="Unrealized" v={fmt.signed(a?.unrealized, ccy)} cls={tone(a?.unrealized)} s="marked at the newest completed bar" />
-        <Stat k="Drawdown" v={fmt.pct(a?.drawdown)} s="from the equity peak" />
-        <Stat k="Trades today" v={a?.trades_today ?? "—"} s={`${live.overview?.bots.filter((b) => b.state === "running").length ?? 0} bot(s) running`} />
+      <MarketStrip />
+      <KpiStrip />
+
+      <div className="grid g-57">
+        <EngineSummary decision={lastDecision} iid={iid} />
+        <Card title="Market" right={
+          <div className="row wrap">
+            <InstrumentSelect value={iid} onChange={setIid} list={instruments} />
+            <div className="seg" role="group" aria-label="Timeframe">
+              {tfs.map((t) => <button key={t} className={t === tf ? "on" : ""} onClick={() => setTf(t)}>{t}</button>)}
+            </div>
+          </div>
+        } flush>
+          {chartErr && <div className="callout bad" style={{ margin: 12 }}>{chartErr}</div>}
+          {chart && chart.instrument === iid && chart.tf === tf
+            ? <PriceChart bars={chart.bars as Bar[]} fills={chart.fills as Fill[]} tfMs={TF_MS[tf]} simulated={chart.simulated} />
+            : <div className="chartbox"><Empty>Loading {iid} {tf}…</Empty></div>}
+          <div className="row wrap small" style={{ padding: "8px 14px", borderTop: "1px solid var(--line)" }}>
+            <span className="dim">Source</span><b>{chart?.status?.provider ?? "—"}</b>
+            {chart?.simulated ? <Badge kind="sim">SIMULATED</Badge> : chart?.status?.fresh ? <Badge kind="good">FRESH</Badge> : <Badge kind="warn">STALE / STORED</Badge>}
+            {chart?.quality !== undefined && chart?.quality !== null && <span className="dim">quality {fmt.num(chart.quality, 0)}/100</span>}
+            {chart?.status?.error && <span className="neg">{chart.status.error}</span>}
+            <span className="grow" />
+            <span className="muted tiny">{inst?.note}</span>
+            <span className="muted tiny">Completed bars only · local time · B/S markers are confirmed fills</span>
+          </div>
+        </Card>
       </div>
+
+      <div className="grid g-3">
+        <EquityCard />
+        <DecisionActivity />
+        <ExecutionStream />
+      </div>
+
+      <AgentStrip />
 
       <div className="grid g-main">
         <div className="col" style={{ gap: 14, minWidth: 0 }}>
-          <Card title="Market" right={
-            <div className="row wrap">
-              <InstrumentSelect value={iid} onChange={setIid} list={instruments} />
-              <div className="seg" role="group" aria-label="Timeframe">
-                {tfs.map((t) => <button key={t} className={t === tf ? "on" : ""} onClick={() => setTf(t)}>{t}</button>)}
-              </div>
-            </div>
-          } flush>
-            {chartErr && <div className="callout bad" style={{ margin: 12 }}>{chartErr}</div>}
-            {chart && chart.instrument === iid && chart.tf === tf
-              ? <PriceChart bars={chart.bars as Bar[]} fills={chart.fills as Fill[]} tfMs={TF_MS[tf]} simulated={chart.simulated} />
-              : <div className="chartbox"><Empty>Loading {iid} {tf}…</Empty></div>}
-            <div className="row wrap small" style={{ padding: "8px 14px", borderTop: "1px solid var(--line)" }}>
-              <span className="dim">Source</span><b>{chart?.status?.provider ?? "—"}</b>
-              {chart?.simulated ? <Badge kind="sim">SIMULATED</Badge> : chart?.status?.fresh ? <Badge kind="good">FRESH</Badge> : <Badge kind="warn">STALE / STORED</Badge>}
-              {chart?.quality !== undefined && chart?.quality !== null && <span className="dim">quality {fmt.num(chart.quality, 0)}/100</span>}
-              {chart?.status?.error && <span className="neg">{chart.status.error}</span>}
-              <span className="grow" />
-              <span className="muted tiny">{inst?.note}</span>
-              <span className="muted tiny">Completed bars only · local time</span>
-            </div>
-          </Card>
-
-          <EquityCard />
           <Positions />
           <CatalogCard />
           <StrategyLab />
         </div>
-
         <div className="col" style={{ gap: 14, minWidth: 0 }}>
           <AutopilotCard />
           <BotControl instruments={instruments} iid={iid} tf={tf} />
@@ -444,6 +444,7 @@ function RiskPanel() {
   const [risk, reload] = usePoll<any>("/api/risk", 5000);
   const [edit, setEdit] = useState<{ key: string; value: string } | null>(null);
   const [raise, setRaise] = useState<{ key: string; value: number } | null>(null);
+  const [open, setOpen] = useState(false);
   if (!risk) return <Card title="Risk"><Empty>Loading…</Empty></Card>;
   const L = risk.limits;
   const u = risk.usage ?? {};
@@ -469,6 +470,12 @@ function RiskPanel() {
         <Meter label="Gross exposure" value={u.gross_exposure} />
         <Meter label="Largest position" value={u.position} />
         <div className="note">Deterministic checks on every order: approve, shrink or deny. No agent can raise a limit; raising needs your typed confirmation.</div>
+        <button className="btn" onClick={() => setOpen(true)}>Risk and capital settings…</button>
+        <div className="tiny muted">Counters: {risk.counters.approved} approved · {risk.counters.adjusted} shrunk · {risk.counters.denied} denied · {risk.counters.duplicates_blocked} duplicates blocked</div>
+      </div>
+      {open && (
+        <Drawer title="Risk and capital settings" onClose={() => { setOpen(false); setEdit(null); }}>
+        <div className="note">Click a value to change it. Lowering a limit applies at once; raising one asks you to type a confirmation phrase.</div>
         <table className="t small">
           <tbody>
             {rows.map(([k, label, f]) => (
@@ -492,8 +499,8 @@ function RiskPanel() {
             ))}
           </tbody>
         </table>
-        <div className="tiny muted">Counters: {risk.counters.approved} approved · {risk.counters.adjusted} shrunk · {risk.counters.denied} denied · {risk.counters.duplicates_blocked} duplicates blocked</div>
-      </div>
+        </Drawer>
+      )}
       {raise && (
         <PhraseConfirm title="Raise a risk limit" phrase={risk.phrases.raise_limits} action="Raise limit"
           body={<>You are raising <b>{raise.key}</b> from {String(L[raise.key])} to {raise.value}. Larger limits allow larger losses.</>}
@@ -548,8 +555,9 @@ function EquityCard() {
   const [hours, setHours] = useState(168);
   const [eq] = usePoll<any>(`/api/equity?hours=${hours}`, 60000, [hours]);
   const [report, setReport] = useState(false);
+  const dd = useMemo(() => (eq?.drawdown ?? []).map((d: any) => [d[0], d[1] * 100] as [number, number]), [eq]);
   return (
-    <Card title="Equity" sub={eq?.simulated ? "paper account (simulated money)" : undefined} right={
+    <Card title="Equity and drawdown" sub={eq?.simulated ? "paper (simulated money)" : undefined} right={
       <div className="row">
         <div className="seg">{[[24, "1D"], [168, "1W"], [720, "1M"], [8760, "1Y"]].map(([h, l]) => <button key={h} className={hours === h ? "on" : ""} onClick={() => setHours(Number(h))}>{l}</button>)}</div>
         <button className="btn sm" onClick={() => setReport(true)}>Session report</button>
@@ -557,7 +565,9 @@ function EquityCard() {
     } flush>
       {!eq || eq.equity.length < 2 ? <Empty>The equity curve is recorded every minute while the program runs; it appears after a few minutes.</Empty> : (
         <>
-          <EquityChart points={eq.equity} height={200} />
+          <EquityChart points={eq.equity} height={150} />
+          <div className="tiny muted" style={{ padding: "4px 14px 0" }}>Drawdown from the running peak (%)</div>
+          <EquityChart points={dd} height={70} />
           <div className="row wrap small" style={{ padding: "6px 14px", borderTop: "1px solid var(--line)" }}>
             <span className="dim">Max drawdown in view</span><b className="mono">{fmt.pct(Math.min(...eq.drawdown.map((d: any) => d[1])))}</b>
             {eq.adjustments.length > 0 && <span className="muted tiny">{eq.adjustments.length} balance adjustment(s) in this period are not trading results</span>}

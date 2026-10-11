@@ -98,6 +98,14 @@ export const fmt = {
     const n = Number(v);
     return Number.isFinite(n) ? n.toLocaleString(undefined, { maximumFractionDigits: dp, minimumFractionDigits: 0 }) : "—";
   },
+  // a price at a sensible precision: 2 decimals from 1 up, 6 significant digits below 1
+  price(v: string | number | null | undefined) {
+    if (v === null || v === undefined || v === "") return "—";
+    const n = Number(v);
+    if (!Number.isFinite(n)) return "—";
+    return Math.abs(n) >= 1 ? n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+      : n.toLocaleString(undefined, { maximumSignificantDigits: 6 });
+  },
   pct(v: string | number | null | undefined, dp = 2) {
     if (v === null || v === undefined || v === "") return "—";
     const n = Number(v);

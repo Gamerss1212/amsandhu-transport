@@ -6,6 +6,7 @@ import CommandCenter from "./pages/CommandCenter";
 import BrokerMoney from "./pages/BrokerMoney";
 import LiveIntelligence from "./pages/LiveIntelligence";
 import Assistant from "./components/Assistant";
+import { Clock } from "./components/Dashboard";
 
 const PAGES = [
   ["/", "AI Trading System"],
@@ -50,7 +51,10 @@ export default function App() {
           ))}
         </nav>
         <div className="statusline">
+          <Clock />
           {o && <ModeBadge mode={o.mode} />}
+          {live.account?.account && <span className="small dim hide-sm" title="Selected account">{live.account.account.account}</span>}
+          {o && <Badge kind={o.autopilot?.enabled ? "good" : ""} dot>{o.autopilot?.enabled ? "SYSTEM RUNNING" : "SYSTEM STOPPED"}</Badge>}
           {o && <StateBadge state={o.state.state} />}
           {kill ? <Badge kind="bad" dot>STOP ALL ENGAGED</Badge> : locked ? <Badge kind="bad" dot>TRADING LOCKED</Badge> : null}
           <Badge kind={live.ws === "live" ? "good" : live.ws === "offline" ? "bad" : "warn"} dot>
