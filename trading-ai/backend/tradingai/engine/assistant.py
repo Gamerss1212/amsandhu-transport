@@ -41,6 +41,8 @@ class Assistant:
         self._fill_since = 0.0
         self.announced = 0
         self.commands: dict[str, dict] = {}
+        # what "that bot" refers to: the bot most recently named in an answer or an announcement (expires in 30 min)
+        self.context: dict[str, Any] = {"bot_id": None, "ts": 0.0, "source": None}
         self._thread = threading.Thread(target=self._run, name="assistant", daemon=True)
 
     def start(self) -> None:
@@ -111,10 +113,17 @@ class Assistant:
         elif t == "research.done" and d.get("state") == "failed":
             return
 
+    def remember(self, bot_id: Optional[str], source: str) -> None:
+        if bot_id and bot_id in self.app.bots:
+            self.context = {"bot_id": bot_id, "ts": time.time(), "source": source}
+
     def _flush_fills(self) -> None:
         fills, self._fills = self._fills, []
         if not fills:
             return
+        last = fills[-1].get("instrument")
+        owner = next((b.bot_id for b in self.app.bots.values() if b.instrument_id == last), None)
+        self.remember(owner, "fill announcement")
         if len(fills) == 1:
             f = fills[0]
             txt = f"{'Paper' if self.app.mode != 'live' else 'Live'} fill confirmed: {f.get('side')} {f.get('qty')} " \
@@ -156,6 +165,67 @@ def _money(v: Any) -> str:
         return "unavailable"
 
 
+NAMES = {"bitcoin": "BTC", "btc": "BTC", "xbt": "BTC", "ether": "ETH", "ethereum": "ETH", "solana": "SOL",
+         "dogecoin": "DOGE", "doge": "DOGE", "pepe": "PEPE", "shiba": "SHIB", "euro": "EURUSD", "gold": "GC",
+         "s&p": "SPY", "nasdaq": "QQQ", "apple": "AAPL", "tesla": "TSLA", "nvidia": "NVDA", "microsoft": "MSFT"}
+PRONOUN = r"\b(that|this|the same|it|its|it's)\b"
+
+
+def resolve_bot(a: Assistant, q: str) -> tuple[Optional[Any], str]:
+    """Which bot the owner means: an explicit id, a market named in the question, "that bot" (the last one mentioned,
+    for 30 minutes), or the only bot there is. Returns (bot or None, how it was resolved)."""
+    bots = list(a.app.bots.values())
+    m = re.search(r"\bbot[-_ ]?([0-9a-z]{6,})", q)
+    if m:
+        hit = [b for b in bots if b.bot_id.lower().replace("-", "").endswith(m.group(1).replace("-", ""))]
+        if hit:
+            return hit[0], "named by id"
+    words = set(re.findall(r"[a-z0-9&]+", q))
+    wanted = {NAMES[w] for w in words if w in NAMES} | {w.upper() for w in words}
+    hits = [b for b in bots if b.instrument_id.split(":")[-1].split("-")[0].upper() in wanted]
+    if len(hits) == 1:
+        return hits[0], "named by market"
+    if len(hits) > 1:
+        run = [b for b in hits if b.state == "running"]
+        return (run or hits)[0], "named by market (first of several)"
+    if re.search(PRONOUN, q) and a.context["bot_id"] in a.app.bots and time.time() - a.context["ts"] < 1800:
+        return a.app.bots[a.context["bot_id"]], f"the bot from the last {a.context['source']}"
+    if len(bots) == 1:
+        return bots[0], "the only bot"
+    return None, "unresolved"
+
+
+def _bot_line(a: Assistant, b: Any) -> str:
+    d = a.app.db.one("SELECT ts, outcome, reason FROM decisions WHERE bot_id=? ORDER BY ts DESC LIMIT 1", (b.bot_id,))
+    owner = a.app.fleet.owner_of(b.instrument_id)
+    txt = (f"{b.strategy_id.split('.')[0].replace('_', ' ')} on {b.instrument_id.split(':')[-1]} {b.tf} is {b.state}"
+           + (f", owned by agent {owner}" if owner else "") + ".")
+    if d:
+        txt += f" Its last decision, {int((now_ms() - d['ts']) / 60000)} minutes ago, was " \
+               f"{d['outcome'].replace('_', ' ').lower()}: {d['reason']}."
+    else:
+        txt += " It has not made a decision yet."
+    return txt
+
+
+def i_that_bot(a: Assistant, q: str) -> dict:
+    b, how = resolve_bot(a, q)
+    if b is None:
+        return {"intent": "bot_detail", "answer": "Which bot do you mean? I have no recent bot to refer to. Name its "
+                "market, for example: what is the bitcoin bot doing?", "resolved": how}
+    a.remember(b.bot_id, "question")
+    if re.search(r"\b(pause|stop|halt)\b", q):
+        if b.state != "running":
+            return {"intent": "pause_bot", "answer": f"That bot is already {b.state}.", "resolved": how,
+                    "facts": {"bot_id": b.bot_id}}
+        a.app.bot_action(b.bot_id, "pause", by="assistant")
+        return {"intent": "pause_bot", "answer": f"Paused {b.strategy_id.split('.')[0].replace('_', ' ')} on "
+                f"{b.instrument_id.split(':')[-1]}. Its open position, if any, is kept; resume it on the dashboard.",
+                "resolved": how, "facts": {"bot_id": b.bot_id},
+                "action": {"name": "pause_bot", "bot_id": b.bot_id, "result": "completed"}}
+    return {"intent": "bot_detail", "answer": _bot_line(a, b), "resolved": how, "facts": {"bot_id": b.bot_id}}
+
+
 def i_bots(a: Assistant, q: str) -> dict:
     app = a.app
     bots = list(app.bots.values())
@@ -166,6 +236,8 @@ def i_bots(a: Assistant, q: str) -> dict:
         parts.append(f"{b.strategy_id.split('.')[0].replace('_', ' ')} on {b.instrument_id.split(':')[1]} "
                      f"{b.tf}.")
     parts.append(f"The autopilot is on: {ap['doing']}." if app.autopilot.cfg.enabled else "The autopilot is off.")
+    if len(run) == 1:
+        a.remember(run[0].bot_id, "status answer")
     return {"intent": "bots", "answer": " ".join(parts), "facts": {"running": len(run), "bots": len(bots)}}
 
 
@@ -194,10 +266,19 @@ def i_why_not(a: Assistant, q: str) -> dict:
 
 
 def i_why_trade(a: Assistant, q: str) -> dict:
-    d = a.app.db.one("SELECT decision_id, instrument_id, strategy_id, reason, ts, mode FROM decisions WHERE "
-                     "outcome='ORDER' ORDER BY ts DESC LIMIT 1")
+    b, how = resolve_bot(a, q) if re.search(PRONOUN + r"|\bbot\b", q) else (None, "")
+    if b is not None:
+        d = a.app.db.one("SELECT decision_id, instrument_id, strategy_id, reason, ts, mode, bot_id FROM decisions "
+                         "WHERE outcome='ORDER' AND bot_id=? ORDER BY ts DESC LIMIT 1", (b.bot_id,))
+        if not d:
+            return {"intent": "why_trade", "answer": f"{_bot_line(a, b)} It has not placed an order yet.",
+                    "resolved": how}
+    else:
+        d = a.app.db.one("SELECT decision_id, instrument_id, strategy_id, reason, ts, mode, bot_id FROM decisions "
+                         "WHERE outcome='ORDER' ORDER BY ts DESC LIMIT 1")
     if not d:
         return {"intent": "why_trade", "answer": "There is no trade yet in this installation."}
+    a.remember(d["bot_id"], "trade explanation")
     return {"intent": "why_trade", "answer": f"The last {d['mode']} order was on {d['instrument_id']} by "
             f"{(d['strategy_id'] or '').split('.')[0].replace('_', ' ')}: {d['reason']}. Every risk check it passed is "
             "listed on Agent Activity under that decision.", "facts": {"decision_id": d["decision_id"]},
@@ -305,7 +386,8 @@ def i_navigate(a: Assistant, q: str) -> dict:
 
 HELP = ("I can tell you what the bots are doing, why you are or aren't trading, why the last trade happened, today's "
         "fees, which strategies are under review, your exposure and risk state, broker connections, and a session "
-        "summary. I can pause or resume new entries and engage the emergency stop. Going live, raising limits, "
+        "summary. Ask about one bot by its market (the bitcoin bot) or as that bot after I mention one. I can pause a "
+        "bot, pause or resume new entries and engage the emergency stop. Going live, raising limits, "
         "flattening and re-arming stay on the page.")
 
 INTENTS = [
@@ -313,6 +395,7 @@ INTENTS = [
      r"|\bwithdraw|\bdeposit|\btransfer", i_refuse),
     (r"emergency stop|stop all trading|kill switch", i_estop),
     (r"\b(pause|resume|unpause|allow)\b.*\bentr", i_pause),
+    (r"\b(pause|stop|halt)\b.*\bbot\b", i_that_bot),
     (r"why .*(not|n't|no) (trad|buy|sell)|why .*idle|why .*nothing", i_why_not),
     (r"why .*(trade|buy|sell|enter|order)|last trade|that trade", i_why_trade),
     (r"\bfee", i_fees),
@@ -322,6 +405,7 @@ INTENTS = [
     (r"broker|connection", i_broker),
     (r"show|open|go to|navigate", i_navigate),
     (r"summary|report|how (am i|are we) doing|today", i_summary),
+    (PRONOUN + r".*\bbot\b|\bthe [a-z0-9&]+ bot\b|\bbot[-_ ]?[0-9a-z]{6,}", i_that_bot),
     (r"bot|doing|status|what.*happening", i_bots),
     (r"help|what can you", lambda a, q: {"intent": "help", "answer": HELP}),
 ]

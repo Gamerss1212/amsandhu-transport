@@ -226,11 +226,12 @@ class Fleet:
             return cached
         rows = self.app.db.query(
             "SELECT json_extract(dataset, '$.instrument') AS iid, strategy_id, created, "
-            "json_extract(results, '$.verdict') AS v FROM experiments WHERE status!='RUNNING' ORDER BY created")
-        latest: dict[tuple, str] = {}
+            "json_extract(results, '$.verdict') AS v, json_extract(results, '$.operating_mode') AS om "
+            "FROM experiments WHERE status!='RUNNING' ORDER BY created")
+        latest: dict[tuple, bool] = {}
         for r in rows:
-            latest[(r["strategy_id"], r["iid"])] = r["v"]
-        out = {iid for (_, iid), v in latest.items() if v == "PAPER TEST" and iid}
+            latest[(r["strategy_id"], r["iid"])] = r["v"] == "PAPER TEST" and r["om"] == "intraday"
+        out = {iid for (_, iid), ok in latest.items() if ok and iid and not iid.startswith("PORTFOLIO:")}
         self._budget_cache = (time.time(), out)
         return out
 
@@ -276,8 +277,9 @@ class Fleet:
             open_ = inst.market_type.name == "CRYPTO_SPOT" or session(inst.calendar or "CRYPTO", now_ms())["open"]
             q = self._qualified_instruments()
             a.eligible = sorted({r["strategy_id"] for r in app.db.query(
-                "SELECT strategy_id, json_extract(results, '$.verdict') AS v FROM experiments WHERE "
-                "json_extract(dataset, '$.instrument')=? AND status!='RUNNING'", (iid,)) if r["v"] == "PAPER TEST"}) \
+                "SELECT strategy_id, json_extract(results, '$.verdict') AS v, json_extract(results, '$.operating_mode') "
+                "AS om FROM experiments WHERE json_extract(dataset, '$.instrument')=? AND status!='RUNNING'", (iid,))
+                if r["v"] == "PAPER TEST" and r["om"] == "intraday"}) \
                 if iid in q else []
             bots = [b for b in app.bots.values() if b.instrument_id == iid and b.state == "running"]
             pos = app.paper.get_positions().get(iid)
@@ -439,6 +441,9 @@ class Fleet:
             c.update(per.get(iid, {}) if iid else {})
             c["venue"] = iid.split(":", 1)[0] if iid else None
             c["market"] = MARKET_OF.get(self.app.book.get(iid).market_type) if iid else None
+            disc = getattr(self.app, "discovery", None)
+            c["meme"] = bool(iid and disc is not None and c["market"] == "crypto" and
+                             disc.meme_tags(self.app.book.get(iid).base_asset))
             c["budget"] = str(self.budget(a.agent_id).quantize(Decimal("0.01")))
             c["next_action"] = a.next_action
             cards.append(c)

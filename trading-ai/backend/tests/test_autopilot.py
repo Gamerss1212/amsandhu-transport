@@ -9,7 +9,7 @@ from tradingai.app import App
 
 
 def result(verdict, quality=60.0, trades=40, test_ret=0.05, wf=0.8, sh2x=0.5, sim=True):
-    return {"status": "ok", "verdict": verdict, "quality": {"score": quality}, "test": {"trades": trades,
+    return {"status": "ok", "verdict": verdict, "operating_mode": "intraday", "quality": {"score": quality}, "test": {"trades": trades,
             "total_return": test_ret}, "walk_forward": {"oos_sharpe": wf}, "cost_stress": {"2.0x": {"sharpe": sh2x}},
             "reproducibility": {"simulated_data": sim}, "checks": [], "test_trades": []}
 
@@ -62,6 +62,7 @@ def test_entries_wait_in_cash_until_a_strategy_qualifies(app):
 def test_a_bot_whose_strategy_says_buy_waits_until_the_strategy_qualifies(app, monkeypatch):
     from tradingai.engine import orchestrator as O
     monkeypatch.setattr(O.Strategy, "generate_signal", lambda self: O.Signal(1, 0, "tsmom.none.flip"))
+    monkeypatch.setattr(O.daytrade, "entry_check", lambda cal, ms: (True, "OK", "test: inside the entry window"))
     app.autopilot.cfg.enabled = False
     bot = app.create_bot("DEMO:DEMO-TREND", "1h", "tsmom.none.flip", signal_mode="strategy")
     app.bot_action(bot["bot_id"], "start")

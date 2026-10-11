@@ -48,6 +48,7 @@ class BTConfig:
     fill_ratio: float = 1.0                # Monte Carlo "missed fills": share of entry orders that get filled
     seed: int = 7
     fixed_qty: Optional[float] = None      # golden tests and manual runs: trade exactly this quantity
+    day_trading: bool = False              # apply the intraday operating rules (engine/daytrade.py)
 
 
 @dataclass
@@ -129,6 +130,12 @@ def run(bars: Bars, signal: np.ndarray, inst: Instrument, cfg: BTConfig | None =
     roll_flat = (cfg.flat_in_roll_window and "continuous_provider_series" in inst.tags) and _roll_window_mask(bars.ts)
     if roll_flat is False:
         roll_flat = np.zeros(n, dtype=bool)
+    dt_no_entry = dt_flat = None
+    max_hold: Optional[int] = None
+    bar_ms = int(np.median(np.diff(bars.ts))) if n > 1 else 60_000
+    if cfg.day_trading:
+        from tradingai.engine.daytrade import masks
+        dt_no_entry, dt_flat, max_hold = masks(bars.ts, bar_ms, inst.calendar or "CRYPTO")
     sig = np.clip(np.nan_to_num(signal), -1, 1)
     if not shortable:
         sig = np.maximum(sig, 0)
@@ -275,12 +282,20 @@ def run(bars: Bars, signal: np.ndarray, inst: Instrument, cfg: BTConfig | None =
         cur_dir = float(np.sign(pos))
         sched: Optional[float] = None
         reason = ""
+        dt_reason = ""
+        if dt_flat is not None:                  # intraday rules: flatten deadline, maximum hold, entry cutoff
+            if dt_flat[i]:
+                want_dir, dt_reason = 0.0, "session flatten"
+            elif pos != 0 and max_hold and int(bars.ts[i]) + 2 * bar_ms - int(entry_ts) > max_hold:
+                want_dir, dt_reason = 0.0, "max hold"
+            elif dt_no_entry[i] and want_dir != cur_dir:
+                want_dir, dt_reason = 0.0, "entry cutoff"
         if pos != 0 and cfg.exit_model == "time" and i - entry_bar >= max_bars:
             sched, reason = 0.0, "time exit"
             blocked_dir = cur_dir
             want_dir = 0.0
         elif pos != 0 and want_dir != cur_dir:
-            sched, reason = 0.0, ("roll window" if roll_flat[i] else "signal")
+            sched, reason = 0.0, ("roll window" if roll_flat[i] else dt_reason or "signal")
         if cfg.exit_model == "trail" and pos != 0 and np.isfinite(atr[i]):
             nt = c[i] - np.sign(pos) * trail_atr * atr[i]
             trail = max(trail, nt) if pos > 0 else min(trail, nt)
@@ -328,6 +343,9 @@ def run(bars: Bars, signal: np.ndarray, inst: Instrument, cfg: BTConfig | None =
         flags.append("no volume data: no participation cap")
     if "continuous_provider_series" in inst.tags:
         flags.append("futures on a continuous provider series: flat in roll windows")
+    if cfg.day_trading:
+        flags.append("intraday rules applied: entry window and cutoff, session flatten deadline, crypto 24-hour "
+                     "maximum hold")
     if undersized:
         flags.append(f"{undersized} entry signal(s) skipped: one contract/lot (about {smallest_unit:,.0f} USD notional) is "
                      f"larger than the position this capital and sizing allow")
@@ -335,6 +353,7 @@ def run(bars: Bars, signal: np.ndarray, inst: Instrument, cfg: BTConfig | None =
                     {"fees": t_fees, "spread": t_spread, "slippage": t_slip, "funding": t_fund,
                      "model": {"market": cm.market, "labels": cm.labels, "note": cm.note, "x": cfg.cost_mult}},
                     flags, {"exit_model": cfg.exit_model, "exit_params": ep, "capital": cfg.capital,
+                            "day_trading": cfg.day_trading,
                             "risk_per_trade": cfg.risk_per_trade, "vol_target": cfg.vol_target,
                             "max_leverage": lev, "allow_short": shortable, "cost_mult": cfg.cost_mult},
                     ruined, partial, missed, undersized)

@@ -112,12 +112,28 @@ export function EngineSummary({ decision, iid }: { decision: any; iid: string })
             <div>Research</div><div>{ap ? `${ap.counts.screened} screened · ${ap.counts.confirmed} full tests · ${ap.candidates?.length ?? 0} qualified` : "—"}</div>
             <div>Active strategies</div><div>{bots.length ? bots.map((b) => `${b.strategy_id} on ${b.instrument_id}`).join(" · ") : "none (no strategy has qualified, so nothing trades)"}</div>
             <div>Regime</div><div>{iid}: {reg ? `${reg.trend} · ${reg.volatility} volatility · ${reg.character}` : "no decision on this market yet"}</div>
+            <div>Operating mode</div><div><DayRules /></div>
+            <div>Meme coins</div><div>{o.offline ? "discovery off (offline mode)" : <MemeLine />}</div>
             <div>Mode</div><div>{o.mode === "live" ? "LIVE (real money)" : o.mode === "shadow" ? "Shadow (orders recorded, not sent)" : "Paper (simulated money)"}</div>
           </div>
         </div>
       </div>
     </Card>
   );
+}
+
+function DayRules() {
+  const [d] = usePoll<any>("/api/daytrade", 0);
+  if (!d) return <>—</>;
+  const tip = Object.entries(d.rules).map(([k, r]: any) => `${k} (${r.timezone}): entries ${r.entry_window}; flat ${r.flatten}`).join("\n");
+  return <span title={`${tip}\n${d.note}`}>Intraday: stocks flat 10 min before the close, futures and forex before 17:00 New York, crypto held 24 h at most <span className="muted">(hover for all rules)</span></span>;
+}
+
+function MemeLine() {
+  const [d] = usePoll<any>("/api/coverage/discovery", 60000);
+  if (!d) return <>—</>;
+  const p = d.meme.pairs;
+  return <>{p.length} tagged pair(s) on {Object.keys(d.venues).length} venues · {p.filter((m: any) => m.execution_eligible).length} paper-tradable · tags unverified</>;
 }
 
 // ---------------------------------------------------------------- 5. measured decision activity

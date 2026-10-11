@@ -116,7 +116,9 @@ export default function BrokerMoney() {
         )}
       </Card>
 
+      {brokers?.funding && <AddFunds funding={brokers.funding} />}
       <Coverage />
+      <DiscoveryCoverage />
       <OrdersFills />
 
       {adding && brokers && <AddConnection adapters={brokers.adapters} onClose={() => setAdding(false)} onSaved={() => { setAdding(false); reload(); }} />}
@@ -321,6 +323,78 @@ function Coverage() {
           </table>
         </div>
       )}
+    </Card>
+  );
+}
+
+// Market discovery: what the connected public providers list, with explicit denominators (specification 3 and 5B).
+function DiscoveryCoverage() {
+  const [d] = usePoll<any>("/api/coverage/discovery", 30000);
+  const [q, setQ] = useState("");
+  if (!d) return <Card title="Market discovery"><Empty>Loading…</Empty></Card>;
+  const s = q.trim().toLowerCase();
+  const memes = d.meme.pairs.filter((m: any) => !s || `${m.symbol} ${m.base} ${m.themes.join(" ")}`.toLowerCase().includes(s));
+  const venues = Object.entries(d.venues) as [string, any][];
+  return (
+    <Card title="Market discovery and coverage" sub={`denominator: ${d.denominator}`} flush>
+      {d.offline && <div className="callout warn" style={{ margin: 12 }}>Offline mode: discovery is off, so nothing below is current.</div>}
+      <div className="scroll">
+        <table className="t small">
+          <thead><tr><th>Venue</th><th className="num">Known</th><th className="num">Listed now</th><th className="num">Online</th><th className="num">Fresh price</th><th className="num">Stale or missing</th><th className="num">Paper-tradable</th><th className="num">Delisted</th><th>Snapshot</th></tr></thead>
+          <tbody>{venues.map(([v, x]) => (
+            <tr key={v}><td><b>{v}</b></td><td className="num mono">{x.known}</td><td className="num mono">{x.listed}</td><td className="num mono">{x.online}</td>
+              <td className="num mono">{x.snapshot_fresh}</td><td className="num mono">{x.stale_or_missing}</td><td className="num mono">{x.execution_eligible}</td>
+              <td className="num mono">{x.delisted}</td><td className="tiny">{x.received ? `${fmt.datetime(x.received)} (${fmt.ago(x.received)})` : "not yet"}</td></tr>
+          ))}</tbody>
+        </table>
+      </div>
+      <div className="note" style={{ padding: "6px 14px" }}>
+        Listings refresh daily ({d.listed_at ? `last ${fmt.datetime(d.listed_at)}` : "not yet"}); prices come from one shared snapshot per venue each minute.
+        Paper-tradable means an online Coinbase USD pair (this software's candle feed). Kraken pairs are watched, not traded.
+        {Object.keys(d.errors).length > 0 && <span className="neg"> Errors: {Object.entries(d.errors).map(([k, v]) => `${k}: ${v}`).join("; ")}</span>}
+      </div>
+      <div style={{ padding: "10px 14px", borderTop: "1px solid var(--line)" }} className="col">
+        <div className="row wrap"><b>Meme coins</b><Badge kind="warn">tags unverified</Badge><span className="small dim">{d.meme.tagged_pairs} tagged pair(s) · {d.meme.pairs.filter((m: any) => m.execution_eligible).length} paper-tradable</span>
+          <span className="grow" /><input placeholder="Search meme pairs" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Search meme pairs" /></div>
+        <div className="note">{d.meme.note}</div>
+        <div className="scroll" style={{ maxHeight: 280 }}>
+          <table className="t small">
+            <thead><tr><th>Venue</th><th>Pair</th><th>Themes</th><th className="num">Last</th><th>Fresh</th><th>Paper-tradable</th></tr></thead>
+            <tbody>{memes.map((m: any) => (
+              <tr key={`${m.venue}:${m.symbol}`}><td>{m.venue}</td><td className="mono">{m.symbol}</td><td className="tiny">{m.themes.join(", ")}</td>
+                <td className="num mono">{fmt.price(m.last)}</td><td>{m.fresh ? <Badge kind="good">yes</Badge> : <Badge kind="warn">no</Badge>}</td>
+                <td>{m.execution_eligible ? <Badge kind="info">yes</Badge> : <span className="muted">watch only</span>}</td></tr>
+            ))}</tbody>
+          </table>
+        </div>
+      </div>
+      <div style={{ padding: "10px 14px", borderTop: "1px solid var(--line)" }} className="col">
+        <b>Not covered</b>
+        {d.uncovered.map((u: any) => <div key={u.market} className="small"><b>{u.market}</b> <span className="dim">— {u.reason}</span></div>)}
+      </div>
+    </Card>
+  );
+}
+
+// Add Funds: opens the broker's own official website. Nothing about money is entered or handled here.
+function AddFunds({ funding }: { funding: any[] }) {
+  return (
+    <Card title="Add funds" sub="deposits happen at your broker, signed in on its own website">
+      <div className="col">
+        <div className="row wrap">
+          {funding.map((f) => (
+            <a key={f.broker} className="btn" href={f.url} target="_blank" rel="noopener noreferrer" title={`${f.label}: ${f.how}`}>
+              {f.label.split(" (")[0]} ↗ <span className="tiny muted">{f.domain}</span>
+            </a>
+          ))}
+        </div>
+        <div className="note">
+          Each button opens that broker's official website in your browser. Sign in there and use its deposit page
+          ({funding.map((f) => `${f.label.split(" (")[0]}: ${f.how}`).join(" ")}). This app never asks for card or bank
+          details and never pretends to deposit. A deposit does not raise the amount the system may trade: live trading uses
+          only the capital limit you set when arming it. The paper account is simulated money; change it with "Set paper balance".
+        </div>
+      </div>
     </Card>
   );
 }

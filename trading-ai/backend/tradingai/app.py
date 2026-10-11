@@ -70,6 +70,8 @@ class App:
         self.tick_seconds = tick_seconds
         self._stop = threading.Event()
         self._loop_thread: Optional[threading.Thread] = None
+        self._dt_swept = 0.0
+        self._dt_incidents: set[str] = set()
         self.offline = offline
         self.mode = "paper"
         self.bots: dict[str, BotConfig] = {}
@@ -423,6 +425,13 @@ class App:
                 bot.day, bot.trades_today = day, 0
         # each bot decides inside its owning agent's job; agents run concurrently, orders go through one authority
         out.extend(self.fleet.run_bots(running, self._bot_step))
+        if time.time() - self._dt_swept >= 30:              # intraday backstop: deadlines pass even without new bars
+            self._dt_swept = time.time()
+            try:
+                self.daytrade_sweep()
+            except Exception as e:                            # noqa: BLE001 - reported, never stops the loop
+                self.bus.publish("system.error", {"error": f"day-trading sweep: {type(e).__name__}: {e}"},
+                                 severity="error")
         return out
 
     def _bot_step(self, bot) -> Optional[dict]:
@@ -570,6 +579,78 @@ class App:
         self.bus.publish("risk.entries", {"paused": on, "by": by}, severity="warning" if on else "info")
         return {"entries_paused": self.risk.entries_paused}
 
+    def _close_position(self, p: dict, by: str) -> list[dict]:
+        """Close one paper position through the risk service with reduce-only orders, one per strategy lot."""
+        from tradingai.risk.service import OrderRequest
+        br = self.paper
+        inst = self.book.get(p["instrument_id"])
+        q = self.quote(inst.instrument_id)
+        if q is None:
+            return [{"instrument": inst.instrument_id, "status": "NO_PRICE", "detail": "no fresh price"}]
+        acct = br.get_balance()
+        held = Decimal(p["qty"])
+        out = []
+        for sid, lot in (p.get("strategy_lots") or {"manual": p["qty"]}).items():
+            lq = Decimal(str(lot))
+            if lq == 0:
+                continue
+            bars, st = self.md.bars(inst.instrument_id, "1d" if "1d" in self.md.providers[
+                self.sources[inst.instrument_id].provider].timeframes else "1h", lookback=3)
+            snap = self.risk_snapshot(inst, bars, st, "paper")
+            req = OrderRequest(client_order_id="", instrument_id=inst.instrument_id,
+                               market=MARKET_OF.get(inst.market_type, "crypto"), side="sell" if lq > 0 else "buy",
+                               quantity=abs(lq), reference_price=Decimal(str(q["price"])), limit_price=None,
+                               multiplier=inst.multiplier, environment="paper", account_id=acct.account_id_masked,
+                               reduces_position=abs(lq) <= abs(held), quantity_step=inst.quantity_step)
+            res = self.oms.place(decision_id=new_id("FLAT"), req=req, snapshot=snap, broker=br,
+                                 broker_symbol=inst.symbol, mode="paper", strategy_id=None if sid == "manual"
+                                 else sid, decided_at=time.time())
+            out.append({"instrument": inst.instrument_id, "strategy": sid, "qty": str(lq),
+                        "status": res.get("status"), "detail": res["risk"]["reason"], "by": by})
+        return out
+
+    def position_opened_at(self, instrument_id: str) -> Optional[int]:
+        """When the current paper position in this instrument was opened (the fill that took it from flat)."""
+        pos, opened = Decimal(0), None
+        for r in self.db.query("SELECT side, qty, ts FROM fills WHERE account_id=? AND instrument_id=? ORDER BY ts",
+                               (self.paper.account_id, instrument_id)):
+            if pos == 0:
+                opened = r["ts"]
+            pos += Decimal(r["qty"]) * (1 if r["side"] == "buy" else -1)
+        return opened if pos != 0 else None
+
+    def daytrade_sweep(self) -> list[dict]:
+        """Backstop for the intraday rules: close any paper position past its flattening deadline or maximum hold,
+        even when its bot is stopped or no new bar has arrived. A closed market cannot be traded: the position is kept,
+        a risk incident is recorded once, and the close is retried when the market opens."""
+        from tradingai.engine import daytrade
+        if self.mode == "live":
+            return []
+        out, t = [], now_ms()
+        working = {o.instrument_id for o in self.paper.get_open_orders()}
+        for p in self.paper.positions_detail():
+            iid = p["instrument_id"]
+            if iid in working:
+                continue
+            inst = self.book.get(iid)
+            cal = inst.calendar or "CRYPTO"
+            due = daytrade.exit_due(cal, self.position_opened_at(iid), t, 0)
+            if not due:
+                continue
+            s = session(cal, t)
+            if not s["open"]:
+                key = f"{iid}|{s.get('trading_date')}"
+                if key not in self._dt_incidents:
+                    self._dt_incidents.add(key)
+                    self.audit("risk", f"{iid}: held past its session ({due[1]}); the market is closed, so the "
+                               "position is kept and closed when it opens", severity="warning",
+                               data={"code": due[0], "instrument": iid})
+                continue
+            res = self._close_position(p, f"day-trading rules ({due[0]})")
+            self.audit("daytrade", f"{iid}: {due[0]} - {due[1]}", severity="info", data={"results": res})
+            out.extend(res)
+        return out
+
     def flatten_all(self, by: str = "owner") -> dict:
         """Close every paper position through the risk service (reduce-only orders). A request is not a completed
         action: each instrument reports what actually happened (filled, blocked because the market is closed...)."""
@@ -580,31 +661,8 @@ class App:
                                   "broker or with EMERGENCY STOP (flatten policy)")
         cancelled = self.oms.cancel_all(br, f"flatten all by {by}")
         out = []
-        acct = br.get_balance()
         for p in br.positions_detail():
-            inst = self.book.get(p["instrument_id"])
-            q = self.quote(inst.instrument_id)
-            if q is None:
-                out.append({"instrument": inst.instrument_id, "status": "NO_PRICE", "detail": "no fresh price"})
-                continue
-            held = Decimal(p["qty"])
-            for sid, lot in (p.get("strategy_lots") or {"manual": p["qty"]}).items():
-                lq = Decimal(str(lot))
-                if lq == 0:
-                    continue
-                bars, st = self.md.bars(inst.instrument_id, "1d" if "1d" in self.md.providers[
-                    self.sources[inst.instrument_id].provider].timeframes else "1h", lookback=3)
-                snap = self.risk_snapshot(inst, bars, st, self.mode)
-                req = OrderRequest(client_order_id="", instrument_id=inst.instrument_id,
-                                   market=MARKET_OF.get(inst.market_type, "crypto"), side="sell" if lq > 0 else "buy",
-                                   quantity=abs(lq), reference_price=Decimal(str(q["price"])), limit_price=None,
-                                   multiplier=inst.multiplier, environment="paper", account_id=acct.account_id_masked,
-                                   reduces_position=abs(lq) <= abs(held), quantity_step=inst.quantity_step)
-                res = self.oms.place(decision_id=new_id("FLAT"), req=req, snapshot=snap, broker=br,
-                                     broker_symbol=inst.symbol, mode="paper", strategy_id=None if sid == "manual"
-                                     else sid, decided_at=time.time())
-                out.append({"instrument": inst.instrument_id, "strategy": sid, "qty": str(lq),
-                            "status": res.get("status"), "detail": res["risk"]["reason"]})
+            out.extend(self._close_position(p, by))
         done = all(o["status"] == "FILLED" for o in out)
         self.audit("flatten", f"flatten all by {by}: {sum(o['status'] == 'FILLED' for o in out)}/{len(out)} closed",
                    severity="warning", data={"results": out, "cancelled_orders": cancelled})
@@ -1040,9 +1098,11 @@ class App:
         the same market and timeframe passed every gate (verdict PAPER TEST) and the autopilot has not retired it since.
         Portfolio templates use their portfolio run. Exits are never blocked by this."""
         from tradingai.research.portfolio import PORTFOLIOS
-        if strategy_id in PORTFOLIOS:
-            instrument_id, tf = f"PORTFOLIO:{strategy_id}", None
-        sql = ("SELECT experiment_id, created, json_extract(results, '$.verdict') AS verdict FROM experiments "
+        if strategy_id in PORTFOLIOS or instrument_id.startswith("PORTFOLIO:"):
+            return False, ("monthly portfolio method: research-only in the intraday operating mode (a shorter version "
+                           "would need its own evaluation)")
+        sql = ("SELECT experiment_id, created, json_extract(results, '$.verdict') AS verdict, "
+               "json_extract(results, '$.operating_mode') AS om FROM experiments "
                "WHERE strategy_id=? AND json_extract(dataset, '$.instrument')=? AND status!='RUNNING'")
         args: list = [strategy_id, instrument_id]
         if tf:
@@ -1053,6 +1113,8 @@ class App:
             return False, "not tested on this market yet: no trade until a version qualifies"
         if r["verdict"] != "PAPER TEST":
             return False, f"latest research verdict {r['verdict'] or 'none'} ({r['experiment_id']}): not qualified"
+        if r["om"] != "intraday":
+            return False, f"{r['experiment_id']} was not tested under the day-trading rules: not qualified"
         retired = self.autopilot.mem.get("retired", {})
         if any(k.startswith(f"{strategy_id}|{instrument_id}|") and until > now_ms() for k, until in retired.items()):
             return False, "retired by the autopilot after falling short in paper trading"

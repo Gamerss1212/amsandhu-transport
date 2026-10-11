@@ -21,6 +21,7 @@ from tradingai.agents import roster
 from tradingai.agents.base import AGENTS, run as run_agent
 from tradingai.agents.ensemble import combine
 from tradingai.backtest.costs import default_for, half_spread_price
+from tradingai.engine import daytrade
 from tradingai.core.ids import new_id
 from tradingai.data.bars import TF_MS
 from tradingai.features.registry import FeatureFrame
@@ -168,6 +169,21 @@ class Orchestrator:
             want = max(want, 0)
         tradable = paper_tradable(inst)
         cur = int(np.sign(pos_qty))
+        # ---- day-trading rules (engine/daytrade.py): the same rules research applied to this strategy
+        cal = inst.calendar or "CRYPTO"
+        bar_ms = int(np.median(np.diff(bars.ts[-50:]))) if len(bars) > 2 else 60_000
+        if cur != 0:
+            due = daytrade.exit_due(cal, app.position_opened_at(inst.instrument_id), now_ms(), bar_ms)
+            if due:
+                rec["day_trading"] = {"code": due[0], "detail": due[1]}
+                want = 0
+        if "day_trading" not in rec and want != 0 and want != cur:
+            ok_e, code_e, detail_e = daytrade.entry_check(cal, now_ms())
+            if not ok_e:
+                rec["day_trading"] = {"code": code_e, "detail": detail_e}
+                if cur == 0:
+                    return self._finish(rec, "NO_TRADE", f"{code_e}: {detail_e}", lat, t_start)
+                want = 0                                     # may close what it holds, never reverse into new risk
         entering = want != 0 and want != cur
         owner = app.fleet.owner_of(inst.instrument_id)
         if entering and owner is None:
@@ -233,6 +249,8 @@ class Orchestrator:
         if outcome == "ORDER" and entering:
             bot.trades_today += 1
         reason = res["risk"]["reason"] if outcome == "RISK_REJECT" else f"{side} {abs(delta)} ({res.get('status')})"
+        if rec.get("day_trading"):
+            reason = f"{rec['day_trading']['code']}: {rec['day_trading']['detail']} -> {reason}"
         return self._finish(rec, outcome, reason, lat, t_start)
 
     def _finish(self, rec: dict, outcome: str, reason: str, lat: dict, t0: float) -> dict:

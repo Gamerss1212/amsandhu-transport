@@ -29,7 +29,8 @@ def app(tmp_path):
 def record(app, sid, iid, tf, verdict):
     eid = app.ledger.start(family="test", strategy_id=sid, hypothesis="test", instrument=iid, tf=tf,
                            profile="STANDARD", seed=7, dataset={"simulated": True})
-    app.ledger.finish(eid, {"status": "ok", "verdict": verdict, "quality": {"score": 60}, "test": {"trades": 40},
+    app.ledger.finish(eid, {"status": "ok", "verdict": verdict, "operating_mode": "intraday", "quality": {"score": 60},
+                            "test": {"trades": 40},
                             "reproducibility": {"simulated_data": True}, "checks": []})
     time.sleep(0.002)
     return eid

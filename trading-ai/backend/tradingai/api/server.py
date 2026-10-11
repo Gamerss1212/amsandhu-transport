@@ -269,6 +269,11 @@ def create_app(core, *, token: Optional[str] = None, on_shutdown=None) -> FastAP
         from tradingai.engine.dashboard import market_strip as ms
         return ms(core)
 
+    @api.get("/api/daytrade")
+    def daytrade_rules():
+        from tradingai.engine.daytrade import describe
+        return describe()
+
     @api.get("/api/activity")
     def activity(minutes: int = 60):
         from tradingai.engine.dashboard import decision_activity
@@ -427,10 +432,13 @@ def create_app(core, *, token: Optional[str] = None, on_shutdown=None) -> FastAP
     # ------------------------------------------------------------ Brokers & Accounts page
     @api.get("/api/brokers")
     def brokers():
+        from tradingai.brokers.adapters import FUNDING
         return {"matrix": broker_matrix(), "adapters": {k: {"label": v.label, "environments": v.environments,
                                                            "needs": v.needs, "setup": v.setup,
                                                            "verified": v.verified}
-                                                       for k, v in ADAPTERS.items()}}
+                                                       for k, v in ADAPTERS.items()},
+                "funding": [{"broker": k, "label": ADAPTERS[k].label, "url": u, "domain": dom, "how": how}
+                            for k, (u, dom, how) in FUNDING.items()]}
 
     @api.get("/api/connections")
     def connections():

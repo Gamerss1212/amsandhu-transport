@@ -10,7 +10,7 @@ type Agent = {
   id: string; group: string; partition: string[]; runtime: string; job: string; detail: string; venue: string | null;
   market: string | null; consumed_version: number | null; last_input_ts: number | null; last_price: string | null;
   heartbeat: number | null; job_ms: number | null; eligible: number; errors: number; assignment_version: number;
-  budget: string; next_action: string | null; fresh: boolean; strategies?: string[]; position?: string | null; unrealized?: string | null;
+  budget: string; next_action: string | null; fresh: boolean; meme?: boolean; strategies?: string[]; position?: string | null; unrealized?: string | null;
   realized?: string | null; fees?: string | null; open_orders?: number; last_decision?: { ts: number; outcome: string; reason: string } | null;
 };
 
@@ -210,6 +210,7 @@ function AgentGrid({ agents, groups, onOpen }: { agents: Agent[]; groups: any[];
   const [group, setGroup] = useState("");
   const [state, setState] = useState("");
   const [market, setMarket] = useState("");
+  const [memeOnly, setMemeOnly] = useState(false);
   const [by, setBy] = useState<"group" | "market" | "venue" | "job">("group");
   const box = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(1000);
@@ -227,9 +228,10 @@ function AgentGrid({ agents, groups, onOpen }: { agents: Agent[]; groups: any[];
   const shown = useMemo(() => {
     const s = q.trim().toLowerCase();
     return agents.filter((a) => (!group || a.group === group) && (!state || a.runtime === state) && (!market || a.market === market) &&
+      (!memeOnly || a.meme) &&
       (!s || a.id.toLowerCase().includes(s) || a.partition.some((p) => p.toLowerCase().includes(s)) || a.job.includes(s) ||
         (a.strategies ?? []).some((x) => x.toLowerCase().includes(s))));
-  }, [agents, q, group, state, market]);
+  }, [agents, q, group, state, market, memeOnly]);
 
   const cols = Math.max(1, Math.floor(width / MIN_W));
   const rows = useMemo(() => {
@@ -275,6 +277,7 @@ function AgentGrid({ agents, groups, onOpen }: { agents: Agent[]; groups: any[];
           <option value="group">Group by coverage group</option><option value="market">Group by asset class</option>
           <option value="venue">Group by venue</option><option value="job">Group by current job</option>
         </select>
+        <label className="row small" style={{ gap: 5 }} title="Seed-list tags: unverified classification"><input type="checkbox" checked={memeOnly} onChange={(e) => setMemeOnly(e.target.checked)} />Meme coins</label>
         <span className="tiny muted">{shown.length} of {agents.length}</span>
       </div>
       <div ref={box} className="vgrid" style={{ height: viewH }} onScroll={(e) => setTop((e.target as HTMLDivElement).scrollTop)}>
@@ -301,7 +304,7 @@ function AgentCard({ a, onOpen }: { a: Agent; onOpen: (id: string) => void }) {
   const d = a.last_decision;
   return (
     <button className={`agent-card ${a.runtime}`} onClick={() => onOpen(a.id)} title={a.detail}>
-      <div className="spread"><span><b className="mono">{a.id}</b> <span className="tiny muted">{GROUP_LABEL[a.group] ?? a.group}</span></span><Badge kind={RUNTIME_KIND[a.runtime] ?? ""}>{a.runtime}</Badge></div>
+      <div className="spread"><span><b className="mono">{a.id}</b> <span className="tiny muted">{GROUP_LABEL[a.group] ?? a.group}{a.meme ? " · meme" : ""}</span></span><Badge kind={RUNTIME_KIND[a.runtime] ?? ""}>{a.runtime}</Badge></div>
       <div className="tiny ell">{iid ? <><span className="mono">{iid}</span>{a.last_price && <span className="dim"> · {fmt.price(a.last_price)} · {fmt.ago(a.last_input_ts)}</span>}</> : <span className="muted">no distinct market</span>}</div>
       <div className="tiny ell dim"><b style={{ color: "var(--text)" }}>{a.job}</b>{(a.strategies ?? []).length ? ` · ${a.strategies!.join(", ")}` : ""}</div>
       <div className="tiny ell muted">budget {fmt.money(a.budget)} · pos {a.position ?? "—"} · orders {a.open_orders ?? 0} · fees {a.fees ? fmt.money(a.fees) : "—"}</div>

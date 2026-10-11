@@ -412,6 +412,19 @@ class Coinbase(BrokerAdapter):
 
 ADAPTERS = {"alpaca": Alpaca, "oanda": Oanda, "kraken": Kraken, "ibkr": IBKR, "coinbase": Coinbase}
 
+# Add Funds (specification page 3): only each broker's own official website, opened in the owner's browser. Deposits
+# happen there, signed in to the broker. This software never collects card or bank details, never emulates a deposit,
+# and a deposit never raises the trading allocation here. Deep links are not used: only the official home or sign-in
+# page, which was checked to answer on 2026-10-11 (Coinbase refuses automated checks; coinbase.com is its own domain).
+FUNDING = {
+    "kraken": ("https://www.kraken.com/", "kraken.com", "Sign in, then Funding > Deposit."),
+    "coinbase": ("https://www.coinbase.com/", "coinbase.com", "Sign in, then use the deposit or transfer option."),
+    "alpaca": ("https://app.alpaca.markets/", "app.alpaca.markets", "Sign in to the dashboard, then fund the account."),
+    "ibkr": ("https://www.interactivebrokers.ca/", "interactivebrokers.ca", "Sign in to Client Portal, then Transfer "
+             "& Pay > Transfer Funds."),
+    "oanda": ("https://www.oanda.com/ca-en/", "oanda.com", "Sign in, then use the deposit option for your account."),
+}
+
 
 def matrix() -> list[dict]:
     """Broker x feature matrix from each adapter's declared capabilities (detected live where the broker reports them)."""

@@ -7,7 +7,9 @@ import { go } from "../App";
 // optional listening (the browser's own recognizer, where available) and proactive announcements of verified events.
 // Settings are per-viewer conveniences kept in localStorage; trading permissions never depend on them.
 
-type Line = { who: "you" | "ai" | "event"; text: string; ts: number; severity?: string };
+// announcement lifecycle: received -> queued -> speaking -> spoken, or shown without speech (and why), expired,
+// interrupted (the owner spoke) or failed (the browser's speech engine reported an error)
+type Line = { who: "you" | "ai" | "event"; text: string; ts: number; severity?: string; vid?: string; state?: string };
 const SPEAK_MIN = { info: 0, warning: 1, error: 2, critical: 3 } as Record<string, number>;
 
 function load<T>(k: string, d: T): T {
@@ -23,6 +25,10 @@ export default function Assistant() {
   const [voiceOn, setVoiceOn] = useState<boolean>(() => load("ai.voice", false));
   const [proactive, setProactive] = useState<boolean>(() => load("ai.proactive", false));
   const [minSev, setMinSev] = useState<string>(() => load("ai.minsev", "warning"));
+  const [volume, setVolume] = useState<number>(() => load("ai.volume", 0.9));
+  const [quiet, setQuiet] = useState<[number, number]>(() => load("ai.quiet", [22, 7]));
+  const [quietOn, setQuietOn] = useState<boolean>(() => load("ai.quietOn", false));
+  const [lat, setLat] = useState<number[]>([]);
   const [listening, setListening] = useState(false);
   const [speaking, setSpeaking] = useState(false);
   const seen = useRef(new Set<string>());
@@ -31,7 +37,17 @@ export default function Assistant() {
   const synth = typeof window !== "undefined" ? window.speechSynthesis : undefined;
   const Recog: any = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
 
-  useEffect(() => { save("ai.voice", voiceOn); save("ai.proactive", proactive); save("ai.minsev", minSev); }, [voiceOn, proactive, minSev]);
+  useEffect(() => {
+    save("ai.voice", voiceOn); save("ai.proactive", proactive); save("ai.minsev", minSev);
+    save("ai.volume", volume); save("ai.quiet", quiet); save("ai.quietOn", quietOn);
+  }, [voiceOn, proactive, minSev, volume, quiet, quietOn]);
+  const mark = (vid: string, state: string) => setLines((l) => l.map((x) => (x.vid === vid ? { ...x, state } : x)));
+  const inQuiet = () => {
+    if (!quietOn) return false;
+    const h = new Date().getHours();
+    const [a, b] = quiet;
+    return a === b ? false : a < b ? h >= a && h < b : h >= a || h < b;
+  };
   useEffect(() => { endRef.current?.scrollIntoView({ block: "end" }); }, [lines, open]);
 
   const pickVoice = () => {
@@ -39,16 +55,21 @@ export default function Assistant() {
     return vs.find((v) => /en-GB/i.test(v.lang) && /(George|Ryan|Daniel|Arthur|Male)/i.test(v.name))
       ?? vs.find((v) => /en-GB/i.test(v.lang)) ?? vs.find((v) => /^en/i.test(v.lang));
   };
-  const speak = (t: string, urgent = false) => {
+  const speak = (t: string, urgent = false, ev?: { vid: string; created: number; expires: number }) => {
     if (!voiceOn || !synth) return;
     if (urgent) synth.cancel();
     const u = new SpeechSynthesisUtterance(t);
     const v = pickVoice();
     if (v) u.voice = v;
-    u.rate = 1.02; u.pitch = 0.95;
-    u.onstart = () => setSpeaking(true);
-    u.onend = () => setSpeaking(false);
-    u.onerror = () => setSpeaking(false);
+    u.rate = 1.02; u.pitch = 0.95; u.volume = volume;
+    u.onstart = () => {
+      if (ev && Date.now() > ev.expires) { synth.cancel(); mark(ev.vid, "expired before speaking"); return; }
+      setSpeaking(true);
+      if (ev) { mark(ev.vid, "speaking"); setLat((x) => [...x.slice(-49), Date.now() - ev.created]); }
+    };
+    u.onend = () => { setSpeaking(false); if (ev) mark(ev.vid, "spoken"); };
+    u.onerror = (e: any) => { setSpeaking(false); if (ev) mark(ev.vid, e?.error === "interrupted" || e?.error === "canceled" ? "interrupted" : "failed"); };
+    if (ev) mark(ev.vid, "queued");
     synth.speak(u);
   };
 
@@ -59,10 +80,11 @@ export default function Assistant() {
     const ev = last.data;
     if (seen.current.has(ev.id)) return;
     seen.current.add(ev.id);
-    setLines((l) => [...l.slice(-80), { who: "event", text: ev.text, ts: ev.created, severity: ev.severity }]);
-    if (proactive && Date.now() < ev.expires && (SPEAK_MIN[ev.severity] ?? 0) >= (SPEAK_MIN[minSev] ?? 1)) {
-      speak(ev.text, ev.severity === "critical");
-    }
+    const why = !proactive || !voiceOn ? "shown (speech off)" : Date.now() >= ev.expires ? "expired" :
+      (SPEAK_MIN[ev.severity] ?? 0) < (SPEAK_MIN[minSev] ?? 1) ? "shown (below your announce level)" :
+      inQuiet() && ev.severity !== "critical" ? "shown (quiet hours)" : "received";
+    setLines((l) => [...l.slice(-80), { who: "event", text: ev.text, ts: ev.created, severity: ev.severity, vid: ev.id, state: why }]);
+    if (why === "received") speak(ev.text, ev.severity === "critical", { vid: ev.id, created: ev.created, expires: ev.expires });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [live.events]);
 
@@ -109,6 +131,7 @@ export default function Assistant() {
             {lines.map((l, i) => (
               <div key={i} className={`al ${l.who} ${l.severity ?? ""}`}>
                 <span className="tiny muted mono">{fmt.time(l.ts)}</span> {l.who === "event" ? "◆ " : l.who === "you" ? "You: " : ""}{l.text}
+                {l.state && <span className="tiny muted"> · {l.state}</span>}
               </div>
             ))}
             <div ref={endRef} />
@@ -124,6 +147,14 @@ export default function Assistant() {
             <select value={minSev} onChange={(e) => setMinSev(e.target.value)} aria-label="Announce from severity" style={{ padding: "2px 4px" }}>
               <option value="info">all events</option><option value="warning">warnings and up</option><option value="critical">critical only</option>
             </select>
+            <label className="row" style={{ gap: 4 }} title="Speech volume">vol<input type="range" min={0} max={1} step={0.1} value={volume} onChange={(e) => setVolume(Number(e.target.value))} style={{ width: 70 }} aria-label="Speech volume" /></label>
+            <label className="row" style={{ gap: 4 }} title="During quiet hours only critical announcements are spoken"><input type="checkbox" checked={quietOn} onChange={(e) => setQuietOn(e.target.checked)} />quiet</label>
+            {quietOn && <>
+              <select value={quiet[0]} onChange={(e) => setQuiet([Number(e.target.value), quiet[1]])} aria-label="Quiet hours start" style={{ padding: "2px 4px" }}>{Array.from({ length: 24 }, (_, h) => <option key={h} value={h}>{String(h).padStart(2, "0")}:00</option>)}</select>
+              <span className="muted">to</span>
+              <select value={quiet[1]} onChange={(e) => setQuiet([quiet[0], Number(e.target.value)])} aria-label="Quiet hours end" style={{ padding: "2px 4px" }}>{Array.from({ length: 24 }, (_, h) => <option key={h} value={h}>{String(h).padStart(2, "0")}:00</option>)}</select>
+            </>}
+            {lat.length > 0 && <span className="muted" title="Time from the server recording an event to this browser starting to speak it">event→speech p50 {[...lat].sort((a, b) => a - b)[Math.floor(lat.length / 2)]} ms (n={lat.length})</span>}
             {!synth && <span className="muted">this browser has no speech output</span>}
             <span className="muted">No cloud AI: answers come from verified system state.</span>
           </div>

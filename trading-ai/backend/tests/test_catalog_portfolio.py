@@ -108,9 +108,17 @@ def test_unqualified_portfolio_bot_buys_nothing(app, monkeypatch):
     assert any("not qualified" in (r["reason"] or "") or "STRATEGY_NOT_QUALIFIED" in (r["reason"] or "") for r in rows)
 
 
+def test_monthly_portfolio_stays_research_only_in_intraday_mode(app, monkeypatch):
+    qualify_portfolio(app, "ST045")                                      # even a passing portfolio run
+    ok, why = app.qualification("ST045", "PORTFOLIO:ST045")
+    assert not ok and "intraday" in why
+    assert all(not c["iid"].startswith("PORTFOLIO:") for c in app.autopilot.candidates())
+
+
 def test_portfolio_bot_rebalances_through_the_risk_service(app, monkeypatch):
+    # the rebalancing mechanics, for a portfolio that would qualify under a separately evaluated intraday version
     spec = P.PORTFOLIOS["ST045"]
-    qualify_portfolio(app, "ST045")
+    monkeypatch.setattr(app, "qualification", lambda sid, iid, tf=None: (True, "test"))
     pan = synthetic_panel(n=3, drift=0.004, sd=0.004)                   # every coin trending up: the template buys
     pan["status"] = {i: {"bars": 1200} for i in spec.universe}
     monkeypatch.setattr(portfolio_bot, "load_panel", lambda md, book, uni, lookback=400: pan)

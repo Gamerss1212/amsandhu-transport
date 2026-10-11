@@ -84,6 +84,7 @@ def _signal(spec: StrategySpec, bars: Bars, calendar: str, market: str, params: 
 def _bt(spec, bars, sig, inst, ppy, params=None, **kw) -> BTResult:
     p = dict(spec.parameters, **(params or {}))
     ep = {k: p[k] for k in ("stop_atr", "target_r", "max_bars", "trail_atr") if k in p}
+    kw.setdefault("day_trading", True)          # research tests a strategy under the rules it would trade with
     return run(bars, sig, inst, BTConfig(exit_model=spec.exit_model, exit_params=ep, ppy=ppy, **kw))
 
 
@@ -298,6 +299,7 @@ def run_research(spec: StrategySpec, bars: Bars, inst: Instrument, calendar: str
     verdict = "PAPER TEST" if passed else ("RESEARCH FURTHER" if promising else "REJECT")
     return {
         "status": "ok", "verdict": verdict, "reason_codes": reason_codes, "strategy_id": spec.strategy_id, "instrument": inst.instrument_id,
+        "operating_mode": "intraday",
         "profile": profile, "params_chosen": grid[best], "grid": heat, "segments": {
             k: [int(bars.ts[v[0]]), int(bars.ts[v[1] - 1])] for k, v in seg.items()},
         "train": M.report(train_runs[best], ppy), "validation": M.report(val, ppy), "test": rep_test,

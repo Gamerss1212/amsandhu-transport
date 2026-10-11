@@ -49,9 +49,10 @@ if TYPE_CHECKING:
 
 log = logs.get("autopilot")
 DAY = 86_400_000
-MARKET_TFS = {"crypto": ("1h", "4h", "1d"), "stock": ("1d",), "etf": ("1d", "1h"), "fx": ("1h", "4h"),
-              "future": ("1d",)}
-LOOKBACK = {"1h": 5000, "4h": 3000, "1d": 2500}
+# intraday operating mode (engine/daytrade.py): only bar sizes that can open and close inside one session are screened
+MARKET_TFS = {"crypto": ("15m", "1h", "4h"), "stock": ("15m", "1h"), "etf": ("15m", "1h"), "fx": ("15m", "1h"),
+              "future": ("15m", "1h")}
+LOOKBACK = {"15m": 2000, "1h": 5000, "4h": 3000, "1d": 2500}
 DISCOVERED_RESEARCH = 12                 # discovered pairs screened: the most liquid few, not hundreds
 MARKETS = ("crypto", "stock", "etf", "fx", "future")
 
@@ -280,7 +281,8 @@ class Autopilot:
             "json_extract(results, '$.walk_forward.oos_sharpe') AS wf, "
             "json_extract(results, '$.cost_stress.\"2.0x\".sharpe') AS sh2x, "
             "json_extract(results, '$.reproducibility.simulated_data') AS sim, "
-            "json_extract(results, '$.beats_benchmark') AS beats "
+            "json_extract(results, '$.beats_benchmark') AS beats, "
+            "json_extract(results, '$.operating_mode') AS om "
             "FROM experiments WHERE profile IN ('STANDARD','DEEP','PORTFOLIO') AND status!='RUNNING' AND created>? "
             "ORDER BY created DESC", (now_ms() - 30 * DAY,))
         seen, out = set(), []
@@ -290,8 +292,8 @@ class Autopilot:
                 continue
             seen.add(k)
             tier = None
-            if r["verdict"] == "PAPER TEST":
-                tier = "qualified"
+            if r["verdict"] == "PAPER TEST" and r["om"] == "intraday":
+                tier = "qualified"          # passed every gate under the same day-trading rules it will trade with
             if tier is None or self.mem["retired"].get(k, 0) > now_ms():
                 continue
             if (r["iid"] or "").startswith("PORTFOLIO:") and not r["beats"]:
