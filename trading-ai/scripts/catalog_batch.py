@@ -1,7 +1,7 @@
 """Backtest every implementable template of the owner's 80-template catalog on real data, with the same research
 engine the app uses (results go into the app's research ledger, counted as trials).
 
-    python scripts/catalog_batch.py <home folder>
+    python scripts/catalog_batch.py <home folder> [card ...]      (cards: run only those, no portfolio pass)
 """
 
 import sys
@@ -41,7 +41,7 @@ PLAN = {   # card -> generator -> (instrument, timeframe) list, chosen by each c
     "ST121": {"noise_band_momentum": [("US:SPY", "15m"), ("US:QQQ", "15m")]},
     "ST122": {"active_orb": [("US:SPY", "5m"), ("US:QQQ", "5m"), ("US:SPY", "15m"), ("US:QQQ", "15m")]},
 }
-LOOKBACK = {"15m": 2000, "30m": 1200, "1h": 5000, "4h": 3000, "1d": 2500}
+LOOKBACK = {"5m": 4000, "15m": 2000, "30m": 1200, "1h": 5000, "4h": 3000, "1d": 2500}
 
 
 def template(gen: str) -> str:
@@ -60,14 +60,16 @@ def wait(app, jid):
     return app.jobs.view(jid, with_result=True)
 
 
-def main(home):
+def main(home, only=None):
     app = App(home, offline=False, start_loop=False, autopilot=False)
     t0 = time.time()
-    for sid in PORTFOLIOS:
+    for sid in ([] if only else PORTFOLIOS):
         j = wait(app, app.submit_portfolio(sid, by="catalog-batch")["job_id"])
         print(f"{time.time() - t0:7.0f}s PORTFOLIO {sid:8s} {j['state']:8s} {j.get('result') or j.get('error')}",
               flush=True)
     for card, gens in PLAN.items():
+        if only and card not in only:
+            continue
         for gen, targets in gens.items():
             sid = template(gen)
             for iid, tf in targets:
@@ -83,4 +85,4 @@ def main(home):
 
 
 if __name__ == "__main__":
-    main(sys.argv[1])
+    main(sys.argv[1], set(sys.argv[2:]) or None)

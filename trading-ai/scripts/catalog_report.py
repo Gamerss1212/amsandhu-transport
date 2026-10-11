@@ -80,6 +80,15 @@ def main(home, out):
     if best:
         head += (f"The highest Deflated Sharpe was {best['results']['statistics']['dsr']:.3f}: "
                  f"{best['strategy_id']} on {best['dataset'].get('instrument')}.")
+    passed = [r for r in ok if not any(not c["passed"] and c["name"].startswith("deflated Sharpe")
+                                       for c in r["results"]["checks"])]
+    for r in passed:
+        cap = PORTFOLIOS[r["strategy_id"]].max_verdict if r["strategy_id"] in PORTFOLIOS else "PAPER TEST"
+        failed = [c["name"] for c in r["results"]["checks"] if c.get("required", True) and not c["passed"]]
+        head += (f" {r['strategy_id']} passed the Deflated Sharpe gate but stays {r['results']['verdict']}: "
+                 + ("its universe is today's seven large US stocks (survivorship bias), so its verdict is capped at "
+                    f"{cap} and it may not trade." if cap != "PAPER TEST" else
+                    f"it failed {', '.join(failed) or 'another required gate'}."))
     w("**Headline.** " + head)
     w("")
 
