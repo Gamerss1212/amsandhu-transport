@@ -61,6 +61,13 @@ def main(home, out):
       f"downloaded by the app (Yahoo Finance and Coinbase public endpoints). Every number below is read from that "
       f"ledger.")
     w("")
+    if any((r["results"] or {}).get("operating_mode") != "intraday" for r in rows
+           if not (r["results"] or {}).get("strategy_id", "").startswith("PORTFOLIO")):
+        w("**Note for 1.4.0.** These runs were made before the day-trading operating mode existed (version 1.3.0, "
+          "positions could be held overnight and portfolios rebalanced monthly). From 1.4.0 a strategy can qualify only "
+          "from a test run under the intraday rules, so none of these results can qualify one; the agents re-test the "
+          "runnable templates by themselves under the new rules, and daily or monthly methods stay research-only.")
+        w("")
     w("**How to read this.** \"Published evidence\" is the label your specification gives each template "
       "(R research-supported, C documented construction, H hypothesis). \"Here\" is what this software measured on "
       "its own data, net of modelled costs, on a held-out period it never tuned on. The two are different things: "
