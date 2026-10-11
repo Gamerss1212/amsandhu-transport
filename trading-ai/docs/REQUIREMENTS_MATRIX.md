@@ -19,7 +19,7 @@ The exe has been tested under Wine on Linux, **not on a physical Windows PC**.
 |---|---|---|
 | One launcher `START_TRADING_AI.exe`, no command prompt, npm or Python for the user | DONE | PyInstaller one-folder build (`packaging/trading_ai.spec`); Python, libraries and the compiled dashboard are inside `_internal/`. |
 | Starts backend on 127.0.0.1, auto-selects a free port from 8000 | DONE | `launcher.free_port`; never binds 0.0.0.0. |
-| Starts DB, trading engine, agents, WebSocket, risk, frontend; opens the browser | DONE | 17 start-up checks shown on `/health` (including the autopilot and the assistant). |
+| Starts DB, trading engine, agents, WebSocket, risk, frontend; opens the browser | DONE | 19 start-up checks shown on `/health` (including market discovery, the trading fleet, the autopilot and the assistant). |
 | Single instance (a second double-click opens the running dashboard) | DONE | OS file lock + `/api/system/ping` probe; verified under Wine. |
 | Clean stop (console close, Ctrl+C, Shut down button) with state saved | DONE | Windows console handler + `/api/system/shutdown`; bots, risk state and a DB backup are saved. |
 | Code signing | NOT DONE | Unsigned: SmartScreen may warn on first run. |

@@ -93,6 +93,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
   cursor: pointer; font-weight: 600; white-space: nowrap; transition: background 0.12s, border-color 0.12s;
 }
 .btn:hover:not(:disabled) { border-color: var(--accent-2); }
+a.btn { text-decoration: none; color: var(--text); }
 .btn:disabled { opacity: 0.45; cursor: not-allowed; }
 .btn.primary { background: var(--accent-2); border-color: var(--accent-2); color: #fff; }
 .btn.primary:hover:not(:disabled) { background: #3a9fe6; }
