@@ -1,4 +1,4 @@
-# Requirements matrix — Trading AI 1.5.0
+# Requirements matrix — Trading AI 1.5.1
 
 Status meanings:
 * **DONE**: implemented and exercised by a test or by the self-test.
@@ -7,11 +7,11 @@ Status meanings:
 * **NOT DONE**: not built.
 
 How it was verified:
-* **Unit tests**: 155 tests (`backend/tests`).
-* **Self-test**: `START_TRADING_AI.exe --selftest` runs 31 steps over HTTP and WebSocket against the real server. For 1.5.0 it passed 31 of 31, both from source and on the built Windows exe under Wine.
+* **Unit tests**: 167 tests (`backend/tests`), also run on real Windows 11 by `.github/workflows/windows.yml`.
+* **Self-test**: `START_TRADING_AI.exe --selftest` runs 32 steps over HTTP and WebSocket against the real server. For 1.5.1 it passed 32 of 32 from source, on the built exe under Wine, and on an exe built natively on Windows 11.
 * **Real-data run**: the dashboard and API were exercised on live Coinbase, Kraken and Yahoo data.
 
-The exe has been tested under Wine on Linux, **not on a physical Windows PC**.
+The exe has been tested under Wine on Linux and on a real Windows 11 virtual machine (GitHub runner), **not on a physical Windows PC**.
 
 ## Launch and packaging
 
@@ -74,7 +74,7 @@ The two owner documents are stored unchanged: `docs/specs/AI_Trading_System_Mast
 | Explicit portfolio, position and loss limits plus an emergency stop, tested before execution | DONE | Risk service limits (order, position, gross, leverage, asset class, correlated exposure, open positions, liquidity, daily/weekly loss locks, drawdown). Per-agent daily loss limit of 0.5% of equity (test `test_daily_loss_limit_stops_the_agents_entries_and_two_breaches_roll_back`). The emergency stop removes every permission (test, and a self-test step). |
 | Backtest individually and as a combined portfolio across bull, bear, sideways and volatile markets, with all costs | DONE | `docs/PORTFOLIO_BACKTEST_REPORT.md`: a walk-forward of the master's whole selection process for every agent, combined into one portfolio, by regime, including fees, spread, slippage and funding. Limits are stated in the report. |
 | Prevent look-ahead and leakage; walk-forward; held-out data; paper before live | DONE | Signals are causal and fill at the next bar. Selection never sees the test segment. Walk-forward folds trade only unseen data. Regime labels use the previous day's data. Paper only: live stays off. |
-| Test terminal, software, integrations, order handling, recovery, hardware thermal; report passed / failed / not performed | DONE (thermal NOT PERFORMED) | `docs/VERIFICATION_REPORT.md`. A real `kill -9` recovery check passed 14 of 14. Thermal could not be performed: the build machine has no temperature sensors. |
+| Test terminal, software, integrations, order handling, recovery, hardware thermal; report passed / failed / not performed | DONE (thermal of a physical PC NOT PERFORMED here) | `docs/VERIFICATION_REPORT.md`. A real `kill -9` recovery check passed 14 of 14; the suite, build and self-test passed on real Windows 11. The thermal check itself (`hardware.py`) is built and ran on Windows 11, but that machine is a VM with no sensors; your PC's result needs your run. |
 | Master agent controls assignments, capital, portfolio risk, permissions, monitoring, emergency shutdown | DONE | `engine/master.py` (see its docstring). The deterministic risk service and the emergency stop sit above it, and no agent can change them. |
 | Continuous learning: record each mistake, find its root cause, share the lesson, add persistent safeguards and regression tests | DONE | `engine/learning.py`: 14 root causes. The first mistake of a cause becomes a lesson whose safeguard applies to all agents. Safeguards only block or shrink entries. Every stored scenario is replayed at start-up (a failure stops start-up), per new lesson and hourly. Tests: `test_learning.py` (12). |
 | Validate learned changes by backtest and paper before promotion; version history; automatic rollback | DONE (paper) | A new version needs a PAPER TEST verdict, then must beat the active version on bars it was not trained on (shadow) before promotion. Rollback happens on a paper loss above 2% of equity, 2 daily-limit breaches in 7 days, results below validation, or a failed re-validation. "Live" promotion is not enabled (real money stays off). |
@@ -163,7 +163,7 @@ The two owner documents are stored unchanged: `docs/specs/AI_Trading_System_Mast
 
 ## Known gaps
 
-1. Not tested on a physical Windows PC; tested only under Wine.
+1. Not tested on a physical Windows PC; tested under Wine and on a Windows 11 virtual machine.
 2. No broker adapter is verified against a real account, so live trading cannot be armed.
 3. No news, economic-calendar, funding, order-book or on-chain feeds are connected.
 4. Machine-learning models and the portfolio optimizer are not used in live decisions.
@@ -177,4 +177,14 @@ The two owner documents are stored unchanged: `docs/specs/AI_Trading_System_Mast
 12. Free data limits the history: Yahoo keeps about 60 days of 15-minute bars and about 2 years of hourly bars, so 15-minute agents have few test trades. Options, bonds and more forex pairs or futures contracts cannot be observed here, so no agent covers them.
 13. Coverage stops at Coinbase, Kraken and the curated Yahoo list; meme-coin tags are unverified.
 14. The page layout follows the specification's written description of the reference video; the video itself was not available.
-15. Hardware thermal behaviour was not tested: the build machine is a cloud VM with no temperature sensors (`VERIFICATION_REPORT.md`).
+15. The temperature of your own PC has not been measured: the test machines are virtual machines with no sensors. Run `CHECK_COMPUTER_TEMPERATURE.bat` on your PC (`VERIFICATION_REPORT.md`). Many PCs expose only a motherboard thermal zone, or none, to Windows; the report then says so.
+
+## 1.5.1: Windows 11 and thermal check (owner's request of 2026-10-13)
+
+| Requirement | Status | How it was verified |
+|---|---|---|
+| Runs on Windows 11 | DONE | Built and self-tested natively on a Windows 11 (build 26100) GitHub runner, and under Wine. `START_HERE.txt` explains SmartScreen, Smart App Control (the program is unsigned) and Defender. Not tested on a physical PC. |
+| Check for errors in the thermal (temperature) | DONE (your PC's result NOT PERFORMED here) | `CHECK_COMPUTER_TEMPERATURE.bat` and the page 3 button run 1 minute idle, a load on every logical CPU (1 to 30 minutes, default 5), then 1 minute of cool-down, sampling Windows performance counters every 5 seconds. Verdicts: PASS, PASS (no temperature sensor), WARNING, FAIL, STOPPED. Tests: `tests/test_hardware.py` (12). Real-Windows run: PASS (no sensor) on a VM. |
+| Never overheats the PC through the check | DONE | The load stops at once at 95 °C; Ctrl+C or Stop also stops it. Tested with a simulated 96 °C sensor: stopped in under 5 seconds. |
+| Monitors while running, protects the PC | DONE | The program reads the temperature every 30 seconds; at 85 °C or when Windows limits the CPU, it pauses new training jobs and records the event. Trading rules and risk checks are not changed. Test: training pauses and resumes. |
+| No invented temperatures | DONE | A PC that reports no sensor is reported as such. Readings outside 5-130 °C are dropped as sensor faults. |

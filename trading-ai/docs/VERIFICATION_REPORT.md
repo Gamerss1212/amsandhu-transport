@@ -1,18 +1,22 @@
-# Verification report — Trading AI 1.5.0
+# Verification report — Trading AI 1.5.1
 
 Every line below is a check that was actually run, with its real result. A check that could not be run is listed as
 **NOT PERFORMED**, with the reason. Nothing here is a statement about future returns.
 
-Machine: a cloud Linux VM with 4 vCPUs (Intel Xeon, 2.8 GHz). The Windows program was built and run under Wine. It has
-**not** been run on a physical Windows PC.
+Machines: a cloud Linux VM with 4 vCPUs (Intel Xeon, 2.8 GHz), where the Windows program was built and run under Wine;
+and a **real Windows 11 machine** (GitHub Actions `windows-2025` runner: Windows 11, build 26100, AMD EPYC 7763, 4
+logical CPUs). That runner is a virtual machine. The program has **not** been run on a physical Windows PC: the
+temperature of your own computer can only be measured by running the thermal check on it.
 
 ## Summary
 
 | Area | Result |
 |---|---|
-| Unit and integration tests (`backend/tests`) | PASSED: 155 of 155. |
-| Self-test of the program from source (offline, over HTTP and WebSocket) | PASSED: 31 of 31 steps. |
-| Self-test of the built Windows exe under Wine | PASSED: 31 of 31 steps under Wine, in a fresh data folder, offline (`selftest.log` in the download). The agent probe ran the full decision pipeline on A004's market. The 155 tests also passed inside the build. |
+| Unit and integration tests (`backend/tests`) | PASSED: 167 of 167 on Linux, and the same suite passed on real Windows 11 (see the next rows). |
+| Real Windows 11: tests, native build, exe self-test, thermal check | PASSED on the second run. Workflow `.github/workflows/windows.yml` (run 38478862548): all tests, a native PyInstaller build, the built exe's 32-step self-test (all passed, including "computer temperature sensors read": "Windows 11: sensors via windows-pdh"), then the exe's thermal check (below). The first run FAILED, which found two Windows-only problems (rows 13 and 15 below). |
+| Thermal check on that Windows 11 VM (1 minute of full load) | RESULT: PASS (no temperature sensor). Windows reported no temperature: the `Thermal Zone Information` counter set exists but has no instances on a VM, so the report says "not reported" and shows no temperature figure. What it did measure: CPU busy 99% on all 4 logical CPUs, CPU speed 133% of nominal with no drop, no passive limit or throttle reasons reported, work rate 287 → 262 per second (−12%, below the 30% warning level). The check ran 3 minutes in all (1 idle, 1 load, 1 cool-down). This proves the load test, the Windows counters and the report work on real Windows 11. It says nothing about the heat of any physical PC. |
+| Self-test of the program from source (offline, over HTTP and WebSocket) | PASSED: 32 of 32 steps. |
+| Self-test of the built Windows exe under Wine | PASSED: 32 of 32 steps under Wine, in a fresh data folder, offline (`selftest.log` in the download). The agent probe ran the full decision pipeline on A004's market. The tests also passed inside the build (167). Under Wine the temperature counters do not exist, so that run shows "no temperature reported". |
 | Crash recovery: real SIGKILL during training, then restart | PASSED: 14 of 14 checks (`scripts/kill_restart_check.py`). After the kill, the program restarted READY in paper mode with every start-up check passing, an intact database and audit chain, all 100 agents on the same markets, and 2 interrupted research runs marked failed (not left running). Reconciliation was clean. |
 | Paper round trip on a live BTC price through the real order path | PASSED: buy and sell both FILLED. Slippage 1.3 bp each side against the live quote, fee 0.20 per order on a 50 USD order. Reconciliation clean, paper ledger invariant holds. |
 | Soak on live data, run 1 (20 minutes) | FAILED, then fixed: 20 missed agent deadlines and a 2.7 s cycle every 5 minutes; "fresh data" flapped between 51 and 45. Causes and fixes are below. |
@@ -21,7 +25,7 @@ Machine: a cloud Linux VM with 4 vCPUs (Intel Xeon, 2.8 GHz). The Windows progra
 | Walk-forward portfolio backtest by market regime | Completed: `PORTFOLIO_BACKTEST_REPORT.md`. Results are below. |
 | Data integrations (Coinbase, Kraken, Yahoo Finance public data) | PASSED. Coinbase listed 842 pairs and Kraken 1,460. All 100 agents received real history (Coinbase for crypto, Yahoo for stocks, ETFs, FX and futures). |
 | Broker integrations with real accounts (Alpaca, OANDA, Kraken, IBKR, Coinbase) | NOT PERFORMED: no account credentials exist in this environment, by design (credentials are never pasted into chat). The adapters stay UNVERIFIED, so live trading cannot be armed. Offline tests cover order handling, duplicate prevention, uncertain submissions, reduce-only exits and the live-mode refusal. |
-| Hardware thermal behaviour | NOT PERFORMED: the build machine is a cloud VM with no temperature sensors (`/sys/class/thermal` is empty and there is no hwmon). Check it on your PC with a monitoring tool such as HWiNFO while the program trains (training is the heaviest load: at most 2 research jobs at once). Measured load here, with no training running: 3–6% of one CPU core, about 115 MB of memory. |
+| Hardware thermal behaviour of a physical PC | NOT PERFORMED here: the build machine and the Windows test machine are virtual machines with no temperature sensors, and no physical PC is reachable from this environment. **Use the built-in check on your PC**: double-click `CHECK_COMPUTER_TEMPERATURE.bat` (or press "Run thermal check" on page 3). It runs every CPU core at full load, reads Windows' own sensors, stops at 95 °C and writes a report to `thermal-reports`. While the program runs, it also reads the temperature every 30 seconds and pauses training when the PC is hot. Measured load of the program itself, with no training running: 3–6% of one CPU core, about 115 MB of memory. |
 | Live (real-money) execution | NOT PERFORMED, by design. Real-money orders stay disabled until you arm them separately with a verified broker account. |
 
 ## What the tests cover
@@ -78,6 +82,9 @@ Tests that exist and pass (`backend/tests`):
 | 10 | Offline, the master queued training for markets with no stored data, wasting jobs. | Offline, only markets with stored or DEMO data are trained. | `test_training_submits_documented_research_per_candidate_with_bounded_jobs`. |
 | 11 | The master's counts (promoted, rolled back, rejected) reset to zero on restart. | They are read from the database. | `test_lifetime_counts_come_from_the_database_and_survive_a_restart`. |
 | 12 | Page 1 role cards had overflowing badges, and a stat label was cut off. | The layout was fixed and checked in Chromium at 1500 px and 390 px (no horizontal scroll). | Screenshots taken during the check. |
+| 13 | **Real Windows only: a test failed because of 32-bit integers.** On Windows, numpy's default integer is 32-bit, so `np.arange(n) * 3_600_000` in test data overflowed and produced bar times that were not increasing. | The test data builders use 64-bit integers. The program code was checked: it only uses `arange` for indexes, and the demo data already used 64-bit. | First real-Windows run failed at `test_crypto_backtest_respects_the_24_hour_hold`; the second run passed. |
+| 14 | **Wine only: the exe aborted** when reading temperatures, because Wine does not implement one Windows performance-counter call (`PdhGetFormattedCounterArrayW`). | Single counters use the call Wine has; the thermal-zone list is skipped under Wine and reported as not available there. Real Windows uses the full path. | Wine self-test 32 of 32; real Windows run read the same counters. |
+| 15 | **Thermal check: a 1-second test load could warn about a falling work rate** (noise, seen on the Windows runner). | The work-rate comparison is only made over a load of 30 seconds or more; a real check runs at least 60 seconds. | `test_a_falling_work_rate_is_judged_only_over_a_long_enough_load`; the second Windows run passed. |
 
 ## Training result (what the agents learned)
 
@@ -121,4 +128,4 @@ Full tables: `PORTFOLIO_BACKTEST_REPORT.md`. The period is 2025-01-25 to 2026-10
 1. No strategy version has passed the research gate. The system correctly stays in cash.
 2. No broker account is connected or verified.
 3. Real money needs your separate, explicit arming step. Nothing in this release turns it on.
-4. The exe has not been tested on a physical Windows PC, and thermal behaviour has not been measured.
+4. The exe has run on a real Windows 11 virtual machine and under Wine, but not on a physical PC, and the thermal behaviour of your computer has not been measured until you run the thermal check on it.
