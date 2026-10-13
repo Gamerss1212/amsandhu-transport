@@ -34,6 +34,9 @@ class OMS:
         # lock the snapshot's positions are re-read with working orders counted, so capital is reserved atomically
         self._authority = threading.RLock()
         self.refresh_positions: Optional[Callable[[BrokerAdapter], Optional[dict]]] = None
+        # learning hooks: a risk denial and a broker error are recorded as mistakes (engine/learning.py)
+        self.on_rejection: Optional[Callable[[OrderRequest, RiskDecision, Optional[dict]], object]] = None
+        self.on_error: Optional[Callable[[OrderRequest, str], object]] = None
 
     def _lat(self, key: str, v: float) -> None:
         self.latency[key] = (self.latency[key] + [v])[-500:]
@@ -47,13 +50,22 @@ class OMS:
                       "p99": round(s[int(len(s) * 0.99) - 1], 2) if len(s) >= 100 else None}
         return out
 
-    def place(self, **kw) -> dict:
+    def place(self, *, context: Optional[dict] = None, **kw) -> dict:
         with self._authority:
             if self.refresh_positions is not None:
                 fresh = self.refresh_positions(kw["broker"])
                 if fresh is not None:
                     kw["snapshot"].positions = fresh
-            return self._place(**kw)
+            out = self._place(**kw)
+        try:                                                 # learning never blocks or breaks order handling
+            if out.get("status") == "BLOCKED_BY_RISK" and self.on_rejection is not None:
+                self.on_rejection(kw["req"], out["_decision"], context)
+            elif out.get("status") == "UNKNOWN" and self.on_error is not None:
+                self.on_error(kw["req"], str(out.get("error")))
+        except Exception:                                    # noqa: BLE001
+            pass
+        out.pop("_decision", None)
+        return out
 
     def _place(self, *, decision_id: str, req: OrderRequest, snapshot: Snapshot, broker: BrokerAdapter,
                broker_symbol: str, mode: str, strategy_id: Optional[str], decided_at: float, leg: int = 0,
@@ -68,6 +80,7 @@ class OMS:
         out = {"client_order_id": req.client_order_id, "risk": decision.as_dict(), "mode": mode}
         if not decision.approved:
             out["status"] = "BLOCKED_BY_RISK"
+            out["_decision"] = decision
             self.bus.publish("risk.denied", {"decision_id": decision_id, "instrument": req.instrument_id,
                                              "reason": decision.reason}, severity="warning",
                              correlation_id=decision_id)

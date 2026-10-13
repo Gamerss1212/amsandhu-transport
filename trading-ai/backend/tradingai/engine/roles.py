@@ -1,6 +1,7 @@
 """The shared operational capabilities C01-C50 of the owner's specification (revision 13, section 4), mapped onto the
 components that actually do the work in this software, with an honest implementation type and a state read from the
-running system. Capability IDs are not trading-agent IDs and are not counted in the fleet of 320 (engine/fleet.py).
+running system. Capability IDs are not trading-agent IDs and are not counted among the 100 trading agents
+(engine/master.py).
 
 Implementation types: "deterministic service" (plain code), "agent functions" (the rule-based agents that vote or
 advise on every decision), "statistical model", or "unavailable". No role here is a language model: this build has
@@ -21,8 +22,8 @@ if TYPE_CHECKING:
 
 # role id, name, implementation type, component, agent groups (for the specialist roles)
 ROLES = [
-    ("01", "Supercomputer Brain / fleet coordinator", "deterministic service", "engine/fleet.py (partitions, ownership, "
-     "budgets, supervision) + engine/autopilot.py", ()),
+    ("01", "Master system agent / fleet coordinator", "deterministic service", "engine/master.py (assignments, "
+     "training, versions, capital, permissions, monitoring, emergency stop) + engine/learning.py", ()),
     ("02", "Market-data supervisor", "deterministic service", "data/pipeline.py (providers, store, freshness)", ()),
     ("03", "Data-quality analyst", "agent functions", "data/quality.py + data agents D01-D10", ("data",)),
     ("04", "Regime analyst", "statistical model", "regime/detect.py (rules + 2-state HMM + CUSUM) + market agents",

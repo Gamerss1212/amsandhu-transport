@@ -123,10 +123,6 @@ class PauseIn(BaseModel):
     reason: str = ""
 
 
-class FleetIn(BaseModel):
-    desired: int = Field(ge=1, le=1000)
-
-
 class AskIn(BaseModel):
     text: str = Field(min_length=1, max_length=500)
     command_id: Optional[str] = Field(None, max_length=64)
@@ -252,6 +248,18 @@ def create_app(core, *, token: Optional[str] = None, on_shutdown=None) -> FastAP
     def fleet():
         return core.fleet.view()
 
+    @api.get("/api/learning")
+    def learning():
+        return core.learning.view()
+
+    @api.post("/api/learning/replay")
+    def learning_replay():
+        return core.learning.replay_all("owner request")
+
+    @api.post("/api/fleet/{agent_id}/probe")
+    def fleet_probe(agent_id: str):
+        return core.probe_agent(agent_id)
+
     @api.get("/api/fleet/summary")
     def fleet_summary():
         return core.fleet.summary()
@@ -259,10 +267,6 @@ def create_app(core, *, token: Optional[str] = None, on_shutdown=None) -> FastAP
     @api.get("/api/fleet/{agent_id}")
     def fleet_agent(agent_id: str):
         return core.fleet.detail(agent_id)
-
-    @api.post("/api/fleet/size")
-    def fleet_size(f: FleetIn):
-        return core.fleet.set_desired(f.desired)
 
     @api.get("/api/market/strip")
     def market_strip():
@@ -326,8 +330,8 @@ def create_app(core, *, token: Optional[str] = None, on_shutdown=None) -> FastAP
 
     @api.post("/api/bots")
     def create_bot(b: BotIn):
-        return core.create_bot(b.instrument_id, b.tf, b.strategy_id, b.signal_mode, b.risk_profile,
-                               b.max_trades_per_day)
+        raise PermissionError("bots are run only by the 100 trading agents: each market has exactly one owning agent, "
+                              "so a manual bot could hold a position that conflicts with it")
 
     @api.post("/api/bots/{bot_id}/{action}")
     def bot_action(bot_id: str, action: str):

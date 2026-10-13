@@ -60,6 +60,8 @@ class BotConfig:
     pending: dict = field(default_factory=dict)        # portfolio bots: target weights not yet traded
     rebalance_key: Optional[str] = None      # portfolio bots: the month/week of the last rebalance
     checked_at: float = 0.0
+    params: dict = field(default_factory=dict)          # the agent version's trained parameters
+    agent_id: Optional[str] = None                      # the trading agent this bot belongs to (A001-A100)
 
     def as_dict(self) -> dict:
         return dict(vars(self))
@@ -112,7 +114,7 @@ class Orchestrator:
         sig = Signal(0, int(bars.available_at[-1]), bot.strategy_id)
         strat = None
         if spec is not None and spec.runnable:
-            strat = Strategy(spec)
+            strat = Strategy(spec, bot.params or None)
             strat.on_market_data(bars, inst.calendar or "CRYPTO", market)
             t = time.perf_counter()
             sig = strat.generate_signal()
@@ -186,13 +188,22 @@ class Orchestrator:
                 want = 0                                     # may close what it holds, never reverse into new risk
         entering = want != 0 and want != cur
         owner = app.fleet.owner_of(inst.instrument_id)
-        if entering and owner is None:
-            rec["agent"] = None
+        if entering and (owner is None or (bot.agent_id and bot.agent_id != owner) or
+                         (not bot.agent_id and mode != "shadow")):
+            rec["agent"] = owner
             if cur == 0:
-                return self._finish(rec, "NO_TRADE", "no owning trading agent for this instrument: the brain has not "
-                                    "assigned it (each instrument has exactly one owner)", lat, t_start)
+                return self._finish(rec, "NO_TRADE", "only the instrument's owning trading agent may open positions "
+                                    "on it (one owner per instrument, so positions never conflict)", lat, t_start)
             want, entering = 0, False
         rec["agent"] = owner
+        if entering:
+            # the master's execution permission: a validated active version, not suspended, not stopped for the day
+            perm, why_p = app.fleet.permission(owner)
+            if not perm and mode != "shadow":
+                rec["permission"] = why_p
+                if cur == 0:
+                    return self._finish(rec, "NO_TRADE", f"MASTER_PERMISSION: {why_p}", lat, t_start)
+                want, entering = 0, False
         if entering:
             # owner's rule: no new exposure until this strategy version qualifies; exits always stay allowed
             ok, why_q = app.qualification(bot.strategy_id, inst.instrument_id, bot.tf)
@@ -218,6 +229,7 @@ class Orchestrator:
             return self._finish(rec, "NO_TRADE", why, lat, t_start)
         # ---- size
         target = Decimal(0)
+        budget = Decimal(0)
         if want != 0 and strat is not None:
             budget = acct.equity * Decimal(str(RISK_PROFILES.get(bot.risk_profile, 0.0025)))
             target = strat.calculate_position(Signal(want, sig.as_of, bot.strategy_id), inst, budget)
@@ -229,6 +241,20 @@ class Orchestrator:
             return self._finish(rec, "NO_TRADE", "target equals the current position (size rounded to zero)", lat,
                                 t_start)
         side = "buy" if delta > 0 else "sell"
+        reduces = abs(target) < abs(pos_qty) and np.sign(target) in (0, np.sign(pos_qty))
+        ctx = None
+        if not reduces:
+            # learned safeguards (engine/learning.py): may only skip or shrink an entry, never loosen a limit
+            ctx = self._guard_context(owner, inst, market, side, abs(delta), Decimal(str(last)), snap, bars, reg)
+            g = app.learning.guard(ctx)
+            if not g["allow"]:
+                rec["safeguards"] = g["applied"]
+                return self._finish(rec, "NO_TRADE", "SAFEGUARD: " + "; ".join(g["applied"]), lat, t_start)
+            if g["qty"] < abs(delta):
+                rec["safeguards"] = g["applied"]
+                delta = g["qty"] if delta > 0 else -g["qty"]
+                if delta == 0:
+                    return self._finish(rec, "NO_TRADE", "SAFEGUARD: " + "; ".join(g["applied"]), lat, t_start)
         req = OrderRequest(client_order_id="", instrument_id=inst.instrument_id, market=market, side=side,
                            quantity=abs(delta), reference_price=Decimal(str(last)), limit_price=None,
                            multiplier=inst.multiplier, environment=mode, account_id=acct.account_id_masked,
@@ -242,9 +268,11 @@ class Orchestrator:
         t = time.perf_counter()
         res = app.oms.place(decision_id=did, req=req, snapshot=snap, broker=app.broker_for(mode),
                             broker_symbol=app.broker_symbol(inst, mode), mode=mode, strategy_id=bot.strategy_id,
-                            decided_at=t_start)
+                            decided_at=t_start, context=ctx)
         lat["risk_and_order_ms"] = (time.perf_counter() - t) * 1000
         rec["order"] = {"side": side, "qty": str(abs(delta)), "target": str(target), **res}
+        if not reduces:
+            rec["order"]["planned_risk"] = str(budget.quantize(Decimal("0.01")))
         outcome = "ORDER" if res.get("status") not in ("BLOCKED_BY_RISK", "BLOCKED", "REJECTED") else "RISK_REJECT"
         if outcome == "ORDER" and entering:
             bot.trades_today += 1
@@ -252,6 +280,52 @@ class Orchestrator:
         if rec.get("day_trading"):
             reason = f"{rec['day_trading']['code']}: {rec['day_trading']['detail']} -> {reason}"
         return self._finish(rec, outcome, reason, lat, t_start)
+
+    def _guard_context(self, owner: Optional[str], inst: Any, market: str, side: str, qty: Decimal, price: Decimal,
+                       snap: Any, bars: Any, reg: Any) -> dict:
+        """The facts the learned safeguards look at for one entry proposal (also stored as a mistake's scenario)."""
+        app = self.app
+        L = app.risk.limits
+        eq = snap.equity or Decimal(0)
+        pos = snap.positions or {}
+
+        def notional(p: dict) -> Decimal:
+            return abs(Decimal(str(p.get("qty", 0)))) * Decimal(str(p.get("price") or 0)) * \
+                Decimal(str(p.get("multiplier", 1)))
+        cur = notional(pos.get(inst.instrument_id, {})) if inst.instrument_id in pos else Decimal(0)
+        gross = sum((notional(p) for k, p in pos.items() if k != inst.instrument_id), Decimal(0))
+        limits = {"order": eq * Decimal(str(L.max_order_pct_equity)),
+                  "position": eq * Decimal(str(L.max_position_pct_equity)) - cur,
+                  "gross": eq * Decimal(str(L.max_gross_exposure)) - gross - cur}
+        if owner:
+            used = sum((notional(pos[i]) for i in app.fleet.agents[owner].partition if i in pos), Decimal(0))
+            limits["agent_budget"] = app.fleet.budget(owner) - used
+        now = time.time()
+        recent = [r for r in app.risk.recent if r[2] == inst.instrument_id]
+        r = app.risk
+        controls = ("emergency stop" if r.kill_switch else "trading locked" if r.trading_locked else
+                    "entries paused" if r.entries_paused else "reconciliation required"
+                    if app.state.state == "RECONCILIATION_REQUIRED" else None)
+        last_close = float(bars.close[-1]) if len(bars) else float(price)
+        bar_s = float(np.median(np.diff(bars.ts[-50:])) / 1000) if len(bars) > 2 else 60.0
+        return {"agent_id": owner, "instrument_id": inst.instrument_id, "market": market, "side": side,
+                "qty": str(qty), "price": str(price), "multiplier": str(inst.multiplier),
+                "quantity_step": str(inst.quantity_step),
+                "data_age_s": snap.data_age_s, "bar_seconds": bar_s, "session_open": snap.market_open,
+                "open_orders": sum(1 for o in app.paper.get_open_orders() if o.instrument_id == inst.instrument_id),
+                "last_entry_age_s": (now - max(x[0] for x in recent)) if recent else None,
+                "orders_last_minute": sum(1 for x in r.recent if now - x[0] <= 60),
+                "max_orders_per_minute": L.max_orders_per_minute,
+                "cooldown_s": app.learning.cooldown_left(inst.instrument_id),
+                "price_deviation": abs(float(price) / last_close - 1) if last_close else 0.0,
+                "max_price_deviation": L.max_price_deviation_pct,
+                "participation_qty": (str(Decimal(str(snap.last_volume)) * Decimal(str(L.max_participation)))
+                                      if snap.last_volume else None),
+                "vol_regime": getattr(reg, "volatility", None),
+                "agent_day_stopped": bool(owner and app.fleet.day_stop.get(owner) ==
+                                          time.strftime("%Y-%m-%d", time.gmtime())),
+                "controls_engaged": controls,
+                "limits": {k: str(v) for k, v in limits.items()}}
 
     def _finish(self, rec: dict, outcome: str, reason: str, lat: dict, t0: float) -> dict:
         lat["total_ms"] = (time.time() - t0) * 1000

@@ -102,14 +102,15 @@ class App:
         self._check("instrument registry and calendars", self._instruments)
         self._check("market data store (DuckDB + Parquet)", self._marketdata)
         self._check("strategy library", lambda: f"{lib_summary()['runnable']} runnable templates")
-        self._check("agents", lambda: f"{len(AGENTS)} agents registered")
+        self._check("signal agent functions", lambda: f"{len(AGENTS)} rule-based functions advise each decision")
         self._check("risk service (persisted state restored)", self._risk)
         self._check("paper broker", self._paper)
         self._check("broker connections", self._load_connections)
         self._check("order management", self._oms)
         self._check("research engine", self._research)
         self._check("market discovery", self._discovery)
-        self._check("trading fleet and Supercomputer Brain", self._fleet)
+        self._check("learning: lessons and regression replay", self._learning)
+        self._check("master agent and 100 trading agents", self._fleet)
         self._check("autopilot", self._autopilot)
         self._check("assistant", self._assistant)
         self._check("frontend files", self._frontend)
@@ -132,6 +133,8 @@ class App:
 
     def _open_db(self) -> str:
         self.db = Database(self.paths.db)
+        if self.db.pre_upgrade_backup:
+            return f"schema v{self.db.version}; the old database was backed up first to {self.db.pre_upgrade_backup}"
         return f"schema v{self.db.version}"
 
     def _audit_chain(self) -> str:
@@ -213,12 +216,27 @@ class App:
         return ("offline: discovery off" if self.offline else
                 f"{n} listed pairs remembered; listings refresh daily, prices every minute")
 
+    def _learning(self) -> str:
+        from tradingai.engine.learning import Learning
+        self.learning = Learning(self)
+        self.oms.on_rejection = self.learning.record_rejection
+        self.oms.on_error = lambda req, err: (self.learning.record(
+            "EXECUTION_ERROR", agent_id=req.agent_id, instrument_id=req.instrument_id, detail={"error": err[:300]},
+            scenario={"cooldown_s": 900, "qty": str(req.quantity), "instrument_id": req.instrument_id})
+            if req.agent_id and not req.reduces_position else None)
+        run = self.learning.replay_all("start-up")
+        if run["failed"]:
+            raise AssertionError(f"{len(run['failed'])} of {run['scenarios']} learned scenario(s) failed their replay: "
+                                 + "; ".join(f"{f['root_cause']}: {f['why']}" for f in run["failed"]))
+        return f"{len(self.learning.lessons)} lesson(s); {run['passed']}/{run['scenarios']} regression scenario(s) pass"
+
     def _fleet(self) -> str:
-        from tradingai.engine.fleet import Fleet
-        self.fleet = Fleet(self)
+        from tradingai.engine.master import Master
+        self.fleet = Master(self)
+        self.master = self.fleet
         c = self.fleet.counts()
-        return (f"{c['registered']} agents registered (target {c['target']}), {c['assigned']} with a distinct market "
-                f"partition, {c['blocked']} blocked without one")
+        return (f"{c['registered']} trading agents (exactly {c['target']}), {c['assigned']} with a distinct market; "
+                f"{c['validated']} with a validated version")
 
     def _assistant(self) -> str:
         from tradingai.engine.assistant import Assistant
@@ -447,6 +465,10 @@ class App:
             bars, _ = self.md.bars(bot.instrument_id, bot.tf, lookback=3, max_age_s=self.tick_seconds)
         except Exception as e:                        # noqa: BLE001
             self.bus.publish("data.error", {"bot": bot.bot_id, "error": str(e)}, severity="warning")
+            if bot.agent_id:
+                self.learning.record("DATA_ERROR", agent_id=bot.agent_id, instrument_id=bot.instrument_id,
+                                     detail={"error": str(e)[:300]},
+                                     scenario={"cooldown_s": 900, "qty": "1", "instrument_id": bot.instrument_id})
             return None
         if not len(bars):
             return None
@@ -492,10 +514,29 @@ class App:
                    data=self.bots[bid].as_dict())
         return self.bots[bid].as_dict()
 
+    def probe_agent(self, agent_id: str) -> dict:
+        """Run one agent's full decision pipeline in SHADOW mode (nothing is sent): a diagnostic the self-test uses."""
+        from tradingai.engine.master import ROLES
+        a = self.fleet.agents.get(agent_id)
+        if a is None:
+            raise KeyError(agent_id)
+        if not a.partition:
+            raise ValueError(f"{agent_id} has no market assigned")
+        v = self.fleet.active_version(agent_id)
+        role = ROLES[a.role]
+        sid, tf, params = (v["strategy_id"], v["tf"], v["params"]) if v else (role.candidates[0], role.tf, {})
+        probe = BotConfig("PROBE-" + agent_id, a.partition[0], tf, sid, "strategy", agent_id=agent_id, params=params)
+        rec = self.orch.decide(probe, "shadow")
+        return {"agent": agent_id, "strategy_id": sid, "tf": tf, "version": v["version"] if v else None,
+                "decision_id": rec["decision_id"], "outcome": rec["outcome"], "reason": rec["reason"]}
+
     def bot_action(self, bot_id: str, action: str, by: str = "owner") -> dict:
         bot = self.bots.get(bot_id)
         if bot is None:
             raise KeyError("unknown bot")
+        if action == "delete" and bot.managed_by == "master" and by == "owner":
+            raise PermissionError("this bot is a trading agent's execution loop: stop or pause it instead (the master "
+                                  "would recreate it)")
         if bot.state == "retiring" and action != "delete":
             raise PermissionError("the autopilot is retiring this bot (closing its position)")
         if action == "start":

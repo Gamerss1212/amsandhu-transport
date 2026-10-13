@@ -96,6 +96,23 @@ MIGRATIONS: list[str] = [
         kind TEXT NOT NULL, status TEXT NOT NULL, first_seen INTEGER NOT NULL, last_seen INTEGER NOT NULL,
         delisted INTEGER, meta TEXT, PRIMARY KEY (venue, symbol));
     """,
+    # 5: the 100-agent system: versioned agent policies, recorded mistakes, shared lessons and their regression runs
+    """
+    CREATE TABLE agent_versions (agent_id TEXT NOT NULL, version INTEGER NOT NULL, created INTEGER NOT NULL,
+        status TEXT NOT NULL, strategy_id TEXT NOT NULL, tf TEXT NOT NULL, params TEXT NOT NULL,
+        experiment_id TEXT, training TEXT NOT NULL, shadow TEXT, paper TEXT, changed INTEGER NOT NULL,
+        reason TEXT, PRIMARY KEY (agent_id, version));
+    CREATE INDEX agent_versions_status ON agent_versions(status);
+    CREATE TABLE lessons (lesson_id TEXT PRIMARY KEY, created INTEGER NOT NULL, root_cause TEXT NOT NULL UNIQUE,
+        kind TEXT NOT NULL, first_agent TEXT, safeguard TEXT NOT NULL, description TEXT NOT NULL,
+        occurrences INTEGER NOT NULL, repeats INTEGER NOT NULL, last_seen INTEGER NOT NULL, scenario TEXT NOT NULL);
+    CREATE TABLE mistakes (mistake_id TEXT PRIMARY KEY, ts INTEGER NOT NULL, agent_id TEXT, instrument_id TEXT,
+        kind TEXT NOT NULL, root_cause TEXT NOT NULL, detail TEXT NOT NULL, lesson_id TEXT, repeat INTEGER NOT NULL,
+        ref TEXT);
+    CREATE INDEX mistakes_ts ON mistakes(ts);
+    CREATE TABLE regression_runs (run_id TEXT PRIMARY KEY, ts INTEGER NOT NULL, scenarios INTEGER NOT NULL,
+        passed INTEGER NOT NULL, failed TEXT NOT NULL, trigger TEXT NOT NULL);
+    """,
 ]
 
 GENESIS = "0" * 64
@@ -137,6 +154,7 @@ class Database:
         self._con.execute("PRAGMA journal_mode=WAL")
         self._con.execute("PRAGMA synchronous=FULL")
         self._con.execute("PRAGMA foreign_keys=ON")
+        self.pre_upgrade_backup: Optional[Path] = None
         self._migrate()
 
     # ------------------------------------------------------------------ schema
@@ -147,6 +165,11 @@ class Database:
             current = row[0] if row else 0
             if row is None:
                 self._con.execute("INSERT INTO schema_version (version) VALUES (0)")
+            if 0 < current < len(MIGRATIONS):
+                # an upgrade from an older release: keep a recoverable copy of the old database first
+                stamp = time.strftime("%Y%m%d-%H%M%S")
+                self.pre_upgrade_backup = self.backup(Path(self.path).parent / "backups" /
+                                                      f"pre-upgrade-schema{current}-{stamp}.sqlite3")
             for i, sql in enumerate(MIGRATIONS[current:], start=current + 1):
                 self._con.execute("BEGIN IMMEDIATE")
                 try:

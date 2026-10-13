@@ -169,8 +169,8 @@ def banner(url: str, core) -> str:
              f"  Local server running at  {url}",
              "  Only this computer can reach it (127.0.0.1).",
              f"  Mode: {core.mode.upper()}   State: {core.state.state}",
-             "  Autopilot: " + ("ON - it researches, starts, watches and retires paper bots by itself"
-                                if core.autopilot.cfg.enabled else "off (press START BOT on the dashboard)"),
+             "  Master agent: " + ("ON - it trains, validates and runs 100 paper trading agents by itself"
+                                   if core.autopilot.cfg.enabled else "off (press Start System on the dashboard)"),
              f"  Data folder: {core.paths.base}",
              "", "  Keep this window open while you use the dashboard.",
              "  Close it (or press Ctrl+C) to stop everything safely.", "  " + "=" * 58]
@@ -236,27 +236,39 @@ def selftest(home: Optional[str], offline: bool) -> int:
                (_ for _ in ()).throw(AssertionError()))
     ok &= step("starts in PAPER mode", lambda: (api("/api/overview")["mode"] == "paper") or
                (_ for _ in ()).throw(AssertionError("not paper")))
+    def by_master(j):
+        return str(j["meta"].get("by", "")).startswith("master:")
+
     def autopilot_working():
         ap = api("/api/autopilot")
-        assert ap["config"]["enabled"], "autopilot is off on a fresh install"
+        assert ap["config"]["enabled"], "the system is off on a fresh install"
         t0 = time.time()
         while time.time() - t0 < 60:
-            mine = [j for j in api("/api/research/jobs") if j["meta"].get("by") == "autopilot"]
+            mine = [j for j in api("/api/research/jobs") if by_master(j)]
             if mine:
-                return f"on by default; started by itself: {mine[-1]['title']}"
+                return f"on by default; the master started training by itself: {mine[-1]['title']}"
             time.sleep(1)
-        raise TimeoutError("the autopilot did not start any research within 60 s")
-    ok &= step("autopilot on by default and working by itself", autopilot_working)
+        raise TimeoutError("the master agent did not start any training within 60 s")
+    ok &= step("master agent on by default and training by itself", autopilot_working)
     ok &= step("live mode refused without arming", lambda: c.post("/api/mode", headers=tok["h"],
                                                                      json={"mode": "live"}).status_code == 403 or
                (_ for _ in ()).throw(AssertionError("live was not refused")))
     ok &= step("instruments and chart (DEMO, simulated)", lambda: (lambda ch: f"{len(ch['bars'])} bars, simulated="
                                                                    f"{ch['simulated']}")(
         api("/api/chart?instrument=DEMO:DEMO-TREND&tf=5m&n=120")))
-    bot = {}
-    ok &= step("create a paper bot", lambda: bot.update(api("/api/bots", "POST", json={
-        "instrument_id": "DEMO:DEMO-TREND", "tf": "5m", "strategy_id": "tsmom.none.flip"})) or bot["bot_id"])
+    ok &= step("bots are created only by the master (owner request refused)", lambda: c.post(
+        "/api/bots", headers=tok["h"], json={"instrument_id": "DEMO:DEMO-TREND", "tf": "5m",
+                                              "strategy_id": "tsmom.none.flip"}).status_code == 403 or
+        (_ for _ in ()).throw(AssertionError("POST /api/bots was not refused")))
     ok &= step("Start System", lambda: api("/api/bot/start", "POST"))
+
+    def probe():
+        f = api("/api/fleet")
+        have = [a for a in f["agents"] if a["partition"]]
+        aid = next((a["id"] for a in have if a["job"] != "waiting for data"), have[0]["id"])
+        p = api(f"/api/fleet/{aid}/probe", "POST")
+        return f"{aid} ({p['strategy_id']} {p['tf']}, shadow): {p['outcome']}: {p['reason'][:90]}"
+    ok &= step("an agent's full decision pipeline runs (shadow probe, nothing sent)", probe)
 
     def decided():
         t0 = time.time()
@@ -269,8 +281,8 @@ def selftest(home: Optional[str], offline: bool) -> int:
     ok &= step("trading loop writes a decision", decided)
     ok &= step("Stop", lambda: api("/api/bot/stop", "POST"))
     def research_recorded():
-        mine = [j for j in api("/api/research/jobs") if j["meta"].get("by") == "autopilot"]
-        assert mine, "the autopilot started no research"
+        mine = [j for j in api("/api/research/jobs") if by_master(j)]
+        assert mine, "the master started no training"
         j = wait_job(mine[0]["job_id"])
         n = api("/api/research/experiments?limit=5")["counts"]["experiments"]
         assert n >= 1, "nothing recorded in the research ledger"
@@ -289,14 +301,22 @@ def selftest(home: Optional[str], offline: bool) -> int:
 
     def fleet_ok():
         f = api("/api/fleet")
-        assert f["counts"]["registered"] == 320 and len(f["agents"]) == 320, f["counts"]
+        assert f["counts"]["registered"] == 100 and len(f["agents"]) == 100, f["counts"]
         owned = [i for a in f["agents"] for i in a["partition"]]
         assert len(owned) == len(set(owned)), "an instrument has two owners"
         detail = api("/api/fleet/" + f["agents"][0]["id"])
-        assert detail["id"] == f["agents"][0]["id"]
+        assert detail["id"] == f["agents"][0]["id"] and detail["role"]["candidates"], detail.get("role")
         return (f"{f['counts']['registered']} agents, {f['counts']['assigned']} with a distinct market, "
-                f"{f['counts']['blocked']} blocked with a reason; brain plan v{f['brain']['plan_version']}")
-    ok &= step("trading fleet: 320 agents, one owner per market", fleet_ok)
+                f"{f['counts']['blocked']} blocked with a reason, {f['counts']['validated']} with a validated version; "
+                f"master plan v{f['brain']['plan_version']}")
+    ok &= step("master agent: exactly 100 trading agents, one owner per market", fleet_ok)
+
+    def learning_ok():
+        r = api("/api/learning/replay", "POST")
+        assert not r["failed"], r["failed"]
+        m = api("/api/learning")["metrics"]
+        return f"{m['lessons']} lesson(s); regression replay {r['passed']}/{r['scenarios']} passed"
+    ok &= step("learned safeguards: regression replay passes", learning_ok)
 
     def caps_ok():
         r = api("/api/roles")
@@ -338,6 +358,13 @@ def selftest(home: Optional[str], offline: bool) -> int:
     ok &= step("reconciliation", lambda: (lambda r: r["ok"] or (_ for _ in ()).throw(AssertionError(r)))(
         api("/api/reconcile", "POST")))
     ok &= step("EMERGENCY STOP engages", lambda: api("/api/emergency-stop", "POST", json={"reason": "selftest"}))
+
+    def no_permission():
+        f = api("/api/fleet")
+        assert f["counts"]["execution_eligible"] == 0, f["counts"]
+        assert all(not a["permission"] for a in f["agents"]), "an agent kept its permission"
+        return "0 of 100 agents may open trades while the emergency stop is engaged"
+    ok &= step("emergency stop removes every agent's permission", no_permission)
     ok &= step("re-arm with the typed phrase", lambda: api("/api/rearm", "POST", json={"phrase": "RE-ARM TRADING"}))
     ok &= step("audit chain verifies", lambda: api("/api/audit/verify")["ok"] or
                (_ for _ in ()).throw(AssertionError("audit chain broken")))

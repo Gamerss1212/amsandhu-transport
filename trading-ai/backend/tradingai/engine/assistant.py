@@ -98,9 +98,19 @@ class Assistant:
                 self._fill_since = time.time()
         elif t == "autopilot":
             msg = d.get("message", "")
-            if msg.startswith(("started", "retired")) or msg.startswith("AUTOPILOT"):
-                self._announce("autopilot", "warning" if msg.startswith("retired") else "info", "Autopilot",
-                               "Autopilot: " + msg.split(" (")[0] + ".", "ap:" + msg[:60], 30, 900)
+            if msg.startswith("AUTOPILOT"):
+                self._announce("autopilot", "info", "System", "The master agent is " +
+                               ("on." if msg.endswith("ON") else "off."), "ap:" + msg[:60], 30, 900)
+        elif t == "master":
+            msg = d.get("message", "")
+            if re.search(r": (active|rolled_back) \(|-> active|suspended", msg):
+                bad = "rolled_back" in msg or "suspended" in msg
+                self._announce("master", "warning" if bad else "info", "Master agent",
+                               "Master agent: " + msg.split(" (")[0] + ".", "ma:" + msg[:60], 30, 900)
+        elif t == "learning" and not d.get("repeat"):
+            self._announce("learning", "info", "Lesson learned", f"New lesson from {d.get('agent') or 'the system'}: "
+                           f"{str(d.get('root_cause', '')).replace('_', ' ').lower()}. Its safeguard now applies to all "
+                           "agents.", "les:" + str(d.get("root_cause")), 60, 900)
         elif t == "state" and d.get("to") in ("ERROR", "RECONCILIATION_REQUIRED"):
             self._announce("system", "critical", "System state", f"Attention: the system moved to "
                            f"{d['to'].replace('_', ' ').lower()}. {d.get('reason', '')}", "state:" + d["to"], 60, 900)
@@ -230,12 +240,15 @@ def i_bots(a: Assistant, q: str) -> dict:
     app = a.app
     bots = list(app.bots.values())
     run = [b for b in bots if b.state == "running"]
-    ap = app.autopilot.view()
-    parts = [f"{len(run)} of {len(bots)} bots are running in {app.mode} mode."]
+    c = app.fleet.counts()
+    parts = [f"The master agent runs {c['registered']} trading agents in {app.mode} mode: {c['assigned']} have a market, "
+             f"{c['validated']} have a validated version and {c['execution_eligible']} may open trades now.",
+             f"{len(run)} of {len(bots)} bots are running (each is one agent's execution loop)."]
     for b in run[:6]:
-        parts.append(f"{b.strategy_id.split('.')[0].replace('_', ' ')} on {b.instrument_id.split(':')[1]} "
-                     f"{b.tf}.")
-    parts.append(f"The autopilot is on: {ap['doing']}." if app.autopilot.cfg.enabled else "The autopilot is off.")
+        parts.append(f"{(b.agent_id + ': ') if getattr(b, 'agent_id', None) else ''}"
+                     f"{b.strategy_id.split('.')[0].replace('_', ' ')} on {b.instrument_id.split(':')[1]} {b.tf}.")
+    parts.append(f"The master is on: {app.fleet.doing}." if app.autopilot.cfg.enabled else
+                 "The master agent is off: press Start System.")
     if len(run) == 1:
         a.remember(run[0].bot_id, "status answer")
     return {"intent": "bots", "answer": " ".join(parts), "facts": {"running": len(run), "bots": len(bots)}}
@@ -253,10 +266,10 @@ def i_why_not(a: Assistant, q: str) -> dict:
         why = "Reconciliation is required: new exposure is frozen until local records match the account."
     elif not any(b.state == "running" for b in app.bots.values()):
         none_qualified = not app.autopilot.candidates()
-        why = ("No strategy has qualified yet, so the system stays in cash by design while it keeps researching. "
-               if none_qualified else "No bot is running. ") + (
-            "Right now: " + app.autopilot.view()["doing"] + "." if app.autopilot.cfg.enabled
-            else "Press Start System to let the autopilot run.")
+        why = ("No agent has a validated version yet, so the system stays in cash by design while the master trains "
+               "them. " if none_qualified else "No agent's execution loop is running. ") + (
+            "Right now: " + app.fleet.doing + "." if app.autopilot.cfg.enabled
+            else "Press Start System to let the master agent run.")
     else:
         last = app.db.one("SELECT outcome, reason, instrument_id FROM decisions ORDER BY ts DESC LIMIT 1")
         why = ("Bots are running; the latest decision was " + f"{last['outcome'].replace('_', ' ').lower()} on "
@@ -304,11 +317,11 @@ def i_review(a: Assistant, q: str) -> dict:
            f"{rs.get('TEST_COMPLETE', 0)} need more research and {rs.get('REJECTED_UNDER_TEST', 0)} were rejected; "
            f"{rs.get('DATA_BLOCKED', 0)} are blocked by missing data or products.")
     if cands:
-        txt += " Qualified and waiting for a slot: " + "; ".join(f"{c['strategy_id'].split('.')[0].replace('_', ' ')} on "
-                                                                f"{c['iid'].split(':')[1]}" for c in cands) + "."
-    pend = app.autopilot.mem.get("pending", [])
-    if pend:
-        txt += f" {len(pend)} full test{'s are' if len(pend) != 1 else ' is'} queued."
+        txt += " Agents with a validated version: " + "; ".join(
+            f"{c['agent']} {c['strategy_id'].split('.')[0].replace('_', ' ')} on {c['iid'].split(':')[1]}"
+            for c in cands) + "."
+    if app.fleet.jobs:
+        txt += f" {len(app.fleet.jobs)} training job{'s are' if len(app.fleet.jobs) != 1 else ' is'} running."
     return {"intent": "review", "answer": txt}
 
 
