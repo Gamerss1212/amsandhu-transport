@@ -78,6 +78,18 @@ def test_a_stopped_check_gives_no_conclusion():
     assert res["verdict"] == "STOPPED" and res["stopped"] and not loaded()
 
 
+def test_a_falling_work_rate_is_judged_only_over_a_long_enough_load():
+    def samples(span_s):
+        n = 12
+        return [{"t_s": i * span_s / (n - 1), "phase": "load", "max_temp_c": 70.0, "passive_limit_pct": None,
+                 "throttle_reasons": None, "cpu_load_pct": 100.0, "cpu_perf_pct": None, "cpu_mhz": None,
+                 "perf_limit_flags": None, "work_rate": 200.0 if i < 6 else 90.0, "status": "ok"} for i in range(n)]
+    long_run = H.summarise(samples(60.0), 2, None, False, 1.0)
+    assert long_run["verdict"] == "WARNING" and long_run["work_rate_drop"] > 0.5
+    short_run = H.summarise(samples(1.0), 2, None, False, 0.02)
+    assert short_run["verdict"] == "PASS" and short_run["work_rate_drop"] is None
+
+
 def test_assess_thresholds_and_reasons():
     base = {"max_temp_c": None, "passive_limit_pct": None, "throttle_reasons": None, "cpu_load_pct": None,
             "cpu_perf_pct": None}

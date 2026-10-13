@@ -38,6 +38,7 @@ CRIT_C = 95.0              # the load test stops immediately at or above this
 SAME_SENSOR_LIMITS = (5.0, 130.0)  # readings outside this range are sensor errors, not temperatures
 PERF_LOW_PCT = 60.0        # effective speed below this while busy = held back
 RATE_DROP_WARN = 0.30      # work rate falling more than 30% under sustained load = throttling (some fall is normal)
+RATE_MIN_SPAN_S = 30.0     # a shorter load is too noisy to judge a falling work rate (a real check runs 60 s or more)
 
 PDH_PATHS = {
     "zone_temp_hp": r"\Thermal Zone Information(*)\High Precision Temperature",
@@ -391,8 +392,10 @@ def summarise(samples: list[dict], threads: int, aborted: Optional[str], stopped
     rates = [s["work_rate"] for s in samples if s["phase"] == "load" and s["work_rate"]]
     early = rates[:max(1, min(6, len(rates) // 4))] if rates else []
     late = rates[-max(1, min(12, len(rates) // 4)):] if rates else []
+    load_t = [s["t_s"] for s in samples if s["phase"] == "load"]
+    span = (load_t[-1] - load_t[0]) if len(load_t) > 1 else 0.0
     drop = None
-    if early and late and max(early) > 0:
+    if early and late and max(early) > 0 and span >= RATE_MIN_SPAN_S:
         drop = round(1 - (sum(late) / len(late)) / (sum(early) / len(early)), 3)
     passive = col("load", "passive_limit_pct")
     throttle = [x for x in col("load", "throttle_reasons") if x]
