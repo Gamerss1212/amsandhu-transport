@@ -688,3 +688,33 @@ def test_a_version_trained_on_one_market_is_never_used_on_another(app):
         assert not ok
     finally:
         app.offline = True
+
+
+def test_a_slow_agent_job_is_never_doubled_and_refreshes_are_spread(app, monkeypatch):
+    import threading as th
+    gate = th.Event()
+    a = app.fleet.agents["A004"]
+    real = app.fleet._job
+
+    def slow(agent):
+        if agent is a:
+            gate.wait(5)
+        return real(agent)
+    monkeypatch.setattr(app.fleet, "_job", slow)
+    monkeypatch.setattr(M, "JOB_SECONDS", 0.05)
+    app.fleet.cycle()                                    # A004's job is stuck
+    out = app.fleet.cycle()                              # the next cycle must not start a second one
+    assert out["agents"] == 99 and app.fleet.metrics["busy_skipped"] >= 1
+    gate.set()
+
+
+
+def test_monitoring_jobs_never_wait_on_the_network_when_the_data_refresher_runs(app, monkeypatch):
+    calls = []
+    monkeypatch.setattr(app, "quote", lambda iid: calls.append(iid) or {"ts": now_ms(), "price": 1.0})
+    app.fleet._refresher = object()                      # as when start() has launched the refresher thread
+    app.fleet._quotes["CME:ES"] = {"ts": now_ms(), "price": 5000.0}
+    app.fleet.cycle()
+    assert calls == []                                   # jobs read the refresher's cache only
+    es = next(a for a in app.fleet.agents.values() if a.partition == ["CME:ES"])
+    assert es.last_price == "5000.0"

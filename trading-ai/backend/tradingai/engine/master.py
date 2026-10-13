@@ -46,6 +46,7 @@ from datetime import datetime, timezone
 from decimal import Decimal
 from typing import TYPE_CHECKING, Any, Callable, Optional
 
+from tradingai.data.bars import TF_MS
 from tradingai.market.calendars import session
 from tradingai.market.universe import paper_tradable
 from tradingai.storage.db import dumps, now_ms
@@ -191,6 +192,9 @@ class Master:
         self.activity: list[dict] = []
         self._lock = threading.RLock()
         self._pool = ThreadPoolExecutor(max_workers=WORKERS, thread_name_prefix="agent")
+        self._running: dict[str, Any] = {}                  # agent id -> its current monitoring job (a Future)
+        self._quotes: dict[str, dict] = {}                  # instrument -> newest price from the data refresher
+        self._refresher: Optional[threading.Thread] = None
         self._thread: Optional[threading.Thread] = None
         self._stop = threading.Event()
         self.metrics = {"cycles": 0, "last_cycle_ms": None, "missed_deadlines": 0, "last_cycle": None,
@@ -848,12 +852,21 @@ class Master:
             snap = disc.quote(iid) if disc is not None else None
             if snap is not None and disc.fresh(snap):
                 a.consumed_version, a.last_input_ts, a.last_price = disc.version, snap["received"], str(snap["last"])
-            elif time.time() - a.data_at > DATA_SECONDS:
+            elif self._refresher is not None:
+                # the data refresher thread fetches prices at the provider's pace; a monitoring job never waits on the
+                # network, so one slow provider cannot make agents miss their deadlines
+                q = self._quotes.get(iid)
+                if q:
+                    a.last_input_ts, a.last_price = q["ts"], str(q["price"])
+            elif time.time() - a.data_at > DATA_SECONDS:     # no refresher (tests, manual cycles): fetch here
                 a.data_at = time.time()
                 q = app.quote(iid)
                 if q:
                     a.last_input_ts, a.last_price = q["ts"], str(q["price"])
-            data_ok = a.last_input_ts is not None and now_ms() - a.last_input_ts < (DATA_SECONDS * 2 + 120) * 1000
+            # fresh = no older than two of the agent's own bars (the same rule as the STALE_DATA safeguard), and never
+            # stricter than the refresh interval allows
+            limit_ms = max((DATA_SECONDS * 2 + 120) * 1000, 2 * TF_MS.get(ROLES[a.role].tf, 3_600_000))
+            data_ok = a.last_input_ts is not None and now_ms() - a.last_input_ts < limit_ms
             a.fresh = data_ok
             open_ = inst.market_type.name == "CRYPTO_SPOT" or session(inst.calendar or "CRYPTO", now_ms())["open"]
             v = self.active_version(a.agent_id)
@@ -889,8 +902,17 @@ class Master:
 
     def cycle(self) -> dict:
         t0 = time.perf_counter()
-        futs = [self._pool.submit(self._job, a) for a in list(self.agents.values())]
+        futs, busy = [], 0
+        for a in list(self.agents.values()):
+            prev = self._running.get(a.agent_id)
+            if prev is not None and not prev.done():
+                busy += 1                                     # still on its last job: never two jobs for one agent
+                continue
+            f = self._pool.submit(self._job, a)
+            self._running[a.agent_id] = f
+            futs.append(f)
         self.metrics["queue_depth"] = len(futs)
+        self.metrics["busy_skipped"] = self.metrics.get("busy_skipped", 0) + busy
         done, pending = wait(futs, timeout=JOB_SECONDS * 3)
         self.metrics["missed_deadlines"] += len(pending)
         self.metrics["cycles"] += 1
@@ -928,8 +950,39 @@ class Master:
 
     def start(self) -> None:
         if self._thread is None:
+            self._refresher = threading.Thread(target=self._refresh_loop, name="master-data", daemon=True)
+            self._refresher.start()
             self._thread = threading.Thread(target=self._run, name="master", daemon=True)
             self._thread.start()
+
+    def _refresh_loop(self) -> None:
+        """One thread refreshes the newest price of every assigned market that the shared crypto snapshot does not
+        cover, one request at a time, each market about every DATA_SECONDS."""
+        done: dict[str, float] = {}
+        while not self._stop.is_set():
+            disc = getattr(self.app, "discovery", None)
+            due = []
+            for a in list(self.agents.values()):
+                if not a.partition:
+                    continue
+                iid = a.partition[0]
+                snap = disc.quote(iid) if disc is not None else None
+                if snap is not None and disc.fresh(snap):
+                    continue
+                if time.time() - done.get(iid, 0) >= DATA_SECONDS:
+                    due.append(iid)
+            for iid in due:
+                if self._stop.is_set():
+                    return
+                try:
+                    q = self.app.quote(iid)
+                    if q:
+                        self._quotes[iid] = q
+                except Exception as e:                        # noqa: BLE001 - reported, never fatal
+                    self.metrics["data_errors"] = self.metrics.get("data_errors", 0) + 1
+                    self.metrics["last_data_error"] = f"{iid}: {type(e).__name__}: {e}"[:200]
+                done[iid] = time.time()
+            self._stop.wait(2)
 
     def stop(self) -> None:
         self._stop.set()

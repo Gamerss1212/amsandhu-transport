@@ -281,14 +281,26 @@ def _count(reg: dict[int, str], combined: dict) -> dict:
 
 
 def by_regime(series: dict[int, float], reg: dict[int, str]) -> dict:
+    """Group day returns by the benchmark's regime. A day the benchmark did not trade (weekend, holiday) takes the
+    most recent earlier label, which uses only information from before that day."""
+    import bisect
+    keys = sorted(reg)
     groups: dict[str, list] = defaultdict(list)
     for d, r in series.items():
-        groups[reg.get(d, "unlabelled")].append(r)
+        lab = reg.get(d)
+        if lab is None:
+            i = bisect.bisect_right(keys, d) - 1
+            lab = reg[keys[i]] if i >= 0 and d - keys[i] <= 5 else "unlabelled"
+        groups[lab].append(r)
     return {k: stats(v) for k, v in sorted(groups.items())}
 
 
 def pct(x, nd=1):
     return "-" if x is None else f"{x * 100:+.{nd}f}%"
+
+
+def dd(x, nd=1):
+    return "-" if x is None else f"{x * 100:.{nd}f}%"
 
 
 def num(x, nd=2):
@@ -353,7 +365,7 @@ def render(s: dict) -> str:
     for name, x in (("ALL", a), ("GATED", g)):
         if x.get("days"):
             L.append(f"| {name} | {x['days']} | {pct(x['total_return'])} | {num(x['sharpe'])} | "
-                     f"{pct(x['max_drawdown'])} | {x['up_days'] * 100:.0f}% | {pct(x['worst_day'], 2)} |")
+                     f"{dd(x['max_drawdown'])} | {x['up_days'] * 100:.0f}% | {pct(x['worst_day'], 2)} |")
     bh = s["buy_and_hold"]
     if bh:
         L += ["", "For comparison, buy and hold over the same dates: " + "; ".join(
@@ -363,6 +375,10 @@ def render(s: dict) -> str:
           f"{co['breakdown']['spread']:,.0f}, slippage {co['breakdown']['slippage']:,.0f}, funding "
           f"{co['breakdown']['funding']:,.0f}), against gross trading P&L of {co['gross']:,.0f}. All amounts are in "
           "account currency, on each sleeve's own 100,000 of backtest capital.", ""]
+    if co["gross"] > 0 and co["total"] > co["gross"]:
+        L += [f"**Costs were {co['total'] / co['gross']:.1f} times the gross trading profit.** Before costs the "
+              "agents made a little money in total; after costs they lost it. This is the main reason the research gate "
+              "rejects every version.", ""]
     L += regime_table("Combined ALL, by US equity regime (SPY)", c["by_spy_regime"])
     L += regime_table("Combined ALL, by crypto regime (BTC)", c["by_btc_regime"])
     L += regime_table("Combined GATED, by US equity regime (SPY)", c["gated_by_spy_regime"])
@@ -370,9 +386,9 @@ def render(s: dict) -> str:
     for role, x in s["by_role"].items():
         L += [f"### {M.ROLES[role].label} ({x['agents']} agents, benchmark {x['benchmark']})", "",
               f"ALL: {x['all'].get('days', 0)} days, {pct(x['all'].get('total_return'))}, Sharpe "
-              f"{num(x['all'].get('sharpe'))}, max drawdown {pct(x['all'].get('max_drawdown'))}. GATED: "
+              f"{num(x['all'].get('sharpe'))}, max drawdown {dd(x['all'].get('max_drawdown'))}. GATED: "
               f"{pct(x['gated'].get('total_return'))}, Sharpe {num(x['gated'].get('sharpe'))}, max drawdown "
-              f"{pct(x['gated'].get('max_drawdown'))}.", ""]
+              f"{dd(x['gated'].get('max_drawdown'))}.", ""]
         L += regime_table("ALL by regime", x["regimes"])
     L += ["## Every agent (out of sample)", "",
           "| Agent | Market | Candidates chosen across folds | OOS days | OOS return | Sharpe | Max DD | Trades | Costs / gross "
@@ -382,7 +398,7 @@ def render(s: dict) -> str:
         ratio = (f"{x['costs'] / x['gross_pnl']:.0%}" if x["gross_pnl"] > 0 else
                  ("gross loss" if x["gross_pnl"] < 0 else "-"))
         L.append(f"| {x['agent']} | {x['iid']} | {', '.join(c_.split('.')[0] for c_ in x['chosen'])} | {o.get('days', 0)} | "
-                 f"{pct(o.get('total_return'))} | {num(o.get('sharpe'))} | {pct(o.get('max_drawdown'))} | {x['trades']} | "
+                 f"{pct(o.get('total_return'))} | {num(o.get('sharpe'))} | {dd(o.get('max_drawdown'))} | {x['trades']} | "
                  f"{ratio} | {x['gated_folds']}/{len(x['folds'])} | {pct(gg.get('total_return'))} |")
     missing = [d for d in s["data"] if d.get("error") or (d.get("bars") or 0) < 400]
     if missing:
@@ -395,7 +411,8 @@ def render(s: dict) -> str:
           "- Live fills can be worse than the cost model, especially for small coins and at the open.",
           "- The 15-minute agents have only about 60 days of data, so their numbers rest on few trades.",
           "- Regime labels are a reporting device. A short window may contain few days of a given regime, and the day "
-          "counts are shown so the sample size is visible.",
+          "counts are shown so the sample size is visible. Days the benchmark did not trade (weekends, holidays) take "
+          "the previous trading day's label.",
           "- The live system is stricter than ALL. An agent trades only after its own research run passes every gate "
           "(PAPER TEST), and in paper only.", ""]
     return "\n".join(L)
