@@ -17,7 +17,10 @@ replay.
 Nothing shown as real is invented: every number comes from a calculation on real market data, an authenticated broker
 connection, or clearly labelled simulated (DEMO) data.
 
-Download for Windows: [`downloads/TradingAI-v1.5.0-windows.zip`](../downloads/TradingAI-v1.5.0-windows.zip) (unzip, double-click `START_TRADING_AI.exe`). The previous 1.4.1 download is kept beside it.
+Download for Windows 11 or 10 (64-bit): [`downloads/TradingAI-v1.5.1-windows.zip`](../downloads/TradingAI-v1.5.1-windows.zip)
+(unzip, double-click `START_TRADING_AI.exe`; `docs/START_HERE.txt` explains the SmartScreen and Smart App Control
+messages). To check your computer's temperature under full load, double-click `CHECK_COMPUTER_TEMPERATURE.bat` in the
+same folder. The previous 1.5.0 and 1.4.1 downloads are kept beside it.
 
 Beginners: read [`docs/START_HERE.txt`](docs/START_HERE.txt). What is done and what is not:
 [`docs/REQUIREMENTS_MATRIX.md`](docs/REQUIREMENTS_MATRIX.md). The owner's specification is in
@@ -76,7 +79,8 @@ packaging/         PyInstaller spec, Windows build script (runs under Wine on Li
 python -m venv .venv && .venv/bin/pip install -r requirements-dev.txt
 cd frontend && npm ci && npm run build && cd ..
 cd backend && ../.venv/bin/python -m tradingai.launcher            # add --offline to use stored + DEMO data only
-../.venv/bin/python -m pytest -q tests                              # 155 tests
+../.venv/bin/python -m pytest -q tests                              # 166 tests
+../.venv/bin/python -m tradingai.launcher --thermal-check --minutes 5   # temperature and throttling under full load
 ../.venv/bin/python -m tradingai.launcher --selftest --offline      # end-to-end test over HTTP and WebSocket
 ```
 
@@ -103,6 +107,10 @@ Backtest the whole catalog and regenerate its report (about 6 minutes, downloads
 `packaging/build_windows.sh` runs the tests, builds the dashboard, checks the strategy-library cache, runs PyInstaller
 with a Windows Python under Wine, copies the documents, runs the built exe's `--selftest` in a fresh folder and zips
 `release/TradingAI/`. On Windows run the PyInstaller command from the script header natively.
+
+`.github/workflows/windows.yml` does the same on a real Windows machine (GitHub's `windows-2025` runner): the tests,
+a native PyInstaller build, the exe's self-test, a thermal check against Windows' own performance counters, and a list
+of the counters that machine offers. It runs on every push that changes `trading-ai/`, or by hand from the Actions tab.
 
 ## Where things are written
 
