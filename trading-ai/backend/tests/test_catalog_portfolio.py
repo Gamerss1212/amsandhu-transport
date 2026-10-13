@@ -144,7 +144,7 @@ def intraday_bars(sessions=30, seed=3, minutes=15):
     rng = np.random.default_rng(seed)
     per = 390 // minutes
     t0 = 1704205800000                                                   # 2024-01-02 14:30 UTC = 09:30 New York
-    ts = np.concatenate([t0 + d * 86_400_000 + np.arange(per) * minutes * 60_000 for d in range(sessions)])
+    ts = np.concatenate([t0 + d * 86_400_000 + np.arange(per, dtype=np.int64) * minutes * 60_000 for d in range(sessions)])
     c = 100 * np.cumprod(1 + rng.normal(0, 0.003, len(ts)))
     o = np.r_[100.0, c[:-1]]
     v = rng.integers(1_000, 5_000, len(ts)).astype(float)

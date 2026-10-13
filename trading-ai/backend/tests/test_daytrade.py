@@ -55,7 +55,7 @@ def stock_bars(sessions=20, minutes=15):
     per = 390 // minutes
     t0 = ny(2024, 1, 2, 9, 30)
     days = [t0 + d * 86_400_000 for d in range(sessions + 10) if datetime.fromtimestamp((t0 + d * 86_400_000) / 1000, NY).weekday() < 5][:sessions]
-    ts = np.concatenate([d + np.arange(per) * minutes * 60_000 for d in days])
+    ts = np.concatenate([d + np.arange(per, dtype=np.int64) * minutes * 60_000 for d in days])
     c = 100 * np.cumprod(1 + rng.normal(0, 0.002, len(ts)))
     o = np.r_[100.0, c[:-1]]
     return Bars("US:SPY", f"{minutes}m", ts, o, np.maximum(o, c) * 1.001, np.minimum(o, c) * 0.999, c,
@@ -95,7 +95,7 @@ def test_daily_bars_produce_no_intraday_trades(book):
 def test_crypto_backtest_respects_the_24_hour_hold(book):
     rng = np.random.default_rng(2)
     n = 24 * 30
-    ts = ny(2024, 1, 2, 0, 0) + np.arange(n) * H
+    ts = ny(2024, 1, 2, 0, 0) + np.arange(n, dtype=np.int64) * H        # int64: Windows numpy defaults to int32
     c = 100 * np.cumprod(1 + rng.normal(0, 0.004, n))
     o = np.r_[100.0, c[:-1]]
     bars = Bars("COINBASE:BTC-USD", "1h", ts, o, np.maximum(o, c), np.minimum(o, c), c, np.full(n, 1e6))

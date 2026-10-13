@@ -84,6 +84,18 @@ def machine() -> dict:
 
 
 # ---------------------------------------------------------------- Windows: PDH through ctypes
+WILDCARD = {"zone_temp_hp", "zone_temp", "zone_passive", "zone_throttle"}     # one value per thermal zone
+
+
+def _is_wine() -> bool:
+    """Wine runs Windows programs on Linux; its pdh.dll lacks the array call and aborts the process if it is used."""
+    try:
+        import ctypes
+        return hasattr(ctypes.WinDLL("ntdll.dll"), "wine_get_version")
+    except (OSError, AttributeError):
+        return False
+
+
 class _Pdh:
     PDH_MORE_DATA = 0x800007D2
     FMT = 0x00000200 | 0x00008000           # PDH_FMT_DOUBLE | PDH_FMT_NOCAP100 (speed can be above 100%)
@@ -105,11 +117,14 @@ class _Pdh:
         pdh.PdhCollectQueryData.argtypes = [ctypes.c_void_p]
         pdh.PdhGetFormattedCounterArrayW.argtypes = [ctypes.c_void_p, wintypes.DWORD, ctypes.POINTER(wintypes.DWORD),
                                                      ctypes.POINTER(wintypes.DWORD), ctypes.c_void_p]
+        pdh.PdhGetFormattedCounterValue.argtypes = [ctypes.c_void_p, wintypes.DWORD, ctypes.POINTER(wintypes.DWORD),
+                                                    ctypes.POINTER(Value)]
         pdh.PdhCloseQuery.argtypes = [ctypes.c_void_p]
         for f in ("PdhOpenQueryW", "PdhAddEnglishCounterW", "PdhCollectQueryData", "PdhGetFormattedCounterArrayW",
-                  "PdhCloseQuery"):
+                  "PdhGetFormattedCounterValue", "PdhCloseQuery"):
             getattr(pdh, f).restype = wintypes.DWORD
-        self.pdh, self.DWORD = pdh, wintypes.DWORD
+        self.pdh, self.DWORD, self.Value = pdh, wintypes.DWORD, Value
+        self.wine = _is_wine()
         self.q = ctypes.c_void_p()
         rc = pdh.PdhOpenQueryW(None, 0, ctypes.byref(self.q))
         if rc != 0:
@@ -117,6 +132,9 @@ class _Pdh:
         self.counters: dict[str, Any] = {}
         self.missing: dict[str, str] = {}
         for key, path in paths.items():
+            if self.wine and key in WILDCARD:
+                self.missing[key] = "not available under Wine"
+                continue
             h = ctypes.c_void_p()
             rc = pdh.PdhAddEnglishCounterW(self.q, path, 0, ctypes.byref(h))
             if rc == 0:
@@ -130,6 +148,12 @@ class _Pdh:
         self.pdh.PdhCollectQueryData(self.q)
         out: dict[str, dict[str, float]] = {}
         for key, h in self.counters.items():
+            if key not in WILDCARD:                           # one instance (_Total): the single-value call
+                val = self.Value()
+                if self.pdh.PdhGetFormattedCounterValue(h, self.FMT, None, ct.byref(val)) == 0 and \
+                        val.CStatus in (0, 1):
+                    out[key] = {"_Total": float(val.doubleValue)}
+                continue
             size, count = self.DWORD(0), self.DWORD(0)
             rc = self.pdh.PdhGetFormattedCounterArrayW(h, self.FMT, ct.byref(size), ct.byref(count), None)
             if rc != self.PDH_MORE_DATA or size.value == 0:
@@ -209,7 +233,7 @@ class Sensors:
         if os.name == "nt":
             try:
                 self._pdh = _Pdh(PDH_PATHS)
-                self.kind = "windows-pdh"
+                self.kind = "windows-pdh (under Wine)" if self._pdh.wine else "windows-pdh"
             except Exception as e:                        # noqa: BLE001 - reported, never fatal
                 self.error = f"{type(e).__name__}: {e}"
         elif sys.platform.startswith("linux"):
