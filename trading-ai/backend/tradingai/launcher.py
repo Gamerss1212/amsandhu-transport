@@ -265,9 +265,12 @@ def selftest(home: Optional[str], offline: bool) -> int:
     def probe():
         f = api("/api/fleet")
         have = [a for a in f["agents"] if a["partition"]]
-        aid = next((a["id"] for a in have if a["job"] != "waiting for data"), have[0]["id"])
+        pick = (next((a for a in have if a.get("fresh")), None) or
+                next((a for a in have if a["partition"][0].startswith("DEMO:")), None) or have[0])
+        aid = pick["id"]
         p = api(f"/api/fleet/{aid}/probe", "POST")
-        return f"{aid} ({p['strategy_id']} {p['tf']}, shadow): {p['outcome']}: {p['reason'][:90]}"
+        assert "not enough history" not in p["reason"], f"{aid} has no data: the pipeline did not run"
+        return f"{aid} on {pick['partition'][0]} ({p['strategy_id']} {p['tf']}, shadow): {p['outcome']}: {p['reason'][:90]}"
     ok &= step("an agent's full decision pipeline runs (shadow probe, nothing sent)", probe)
 
     def decided():

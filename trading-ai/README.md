@@ -17,6 +17,8 @@ replay.
 Nothing shown as real is invented: every number comes from a calculation on real market data, an authenticated broker
 connection, or clearly labelled simulated (DEMO) data.
 
+Download for Windows: [`downloads/TradingAI-v1.5.0-windows.zip`](../downloads/TradingAI-v1.5.0-windows.zip) (unzip, double-click `START_TRADING_AI.exe`). The previous 1.4.1 download is kept beside it.
+
 Beginners: read [`docs/START_HERE.txt`](docs/START_HERE.txt). What is done and what is not:
 [`docs/REQUIREMENTS_MATRIX.md`](docs/REQUIREMENTS_MATRIX.md). The owner's specification is in
 [`docs/specs/`](docs/specs/AI_Trading_System_Master_Prompt.md) (revision 13, with `Backtested_Working_Strategies.md`); its runnable
@@ -74,7 +76,7 @@ packaging/         PyInstaller spec, Windows build script (runs under Wine on Li
 python -m venv .venv && .venv/bin/pip install -r requirements-dev.txt
 cd frontend && npm ci && npm run build && cd ..
 cd backend && ../.venv/bin/python -m tradingai.launcher            # add --offline to use stored + DEMO data only
-../.venv/bin/python -m pytest -q tests                              # 147 tests
+../.venv/bin/python -m pytest -q tests                              # 155 tests
 ../.venv/bin/python -m tradingai.launcher --selftest --offline      # end-to-end test over HTTP and WebSocket
 ```
 

@@ -7,8 +7,8 @@ Status meanings:
 * **NOT DONE**: not built.
 
 How it was verified:
-* **Unit tests**: 147 tests (`backend/tests`).
-* **Self-test**: `START_TRADING_AI.exe --selftest` runs 28 steps over HTTP and WebSocket against the real server. It passed on the built Windows exe under Wine.
+* **Unit tests**: 155 tests (`backend/tests`).
+* **Self-test**: `START_TRADING_AI.exe --selftest` runs 31 steps over HTTP and WebSocket against the real server. For 1.5.0 it passed 31 of 31, both from source and on the built Windows exe under Wine.
 * **Real-data run**: the dashboard and API were exercised on live Coinbase, Kraken and Yahoo data.
 
 The exe has been tested under Wine on Linux, **not on a physical Windows PC**.
