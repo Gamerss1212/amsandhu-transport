@@ -22,7 +22,7 @@ export default function StrategyLab() {
   return (
     <Card title="Research evidence" sub="tested automatically by the agents: chronological train / validation / test, walk-forward, cost stress, deflated Sharpe">
       <div className="col">
-        <div className="note">Read-only. The autopilot chooses what to test and records every run in the research ledger, where it
+        <div className="note">Read-only. The master agent chooses what to test (three candidates per agent role) and records every run in the research ledger, where it
           counts as a trial for multiple-testing correction. A test can make a strategy eligible for paper trading at most, never for live trading.</div>
         {running.length > 0 && (
           <div className="col" style={{ gap: 6 }}>

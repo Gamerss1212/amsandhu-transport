@@ -50,6 +50,14 @@ class Ledger:
         self.db.execute("UPDATE experiments SET params=?, results=?, status=?, reason=?, finished=? WHERE experiment_id=?",
                         (dumps(params), dumps(slim), status, reason[:2000], now_ms(), eid))
 
+    def close_interrupted(self) -> int:
+        """Runs still marked RUNNING at start-up were cut off by a crash or a forced stop: mark them failed (they are
+        retried by the master; they never count as evidence)."""
+        rows = self.db.query("SELECT experiment_id FROM experiments WHERE status='RUNNING'")
+        for r in rows:
+            self.fail(r["experiment_id"], "interrupted: the program stopped while this run was in progress")
+        return len(rows)
+
     def fail(self, eid: str, why: str) -> None:
         self.db.execute("UPDATE experiments SET status=?, reason=?, finished=? WHERE experiment_id=?",
                         ("FAILED", why[:2000], now_ms(), eid))

@@ -104,3 +104,17 @@ def test_bots_from_earlier_releases_are_removed_once_flat(app):
         app.paper.get_positions = real
     app.fleet._sync_bots()
     assert held["bot_id"] not in app.bots
+
+
+def test_lifetime_counts_come_from_the_database_and_survive_a_restart(tmp_path):
+    home = str(tmp_path / "home")
+    a = App(home, offline=True, start_loop=False)
+    train(a, "A004", [1.0, 0.5, 0.2])
+    train(a, "A005", [0.4, 0.3, 0.2], ["REJECT", "REJECT", "REJECT"])
+    a.shutdown()
+    b = App(home, offline=True, start_loop=False)
+    try:
+        c = b.autopilot.view()["counts"]
+        assert (c["promoted"], c["rejected_versions"], c["validated_agents"], c["trained_runs"]) == (1, 1, 1, 6)
+    finally:
+        b.shutdown()

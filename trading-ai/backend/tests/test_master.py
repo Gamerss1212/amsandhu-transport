@@ -138,7 +138,7 @@ def test_training_submits_documented_research_per_candidate_with_bounded_jobs(ap
     monkeypatch.setattr(app, "offline", False)
     app.fleet.operate()
     sid, iid, tf, profile, lookback, by = calls[0]
-    assert (sid, iid, tf, profile, lookback) == ("tsmom.none.trail", "COINBASE:BTC-USD", "1h", "STANDARD", 5000)
+    assert (sid, iid, tf, profile, lookback) == ("tsmom.none.trail", "COINBASE:BTC-USD", "1h", "STANDARD", 20000)
     assert by == "master:A001"
     assert len({c[5] for c in calls}) == 2                        # one job per agent at a time
 
@@ -572,3 +572,37 @@ def test_online_all_100_agents_get_a_distinct_market_and_stablecoins_are_skipped
         assert app.fleet.counts()["blocked"] == 0
     finally:
         app.offline = True
+
+
+def test_a_crash_and_restart_restores_agents_versions_positions_and_lessons(tmp_path, monkeypatch):
+    home = str(tmp_path / "home")
+    a = App(home, offline=True, start_loop=False)
+    _buy_signal(monkeypatch)
+    train(a, "A004", [1.0, 0.5, 0.2], params={"tsmom.none.trail": {"lookback": 48}})
+    bot_id = a.fleet.bot_of["A004"]
+    assert a.orch.decide(a.bots[bot_id], "paper")["outcome"] == "ORDER"
+    a.paper.process()
+    held = a.paper.get_positions()["DEMO:DEMO-TREND"]
+    a.learning.record("STALE_DATA", agent_id="A004", instrument_id="DEMO:DEMO-TREND", detail={},
+                      scenario={"data_age_s": 9000, "bar_seconds": 3600, "qty": "1"})
+    a.fleet.suspend("A005", M.DAY, "test")
+    owners = dict(a.fleet.owner)
+    eid = a.ledger.start(family="test", strategy_id="tsmom.none.trail", hypothesis="x", instrument="DEMO:DEMO-TREND",
+                         tf="1h", profile="STANDARD", seed=7, dataset={})    # a run cut off by the crash
+    # crash: no shutdown, nothing flushed by hand
+    b = App(home, offline=True, start_loop=False)
+    try:
+        assert b.state.state == "PAPER_RUNNING" or b.state.state == "READY", b.state.state
+        assert all(c["ok"] for c in b.checks if c["name"] != "frontend files"), [c for c in b.checks if not c["ok"]]
+        assert b.paper.get_positions()["DEMO:DEMO-TREND"] == held           # the position survived
+        assert b.fleet.owner == owners and b.fleet.bot_of["A004"] == bot_id  # same agents, same markets
+        bot = b.bots[bot_id]
+        assert bot.agent_id == "A004" and bot.params == {"lookback": 48} and bot.state == "running"
+        assert b.fleet.active_version("A004")["version"] == 1 and b.fleet.permission("A004")[0]
+        assert "suspended" in b.fleet.permission("A005")[1] or b.fleet.permission("A005")[0] is False
+        assert "STALE_DATA" in b.learning.lessons and b.learning.last_regression["failed"] == []
+        assert b.db.one("SELECT status FROM experiments WHERE experiment_id=?", (eid,))["status"] == "FAILED"
+        assert b.reconcile()["ok"]
+    finally:
+        b.shutdown()
+        a.shutdown()

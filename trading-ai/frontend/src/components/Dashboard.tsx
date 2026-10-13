@@ -188,11 +188,12 @@ export function ExecutionStream() {
 
 // ---------------------------------------------------------------- 6. agent strip: one card per team, stable colors
 const TEAM_COLOR: Record<string, string> = {
-  equities: "#3dd9ff", crypto: "#f08cda", fx: "#7aa2ff", futures: "#ffb86b", options: "#9be7c4", rates: "#c3a6ff",
-  specialty: "#8fd3ff", overflow: "#a9b8ce",
+  crypto_major: "#f08cda", crypto_trend: "#e879c6", crypto_reversion: "#c3a6ff", etf_intraday: "#3dd9ff",
+  stock_breakout: "#8fd3ff", stock_reversion: "#9be7c4", fx_trend: "#7aa2ff", index_futures: "#ffb86b",
 };
 const TEAM_LABEL: Record<string, string> = {
-  equities: "Equities", crypto: "Crypto", fx: "FX", futures: "Futures", options: "Options", rates: "Rates", specialty: "Specialty", overflow: "Overflow",
+  crypto_major: "Crypto majors", crypto_trend: "Crypto trend", crypto_reversion: "Crypto reversion", etf_intraday: "ETF intraday",
+  stock_breakout: "Stock breakouts", stock_reversion: "Stock reversion", fx_trend: "Forex", index_futures: "Index futures",
 };
 
 export function AgentStrip() {
@@ -201,7 +202,7 @@ export function AgentStrip() {
   useEffect(() => { const t = window.setInterval(() => setNow(Date.now()), 10000); return () => window.clearInterval(t); }, []);
   if (!f) return null;
   return (
-    <Card title="Trading agents" sub={`${f.counts.registered} configured (target ${f.counts.target}); one card per team. Health is the badge, not the color.`}
+    <Card title="Trading agents" sub={`${f.counts.registered} agents run by the master agent; ${f.counts.validated} validated, ${f.counts.execution_eligible} may trade now. One card per role. Health is the badge, not the color.`}
       right={<button className="btn sm" onClick={() => go("/intelligence")}>Open all {f.counts.registered} agents →</button>}>
       <div className="astrip">
         {f.groups.map((g: any) => {
@@ -210,15 +211,15 @@ export function AgentStrip() {
           const stale = g.heartbeat && now - g.heartbeat > 60000;
           return (
             <button key={g.group} className="acard" style={{ borderTopColor: TEAM_COLOR[g.group] }} onClick={() => go("/intelligence")}>
-              <div className="spread"><b style={{ color: TEAM_COLOR[g.group] }}>{TEAM_LABEL[g.group] ?? g.group}</b>
-                <Badge kind={stale ? "warn" : kind}>{stale ? "no heartbeat" : g.ready ? `${g.ready} fresh` : g.assigned ? `${g.assigned} assigned` : "no access"}</Badge></div>
+              <div className="col" style={{ gap: 4, alignItems: "flex-start" }}><b style={{ color: TEAM_COLOR[g.group] }}>{TEAM_LABEL[g.group] ?? g.group}</b>
+                <Badge kind={stale ? "warn" : kind}>{stale ? "no heartbeat" : g.ready ? `${g.ready} fresh` : g.assigned ? `${g.assigned} assigned` : "no market"}</Badge></div>
               <div className="tiny muted mono">{g.ids}</div>
               <div className="abar" title={`${g.ready} fresh data · ${g.assigned - g.ready} assigned without fresh data · ${g.target - g.assigned} without a market`}>
                 <i style={{ width: `${(g.ready / g.target) * 100}%`, background: "var(--good)" }} />
                 <i style={{ width: `${((g.assigned - g.ready) / g.target) * 100}%`, background: "var(--warn)" }} />
               </div>
               <div className="tiny dim ell">{top ? `${top[1]} ${top[0]}` : "idle: no distinct market"}</div>
-              {g.reassigned > 0 && <div className="tiny" style={{ color: "var(--warn)" }}>{g.reassigned} reassigned (gap kept)</div>}
+              <div className="tiny ell" style={{ color: g.validated ? "var(--good)" : "var(--muted)" }}>{g.validated} validated · {g.tf} bars</div>
             </button>
           );
         })}

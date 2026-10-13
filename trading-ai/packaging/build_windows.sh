@@ -45,6 +45,9 @@ echo "== 5/6 documents"
 cp "$ROOT/docs/START_HERE.txt" "$OUT/TradingAI/START_HERE.txt"
 cp "$ROOT/docs/REQUIREMENTS_MATRIX.md" "$OUT/TradingAI/REQUIREMENTS_MATRIX.md"
 cp "$ROOT/docs/CATALOG_BACKTEST_REPORT.md" "$OUT/TradingAI/CATALOG_BACKTEST_REPORT.md"
+for d in STRATEGY_RESEARCH AGENT_TRAINING_REPORT PORTFOLIO_BACKTEST_REPORT VERIFICATION_REPORT BACKUP_AND_RESTORE; do
+  if [ -f "$ROOT/docs/$d.md" ]; then cp "$ROOT/docs/$d.md" "$OUT/TradingAI/$d.md"; fi
+done
 cp "$ROOT/README.md" "$OUT/TradingAI/README.md"
 
 echo "== 6/6 self-test of the built exe (fresh data folder, offline: no network needed)"

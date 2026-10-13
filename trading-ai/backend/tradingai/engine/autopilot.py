@@ -92,13 +92,13 @@ class Autopilot:
         self.app.bus.publish("autopilot", ev, severity=severity)
 
     def _counts(self) -> dict:
-        m = self.app.fleet.metrics if hasattr(self.app, "fleet") else {}
+        m = self.app.fleet.history() if hasattr(self.app, "fleet") else {}
         c = self.app.fleet.counts() if hasattr(self.app, "fleet") else {}
-        return {"screened": m.get("trained", 0), "confirmed": c.get("validated", 0),
+        return {"screened": m.get("trained_runs", 0), "confirmed": c.get("validated", 0),
                 "deployed": m.get("promoted", 0), "retired_count": m.get("rolled_back", 0),
-                "trained_runs": m.get("trained", 0), "validated_agents": c.get("validated", 0),
+                "trained_runs": m.get("trained_runs", 0), "validated_agents": c.get("validated", 0),
                 "promoted": m.get("promoted", 0), "rolled_back": m.get("rolled_back", 0),
-                "rejected_versions": m.get("rejected", 0)}
+                "rejected_versions": m.get("rejected", 0), "shadow_versions": m.get("shadow", 0)}
 
     # ------------------------------------------------------------------ owner controls
     def configure(self, changes: dict) -> dict:

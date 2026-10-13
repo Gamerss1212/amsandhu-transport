@@ -64,7 +64,9 @@ SHADOW_MIN_DAYS = 3
 MAX_TRAINING_JOBS = 2
 DAY_LOSS_PCT = Decimal("0.005")          # an agent may lose 0.5% of equity in a UTC day, then it stops entering
 VERSION_LOSS_PCT = Decimal("0.02")       # a version that loses 2% of equity in paper is rolled back
-LOOKBACK = {"15m": 2000, "1h": 5000, "4h": 3000}
+# the longest history the research engine accepts: a held-out test needs at least 30 trades, which 5,000 hourly
+# bars (about 7 months of crypto) could not give most strategies (1.5.0 training, first pass: 256 of 300 runs)
+LOOKBACK = {"15m": 6000, "1h": 20000, "4h": 6000}
 STABLE = {"USDT", "USDC", "DAI", "PYUSD", "EURC", "GUSD", "USDS", "PAX", "BUSD", "TUSD", "FDUSD", "RLUSD", "USD1",
           "WBTC", "CBBTC", "CBETH", "WETH", "LSETH", "MSOL", "JITOSOL"}
 
@@ -669,7 +671,8 @@ class Master:
             return False, "no market assigned"
         if self.app.risk.kill_switch:
             return False, "emergency stop engaged: every agent is stopped"
-        if not self.app.autopilot.cfg.enabled:
+        ap = getattr(self.app, "autopilot", None)
+        if ap is None or not ap.cfg.enabled:
             return False, "system stopped (press Start System)"
         s = self.suspended.get(agent_id)
         if s and s["until"] > now_ms():
@@ -937,6 +940,17 @@ class Master:
                 "suspended": sum(1 for v in self.suspended.values() if v["until"] > now_ms()),
                 "blocked": sum(1 for a in ags if not a.partition)}
 
+    def history(self) -> dict:
+        """Lifetime counts from the database (they survive restarts, unlike the in-memory cycle metrics)."""
+        st = {r["status"]: r["n"] for r in self.app.db.query(
+            "SELECT status, COUNT(*) AS n FROM agent_versions GROUP BY status")}
+        runs = self.app.db.one("SELECT COUNT(*) AS n FROM experiments WHERE profile='STANDARD' AND status!='RUNNING' "
+                               "AND json_extract(results, '$.operating_mode')='intraday'")
+        return {"trained_runs": int(runs["n"] if runs else 0),
+                "promoted": sum(st.get(k, 0) for k in ("active", "superseded", "rolled_back")),
+                "rolled_back": st.get("rolled_back", 0), "rejected": st.get("rejected", 0),
+                "shadow": st.get("shadow", 0), "versions": sum(st.values())}
+
     def _groups(self) -> list[dict]:
         out = []
         act = {r["agent_id"] for r in self.app.db.query("SELECT agent_id FROM agent_versions WHERE status='active'")}
@@ -965,7 +979,7 @@ class Master:
                 "plan_version": self.plan_version, "owned_instruments": len(self.owner),
                 "market_state_version": disc.version if disc else None,
                 "model": "no cloud AI connected: agents are deterministic code; 0 model calls",
-                "metrics": dict(self.metrics), "doing": self.doing,
+                "metrics": dict(self.metrics), "history": self.history(), "doing": self.doing,
                 "controls": ["strategy assignment", "training and validation", "version promotion and rollback",
                              "capital allocation", "portfolio risk (through the risk service)", "execution permissions",
                              "monitoring", "emergency shutdown"],

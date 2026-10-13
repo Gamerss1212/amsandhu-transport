@@ -24,6 +24,7 @@ export type Bot = {
   max_trades_per_day: number; state: string; trades_today: number; last_bar_ts: number | null; created: number;
   managed_by?: string; tier?: string | null; experiment_id?: string | null; note?: string;
   kind?: string; allocation?: number; pending?: Record<string, number>; rebalance_key?: string | null;
+  agent_id?: string | null; params?: Record<string, unknown>;
 };
 
 type Live = {

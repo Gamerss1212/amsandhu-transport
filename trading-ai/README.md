@@ -4,16 +4,32 @@ A local trading research, paper-trading and (owner-armed) live-trading system fo
 indices and futures. It runs entirely on your computer behind `http://127.0.0.1:<port>`. The Windows release is one
 folder: double-click `START_TRADING_AI.exe`, the local server starts, and the browser opens the dashboard.
 
-It starts in **PAPER** mode and runs by itself: the Autopilot researches strategies under the day-trading rules, starts
-paper bots for the ones that pass, watches them and retires the ones that fall short. It stays in paper. A fleet of 320
-trading agents (A001-A320), coordinated by the Supercomputer Brain, each watches one distinct market. Nothing shown as real is invented: every number comes from a calculation
-on real market data, an authenticated broker connection, or clearly labelled simulated (DEMO) data.
+It starts in **PAPER** mode and runs by itself. One **master agent** runs exactly **100 trading agents** (A001-A100).
+Each agent owns one distinct market and has a role: a strategy family, a bar size, and three candidate templates chosen
+from the evidence in [`docs/STRATEGY_RESEARCH.md`](docs/STRATEGY_RESEARCH.md).
+
+The master trains each agent on its own market data, chooses a version on validation data, and lets the agent trade
+paper automatically only if that version passes every research gate. It promotes better versions through a shadow test,
+rolls back versions that fall short, and enforces portfolio, position and daily loss limits plus the emergency stop.
+Every mistake is recorded with a root cause, and the lesson becomes a safeguard for all agents, with a regression
+replay.
+
+Nothing shown as real is invented: every number comes from a calculation on real market data, an authenticated broker
+connection, or clearly labelled simulated (DEMO) data.
 
 Beginners: read [`docs/START_HERE.txt`](docs/START_HERE.txt). What is done and what is not:
 [`docs/REQUIREMENTS_MATRIX.md`](docs/REQUIREMENTS_MATRIX.md). The owner's specification is in
 [`docs/specs/`](docs/specs/AI_Trading_System_Master_Prompt.md) (revision 13, with `Backtested_Working_Strategies.md`); its runnable
 strategy templates were tested on real data in
 [`docs/CATALOG_BACKTEST_REPORT.md`](docs/CATALOG_BACKTEST_REPORT.md).
+
+Evidence for 1.5.0:
+
+- [`docs/AGENT_TRAINING_REPORT.md`](docs/AGENT_TRAINING_REPORT.md): every agent's training.
+- [`docs/PORTFOLIO_BACKTEST_REPORT.md`](docs/PORTFOLIO_BACKTEST_REPORT.md): walk-forward, combined portfolio, by market
+  regime.
+- [`docs/VERIFICATION_REPORT.md`](docs/VERIFICATION_REPORT.md): what was tested, what passed, failed or could not be run.
+- [`docs/BACKUP_AND_RESTORE.md`](docs/BACKUP_AND_RESTORE.md): how to get the 1.4.1 version back.
 
 ## Architecture
 
@@ -30,10 +46,13 @@ START_TRADING_AI.exe (launcher.py)
      │             the owner's 124-template catalog (ST001-ST124) and 212-entry research index mapped onto them, with
      │             98 sources, reason codes and the owner's own batch results; entries only once a strategy qualifies
      ├─ agents     102 agents in 10 groups; ensemble averages by information cluster; vetoes; no fake probabilities
-     ├─ fleet      320 agents A001-A320 + the Supercomputer Brain: one owner per instrument, budgets only for
-     │             qualified strategies, bounded worker pool, fault isolation (engine/fleet.py); C01-C50 support services
+     ├─ master     the master agent + 100 trading agents A001-A100 in 8 roles: one owner per instrument, training per
+     │             candidate, versions (shadow promotion, rollback), permissions, budgets, daily loss limits, bounded
+     │             worker pool, fault isolation (engine/master.py); C01-C50 support services
+     ├─ learning   mistakes → root causes → lessons → shared safeguards (block or shrink entries only) → regression
+     │             replay at start-up, per lesson and hourly; repeats counted (engine/learning.py)
      ├─ daytrade   intraday rules per calendar: entry window, cutoff, flatten deadline, crypto 24 h hold (engine/daytrade.py)
-     ├─ autopilot  on by default, paper only: screens → full tests → starts bots → reviews → retires (engine/autopilot.py)
+     ├─ autopilot  the system switch (Start System / Stop) that drives the master, paper only (engine/autopilot.py)
      ├─ assistant  deterministic intents over verified state; "that bot" references; proactive voice events with
      │             quiet hours and lifecycle states; refuses money commands
      ├─ engine     orchestrator: data → features → regime → strategy → agents (incl. higher timeframe) → sizing → risk → OMS
@@ -45,7 +64,7 @@ START_TRADING_AI.exe (launcher.py)
      │             portfolio templates (rebalanced, next-day execution, equal-weight benchmark) and portfolio bots
      ├─ portfolio  Ledoit-Wolf, inverse vol, risk parity, min variance, HRP, mean-variance
      └─ api        FastAPI REST + one WebSocket; Host / token / Origin guard; serves the compiled React dashboard
-frontend/          React + TypeScript + Vite: AI Trading System · AI Supercomputer — Agent Activity · Brokers & Accounts
+frontend/          React + TypeScript + Vite: AI Trading System · Master Agent — 100 Agents · Brokers & Accounts
 packaging/         PyInstaller spec, Windows build script (runs under Wine on Linux), icon, version info
 ```
 
@@ -55,11 +74,19 @@ packaging/         PyInstaller spec, Windows build script (runs under Wine on Li
 python -m venv .venv && .venv/bin/pip install -r requirements-dev.txt
 cd frontend && npm ci && npm run build && cd ..
 cd backend && ../.venv/bin/python -m tradingai.launcher            # add --offline to use stored + DEMO data only
-../.venv/bin/python -m pytest -q tests                              # 121 tests
+../.venv/bin/python -m pytest -q tests                              # 147 tests
 ../.venv/bin/python -m tradingai.launcher --selftest --offline      # end-to-end test over HTTP and WebSocket
 ```
 
 Frontend development with hot reload: start the backend on port 8000, then `cd frontend && npm run dev`.
+
+Train all 100 agents and run the walk-forward portfolio backtest (downloads real data; tens of minutes each):
+
+```bash
+.venv/bin/python scripts/train_agents.py /tmp/agents-home        # writes docs/AGENT_TRAINING_REPORT.md
+.venv/bin/python scripts/portfolio_backtest.py /tmp/agents-home  # writes docs/PORTFOLIO_BACKTEST_REPORT.md
+.venv/bin/python scripts/kill_restart_check.py --offline         # kills the program mid-training and checks recovery
+```
 
 Backtest the whole catalog and regenerate its report (about 6 minutes, downloads real data):
 
@@ -89,9 +116,12 @@ experiments), `data/market/` (Parquet), `data/secrets/` (DPAPI-encrypted credent
 * Credentials go into the vault, are masked everywhere, and are never logged. Withdrawal permission is never requested.
 * External text (news, provider messages) is data, never an instruction.
 * A backtest can recommend PAPER TEST at most. Every backtest is recorded and counted as a trial.
-* No strategy order may open exposure unless that strategy version qualified (PAPER TEST on the same market and
-  timeframe, tested under the day-trading rules); otherwise the system waits in cash. There is no manual backtest
-  route; the agents test by themselves.
+* No order may open exposure unless it comes from the instrument's owning agent, that agent has the master's
+  permission, and its version qualified (PAPER TEST on the same market and timeframe, under the day-trading rules).
+  Otherwise the system waits in cash. Exits are always allowed.
+* There is no manual backtest route and no hand-made bot: the agents test by themselves.
+* Learned safeguards can only block or shrink entries; they never loosen a limit. No agent can change a limit, re-arm
+  the emergency stop, turn on live trading or change code.
 * Intraday: stocks are flat 10 minutes before the close, futures and forex before 17:00 New York, crypto is held 24
   hours at most. The same rules run in research and in paper trading.
 * Add Funds only opens the broker's own website. The program never handles card or bank details.

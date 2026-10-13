@@ -148,3 +148,20 @@ def test_assistant_resolves_that_bot_and_the_bitcoin_bot(app):
     r = a.ask("pause that bot")
     assert r["intent"] == "pause_bot" and r["facts"]["bot_id"] == btc and app.bots[btc].state == "paused"
     assert a.ask("go live and raise the limit")["intent"] == "refused"             # money commands stay refused
+
+
+def test_sweep_cancels_a_working_order_and_still_closes_on_time(app, monkeypatch):
+    # a partly filled entry (or any order still working) must not keep a position open past its deadline
+    app.paper.submit_order(client_order_id="T-OPEN", instrument_id="DEMO:DEMO-TREND", side="buy", qty=Decimal("1"))
+    app.paper.process()
+    held = app.paper.get_positions().get("DEMO:DEMO-TREND", 0)
+    assert held > 0
+    app.paper.submit_order(client_order_id="T-WORK", instrument_id="DEMO:DEMO-TREND", side="buy", qty=Decimal("1"),
+                           order_type="limit", limit_price=Decimal("0.01"))        # far below the market: stays working
+    assert [o.client_order_id for o in app.paper.get_open_orders()] == ["T-WORK"]
+    monkeypatch.setattr(app, "position_opened_at", lambda iid: int(time.time() * 1000) - 25 * H)
+    out = app.daytrade_sweep()
+    assert out and all("MAX_HOLD" in o["by"] for o in out)
+    assert app.paper.get_order("T-WORK").status == "CANCELLED"
+    app.paper.process()
+    assert app.paper.get_positions().get("DEMO:DEMO-TREND", 0) == 0

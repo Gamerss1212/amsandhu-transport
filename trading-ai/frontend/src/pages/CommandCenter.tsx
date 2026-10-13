@@ -109,7 +109,7 @@ export default function CommandCenter() {
         </div>
         <div className="col" style={{ gap: 14, minWidth: 0 }}>
           <AutopilotCard />
-          <BotControl instruments={instruments} iid={iid} tf={tf} />
+          <BotControl />
           <RegimeAgents decision={lastDecision} iid={iid} />
           <RiskPanel />
         </div>
@@ -118,15 +118,14 @@ export default function CommandCenter() {
   );
 }
 
-// ---------------------------------------------------------------- autopilot
-const AP_MARKETS: [string, string][] = [["crypto", "Crypto"], ["stock", "Stocks"], ["etf", "ETFs"], ["fx", "Forex"], ["future", "Futures"]];
-
+// ---------------------------------------------------------------- the master agent
 function AutopilotCard() {
   const live = useLive();
   const [ap, reload] = usePoll<any>("/api/autopilot", 4000);
   const o = live.overview!;
-  if (!ap) return <Card title="Autopilot"><Empty>Loading…</Empty></Card>;
+  if (!ap) return <Card title="Master agent"><Empty>Loading…</Empty></Card>;
   const cfg = ap.config;
+  const c = ap.counts;
   const set = async (changes: Record<string, unknown>, ok?: string) => {
     try {
       await api.post("/api/autopilot", changes);
@@ -139,35 +138,21 @@ function AutopilotCard() {
   };
   const autostart = o.autostart;
   return (
-    <Card title="Autopilot" sub="fully automatic paper trading" right={
-      <button className={`btn ${cfg.enabled ? "go" : ""}`} onClick={() => set({ enabled: !cfg.enabled }, cfg.enabled ? "Autopilot off" : "Autopilot on")}
+    <Card title="Master agent" sub="runs the 100 trading agents (paper)" right={
+      <button className={`btn ${cfg.enabled ? "go" : ""}`} onClick={() => set({ enabled: !cfg.enabled }, cfg.enabled ? "Master agent off" : "Master agent on")}
         disabled={!cfg.enabled && !!o.risk.kill_switch}>{cfg.enabled ? "ON" : "OFF"}</button>
     }>
       <div className="col">
         <div className={`callout ${cfg.enabled ? "good" : ""} small`}>
-          <b>{cfg.enabled ? "Now: " : "Autopilot is off. "}</b>{cfg.enabled ? ap.doing : "Press ON (or Start System) and it researches by itself, and starts, watches and retires paper bots for strategies that qualify."}
+          <b>{cfg.enabled ? "Now: " : "The master agent is off. "}</b>{cfg.enabled ? ap.doing : "Press ON (or Start System). It then trains and validates each agent, gives trading permission only to validated versions, and watches every trade."}
         </div>
         <div className="stats" style={{ gridTemplateColumns: "repeat(2, minmax(0, 1fr))" }}>
-          <Stat k="Strategies screened" v={ap.counts.screened} />
-          <Stat k="Full tests" v={ap.counts.confirmed} />
-          <Stat k="Bots running" v={`${ap.running} / ${cfg.max_bots}`} />
-          <Stat k="Retired" v={ap.counts.retired_count} />
-        </div>
-        <div className="row wrap small">
-          <label className="field" style={{ width: 120 }}>Max bots
-            <select value={cfg.max_bots} onChange={(e) => set({ max_bots: Number(e.target.value) })}>
-              {[1, 2, 3, 4, 6, 8, 10, 12].map((n) => <option key={n} value={n}>{n}</option>)}
-            </select>
-          </label>
-        </div>
-        <div className="row wrap small">
-          {AP_MARKETS.map(([m, label]) => (
-            <label key={m} className="row" style={{ gap: 5 }}>
-              <input type="checkbox" checked={cfg.markets.includes(m)}
-                onChange={(e) => set({ markets: e.target.checked ? [...cfg.markets, m] : cfg.markets.filter((x: string) => x !== m) })} />
-              {label}
-            </label>
-          ))}
+          <Stat k="Training runs done" v={c.trained_runs} />
+          <Stat k="Agents validated" v={`${c.validated_agents} / 100`} />
+          <Stat k="Promoted" v={c.promoted} />
+          <Stat k="Rolled back" v={c.rolled_back} />
+          <Stat k="Rejected versions" v={c.rejected_versions} />
+          <Stat k="Running loops" v={ap.running} />
         </div>
         <label className="row small" style={{ gap: 6 }} title={autostart?.reason}>
           <input type="checkbox" disabled={!autostart?.supported} checked={!!autostart?.enabled}
@@ -184,13 +169,14 @@ function AutopilotCard() {
         </label>
         {ap.candidates?.length > 0 && (
           <div className="col" style={{ gap: 4 }}>
-            <div className="tiny muted">QUALIFIED (deployed when a slot is free)</div>
-            {ap.candidates.slice(0, 4).map((c: any) => (
-              <div key={c.key} className="spread tiny">
-                <span className="mono" style={{ wordBreak: "break-all" }}>{c.strategy_id} · {c.iid} {c.tf}</span>
-                <Badge kind={c.tier === "qualified" ? "good" : "warn"}>{c.tier} {c.quality !== null ? Math.round(c.quality) : ""}</Badge>
+            <div className="tiny muted">VALIDATED VERSIONS (may trade in paper)</div>
+            {ap.candidates.slice(0, 6).map((v: any) => (
+              <div key={v.agent} className="spread tiny">
+                <span className="mono" style={{ wordBreak: "break-all" }}>{v.agent} v{v.version} · {v.strategy_id} · {v.iid} {v.tf}</span>
+                <Badge kind="good">PAPER TEST</Badge>
               </div>
             ))}
+            {ap.candidates.length > 6 && <div className="tiny muted">and {ap.candidates.length - 6} more on the Agent Network page</div>}
           </div>
         )}
         {ap.activity?.length > 0 && (
@@ -201,19 +187,18 @@ function AutopilotCard() {
             ))}
           </div>
         )}
-        <div className="note">Paper only: it never trades real money, never changes risk limits, never re-arms after an emergency
-          stop, and only chooses among the fixed strategy templates. Only strategies that passed every research gate are traded;
-          while none qualifies it stays in cash and keeps researching. A bot whose paper results fall short is retired automatically.</div>
+        <div className="note">Paper only. The master never trades real money, never changes a risk limit, never re-arms after an emergency
+          stop, and chooses only among fixed strategy templates. An agent trades only after its version passes every research gate; until then
+          it stays in cash. A version that falls short in paper is rolled back automatically.</div>
       </div>
     </Card>
   );
 }
 
 // ---------------------------------------------------------------- bots
-function BotControl({ instruments, iid, tf }: { instruments: Instrument[]; iid: string; tf: string }) {
+function BotControl() {
   const live = useLive();
   const o = live.overview!;
-  const [adding, setAdding] = useState(false);
   const running = o.bots.filter((b) => b.state === "running").length;
   const act = async (fn: () => Promise<unknown>, ok?: string) => {
     try {
@@ -225,12 +210,12 @@ function BotControl({ instruments, iid, tf }: { instruments: Instrument[]; iid: 
     await live.refresh();
   };
   return (
-    <Card title="Bots" sub={`${o.bots.length} configured · ${running} running`}>
+    <Card title="Agent execution loops" sub={`${o.bots.length} loop(s) · ${running} running`}>
       <div className="col">
         <div className="row">
           <button className="btn go big grow" disabled={!!o.risk.kill_switch || (!!o.autopilot?.enabled && running === o.bots.length)}
-            onClick={() => act(() => api.post("/api/bot/start"), "System started: autopilot on, all bots running")}>Start System</button>
-          <button className="btn big grow" disabled={!running && !o.autopilot?.enabled} onClick={() => act(() => api.post("/api/bot/stop"), "All bots stopped, autopilot paused")}>Stop</button>
+            onClick={() => act(() => api.post("/api/bot/start"), "System started: the master agent is on")}>Start System</button>
+          <button className="btn big grow" disabled={!running && !o.autopilot?.enabled} onClick={() => act(() => api.post("/api/bot/stop"), "Stopped: every agent loop stopped, the master agent paused")}>Stop</button>
         </div>
         <div className="spread">
           <span className="dim small">Mode</span>
@@ -248,12 +233,12 @@ function BotControl({ instruments, iid, tf }: { instruments: Instrument[]; iid: 
           {o.mode === "shadow" && "Shadow: real data, the full decision pipeline, orders recorded but never sent."}
           {o.mode === "live" && "LIVE: orders go to your broker with real money, within the caps you set when arming."}
         </div>
-        <div className="note">The program does Start System by itself when it opens (the button shows it is running). Stop stops every bot and pauses the autopilot.
-          A bot opens trades only for a strategy that qualified in research; otherwise it waits in cash.</div>
+        <div className="note">The program does Start System by itself when it opens. Stop stops every agent loop and pauses the master agent.
+          Each loop belongs to one agent and one market. It opens trades only while its agent's version is validated; exits always run.</div>
         <Controls />
         {o.bots.length === 0 && <Empty>{o.autopilot?.enabled
-          ? "No bots yet: the autopilot starts paper bots by itself only when its research finds a strategy that passes every gate. None has qualified so far, so the system stays in cash."
-          : "No bots. Press Start System to let the autopilot run."}</Empty>}
+          ? "No agent loop yet. The master starts an agent's loop only when one of its versions passes every research gate. None has passed so far, so the system stays in cash."
+          : "Nothing running. Press Start System to let the master agent run."}</Empty>}
         {o.bots.map((b) => (
           <div key={b.bot_id} className="card" style={{ background: "var(--panel-2)" }}>
             <div className="bd col" style={{ gap: 6 }}>
@@ -261,12 +246,13 @@ function BotControl({ instruments, iid, tf }: { instruments: Instrument[]; iid: 
                 <b className="small">{b.instrument_id} · {b.tf}</b>
                 <Badge kind={b.state === "running" ? "good" : b.state === "paused" || b.state === "retiring" ? "warn" : ""} dot>{b.state}</Badge>
               </div>
-              {b.managed_by === "autopilot" && (
+              {b.managed_by === "master" && (
                 <div className="row wrap">
-                  <Badge kind="info">AUTOPILOT</Badge>
-                  <Badge kind={b.tier === "qualified" ? "good" : "warn"}>{b.tier === "qualified" ? "QUALIFIED" : "PROBATION"}</Badge>
+                  <Badge kind="info">AGENT {b.agent_id ?? ""}</Badge>
+                  <Badge kind="good">VALIDATED</Badge>
                 </div>
               )}
+              {b.managed_by !== "master" && <div className="row wrap"><Badge kind="warn">OLD BOT: removed when flat</Badge></div>}
               {b.note && <div className="tiny dim">{b.note}</div>}
               <div className="small dim mono" style={{ wordBreak: "break-all" }}>{b.strategy_id}{b.kind === "portfolio" ? ` · portfolio · ${Math.round((b.allocation ?? 0) * 100)}% of equity` : ""}</div>
               {b.kind === "portfolio" && b.pending && Object.keys(b.pending).length > 0 && (
@@ -279,13 +265,11 @@ function BotControl({ instruments, iid, tf }: { instruments: Instrument[]; iid: 
                   : <button className="btn sm" onClick={() => act(() => api.post(`/api/bots/${b.bot_id}/pause`))}>Pause</button>}
                 <button className="btn sm" disabled={b.state === "stopped"} onClick={() => act(() => api.post(`/api/bots/${b.bot_id}/stop`))}>Stop</button>
                 <span className="grow" />
-                <button className="btn sm ghost" disabled={b.state === "running"} onClick={() => act(() => api.post(`/api/bots/${b.bot_id}/delete`), "Bot deleted")}>Delete</button>
+                {b.managed_by !== "master" && <button className="btn sm ghost" disabled={b.state === "running"} onClick={() => act(() => api.post(`/api/bots/${b.bot_id}/delete`), "Bot deleted")}>Delete</button>}
               </div>
             </div>
           </div>
         ))}
-        <button className="btn" onClick={() => setAdding((v) => !v)}>{adding ? "Cancel" : "+ Add bot"}</button>
-        {adding && <NewBot instruments={instruments} iid={iid} tf={tf} done={() => setAdding(false)} />}
       </div>
     </Card>
   );
@@ -305,58 +289,6 @@ export function StrategyPicker({ market, value, onChange, tf }: { market: string
         {shown.map((s) => <option key={s.strategy_id} value={s.strategy_id}>{s.strategy_id}{s.status?.status ? ` · ${s.status.status}` : ""}</option>)}
       </select>
       <span className="tiny muted">{shown.length} runnable template(s) shown{list && list.length >= 300 ? " (first 300: refine the search)" : ""}. Status = latest research verdict.</span>
-    </div>
-  );
-}
-
-function NewBot({ instruments, iid, tf, done }: { instruments: Instrument[]; iid: string; tf: string; done: () => void }) {
-  const live = useLive();
-  const [inst, setInst] = useState(iid);
-  const [t, setT] = useState(tf);
-  const [sid, setSid] = useState("");
-  const [mode, setMode] = useState("strategy+ensemble");
-  const [risk, setRisk] = useState("conservative");
-  const [cap, setCap] = useState(10);
-  const i = instruments.find((x) => x.instrument_id === inst);
-  const [busy, setBusy] = useState(false);
-  return (
-    <div className="col" style={{ gap: 8 }}>
-      <label className="field">Instrument<InstrumentSelect value={inst} onChange={setInst} list={instruments} tradableOnly /></label>
-      {i && !i.paper_tradable && <div className="callout warn small">{i.why}</div>}
-      <label className="field">Timeframe
-        <select value={t} onChange={(e) => setT(e.target.value)}>{TF_ORDER.filter((x) => i?.timeframes.includes(x)).map((x) => <option key={x}>{x}</option>)}</select>
-      </label>
-      <label className="field">Strategy {i && <StrategyPicker market={i.market} value={sid} onChange={setSid} />}</label>
-      <label className="field">Signal
-        <select value={mode} onChange={(e) => setMode(e.target.value)}>
-          <option value="strategy+ensemble">Strategy, unless the agents lean the other way</option>
-          <option value="strategy">Strategy only (agent vetoes still apply)</option>
-          <option value="ensemble">Agent ensemble decides</option>
-        </select>
-      </label>
-      <div className="row">
-        <label className="field grow">Risk per trade
-          <select value={risk} onChange={(e) => setRisk(e.target.value)}>
-            <option value="conservative">Conservative (0.25% of equity)</option>
-            <option value="moderate">Moderate (0.5%)</option>
-            <option value="aggressive">Aggressive (1%)</option>
-          </select>
-        </label>
-        <label className="field" style={{ width: 110 }}>Max trades/day<input type="number" min={1} max={200} value={cap} onChange={(e) => setCap(Number(e.target.value))} /></label>
-      </div>
-      <button className="btn primary" disabled={!sid || busy} onClick={async () => {
-        setBusy(true);
-        try {
-          await api.post("/api/bots", { instrument_id: inst, tf: t, strategy_id: sid, signal_mode: mode, risk_profile: risk, max_trades_per_day: cap });
-          live.toast("Bot added (stopped). It opens trades only if its strategy qualifies.", "ok");
-          await live.refresh();
-          done();
-        } catch (e: any) {
-          live.toast(e.message, "error");
-        } finally {
-          setBusy(false);
-        }
-      }}>Add bot</button>
     </div>
   );
 }

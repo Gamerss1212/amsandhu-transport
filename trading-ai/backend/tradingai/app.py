@@ -110,8 +110,8 @@ class App:
         self._check("research engine", self._research)
         self._check("market discovery", self._discovery)
         self._check("learning: lessons and regression replay", self._learning)
+        self._check("autopilot", self._autopilot)                  # the system switch, read by the master's permissions
         self._check("master agent and 100 trading agents", self._fleet)
-        self._check("autopilot", self._autopilot)
         self._check("assistant", self._assistant)
         self._check("frontend files", self._frontend)
         critical = [c for c in self.checks if not c["ok"] and c["name"] not in ("frontend files", "broker connections")]
@@ -200,14 +200,16 @@ class App:
     def _research(self) -> str:
         self.ledger = Ledger(self.db)
         self.jobs = Jobs(self.bus, workers=max(1, min(2, (os.cpu_count() or 2) - 1)))
-        return f"{self.ledger.counts()['experiments']} experiment(s) in the ledger"
+        cut = self.ledger.close_interrupted()
+        return f"{self.ledger.counts()['experiments']} experiment(s) in the ledger" + (
+            f"; {cut} run(s) interrupted by the last stop were marked failed" if cut else "")
 
     def _autopilot(self) -> str:
         self.autopilot = Autopilot(self)
         if self._autopilot_override is not None:
             self.autopilot.cfg.enabled = bool(self._autopilot_override)
-        return ("ON: researching and running paper bots by itself" if self.autopilot.cfg.enabled else "off") + \
-            f" (max {self.autopilot.cfg.max_bots} bots, paper only)"
+        return ("ON: the master agent trains and runs the 100 trading agents by itself" if self.autopilot.cfg.enabled
+                else "off") + " (paper only)"
 
     def _discovery(self) -> str:
         from tradingai.market.discovery import Discovery
@@ -668,11 +670,11 @@ class App:
         if self.mode == "live":
             return []
         out, t = [], now_ms()
-        working = {o.instrument_id for o in self.paper.get_open_orders()}
+        working: dict[str, list] = {}
+        for o in self.paper.get_open_orders():
+            working.setdefault(o.instrument_id, []).append(o)
         for p in self.paper.positions_detail():
             iid = p["instrument_id"]
-            if iid in working:
-                continue
             inst = self.book.get(iid)
             cal = inst.calendar or "CRYPTO"
             due = daytrade.exit_due(cal, self.position_opened_at(iid), t, 0)
@@ -687,6 +689,15 @@ class App:
                                "position is kept and closed when it opens", severity="warning",
                                data={"code": due[0], "instrument": iid})
                 continue
+            if working.get(iid):
+                # a partly filled entry (or an older close) still working must not keep the position open past its
+                # deadline: cancel it, then close what is actually held
+                n = sum(1 for o in working[iid] if self.paper.cancel_order(o.client_order_id))
+                self.audit("daytrade", f"{iid}: {n} working order(s) cancelled before the {due[0]} close",
+                           data={"orders": [o.client_order_id for o in working[iid]]})
+                p = next((x for x in self.paper.positions_detail() if x["instrument_id"] == iid), None)
+                if p is None:
+                    continue
             res = self._close_position(p, f"day-trading rules ({due[0]})")
             self.audit("daytrade", f"{iid}: {due[0]} - {due[1]}", severity="info", data={"results": res})
             out.extend(res)
