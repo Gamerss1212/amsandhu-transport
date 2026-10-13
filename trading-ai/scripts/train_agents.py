@@ -241,6 +241,25 @@ def render(s: dict) -> str:
     for role in M.ROLES:
         v = s["by_role"].get(role, {})
         L.append(f"| {M.ROLES[role].label} | " + " | ".join(str(v.get(k, 0)) for k in keys) + " |")
+    runs = [c_ for x in s["agents"] for c_ in x["candidates"] if c_["status"]]
+    if runs:
+        codes = Counter(rc for c_ in runs for rc in (c_.get("reason_codes") or []))
+        enough = sum(1 for c_ in runs if (c_["test_trades"] or 0) >= 30)
+        pos = sum(1 for c_ in runs if (c_["test_sharpe"] or 0) > 0)
+        best = max(runs, key=lambda c_: c_["dsr"] or 0)
+        names = {"EDGE_UNCERTAIN": "edge not proven (any of: Deflated Sharpe below 0.95, test loss, walk-forward, PBO, placebo or best-trades check failed)",
+                 "COSTS_TOO_HIGH": "loses money at 2x modelled costs",
+                 "INSUFFICIENT_DATA": "fewer than 30 trades in the held-out test",
+                 "CONTRACT_TOO_LARGE": "one contract is larger than the sized position"}
+        L += ["", "## Why the gate said no", "",
+              f"- {enough} of {len(runs)} runs had at least 30 trades in the held-out test.",
+              f"- {pos} of {len(runs)} runs had a positive Sharpe in the held-out test.",
+              f"- The highest Deflated Sharpe of any run was {fmt(best['dsr'])}; at least 0.95 is required.",
+              "- Reasons, counted per run (a run can have several):", ""]
+        L += [f"  - {names.get(k, k)}: {v}" for k, v in codes.most_common()]
+        L += ["", "Most of these strategies trade often. After fees, spread and slippage, what remains is too small, "
+              "or too unstable, to tell apart from luck. That matches the published evidence summarised in "
+              "STRATEGY_RESEARCH.md. The software reports this; it does not lower the bar to make trades happen."]
     if s.get("previous"):
         pv = s["previous"]
         L += ["", "## Earlier pass (kept on record)", "",

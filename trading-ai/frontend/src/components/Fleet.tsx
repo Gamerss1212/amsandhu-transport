@@ -28,7 +28,7 @@ const GROUP_LABEL: Record<string, string> = {
   fx_trend: "Forex", index_futures: "Index futures",
 };
 const VERSION_KIND: Record<string, "good" | "warn" | "bad" | "info" | ""> = {
-  active: "good", shadow: "info", superseded: "", rejected: "bad", rolled_back: "warn",
+  active: "good", shadow: "info", superseded: "", rejected: "bad", rolled_back: "warn", retired: "",
 };
 
 export function FleetPanel() {

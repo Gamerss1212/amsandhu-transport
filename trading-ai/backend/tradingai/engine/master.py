@@ -201,54 +201,67 @@ class Master:
         self.assign()
 
     # ================================================================== assignment: one distinct market per agent
-    def _discovered(self) -> list[str]:
+    def _discovered(self) -> tuple[list[str], bool]:
+        """Execution-eligible discovered pairs, most liquid first, and whether that ranking is known (the shared
+        price snapshot has volumes). Right after a start the snapshot is empty and every pair ranks at zero."""
         app = self.app
         disc = getattr(app, "discovery", None)
         if disc is None or app.offline:
-            return []
-        out = []
-        for row in disc.tradable_crypto(400):
+            return [], False
+        out, known = [], False
+        for row in disc.tradable_crypto(10_000):
             base = (row.get("base") or "").upper()
             meta = json.loads(row.get("meta") or "{}")
             iid = f"COINBASE:{row['symbol']}"
             if base in STABLE or meta.get("fx_stablecoin") or iid in ROLE_FIXED:
                 continue
+            known = known or disc.usd_volume(row) > 0
             out.append(iid)
-        return out
+        return out, known
 
-    def _partitions(self) -> dict[str, list[str]]:
+    def _partitions(self) -> tuple[dict[str, list[str]], dict[str, set[str]]]:
+        """Per role: the instruments a free agent may take (in order) and the wider set an agent may KEEP.
+        Discovered pairs: new ones are taken only from a known liquidity ranking; an agent keeps its pair while it
+        stays among the 3x most liquid of its group (hysteresis, so small rank changes never move agents), and keeps
+        it while the ranking is unknown (after a restart) as long as the pair is still listed and online."""
         app = self.app
         parts: dict[str, list[str]] = {}
-        disc = self._discovered()
+        keep: dict[str, set[str]] = {}
+        disc, known = self._discovered()
+        n_disc = ROLE_COUNT["crypto_trend"] + ROLE_COUNT["crypto_reversion"]
+        wide = set(disc[:3 * n_disc]) if known else set(disc)
         for role, first, last, fixed in PLAN:
             n = last - first + 1
             if fixed is not None:
                 parts[role] = [i for i in fixed if i in app.sources and paper_tradable(app.book.get(i))[0]][:n]
-            elif role == "crypto_trend":
-                live = disc[:n]
-                if app.offline:
-                    live = [i for i in DEMO if i in app.sources]
-                parts[role] = live
+                keep[role] = set(parts[role])
+            elif app.offline:
+                parts[role] = [i for i in DEMO if i in app.sources] if role == "crypto_trend" else []
+                keep[role] = set(parts[role])
             else:
-                parts[role] = disc[ROLE_COUNT["crypto_trend"]:ROLE_COUNT["crypto_trend"] + n]
-        for role, ids in parts.items():                     # discovered pairs must be in the book to be traded
-            for iid in ids:
-                if iid not in app.sources and app.discovery is not None:
-                    row = next((r for r in app.discovery.listed("COINBASE") if f"COINBASE:{r['symbol']}" == iid), None)
-                    if row:
-                        app.discovery.ensure_instrument(row)
-        return parts
+                lo = 0 if role == "crypto_trend" else ROLE_COUNT["crypto_trend"]
+                # free agents take the most liquid unowned pair from their band first, then the rest in rank order
+                parts[role] = (disc[lo:] + disc[:lo]) if known else []
+                keep[role] = wide
+        mine = {i for a in self.agents.values() for i in a.partition}
+        missing = {i for ids in parts.values() for i in ids[:3 * n_disc] if i not in app.sources} | \
+            {i for k in keep.values() for i in k if i in mine and i not in app.sources}
+        if missing and getattr(app, "discovery", None) is not None:  # discovered pairs must be in the book to trade
+            for r in app.discovery.listed("COINBASE"):
+                if f"COINBASE:{r['symbol']}" in missing:
+                    app.discovery.ensure_instrument(r)
+        return parts, keep
 
     def assign(self) -> dict:
         """Stable assignment inside each role: an agent keeps its instrument while it stays valid (always while it
         holds a position); free agents take their role's next unowned instrument."""
         with self._lock:
-            parts = self._partitions()
+            parts, may_keep = self._partitions()
             held = set(self.app.paper.get_positions())
             changed = 0
             owner: dict[str, str] = {}
             for a in self.agents.values():
-                valid = set(parts.get(a.role, []))
+                valid = may_keep.get(a.role, set())
                 keep = [i for i in a.partition if (i in valid or i in held) and i not in owner]
                 if keep != a.partition:
                     self._reassign(a, keep, "instrument no longer valid for this role" if a.partition else "")
@@ -256,7 +269,7 @@ class Master:
                 for i in keep:
                     owner[i] = a.agent_id
             for role, first, last, _ in PLAN:
-                pool = [i for i in parts.get(role, []) if i not in owner]
+                pool = [i for i in parts.get(role, []) if i not in owner and i in self.app.sources]
                 for n in range(first, last + 1):
                     a = self.agents[f"A{n:03d}"]
                     if a.partition or not pool:
@@ -273,8 +286,15 @@ class Master:
 
     def _reassign(self, a: Agent, partition: list[str], why: str) -> None:
         a.history = (a.history + [{"ts": now_ms(), "from": a.partition, "to": partition, "why": why}])[-10:]
+        old = a.partition
         a.partition = partition
         a.assignment_version += 1
+        if old and old != partition and hasattr(self, "activity"):
+            # a version is trained on one market: it is never carried over to another one
+            for r in self.app.db.query("SELECT version FROM agent_versions WHERE agent_id=? AND status IN "
+                                       "('active', 'shadow', 'superseded')", (a.agent_id,)):
+                self._set_status(a.agent_id, r["version"], "retired",
+                                 f"the agent's market changed from {old[0]} to {(partition or ['none'])[0]}")
 
     def _save(self) -> None:
         self.app.db.set_setting("master", {
@@ -682,6 +702,9 @@ class Master:
         v = self.active_version(agent_id)
         if v is None:
             return False, "no validated version yet: the agent stays in cash while it trains"
+        trained_on = (v["training"].get("dataset") or {}).get("instrument")
+        if trained_on and trained_on != a.partition[0]:
+            return False, f"v{v['version']} was trained on {trained_on}, not on {a.partition[0]}: retraining first"
         return True, f"v{v['version']} validated ({v['experiment_id']})"
 
     def _qualified_instruments(self) -> set[str]:

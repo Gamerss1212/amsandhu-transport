@@ -606,3 +606,85 @@ def test_a_crash_and_restart_restores_agents_versions_positions_and_lessons(tmp_
     finally:
         b.shutdown()
         a.shutdown()
+
+
+def _online(app):
+    app.md.http = ManyPairs()
+    app.discovery.refresh_listings()
+    app.discovery.snapshot()
+    app.offline = False
+
+
+def test_a_restart_before_the_first_price_snapshot_does_not_move_any_agent(app):
+    _online(app)
+    try:
+        app.fleet.assign()
+        before = {aid: list(a.partition) for aid, a in app.fleet.agents.items()}
+        app.discovery.snap.clear()                       # as right after a start: no volumes, ranking unknown
+        out = app.fleet.assign()
+        assert out["changed"] == 0
+        assert {aid: list(a.partition) for aid, a in app.fleet.agents.items()} == before
+        app.discovery.snapshot()                         # ranking back: still nothing moves
+        assert app.fleet.assign()["changed"] == 0
+    finally:
+        app.offline = True
+
+
+def test_a_fresh_start_takes_no_discovered_pair_until_the_ranking_is_known(app):
+    app.md.http = ManyPairs()
+    app.discovery.refresh_listings()                     # listed, but no snapshot yet
+    app.offline = False
+    try:
+        app.fleet.assign()
+        crypto = [a for a in app.fleet.agents.values() if a.role in ("crypto_trend", "crypto_reversion")]
+        assert all(not a.partition for a in crypto)      # no alphabetical guess: they wait
+        app.discovery.snapshot()
+        app.fleet.assign()
+        assert all(a.partition for a in crypto)
+    finally:
+        app.offline = True
+
+
+def test_small_rank_changes_do_not_move_agents_but_a_delisted_pair_does(app):
+    _online(app)
+    try:
+        app.fleet.assign()
+        a = app.fleet.agents["A010"]
+        iid = a.partition[0]
+        ps = app.md.http.products
+        for k in range(0, 120, 2):                       # neighbours swap volumes: every pair moves one rank
+            ps[k], ps[k + 1] = ps[k + 1], ps[k]
+        app.discovery.snapshot()
+        assert app.fleet.assign()["changed"] == 0 and a.partition == [iid]
+        top = ps[:2]
+        app.md.http.products = ps[2:120] + top + ps[120:]   # the two quietest pairs become the most liquid:
+        app.discovery.snapshot()                             # nobody is pushed out of the 3x window
+        assert app.fleet.assign()["changed"] == 0
+        app.md.http.products = [p for p in app.md.http.products if f"COINBASE:{p['id']}" != iid]
+        app.discovery.refresh_listings()                 # the pair disappears: it is delisted
+        app.discovery.snapshot()
+        app.fleet.assign()
+        assert a.partition and a.partition != [iid]
+    finally:
+        app.offline = True
+
+
+def test_a_version_trained_on_one_market_is_never_used_on_another(app):
+    _online(app)
+    try:
+        app.fleet.assign()
+        a = app.fleet.agents["A010"]
+        old = a.partition[0]
+        train(app, "A010", [1.0, 0.5, 0.2])
+        assert app.fleet.active_version("A010") is not None
+        app.md.http.products = [p for p in app.md.http.products if f"COINBASE:{p['id']}" != old]
+        app.discovery.refresh_listings()
+        app.discovery.snapshot()
+        app.fleet.assign()
+        assert a.partition and a.partition[0] != old
+        assert app.fleet.active_version("A010") is None
+        assert app.fleet.versions("A010")[-1]["status"] == "retired"
+        ok, why = app.fleet.permission("A010")
+        assert not ok
+    finally:
+        app.offline = True
