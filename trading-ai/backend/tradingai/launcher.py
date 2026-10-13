@@ -321,6 +321,14 @@ def selftest(home: Optional[str], offline: bool) -> int:
         return f"{m['lessons']} lesson(s); regression replay {r['passed']}/{r['scenarios']} passed"
     ok &= step("learned safeguards: regression replay passes", learning_ok)
 
+    def thermal_ok():
+        t = api("/api/system/thermal")
+        r = t["reading"] or {}
+        w = (t["machine"].get("windows") or {}).get("name") or t["machine"]["os"]
+        temp = f"{r['max_temp_c']:.0f} C" if r.get("max_temp_c") is not None else "no temperature reported"
+        return f"{w}: sensors via {t['source']}, {temp}, status {t['assessment']['status']}"
+    ok &= step("computer temperature sensors read", thermal_ok)
+
     def caps_ok():
         r = api("/api/roles")
         ids = [x["id"] for x in r["roles"]]
@@ -387,6 +395,54 @@ def selftest(home: Optional[str], offline: bool) -> int:
     return 0 if ok else 1
 
 
+# ---------------------------------------------------------------- thermal check
+def thermal_check(home: str, minutes: float) -> int:
+    """Stand-alone thermal check (no server): 1 minute idle, `minutes` of full load on every logical CPU, 1 minute of
+    cool-down. Stops by itself at 95 C, or with Ctrl+C. Writes thermal-reports/thermal-check-<time>.txt."""
+    from tradingai import hardware as H
+    minutes = max(1.0, min(30.0, minutes))
+    m = H.machine()
+    win = m.get("windows") or {}
+    print(f"Trading AI {__version__} - thermal check", flush=True)
+    print(f"Computer: {win.get('name', m['os'])} (build {win.get('build', '-')}), {m.get('cpu') or 'CPU not reported'}, "
+          f"{m['logical_cpus']} logical CPUs", flush=True)
+    print(f"This runs every CPU core at full load for {minutes:g} minute(s), with 1 minute idle before and 1 minute "
+          "to cool down after.", flush=True)
+    print(f"It stops by itself if the temperature reaches {H.CRIT_C:.0f} C. Press Ctrl+C to stop at any time.\n",
+          flush=True)
+    sensors = H.Sensors()
+    first = sensors.read()
+    if sensors.error:
+        print(f"Sensors could not be opened: {sensors.error}", flush=True)
+    print("Temperature sensors found: " + (", ".join(f"{x['name']} {x['temp_c']:.0f} C" for x in first["sensors"])
+                                           or "none (this PC does not report a temperature to Windows)"), flush=True)
+    if sensors.missing():
+        print("Counters not provided by this Windows: " + ", ".join(sorted(sensors.missing())), flush=True)
+    stop = threading.Event()
+
+    def show(x: dict) -> None:
+        t = "  n/a" if x["max_temp_c"] is None else f"{x['max_temp_c']:5.1f} C"
+        busy = "  -" if x["cpu_load_pct"] is None else f"{x['cpu_load_pct']:3.0f}%"
+        speed = "  -" if x["cpu_perf_pct"] is None else f"{x['cpu_perf_pct']:3.0f}%"
+        lim = "" if x["passive_limit_pct"] is None or x["passive_limit_pct"] >= 100 else \
+            f"  THROTTLED (limit {x['passive_limit_pct']:.0f}%)"
+        rate = "" if x["work_rate"] is None else f"  work {x['work_rate']:.0f}/s"
+        print(f"[{x['t_s']:6.0f}s] {x['phase']:<8} temp {t}  busy {busy}  speed {speed}{rate}{lim}", flush=True)
+    try:
+        res = H.run_check(sensors, minutes, stop=stop, progress=show)
+    except KeyboardInterrupt:
+        stop.set()
+        print("Stopped.", flush=True)
+        return 1
+    path = H.save_report(res, Path(home) / "thermal-reports")
+    print("\n" + "=" * 60, flush=True)
+    print(f"RESULT: {res['verdict']}", flush=True)
+    for r in res["reasons"]:
+        print(f"  - {r}", flush=True)
+    print(f"\nFull report: {path}", flush=True)
+    return 1 if res["verdict"] == "FAIL" else 0
+
+
 # ---------------------------------------------------------------- main
 def main(argv: Optional[list[str]] = None) -> int:
     ap = argparse.ArgumentParser(prog="START_TRADING_AI", description="Start Trading AI on this computer")
@@ -395,10 +451,15 @@ def main(argv: Optional[list[str]] = None) -> int:
     ap.add_argument("--no-browser", action="store_true", help="do not open the browser")
     ap.add_argument("--offline", action="store_true", help="no internet: stored and DEMO data only")
     ap.add_argument("--selftest", action="store_true", help="start, test end to end, print a report, exit")
+    ap.add_argument("--thermal-check", action="store_true",
+                    help="load every CPU core, watch temperature and throttling, write a report, exit")
+    ap.add_argument("--minutes", type=float, default=5.0, help="minutes of full load for --thermal-check (1-30)")
     a = ap.parse_args(argv)
     home = a.home or os.environ.get("TRADING_AI_HOME") or str(config.BASE_DIR)
     if a.selftest:
         return selftest(str(Path(home) / "selftest-data") if not a.home else home, a.offline)
+    if a.thermal_check:
+        return thermal_check(home, a.minutes)
 
     lock = InstanceLock(Path(home) / "data")
     if not lock.acquire():

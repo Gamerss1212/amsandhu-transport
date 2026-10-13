@@ -107,6 +107,10 @@ class Assistant:
                 bad = "rolled_back" in msg or "suspended" in msg
                 self._announce("master", "warning" if bad else "info", "Master agent",
                                "Master agent: " + msg.split(" (")[0] + ".", "ma:" + msg[:60], 30, 900)
+        elif t == "hardware" and d.get("message"):
+            self._announce("hardware", "critical" if d.get("status") == "critical" else
+                           "warning" if d.get("status") == "warning" else "info", "Computer temperature",
+                           d["message"], "hw:" + str(d.get("status")), 120, 900)
         elif t == "learning" and not d.get("repeat"):
             self._announce("learning", "info", "Lesson learned", f"New lesson from {d.get('agent') or 'the system'}: "
                            f"{str(d.get('root_cause', '')).replace('_', ' ').lower()}. Its safeguard now applies to all "
@@ -403,6 +407,28 @@ HELP = ("I can tell you what the bots are doing, why you are or aren't trading, 
         "bot, pause or resume new entries and engage the emergency stop. Going live, raising limits, "
         "flattening and re-arming stay on the page.")
 
+def i_thermal(a: Assistant, q: str) -> dict:
+    hw = getattr(a.app, "hardware", None)
+    if hw is None:
+        return {"intent": "thermal", "answer": "The temperature monitor is not running."}
+    v = hw.view()
+    r, s = v["reading"] or {}, v["assessment"]
+    t = r.get("max_temp_c")
+    parts = [f"Your computer is at {t:.0f} degrees Celsius." if t is not None else
+             "Your computer does not report a temperature to Windows, so I can only watch the CPU's speed."]
+    if s["status"] in ("warning", "critical"):
+        parts.append("It is running hot: " + "; ".join(s["reasons"]) + ". New training waits until it cools down.")
+    elif s["status"] == "ok":
+        parts.append("Nothing shows overheating or throttling right now.")
+    res = (v["check"] or {}).get("result")
+    if res:
+        parts.append(f"The last thermal check said {res['verdict']}.")
+    else:
+        parts.append("To test it under full load, use Run thermal check on the Master Agent page, or double-click "
+                     "CHECK_COMPUTER_TEMPERATURE.bat in the program folder.")
+    return {"intent": "thermal", "answer": " ".join(parts), "navigate": "/intelligence"}
+
+
 INTENTS = [
     (r"\b(go live|live mode|raise|increase).*(limit|capital|leverage|live)|\b(go live|arm live)\b|\bflatten|\bre-?arm"
      r"|\bwithdraw|\bdeposit|\btransfer", i_refuse),
@@ -411,6 +437,7 @@ INTENTS = [
     (r"\b(pause|stop|halt)\b.*\bbot\b", i_that_bot),
     (r"why .*(not|n't|no) (trad|buy|sell)|why .*idle|why .*nothing", i_why_not),
     (r"why .*(trade|buy|sell|enter|order)|last trade|that trade", i_why_trade),
+    (r"temperat|thermal|overheat|too hot|\bheat\b|\bfan\b|throttl", i_thermal),
     (r"\bfee", i_fees),
     (r"review|probation|candidate|research", i_review),
     (r"exposure|position", i_exposure),

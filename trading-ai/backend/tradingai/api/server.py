@@ -114,6 +114,10 @@ class AutopilotIn(BaseModel):
     allow_probation: Optional[bool] = None
 
 
+class ThermalIn(BaseModel):
+    minutes: float = 5.0
+
+
 class AutostartIn(BaseModel):
     enabled: bool
 
@@ -298,6 +302,18 @@ def create_app(core, *, token: Optional[str] = None, on_shutdown=None) -> FastAP
         if changes.get("enabled") and core.risk.kill_switch:
             raise PermissionError("STOP ALL TRADING is engaged: re-arm trading first")
         return core.autopilot.configure(changes)
+
+    @api.get("/api/system/thermal")
+    def thermal():
+        return core.hardware.view()
+
+    @api.post("/api/system/thermal-check")
+    def thermal_check(a: ThermalIn):
+        return core.hardware.start_check(a.minutes)
+
+    @api.post("/api/system/thermal-check/stop")
+    def thermal_check_stop():
+        return core.hardware.stop_check()
 
     @api.get("/api/system/autostart")
     def autostart():

@@ -49,6 +49,7 @@ for d in STRATEGY_RESEARCH AGENT_TRAINING_REPORT PORTFOLIO_BACKTEST_REPORT VERIF
   if [ -f "$ROOT/docs/$d.md" ]; then cp "$ROOT/docs/$d.md" "$OUT/TradingAI/$d.md"; fi
 done
 cp "$ROOT/README.md" "$OUT/TradingAI/README.md"
+cp "$HERE/CHECK_COMPUTER_TEMPERATURE.bat" "$OUT/TradingAI/CHECK_COMPUTER_TEMPERATURE.bat"
 
 echo "== 6/6 self-test of the built exe (fresh data folder, offline: no network needed)"
 ST="$WINEPREFIX/drive_c/tatest"

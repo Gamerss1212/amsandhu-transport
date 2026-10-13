@@ -1,5 +1,5 @@
 import { Fragment, useMemo, useState } from "react";
-import { fmt } from "../api";
+import { api, fmt } from "../api";
 import { Badge, Card, Check, Diverge, Empty, Tabs } from "../components/ui";
 import { useLive, usePoll } from "../store";
 import { ExperimentDrawer, Verdict } from "./StrategyLab";
@@ -49,6 +49,7 @@ export default function LiveIntelligence() {
         </div>
         <div className="col" style={{ gap: 14, minWidth: 0 }}>
           <Health />
+          <Thermal />
           <EventStream />
         </div>
       </div>
@@ -206,6 +207,70 @@ function summarize(e: any): string {
     case "learning": return `LEARNING: ${d.message}`;
     default: return JSON.stringify(d).slice(0, 180);
   }
+}
+
+// ---------------------------------------------------------------- computer temperature and the thermal check
+const HW_KIND: Record<string, "good" | "warn" | "bad" | ""> = { ok: "good", warning: "warn", critical: "bad", unknown: "" };
+
+function Thermal() {
+  const live = useLive();
+  const [t, reload] = usePoll<any>("/api/system/thermal", 3000);
+  const [minutes, setMinutes] = useState(5);
+  if (!t) return <Card title="Computer temperature"><Empty>Loading…</Empty></Card>;
+  const r = t.reading ?? {};
+  const a = t.assessment ?? {};
+  const chk = t.check ?? {};
+  const res = chk.result;
+  const run = async () => {
+    try {
+      await api.post("/api/system/thermal-check", { minutes });
+      live.toast(`Thermal check started: ${minutes} min of full CPU load (1 min idle before, 1 min cool-down after)`, "ok");
+    } catch (e: any) {
+      live.toast(e.message, "error");
+    }
+    reload();
+  };
+  const stop = async () => { await api.post("/api/system/thermal-check/stop"); reload(); };
+  const temps = (t.history ?? []).map((x: any) => x.max_temp_c).filter((x: any) => x !== null && x !== undefined);
+  const last = chk.samples?.length ? chk.samples[chk.samples.length - 1] : null;
+  const win = t.machine?.windows;
+  return (
+    <Card title="Computer temperature" sub={`${win?.name ?? t.machine?.os ?? ""}${win ? ` build ${win.build}` : ""} · ${t.machine?.cpu ?? "CPU not reported"}`}
+      right={<Badge kind={HW_KIND[a.status] ?? ""} dot>{a.status === "unknown" ? "no sensor data" : a.status}</Badge>}>
+      <div className="col" style={{ gap: 8 }}>
+        {a.reasons?.length > 0 && <div className={`callout ${a.status === "critical" ? "bad" : "warn"} small`}>{a.reasons.join("; ")}. New training waits until it cools down; trading checks continue.</div>}
+        <div className="kv small">
+          <div>Temperature</div><div>{r.max_temp_c !== null && r.max_temp_c !== undefined ? <b>{r.max_temp_c.toFixed(1)} °C</b> : <span className="dim">not reported by this PC</span>}
+            {temps.length > 1 && <span className="tiny muted"> · range {Math.min(...temps).toFixed(0)}–{Math.max(...temps).toFixed(0)} °C recently</span>}</div>
+          <div>Sensors</div><div className="tiny">{r.sensors?.length ? r.sensors.map((s: any) => `${s.name}: ${s.temp_c.toFixed(0)} °C`).join(" · ") : "none"}</div>
+          <div>CPU busy</div><div>{r.cpu_load_pct !== null && r.cpu_load_pct !== undefined ? `${r.cpu_load_pct.toFixed(0)}%` : "—"}</div>
+          <div>CPU speed</div><div>{r.cpu_perf_pct !== null && r.cpu_perf_pct !== undefined ? `${r.cpu_perf_pct.toFixed(0)}% of normal${r.cpu_mhz ? ` (≈${r.cpu_mhz} MHz)` : ""}` : "—"}</div>
+          <div>Windows cooling limit</div><div>{r.passive_limit_pct === null || r.passive_limit_pct === undefined ? "—" : r.passive_limit_pct >= 100 ? "none (100%)" : <b className="neg">limited to {r.passive_limit_pct.toFixed(0)}%</b>}</div>
+        </div>
+        <div className="row wrap small">
+          {chk.state === "running"
+            ? <><Badge kind="info" dot>running: {chk.phase}</Badge>
+                {last && <span className="tiny">{last.max_temp_c !== null ? `${last.max_temp_c.toFixed(1)} °C · ` : ""}busy {last.cpu_load_pct ?? "—"}%{last.work_rate ? ` · work ${Math.round(last.work_rate)}/s` : ""}</span>}
+                <button className="btn sm" onClick={stop}>Stop</button></>
+            : <><label className="row" style={{ gap: 6 }}>Minutes of full load
+                <select value={minutes} onChange={(e) => setMinutes(Number(e.target.value))}>{[1, 3, 5, 10, 15].map((m) => <option key={m} value={m}>{m}</option>)}</select></label>
+                <button className="btn sm go" onClick={run}>Run thermal check</button></>}
+        </div>
+        {res && chk.state === "done" && (
+          <div className={`callout ${res.verdict.startsWith("PASS") ? "good" : res.verdict === "FAIL" ? "bad" : "warn"} small`}>
+            <b>Last check: {res.verdict}</b>
+            <ul style={{ margin: "4px 0 0", paddingLeft: 18 }}>{res.reasons.map((x: string) => <li key={x}>{x}</li>)}</ul>
+            <div className="tiny">Idle {res.baseline_c ?? "—"} °C · peak {res.peak_load_c ?? "—"} °C · after cool-down {res.end_of_cooldown_c ?? "—"} °C · work rate change {res.work_rate_drop === null ? "—" : `${(-res.work_rate_drop * 100).toFixed(0)}%`}</div>
+            <div className="tiny mono" style={{ wordBreak: "break-all" }}>Report: {chk.report}</div>
+          </div>
+        )}
+        {chk.state === "failed" && <div className="callout bad small">The check could not run: {chk.error}</div>}
+        <div className="note">The check runs every CPU core at full load and stops by itself at {t.thresholds.stop_c} °C. Warning above {t.thresholds.warning_c} °C, or if
+          Windows slows the CPU to cool it. Many desktop PCs report no temperature to Windows; the check then judges throttling from the CPU's measured speed.
+          A Windows "thermal zone" is often the motherboard, not the CPU core.</div>
+      </div>
+    </Card>
+  );
 }
 
 // ---------------------------------------------------------------- system health

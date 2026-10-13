@@ -110,6 +110,7 @@ class App:
         self._check("research engine", self._research)
         self._check("market discovery", self._discovery)
         self._check("learning: lessons and regression replay", self._learning)
+        self._check("computer temperature sensors", self._hardware)
         self._check("autopilot", self._autopilot)                  # the system switch, read by the master's permissions
         self._check("master agent and 100 trading agents", self._fleet)
         self._check("assistant", self._assistant)
@@ -231,6 +232,18 @@ class App:
             raise AssertionError(f"{len(run['failed'])} of {run['scenarios']} learned scenario(s) failed their replay: "
                                  + "; ".join(f"{f['root_cause']}: {f['why']}" for f in run["failed"]))
         return f"{len(self.learning.lessons)} lesson(s); {run['passed']}/{run['scenarios']} regression scenario(s) pass"
+
+    def _hardware(self) -> str:
+        from tradingai.hardware import HardwareMonitor, machine
+        self.hardware = HardwareMonitor(self)
+        r = self.hardware.sample()
+        m = machine()
+        os_name = (m.get("windows") or {}).get("name") or m["os"]
+        if r["max_temp_c"] is not None:
+            return f"{os_name}: {len(r['sensors'])} temperature sensor(s), now {r['max_temp_c']:.0f} °C"
+        return (f"{os_name}: no temperature sensor reported" +
+                (f" ({self.hardware.sensors.error})" if self.hardware.sensors.error else
+                 "; throttling is still watched through CPU speed" if r["cpu_perf_pct"] is not None else ""))
 
     def _fleet(self) -> str:
         from tradingai.engine.master import Master
@@ -399,6 +412,8 @@ class App:
                 self.discovery.start()
             if getattr(self, "fleet", None) is not None:
                 self.fleet.start()
+            if getattr(self, "hardware", None) is not None:
+                self.hardware.start()
 
     def _loop(self) -> None:
         last_account = last_recon = last_equity = 0.0
@@ -1268,6 +1283,8 @@ class App:
             self.discovery.stop()
         if getattr(self, "fleet", None) is not None:
             self.fleet.stop()
+        if getattr(self, "hardware", None) is not None:
+            self.hardware.stop()
         self.jobs.shutdown()
         self.audit("system", "shut down" + (f"; LIVE positions still open at the broker: {live_open}" if live_open
                                             else ""), severity="warning" if live_open else "info")

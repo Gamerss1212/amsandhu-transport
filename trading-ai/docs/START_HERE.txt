@@ -16,6 +16,38 @@ TRADING AI - START HERE
 
 3. You start in PAPER mode. Paper = simulated money at real market prices. No real money moves.
 
+WINDOWS 11 (and Windows 10)
+---------------------------
+- Needs 64-bit Windows 10 or 11. Nothing else to install: Python and everything else are inside the folder.
+- Unzip first (right-click the zip -> Extract All...). Running the exe from inside the zip preview does not work.
+  Use a normal folder such as Documents\TradingAI, not C:\Program Files (the program writes its data next to itself).
+- "Windows protected your PC" (SmartScreen): click "More info" -> "Run anyway". It appears because the program is
+  not code-signed. Only do this for a file you downloaded from your own repository.
+- Smart App Control (only on some newly installed Windows 11 PCs) blocks unsigned programs completely, with no
+  "Run anyway" button. Check it in Settings -> Privacy & security -> Windows Security -> App & browser control ->
+  Smart App Control. If it is On, this program cannot start. Turning it off is a security trade-off and cannot be
+  switched back on without reinstalling Windows, so decide carefully. A code-signing certificate (paid) would remove
+  this problem; this version does not have one.
+- If Windows Security (Defender) quarantines START_TRADING_AI.exe: programs packed like this one are sometimes
+  flagged by mistake. Open Windows Security -> Protection history, check it is this file, and choose Allow only if
+  you trust where it came from.
+- The program only listens on 127.0.0.1 (this computer), so Windows Firewall does not need to be opened.
+
+CHECK YOUR COMPUTER'S TEMPERATURE (THERMAL CHECK)
+-------------------------------------------------
+Double-click CHECK_COMPUTER_TEMPERATURE.bat in this folder (or press "Run thermal check" on the Master Agent page).
+  - It runs every CPU core at full load for 5 minutes, with 1 minute idle before and 1 minute to cool down after.
+  - Every 5 seconds it reads Windows' own sensors: temperature, whether Windows is slowing the CPU to cool it
+    ("passive limit"), and the CPU's speed. It also measures how much work the CPU gets done, which falls if the
+    CPU throttles - so problems show up even on PCs with no temperature sensor.
+  - It stops by itself at 95 C. Press Ctrl+C to stop it at any time.
+  - Result: PASS, PASS (no temperature sensor), WARNING (above 85 C, throttling, or the speed fell more than 30%),
+    or FAIL (it reached 95 C). The report is saved in the thermal-reports folder.
+  - Many desktop PCs do not report a temperature to Windows, and a Windows "thermal zone" is often the motherboard,
+    not the CPU core. For the exact core temperature use a tool such as HWiNFO alongside it.
+  - Full load is harder than anything this program does: its heaviest work (training) runs at most 2 research jobs at once. While
+    the program runs it checks the temperature every 30 seconds and pauses training if the computer runs hot.
+
 THE THREE PAGES
 ---------------
 AI Trading System   From the top: live prices (Pause stops them updating), your key numbers (equity,

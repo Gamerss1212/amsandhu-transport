@@ -396,6 +396,14 @@ class Master:
     def _submit_training(self) -> Optional[dict]:
         """Start training jobs up to the bound (MAX_TRAINING_JOBS at once); returns the last job started."""
         app = self.app
+        hw = getattr(app, "hardware", None)
+        if hw is not None and hw.hot():
+            # training is the heaviest work this program does: none starts while the computer runs hot or while the
+            # thermal check is loading the CPU (jobs already running finish; trading decisions continue)
+            self.doing = ("training paused: the thermal check is running" if hw.check.get("state") == "running"
+                          else "training paused: the computer is running hot (" +
+                          "; ".join(hw.assessment.get("reasons", [])) + ")")
+            return None
         last = None
         for a in sorted(self.agents.values(), key=lambda x: x.agent_id):
             if len(self.jobs) >= MAX_TRAINING_JOBS:
@@ -826,7 +834,8 @@ class Master:
             self._loss_limits()
             app.learning.tick()
             self._sync_bots()
-            if sub is None and not self.jobs:
+            hw = getattr(app, "hardware", None)
+            if sub is None and not self.jobs and not (hw is not None and hw.hot()):
                 done = sum(1 for a in self.agents.values() if a.partition and self._training_due(a) is None)
                 act = sum(1 for a in self.agents.values() if self.active_version(a.agent_id))
                 self.doing = (f"monitoring: {done} agents trained and current, {act} with a validated version "
