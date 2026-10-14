@@ -49,6 +49,7 @@ for d in STRATEGY_RESEARCH AGENT_TRAINING_REPORT PORTFOLIO_BACKTEST_REPORT VERIF
   if [ -f "$ROOT/docs/$d.md" ]; then cp "$ROOT/docs/$d.md" "$OUT/TradingAI/$d.md"; fi
 done
 cp "$ROOT/README.md" "$OUT/TradingAI/README.md"
+for f in ALL_STRATEGIES BOT_POWER; do if [ -f "$ROOT/docs/$f.xlsx" ]; then cp "$ROOT/docs/$f.xlsx" "$OUT/TradingAI/$f.xlsx"; fi; done
 cp "$HERE/CHECK_COMPUTER_TEMPERATURE.bat" "$OUT/TradingAI/CHECK_COMPUTER_TEMPERATURE.bat"
 cp "$HERE/START_JARVIS.bat" "$OUT/TradingAI/START_JARVIS.bat"
 # JARVIS voice assistant: source only (npm installs the rest on the first run), never node_modules or build output
