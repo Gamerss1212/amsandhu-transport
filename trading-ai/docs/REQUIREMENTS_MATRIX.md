@@ -1,4 +1,4 @@
-# Requirements matrix — Trading AI 1.6.0
+# Requirements matrix — Trading AI 1.7.0
 
 Status meanings:
 * **DONE**: implemented and exercised by a test or by the self-test.
@@ -7,8 +7,8 @@ Status meanings:
 * **NOT DONE**: not built.
 
 How it was verified:
-* **Unit tests**: 170 tests (`backend/tests`), also run on real Windows 11 by `.github/workflows/windows.yml`.
-* **Self-test**: `START_TRADING_AI.exe --selftest` runs 32 steps over HTTP and WebSocket against the real server. For 1.5.1 it passed 32 of 32 from source, on the built exe under Wine, and on an exe built natively on Windows 11.
+* **Unit tests**: 204 tests (`backend/tests`), also run on real Windows 11 by `.github/workflows/windows.yml`.
+* **Self-test**: `START_TRADING_AI.exe --selftest` runs 34 steps over HTTP and WebSocket against the real server (1.7.0: 34 of 34 from source; the Wine and Windows results are in `VERIFICATION_REPORT.md`).
 * **Real-data run**: the dashboard and API were exercised on live Coinbase, Kraken and Yahoo data.
 
 The exe has been tested under Wine on Linux and on a real Windows 11 virtual machine (GitHub runner), **not on a physical Windows PC**.
@@ -200,3 +200,13 @@ The two owner documents are stored unchanged: `docs/specs/AI_Trading_System_Mast
 | Works with any amount of money | DONE (as before) | Paper balance from $100 up; at $100 the limits allow $10 per order, $25 per position and a $3 daily loss. |
 | "$100 becomes $300K" | NOT PROMISED, by design | `CAN_100_DOLLARS_BECOME_300K.md`: the maths (3,000 times the money) and the measured results (0 of 100 agents passed the gate; the portfolio test was negative after costs). No software can promise this. |
 | Bot rewrites and deploys its own live logic | NOT DONE, by design | Improvements are made by a person with tests, never by the bot unattended. |
+
+## 1.7.0: only stocks, crypto and meme coins; JARVIS controls the system by voice (owner's request of 2026-10-14)
+
+| Requirement | Status | How it was verified |
+|---|---|---|
+| Remove every market except stocks, crypto and meme coins | DONE | Forex and futures are gone from the instrument universe; options and bonds rows are gone from coverage. The risk service denies an entry in any market other than US stocks and crypto (`market supported` check; exits stay allowed so an old position can be closed). ETFs and indices remain only as price references (stock agents compare with SPY); they cannot be ordered or assigned. `tests/test_market_policy.py` (11 tests). Engine code for futures and forex calendars stays dormant and unreachable. |
+| Meme coins as their own group | DONE | 15 agents (A041-A055): 8 momentum, 7 mean reversion, on Coinbase meme pairs (16 were online when checked on 2026-10-14). The other crypto agents never take a meme coin. Tested with 15 meme pairs: each meme agent got one, no crypto agent did. |
+| Exactly 100 agents | DONE | 40 crypto, 15 meme, 45 US stocks (11 new stock agents A090-A100 for intraday momentum). The new agents are untrained. |
+| JARVIS controls everything, like the master | DONE within the safety rules | `engine/jarvis_link.py`: pause and Stop run at once; Start, resume, a temperature test and a paper balance wait for the owner's Approve on page 1; orders, limits, live trading, brokers, credentials and the emergency stop do not exist for JARVIS. `tests/test_jarvis_commands.py` (23 tests), a self-test step, a live run of JARVIS's tools, and the page-1 card checked in Chromium. |
+| JARVIS knows everything about stocks, crypto and meme coins | PARTIAL, honestly | It reads the program's markets, agents, roles and results and searches the web. No system knows everything; it is told to look things up and say when it does not know. |

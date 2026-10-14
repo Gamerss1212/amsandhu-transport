@@ -24,8 +24,8 @@ const DOT: Record<string, string> = {
 };
 const GROUP_LABEL: Record<string, string> = {
   crypto_major: "Crypto majors", crypto_trend: "Crypto trend", crypto_reversion: "Crypto reversion",
-  etf_intraday: "ETF intraday", stock_breakout: "Stock breakouts", stock_reversion: "Stock reversion",
-  fx_trend: "Forex", index_futures: "Index futures",
+  meme_momentum: "Meme momentum", meme_reversion: "Meme reversion", stock_breakout: "Stock breakouts",
+  stock_reversion: "Stock reversion", stock_intraday: "Stock intraday",
 };
 const VERSION_KIND: Record<string, "good" | "warn" | "bad" | "info" | ""> = {
   active: "good", shadow: "info", superseded: "", rejected: "bad", rolled_back: "warn", retired: "",

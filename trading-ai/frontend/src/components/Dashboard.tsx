@@ -126,7 +126,7 @@ function DayRules() {
   const [d] = usePoll<any>("/api/daytrade", 0);
   if (!d) return <>—</>;
   const tip = Object.entries(d.rules).map(([k, r]: any) => `${k} (${r.timezone}): entries ${r.entry_window}; flat ${r.flatten}`).join("\n");
-  return <span title={`${tip}\n${d.note}`}>Intraday: stocks flat 10 min before the close, futures and forex before 17:00 New York, crypto held 24 h at most <span className="muted">(hover for all rules)</span></span>;
+  return <span title={`${tip}\n${d.note}`}>Intraday: stocks flat 10 min before the close, crypto and meme coins held 24 h at most <span className="muted">(hover for all rules)</span></span>;
 }
 
 function MemeLine() {
@@ -188,12 +188,12 @@ export function ExecutionStream() {
 
 // ---------------------------------------------------------------- 6. agent strip: one card per team, stable colors
 const TEAM_COLOR: Record<string, string> = {
-  crypto_major: "#f08cda", crypto_trend: "#e879c6", crypto_reversion: "#c3a6ff", etf_intraday: "#3dd9ff",
-  stock_breakout: "#8fd3ff", stock_reversion: "#9be7c4", fx_trend: "#7aa2ff", index_futures: "#ffb86b",
+  crypto_major: "#f08cda", crypto_trend: "#e879c6", crypto_reversion: "#c3a6ff", meme_momentum: "#ffd166",
+  stock_breakout: "#8fd3ff", stock_reversion: "#9be7c4", stock_intraday: "#3dd9ff", meme_reversion: "#ffb86b",
 };
 const TEAM_LABEL: Record<string, string> = {
-  crypto_major: "Crypto majors", crypto_trend: "Crypto trend", crypto_reversion: "Crypto reversion", etf_intraday: "ETF intraday",
-  stock_breakout: "Stock breakouts", stock_reversion: "Stock reversion", fx_trend: "Forex", index_futures: "Index futures",
+  crypto_major: "Crypto majors", crypto_trend: "Crypto trend", crypto_reversion: "Crypto reversion", meme_momentum: "Meme momentum",
+  stock_breakout: "Stock breakouts", stock_reversion: "Stock reversion", stock_intraday: "Stock intraday", meme_reversion: "Meme reversion",
 };
 
 export function AgentStrip() {

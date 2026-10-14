@@ -9,6 +9,7 @@ import { CatalogCard } from "./Catalog";
 import { EquityChart } from "../components/charts";
 import { Drawer } from "../components/ui";
 import { AgentStrip, DecisionActivity, EngineSummary, ExecutionStream, KpiStrip, MarketStrip } from "../components/Dashboard";
+import { JarvisRequests } from "../components/JarvisRequests";
 
 export type Instrument = {
   instrument_id: string; name: string; market: string; market_type: string; provider: string; symbol: string;
@@ -17,7 +18,7 @@ export type Instrument = {
 
 const TF_MS: Record<string, number> = { "1m": 60e3, "5m": 300e3, "15m": 900e3, "30m": 1800e3, "1h": 3600e3, "4h": 14400e3, "1d": 86400e3 };
 const TF_ORDER = ["1m", "5m", "15m", "30m", "1h", "4h", "1d"];
-const MARKET_LABEL: Record<string, string> = { crypto: "Crypto", stock: "Stocks", etf: "ETFs", fx: "Forex", future: "Futures", index: "Indices (reference)" };
+const MARKET_LABEL: Record<string, string> = { crypto: "Crypto and meme coins", stock: "Stocks", etf: "ETF (price reference)", index: "Index (price reference)" };
 
 export function useInstruments() {
   const [list] = usePoll<Instrument[]>("/api/instruments", 0);
@@ -65,6 +66,7 @@ export default function CommandCenter() {
   return (
     <>
       <MarketStrip />
+      <JarvisRequests />
       <KpiStrip />
 
       <div className="grid g-57">

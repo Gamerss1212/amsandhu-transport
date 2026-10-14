@@ -1,4 +1,4 @@
-# Verification report — Trading AI 1.6.0
+# Verification report — Trading AI 1.7.0
 
 Every line below is a check that was actually run, with its real result. A check that could not be run is listed as
 **NOT PERFORMED**, with the reason. Nothing here is a statement about future returns.
@@ -12,7 +12,7 @@ temperature of your own computer can only be measured by running the thermal che
 
 | Area | Result |
 |---|---|
-| Unit and integration tests (`backend/tests`) | PASSED: 170 of 170 on Linux and inside the Wine build (1.6.0). On real Windows 11 the suite passed for 1.5.1 (167 tests, next rows); the same workflow runs on every push. |
+| Unit and integration tests (`backend/tests`) | PASSED: 204 of 204 on Linux (1.7.0). On real Windows 11 the suite passed for 1.5.1 (167 tests, next rows); the same workflow runs on every push. |
 | Real Windows 11: tests, native build, exe self-test, thermal check (measured on 1.5.1) | PASSED on the second run. Workflow `.github/workflows/windows.yml` (run 38478862548): all tests, a native PyInstaller build, the built exe's 32-step self-test (all passed, including "computer temperature sensors read": "Windows 11: sensors via windows-pdh"), then the exe's thermal check (below). The first run FAILED, which found two Windows-only problems (rows 13 and 15 below). |
 | Thermal check on that Windows 11 VM (1 minute of full load) | RESULT: PASS (no temperature sensor). Windows reported no temperature: the `Thermal Zone Information` counter set exists but has no instances on a VM, so the report says "not reported" and shows no temperature figure. What it did measure: CPU busy 99% on all 4 logical CPUs, CPU speed 133% of nominal with no drop, no passive limit or throttle reasons reported, work rate 287 → 262 per second (−12%, below the 30% warning level). The check ran 3 minutes in all (1 idle, 1 load, 1 cool-down). This proves the load test, the Windows counters and the report work on real Windows 11. It says nothing about the heat of any physical PC. |
 | Self-test of the program from source (offline, over HTTP and WebSocket) | PASSED: 33 of 33 steps (1.6.0). |
@@ -29,6 +29,9 @@ temperature of your own computer can only be measured by running the thermal che
 | JARVIS voice assistant, read-only link to the Trading AI (1.6.0) | PASSED where it could be run. JARVIS installs, type-checks (`tsc`), builds (`vite`) and lints. Its nine trading tools were run against a live Trading AI started from source: all nine returned real data; a request for `/api/connections`, a path-traversal path and a bad agent id were refused by JARVIS's own allowlist; and the server itself answered **401** to a write (POST) and to `/api/connections` when given the read-only token. 3 new tests and a new self-test step cover the server side. **NOT PERFORMED:** voice, the microphone, the camera and the 3D screen (they need a real Chrome window and a Claude Code login), and a run of JARVIS on Windows (the CI workflow builds it there, but does not talk to it). |
 | Small account ($100) | CHECKED in the code, not in live trading: at $100 the risk limits allow at most $10 per order, $25 per position and a $3 loss per day. No agent is allowed to trade yet, so there are no small-account trades to measure. |
 | Turning $100 into $300,000 | NOT PROMISED and not tested as a goal: it needs 3,000 times the money. `CAN_100_DOLLARS_BECOME_300K.md` shows the maths and the negative measured results. |
+| Market removal (1.7.0): only US stocks, crypto and meme coins | PASSED: 11 tests. The universe has no forex or futures; ETFs and indices are price references that cannot be traded; the risk service denies entries in etf, fx, future, index and option markets and still allows closing an old position; the coverage page lists only crypto and US stocks; the roster is 40 crypto, 15 meme and 45 stock agents. Live check on 2026-10-14: Coinbase listed 16 meme-coin USD pairs. |
+| JARVIS voice control (1.7.0) | PASSED where it could be run: 23 tests, a self-test step, and a live run against the Trading AI started from source: all 11 read tools returned real data; `pause_entries` ran at once; `start_system` and `set_paper_balance` waited; JARVIS's own token could not approve them (401); `arm_live` was refused (403); after the owner approved, the system started and the paper balance became 100.00. The page-1 approval card was opened in Chromium and Reject cleared it. NOT PERFORMED: voice, microphone and a JARVIS session with a Claude login. |
+| The new agents (15 meme, 11 stock) | NOT PERFORMED: not trained yet. The training and portfolio reports describe the earlier roster (noted at the top of each). |
 | Live (real-money) execution | NOT PERFORMED, by design. Real-money orders stay disabled until you arm them separately with a verified broker account. |
 
 ## What the tests cover

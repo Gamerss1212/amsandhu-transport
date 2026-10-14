@@ -207,6 +207,8 @@ class App:
 
     def _autopilot(self) -> str:
         self.autopilot = Autopilot(self)
+        from tradingai.engine.jarvis_link import JarvisCommands
+        self.jarvis = JarvisCommands(self)
         if self._autopilot_override is not None:
             self.autopilot.cfg.enabled = bool(self._autopilot_override)
         return ("ON: the master agent trains and runs the 100 trading agents by itself" if self.autopilot.cfg.enabled
@@ -1046,10 +1048,8 @@ class App:
         are separate states."""
         from tradingai.brokers.adapters import ADAPTERS
         rows = []
-        live_by = {"crypto": ["kraken", "coinbase"], "stock": ["alpaca", "ibkr"], "etf": ["alpaca", "ibkr"],
-                   "fx": ["oanda", "ibkr"], "future": ["ibkr"]}
-        for m, label in (("crypto", "Crypto spot"), ("stock", "US stocks"), ("etf", "US ETFs"), ("fx", "Forex"),
-                         ("future", "Futures"), ("index", "Indices")):
+        live_by = {"crypto": ["kraken", "coinbase"], "stock": ["alpaca", "ibkr"]}
+        for m, label in (("crypto", "Crypto spot (including meme coins)"), ("stock", "US stocks")):
             iids = [i for i in self.sources if MARKET_OF.get(self.book.get(i).market_type) == m and
                     self.sources[i].provider != "demo"]
             provs = sorted({self.sources[i].provider for i in iids})
@@ -1057,17 +1057,9 @@ class App:
             rows.append({"market": label, "instruments": len(iids), "research": "yes" if iids else "no",
                          "historical_data": ", ".join(provs) or "none",
                          "live_data": "free public candles (completed bars; not an exchange feed)" if iids else "none",
-                         "paper_execution": "reference only (not tradable)" if m == "index" else
-                         ("simulated (continuous series; equity-index roll window)" if m == "future" else "simulated"),
-                         "live_execution": "not applicable" if m == "index" else (
-                             "adapter verified" if verified else "REQUIRES CONNECTION: " + ", ".join(
-                                 ADAPTERS[b].label for b in live_by.get(m, []) if b in ADAPTERS) + " (unverified)")})
-        for label, why in (("Options", "PRODUCT_UNSUPPORTED: no option chains or option-order adapter"),
-                           ("Bonds and credit", "PRODUCT_UNSUPPORTED: no issue-level bond data"),
-                           ("Commodity spreads / rates", "INSUFFICIENT_DATA: no contract-month curves"),
-                           ("Crypto derivatives", "PRODUCT_UNSUPPORTED: not available to Canadian residents on Kraken")):
-            rows.append({"market": label, "instruments": 0, "research": "catalog only", "historical_data": "none",
-                         "live_data": "none", "paper_execution": "none", "live_execution": why})
+                         "paper_execution": "simulated",
+                         "live_execution": "adapter verified" if verified else "REQUIRES CONNECTION: " + ", ".join(
+                             ADAPTERS[b].label for b in live_by.get(m, []) if b in ADAPTERS) + " (unverified)"})
         return rows
 
     def set_paper_balance(self, amount: Decimal) -> dict:

@@ -1,7 +1,7 @@
 # Trading AI
 
-A local trading research, paper-trading and (owner-armed) live-trading system for crypto, stocks, ETFs, forex,
-indices and futures. It runs entirely on your computer behind `http://127.0.0.1:<port>`. The Windows release is one
+A local trading research, paper-trading and (owner-armed) live-trading system for US stocks, crypto and meme coins
+(forex, futures, options and bonds were removed in 1.7.0; ETFs and indices remain only as price references). It runs entirely on your computer behind `http://127.0.0.1:<port>`. The Windows release is one
 folder: double-click `START_TRADING_AI.exe`, the local server starts, and the browser opens the dashboard.
 
 It starts in **PAPER** mode and runs by itself. One **master agent** runs exactly **100 trading agents** (A001-A100).
@@ -17,10 +17,10 @@ replay.
 Nothing shown as real is invented: every number comes from a calculation on real market data, an authenticated broker
 connection, or clearly labelled simulated (DEMO) data.
 
-Download for Windows 11 or 10 (64-bit): [`downloads/TradingAI-v1.6.0-windows.zip`](../downloads/TradingAI-v1.6.0-windows.zip)
+Download for Windows 11 or 10 (64-bit): [`downloads/TradingAI-v1.7.0-windows.zip`](../downloads/TradingAI-v1.7.0-windows.zip)
 (unzip, double-click `START_TRADING_AI.exe`; `docs/START_HERE.txt` explains the SmartScreen and Smart App Control
 messages). To check your computer's temperature under full load, double-click `CHECK_COMPUTER_TEMPERATURE.bat` in the
-same folder. `START_JARVIS.bat` opens the optional JARVIS voice assistant ([`docs/JARVIS.md`](docs/JARVIS.md)). The previous 1.5.1, 1.5.0 and 1.4.1 downloads are kept beside it. Can $100 become $300,000? [No, and why.](docs/CAN_100_DOLLARS_BECOME_300K.md)
+same folder. `START_JARVIS.bat` opens the optional JARVIS voice assistant ([`docs/JARVIS.md`](docs/JARVIS.md)). The previous 1.6.0, 1.5.1 and 1.5.0 downloads are kept beside it. Can $100 become $300,000? [No, and why.](docs/CAN_100_DOLLARS_BECOME_300K.md)
 
 Beginners: read [`docs/START_HERE.txt`](docs/START_HERE.txt). What is done and what is not:
 [`docs/REQUIREMENTS_MATRIX.md`](docs/REQUIREMENTS_MATRIX.md). The owner's specification is in
@@ -44,7 +44,7 @@ START_TRADING_AI.exe (launcher.py)
  └─ App (app.py): start-up checks → recovery → trading loop thread → research worker pool
      ├─ storage    SQLite (WAL, migrations, hash-chained audit log)  ·  DuckDB + Parquet market store  ·  DPAPI vault
      ├─ data       Coinbase / Kraken / Yahoo / DEMO providers, completed bars only, quality checks, provenance hashes
-     ├─ market     123 curated instruments, NYSE/CME/FX/crypto calendars, futures specs and roll windows;
+     ├─ market     US stocks and crypto (meme coins tagged), ETF/index price references; market policy (market/policy.py);
      │             discovery: every Coinbase product and Kraken pair (daily) + one shared price snapshot per minute
      ├─ features   226 causal features (123 functions), regime detection (rules + HMM + CUSUM)
      ├─ strategies 1,502 templates (1,487 runnable): 106 generators × filters × exits, near-duplicates pruned;
@@ -80,7 +80,7 @@ packaging/         PyInstaller spec, Windows build script (runs under Wine on Li
 python -m venv .venv && .venv/bin/pip install -r requirements-dev.txt
 cd frontend && npm ci && npm run build && cd ..
 cd backend && ../.venv/bin/python -m tradingai.launcher            # add --offline to use stored + DEMO data only
-../.venv/bin/python -m pytest -q tests                              # 170 tests
+../.venv/bin/python -m pytest -q tests                              # 204 tests
 ../.venv/bin/python -m tradingai.launcher --thermal-check --minutes 5   # temperature and throttling under full load
 ../.venv/bin/python -m tradingai.launcher --selftest --offline      # end-to-end test over HTTP and WebSocket
 ```
@@ -133,6 +133,6 @@ experiments), `data/market/` (Parquet), `data/secrets/` (DPAPI-encrypted credent
 * There is no manual backtest route and no hand-made bot: the agents test by themselves.
 * Learned safeguards can only block or shrink entries; they never loosen a limit. No agent can change a limit, re-arm
   the emergency stop, turn on live trading or change code.
-* Intraday: stocks are flat 10 minutes before the close, futures and forex before 17:00 New York, crypto is held 24
-  hours at most. The same rules run in research and in paper trading.
+* Only US stocks and crypto (including meme coins) can be entered: the risk service denies every other market.
+* Intraday: stocks are flat 10 minutes before the close, crypto and meme coins are held 24 hours at most. The same rules run in research and in paper trading.
 * Add Funds only opens the broker's own website. The program never handles card or bank details.

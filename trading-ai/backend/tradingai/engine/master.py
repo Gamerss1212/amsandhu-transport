@@ -94,9 +94,6 @@ ROLES = {
                              "1h", ("rsi2_reversion.none.time", "zscore_reversion.none.atr_bracket",
                                     "bollinger_reversion.adx.time"),
                              "reversal documented in less liquid coins; most cost-sensitive family"),
-    "etf_intraday": Role("etf_intraday", "Index and sector ETFs: intraday momentum", "etf", "intraday momentum / ORB",
-                         "15m", ("first_hour_momentum.none.time", "noise_band_momentum.none.time", "orb.none.time"),
-                         "first half-hour predicts last half-hour in SPY and active ETFs (Gao et al. 2018)"),
     "stock_breakout": Role("stock_breakout", "Large US stocks: breakouts", "stock", "opening-range / volatility breakout",
                            "15m", ("active_orb.none.time", "orb.relvol.time", "vol_breakout.none.atr_bracket"),
                            "stocks-in-play opening-range breakout (Zarattini, Barbon and Aziz); disputed after costs"),
@@ -104,17 +101,24 @@ ROLES = {
                             "1h", ("rsi2_reversion.none.time", "ibs_reversion.none.time",
                                    "zscore_reversion.none.atr_bracket"),
                             "short-term reversal survives costs only in large caps with lower turnover"),
-    "fx_trend": Role("fx_trend", "Forex: session momentum", "fx", "session momentum / trend", "1h",
-                     ("london_open_momentum.none.time", "ny_overlap_continuation.none.time", "tsmom.none.trail"),
-                     "currency time-series momentum (Moskowitz, Ooi and Pedersen 2012)"),
-    "index_futures": Role("index_futures", "Equity-index futures: opening breakouts", "future",
-                          "opening-range / initial-balance breakout", "15m",
-                          ("orb.none.time", "initial_balance_breakout.none.time", "overnight_range_breakout.none.time"),
-                          "intraday momentum in index products (Gao et al. 2018)"),
+    "stock_intraday": Role("stock_intraday", "Large US stocks: intraday momentum", "stock", "intraday momentum / ORB",
+                           "15m", ("first_hour_momentum.none.time", "noise_band_momentum.none.time", "orb.none.time"),
+                           "the first half-hour predicting the last was documented in index products and active ETFs "
+                           "(Gao et al. 2018); applying it to single large stocks is untested here, so it must pass the "
+                           "same gate"),
+    "meme_momentum": Role("meme_momentum", "Meme coins: momentum", "crypto", "trend / momentum", "1h",
+                          ("tsmom.none.trail", "donchian_breakout.none.trail", "ema_cross.adx.flip"),
+                          "meme coins move in sharp bursts; there is no published evidence specific to them, so these "
+                          "agents must pass the same research gate and are expected to be the hardest to qualify"),
+    "meme_reversion": Role("meme_reversion", "Meme coins: mean reversion", "crypto", "short-term mean reversion", "1h",
+                           ("rsi2_reversion.none.time", "zscore_reversion.none.atr_bracket",
+                            "bollinger_reversion.adx.time"),
+                           "meme coins overshoot and retrace; no published evidence specific to them, so these agents "
+                           "must pass the same gate; costs are high in thin coins"),
 }
-ETF_INTRADAY = ["SPY", "QQQ", "IWM", "DIA", "XLK", "XLF", "XLE", "XLV", "XLY", "XLI", "SMH", "XBI", "KRE", "GLD", "TLT"]
 STOCK_BREAKOUT = ["AAPL", "MSFT", "NVDA", "AMZN", "TSLA", "META", "GOOGL", "AMD", "NFLX", "AVGO", "PLTR", "COIN", "UBER",
                   "ORCL", "CRM", "ADBE", "INTC"]
+STOCK_INTRADAY = ["QCOM", "PYPL", "BA", "DIS", "ABBV", "MCD", "GS", "CAT", "HON", "IBM", "TXN"]
 STOCK_REVERSION = ["JPM", "XOM", "BRK-B", "LLY", "V", "MA", "UNH", "COST", "WMT", "HD", "PG", "JNJ", "KO", "PEP", "MRK",
                    "CVX", "BAC"]
 # role, first agent number, last agent number, fixed instrument ids (None: chosen from market discovery)
@@ -122,11 +126,11 @@ PLAN: list[tuple[str, int, int, Optional[list[str]]]] = [
     ("crypto_major", 1, 3, ["COINBASE:BTC-USD", "COINBASE:ETH-USD", "COINBASE:SOL-USD"]),
     ("crypto_trend", 4, 25, None),
     ("crypto_reversion", 26, 40, None),
-    ("etf_intraday", 41, 55, [f"US:{s}" for s in ETF_INTRADAY]),
+    ("meme_momentum", 41, 48, None),
+    ("meme_reversion", 49, 55, None),
     ("stock_breakout", 56, 72, [f"US:{s}" for s in STOCK_BREAKOUT]),
     ("stock_reversion", 73, 89, [f"US:{s}" for s in STOCK_REVERSION]),
-    ("fx_trend", 90, 94, ["FX:EURUSD", "FX:GBPUSD", "FX:USDJPY", "FX:USDCAD", "FX:AUDUSD"]),
-    ("index_futures", 95, 100, ["CME:ES", "CME:MES", "CME:NQ", "CME:MNQ", "CBOT:YM", "CME:RTY"]),
+    ("stock_intraday", 90, 100, [f"US:{s}" for s in STOCK_INTRADAY]),
 ]
 DEMO = ["DEMO:DEMO-TREND", "DEMO:DEMO-RANGE", "DEMO:DEMO-VOLATILE"]     # offline only: given to A004-A006
 
@@ -205,9 +209,10 @@ class Master:
         self.assign()
 
     # ================================================================== assignment: one distinct market per agent
-    def _discovered(self) -> tuple[list[str], bool]:
+    def _discovered(self, meme: bool = False) -> tuple[list[str], bool]:
         """Execution-eligible discovered pairs, most liquid first, and whether that ranking is known (the shared
-        price snapshot has volumes). Right after a start the snapshot is empty and every pair ranks at zero."""
+        price snapshot has volumes). Right after a start the snapshot is empty and every pair ranks at zero.
+        `meme` selects the tagged meme coins; the other crypto roles never take one, so owners stay distinct."""
         app = self.app
         disc = getattr(app, "discovery", None)
         if disc is None or app.offline:
@@ -218,6 +223,8 @@ class Master:
             meta = json.loads(row.get("meta") or "{}")
             iid = f"COINBASE:{row['symbol']}"
             if base in STABLE or meta.get("fx_stablecoin") or iid in ROLE_FIXED:
+                continue
+            if bool(disc.meme_tags(base)) != meme:
                 continue
             known = known or disc.usd_volume(row) > 0
             out.append(iid)
@@ -232,6 +239,7 @@ class Master:
         parts: dict[str, list[str]] = {}
         keep: dict[str, set[str]] = {}
         disc, known = self._discovered()
+        memes, meme_known = self._discovered(meme=True)
         n_disc = ROLE_COUNT["crypto_trend"] + ROLE_COUNT["crypto_reversion"]
         wide = set(disc[:3 * n_disc]) if known else set(disc)
         for role, first, last, fixed in PLAN:
@@ -242,6 +250,11 @@ class Master:
             elif app.offline:
                 parts[role] = [i for i in DEMO if i in app.sources] if role == "crypto_trend" else []
                 keep[role] = set(parts[role])
+            elif role in ("meme_momentum", "meme_reversion"):
+                # every tagged meme pair is wanted (there are only about 16); the first role takes the most liquid
+                parts[role] = memes if role == "meme_momentum" else memes[ROLE_COUNT["meme_momentum"]:] + \
+                    memes[:ROLE_COUNT["meme_momentum"]]
+                keep[role] = set(memes)
             else:
                 lo = 0 if role == "crypto_trend" else ROLE_COUNT["crypto_trend"]
                 # free agents take the most liquid unowned pair from their band first, then the rest in rank order

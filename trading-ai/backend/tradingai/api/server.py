@@ -43,6 +43,7 @@ READ_ONLY_PATHS = frozenset({
     "/api/overview", "/api/fleet", "/api/fleet/summary", "/api/learning", "/api/market/strip", "/api/daytrade",
     "/api/activity", "/api/autopilot", "/api/system/thermal", "/api/account", "/api/risk", "/api/orders",
     "/api/fills", "/api/decisions", "/api/equity", "/api/report/session", "/api/report/attribution", "/api/events",
+    "/api/jarvis/pending", "/api/instruments", "/api/coverage", "/api/roles",
 })
 
 
@@ -139,6 +140,13 @@ class AutostartIn(BaseModel):
     enabled: bool
 
 
+class CommandIn(BaseModel):
+    action: str = Field(min_length=1, max_length=40)
+    reason: str = Field("", max_length=200)
+    minutes: Optional[float] = None
+    amount: Optional[Decimal] = None
+
+
 class PauseIn(BaseModel):
     paused: bool
     reason: str = ""
@@ -150,13 +158,15 @@ class AskIn(BaseModel):
 
 
 # ---------------------------------------------------------------- the app
-def create_app(core, *, token: Optional[str] = None, on_shutdown=None, read_token: Optional[str] = None) -> FastAPI:
+def create_app(core, *, token: Optional[str] = None, on_shutdown=None, read_token: Optional[str] = None,
+               command_token: Optional[str] = None) -> FastAPI:
     """`core` is a tradingai.app.App. `on_shutdown` is called after the owner presses Shut down."""
     token = token or secrets.token_urlsafe(32)
     api = FastAPI(title="Trading AI", version=__version__, docs_url=None, redoc_url=None, openapi_url=None,
                   default_response_class=J)
     api.state.token = token
     api.state.read_token = read_token or secrets.token_urlsafe(32)
+    api.state.command_token = command_token or secrets.token_urlsafe(32)
 
     class Guard(BaseHTTPMiddleware):
         async def dispatch(self, request: Request, call_next):
@@ -172,7 +182,10 @@ def create_app(core, *, token: Optional[str] = None, on_shutdown=None, read_toke
                 full = secrets.compare_digest(request.headers.get("x-ta-token", ""), token)
                 read = (not full and read_only_allows(request.method, path) and secrets.compare_digest(
                     request.headers.get("x-ta-read-token", ""), api.state.read_token))
-                if not (full or read):
+                # the voice assistant's command token works on exactly one route: it may ASK (see engine/jarvis_link.py)
+                ask = (not full and request.method == "POST" and path == "/api/jarvis/command" and
+                       secrets.compare_digest(request.headers.get("x-ta-command-token", ""), api.state.command_token))
+                if not (full or read or ask):
                     return J({"error": "missing or wrong session token: reload the page"}, status_code=401)
             resp = await call_next(request)
             resp.headers["X-Content-Type-Options"] = "nosniff"
@@ -231,6 +244,23 @@ def create_app(core, *, token: Optional[str] = None, on_shutdown=None, read_toke
 
     # No manual test or deployment routes (owner's specification, revision 13, section 2): research runs only inside
     # the autopilot, and portfolio bots are created only by the autopilot for strategies that qualify.
+
+    # ------------------------------------------------------------ the voice assistant (engine/jarvis_link.py)
+    @api.post("/api/jarvis/command")
+    def jarvis_command(c: CommandIn):
+        return core.jarvis.submit(c.action, c.reason, c.minutes, c.amount)
+
+    @api.get("/api/jarvis/pending")
+    def jarvis_pending():
+        return core.jarvis.view()
+
+    @api.post("/api/jarvis/pending/{cid}/approve")
+    def jarvis_approve(cid: str):
+        return core.jarvis.approve(cid)
+
+    @api.post("/api/jarvis/pending/{cid}/reject")
+    def jarvis_reject(cid: str):
+        return core.jarvis.reject(cid)
 
     @api.post("/api/controls/pause-entries")
     def pause_entries(p: PauseIn):

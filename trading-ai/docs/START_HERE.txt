@@ -109,8 +109,11 @@ the first start and works in PAPER mode:
   5. Every mistake (for example, an order the risk check refused) is recorded with its cause. The
      lesson becomes a safeguard for all 100 agents and is re-tested every hour.
 
+MARKETS: since 1.7.0 the program trades only US stocks, crypto and meme coins. Forex, futures, options
+and bonds were removed. ETFs and indices are used only as price references (never bought or sold).
+
 DAY TRADING: trades open and close the same day. Stocks are closed 10 minutes before the market closes,
-futures and forex before 5 pm New York time, and a crypto trade is never held more than 24 hours. The
+and a crypto or meme-coin trade is never held more than 24 hours. The
 tests use exactly the same rules, so strategies that need to hold for days or months stay "research only".
 
 IMPORTANT: when this version was built, none of the 100 agents' versions passed every test on real data
@@ -158,8 +161,9 @@ Nothing in this program is financial advice. Backtests describe the past under s
 
 TALK TO IT: JARVIS (OPTIONAL)
 -----------------------------
-JARVIS is a voice assistant that can READ the Trading AI and search the internet. It cannot trade, change a limit or
-stop the program. Start START_TRADING_AI.exe first, then double-click START_JARVIS.bat. It needs Node.js 20+, Google
+JARVIS is a voice assistant that can read the Trading AI, search the internet, and control it by voice: it can pause
+new trades or Stop the system at once. Starting, resuming, a temperature test or a new paper balance only happen
+after YOU press Approve on page 1. It can never place orders, change risk limits, turn on real money or touch accounts. Start START_TRADING_AI.exe first, then double-click START_JARVIS.bat. It needs Node.js 20+, Google
 Chrome and Claude Code (logged in). Full steps: JARVIS.md.
 
 CAN $100 BECOME $300,000?

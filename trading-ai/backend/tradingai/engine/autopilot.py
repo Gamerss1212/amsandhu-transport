@@ -26,11 +26,10 @@ if TYPE_CHECKING:
 log = logs.get("autopilot")
 DAY = 86_400_000
 # intraday operating mode (engine/daytrade.py): only bar sizes that can open and close inside one session are screened
-MARKET_TFS = {"crypto": ("15m", "1h", "4h"), "stock": ("15m", "1h"), "etf": ("15m", "1h"), "fx": ("15m", "1h"),
-              "future": ("15m", "1h")}
+MARKET_TFS = {"crypto": ("15m", "1h", "4h"), "stock": ("15m", "1h")}
 LOOKBACK = {"15m": 2000, "1h": 5000, "4h": 3000, "1d": 2500}
 DISCOVERED_RESEARCH = 12                 # discovered pairs screened: the most liquid few, not hundreds
-MARKETS = ("crypto", "stock", "etf", "fx", "future")
+MARKETS = ("crypto", "stock")
 
 
 @dataclass

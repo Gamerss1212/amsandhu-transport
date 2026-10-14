@@ -1,5 +1,8 @@
 # Portfolio backtest report (walk-forward, by market regime)
 
+> **Note (1.7.0):** this report was produced for the earlier roster. In 1.7.0 the ETF, forex and futures agents (A041-A055, A090-A100) were replaced by 15 meme-coin agents and 11 more stock agents, which have not been trained yet. The crypto (A001-A040) and stock (A056-A089) agents kept their markets.
+
+
 Generated 2026-10-13 05:07 UTC by `scripts/portfolio_backtest.py`, using the app's own backtester and cost model on real market data. The run took 4 minutes. 100 agents had enough history to test.
 
 ## Method

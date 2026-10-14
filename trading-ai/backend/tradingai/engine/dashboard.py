@@ -21,8 +21,7 @@ from tradingai.storage.db import now_ms
 if TYPE_CHECKING:
     from tradingai.app import App
 
-STRIP = ["COINBASE:BTC-USD", "COINBASE:ETH-USD", "COINBASE:SOL-USD", "US:SPY", "US:QQQ", "FX:EURUSD", "CME:ES",
-         "COMEX:GC"]
+STRIP = ["COINBASE:BTC-USD", "COINBASE:ETH-USD", "COINBASE:SOL-USD", "US:AAPL", "US:NVDA", "US:TSLA", "US:MSFT"]
 DEMO_STRIP = ["DEMO:DEMO-TREND", "DEMO:DEMO-RANGE", "DEMO:DEMO-VOLATILE"]
 MEMES_SHOWN = 3
 _cache: dict[str, tuple[float, list]] = {}

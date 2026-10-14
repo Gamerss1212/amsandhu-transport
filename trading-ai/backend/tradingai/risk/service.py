@@ -22,7 +22,7 @@ from tradingai.core.reasons import code_for  # noqa: E402
 
 RAISE_PHRASE = "RAISE MY RISK LIMITS"
 REARM_PHRASE = "RE-ARM TRADING"
-MARKETS = ("crypto", "stock", "etf", "fx", "future")
+MARKETS = ("crypto", "stock")                  # the only markets that may be entered (market removal, 1.7.0)
 
 
 @dataclass
@@ -181,7 +181,8 @@ class RiskService:
                 "account identity confirmed" if s.account_ok and acct_match and env_match else
                 f"account/environment mismatch (order {o.account_id}/{o.environment}, broker "
                 f"{s.account_id}/{s.environment})")
-            add("known market", o.market in MARKETS, o.market)
+            add("market supported (US stocks and crypto only)", o.market in MARKETS or reduce_only,
+                o.market if o.market in MARKETS else f"{o.market}: this market was removed")
             add("broker connected", s.broker_ok, "ok" if s.broker_ok else "broker connection down")
             add("reconciliation clean", s.reconciliation_ok or reduce_only,
                 "ok" if s.reconciliation_ok else "RECONCILIATION_REQUIRED")

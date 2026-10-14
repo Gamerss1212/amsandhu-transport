@@ -7,7 +7,7 @@ const CRED_LABEL: Record<string, string> = {
   key_id: "API key ID", secret: "API secret", token: "Access token", account_id: "Account ID", key: "API key",
   key_name: "API key name", private_key: "EC private key (PEM)",
 };
-const CAPS = ["stocks", "etfs", "crypto", "forex", "futures", "paper_mode", "fractional", "shorting", "bracket_orders", "websocket", "historical_data"];
+const CAPS = ["stocks", "crypto", "paper_mode", "fractional", "shorting", "bracket_orders", "websocket", "historical_data"];
 
 function statusBadge(c: any) {
   if (c.broker === "paper") return <Badge kind="sim" dot>SIMULATED · CONNECTED</Badge>;

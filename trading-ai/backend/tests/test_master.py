@@ -89,7 +89,7 @@ def test_offline_agents_without_a_market_are_blocked_with_the_reason(app):
     v = app.fleet.view()
     blocked = [a for a in app.fleet.agents.values() if not a.partition]
     assert blocked and all(a.runtime == "blocked" and "discovery is offline" in a.detail for a in blocked)
-    assert {a.role for a in blocked} <= {"crypto_trend", "crypto_reversion"}
+    assert {a.role for a in blocked} <= {"crypto_trend", "crypto_reversion", "meme_momentum", "meme_reversion"}
     assert [app.fleet.agents[x].partition for x in ("A004", "A005", "A006")] == [[i] for i in M.DEMO]
     assert v["counts"]["data_ready"] <= v["counts"]["assigned"] < 100
     assert v["brain"]["kind"].startswith("coordinating service")    # the master is not counted as a trader
@@ -549,7 +549,12 @@ class ManyPairs(FakeHttp):
 
 
 def test_online_all_100_agents_get_a_distinct_market_and_stablecoins_are_skipped(app):
-    app.md.http = ManyPairs()
+    http = ManyPairs()
+    memes = ["DOGE", "SHIB", "PEPE", "BONK", "WIF", "FLOKI", "MOG", "POPCAT", "TURBO", "PENGU", "TRUMP", "FARTCOIN",
+             "PNUT", "MOODENG", "GIGA"]
+    http.products += [{"id": f"{b}-USD", "base_currency": b, "quote_currency": "USD", "status": "online",
+                       "quote_increment": "0.0001", "base_increment": "0.01"} for b in memes]
+    app.md.http = http
     app.discovery.refresh_listings()
     app.discovery.snapshot()
     app.offline = False
@@ -557,6 +562,10 @@ def test_online_all_100_agents_get_a_distinct_market_and_stablecoins_are_skipped
         app.fleet.assign()
         f = app.fleet
         assert all(a.partition for a in f.agents.values())                    # 100 of 100 have a market
+        meme_owned = {a.partition[0].split(":")[1].split("-")[0] for a in f.agents.values() if a.role.startswith("meme")}
+        assert meme_owned == set(memes)                                      # the 15 meme agents hold the 15 meme coins
+        assert not any(a.partition[0].split(":")[1].split("-")[0] in memes
+                       for a in f.agents.values() if a.role.startswith("crypto"))   # other crypto agents never take one
         owned = [i for a in f.agents.values() for i in a.partition]
         assert len(owned) == 100 and len(set(owned)) == 100                  # all different
         assert not any(i.startswith("DEMO:") for i in owned)                 # demo markets only offline
@@ -713,8 +722,8 @@ def test_monitoring_jobs_never_wait_on_the_network_when_the_data_refresher_runs(
     calls = []
     monkeypatch.setattr(app, "quote", lambda iid: calls.append(iid) or {"ts": now_ms(), "price": 1.0})
     app.fleet._refresher = object()                      # as when start() has launched the refresher thread
-    app.fleet._quotes["CME:ES"] = {"ts": now_ms(), "price": 5000.0}
+    app.fleet._quotes["US:QCOM"] = {"ts": now_ms(), "price": 5000.0}
     app.fleet.cycle()
     assert calls == []                                   # jobs read the refresher's cache only
-    es = next(a for a in app.fleet.agents.values() if a.partition == ["CME:ES"])
+    es = next(a for a in app.fleet.agents.values() if a.partition == ["US:QCOM"])
     assert es.last_price == "5000.0"

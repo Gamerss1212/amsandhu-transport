@@ -48,7 +48,7 @@ def test_good_order_is_approved():
     (req(quantity=D(0)), snap(), "positive quantity"),
     (req(reference_price=D(0)), snap(), "valid price"),
     (req(side="hold"), snap(), "valid side"),
-    (req(market="index"), snap(), "known market"),                                       # wrong market
+    (req(market="index"), snap(), "market supported (US stocks and crypto only)"),                                       # wrong market
     (req(account_id="OTHER-9"), snap(), "account validated"),                            # account mismatch
     (req(environment="live"), snap(), "account validated"),                              # environment mismatch
     (req(), snap(data_age_s=600.0), "data fresh"),                                       # stale data
@@ -213,7 +213,13 @@ def test_paper_round_trip_closes_the_position_and_balances(paper):
 
 
 def test_paper_futures_use_the_multiplier(paper):
+    """Futures are no longer traded by the program; the contract-multiplier arithmetic of the paper broker is kept and
+    still tested with a locally registered contract."""
+    from dataclasses import replace
+
+    from tradingai.market.instruments import future_from_spec, load_specs
     pb, prices, _ = paper
+    pb.book.add(replace(future_from_spec("ES", load_specs()), calendar="CME", data_source="yahoo"))
     pb.submit_order(client_order_id="F1", instrument_id="CME:ES", side="buy", qty=D(1))
     entry = pb.get_order("F1").avg_price
     prices["CME:ES"] = entry + D("10")

@@ -21,6 +21,7 @@ import numpy as np
 
 from tradingai.core.ids import new_id
 from tradingai.market.calendars import session
+from tradingai.market.policy import TRADABLE_TYPES
 from tradingai.market.instruments import MarketType
 from tradingai.market.universe import paper_tradable
 from tradingai.research.portfolio import PORTFOLIOS, load_panel
@@ -31,7 +32,7 @@ from tradingai.strategies.library import MARKET_OF
 if TYPE_CHECKING:
     from tradingai.app import App
 
-DEPLOYABLE = {MarketType.STOCK, MarketType.ETF, MarketType.CRYPTO_SPOT}
+DEPLOYABLE = TRADABLE_TYPES                      # US stocks and crypto only: ETFs and indices are price references
 DAY = 86_400_000
 
 
@@ -39,9 +40,13 @@ def deployable(app: "App", sid: str) -> tuple[bool, str]:
     spec = PORTFOLIOS.get(sid)
     if spec is None:
         return False, "unknown portfolio template"
-    bad = [i for i in spec.universe if app.book.get(i).market_type not in DEPLOYABLE]
-    if bad:
-        return False, "contract-aware portfolio execution (futures/FX) is not implemented: research only"
+    for i in spec.universe:
+        try:
+            ok = app.book.get(i).market_type in DEPLOYABLE
+        except KeyError:                                  # an instrument of a removed market (forex, futures)
+            ok = False
+        if not ok:
+            return False, "this portfolio holds a market that is not traded (only US stocks and crypto are): research only"
     return True, "ok"
 
 

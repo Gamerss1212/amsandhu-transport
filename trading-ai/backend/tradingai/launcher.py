@@ -120,7 +120,7 @@ class Server:
         try:
             self.link_file.parent.mkdir(parents=True, exist_ok=True)
             self.link_file.write_text(json.dumps({"url": self.url, "read_token": self.api.state.read_token,
-                                                  "pid": os.getpid(), "note": "read-only; GET only"}), encoding="utf-8")
+                                                  "command_token": self.api.state.command_token, "pid": os.getpid(), "note": "read token: GET only; command token: may ask, see engine/jarvis_link.py"}), encoding="utf-8")
             try:
                 os.chmod(self.link_file, 0o600)
             except OSError:
@@ -268,6 +268,19 @@ def selftest(home: Optional[str], offline: bool) -> int:
         return "the read-only token can read the overview and cannot write or reach connections"
 
     ok &= step("voice-assistant link is read-only", read_only_link)
+
+    def jarvis_commands():
+        link = json.loads(srv.link_file.read_text(encoding="utf-8"))
+        ch = {"X-TA-Command-Token": link["command_token"]}
+        asked = c.post("/api/jarvis/command", headers=ch, json={"action": "start_system", "reason": "self-test"}).json()
+        refused = c.post("/api/jarvis/command", headers=ch, json={"action": "arm_live"}).status_code
+        self_approve = c.post(f"/api/jarvis/pending/{asked['id']}/approve", headers=ch).status_code
+        rejected = api(f"/api/jarvis/pending/{asked['id']}/reject", "POST")["status"]
+        assert (asked["status"], refused, self_approve, rejected) == ("waiting_for_owner", 403, 401, "rejected"), \
+            (asked, refused, self_approve, rejected)
+        return "JARVIS can ask; Start waited for the owner, live trading was refused, it could not approve itself"
+
+    ok &= step("voice-assistant commands wait for the owner", jarvis_commands)
     ok &= step("API refuses a foreign Host header",
                lambda: (c.get("/health", headers={"Host": "evil.example"}).status_code == 421) or
                (_ for _ in ()).throw(AssertionError()))
@@ -383,8 +396,8 @@ def selftest(home: Optional[str], offline: bool) -> int:
 
     def daytrade_ok():
         d = api("/api/daytrade")
-        assert d["mode"] == "intraday" and set(d["rules"]) == {"XNYS", "CME", "FX", "CRYPTO"}, d
-        return "intraday rules for stocks, futures, forex and crypto"
+        assert d["mode"] == "intraday" and set(d["rules"]) == {"XNYS", "CRYPTO"}, d
+        return "intraday rules for stocks and crypto (including meme coins)"
     ok &= step("day-trading rules in force", daytrade_ok)
     ok &= step("page 1 market strip and decision activity", lambda: (
         f"{len(api('/api/market/strip')['items'])} strip item(s); "

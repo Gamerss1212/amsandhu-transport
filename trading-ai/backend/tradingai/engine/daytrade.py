@@ -132,6 +132,7 @@ def masks(ts: np.ndarray, bar_ms: int, calendar: str) -> tuple[np.ndarray, np.nd
 
 
 def describe() -> dict:
-    return {"mode": MODE, "rules": RULES,
+    # only the rules of the markets that are traded; the CME and FX rules stay in the engine but are not shown or used
+    return {"mode": MODE, "rules": {k: v for k, v in RULES.items() if k in ("XNYS", "CRYPTO")},
             "note": "Rules apply identically in research and paper trading. Methods with longer source horizons "
                     "(daily bars, monthly portfolios) stay research-only in this mode."}

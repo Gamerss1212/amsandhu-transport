@@ -80,9 +80,9 @@ def test_portfolio_simulation_executes_next_day_and_charges_costs():
     assert np.all(s0["returns"][:first_rb + 1] == 0)                    # nothing held until the day after a decision
 
 
-def test_futures_portfolios_are_research_only(app):
-    assert portfolio_bot.deployable(app, "ST001")[0] is False
-    assert portfolio_bot.deployable(app, "ST004")[0] is True
+def test_portfolios_of_removed_markets_and_etfs_are_research_only(app):
+    assert portfolio_bot.deployable(app, "ST001")[0] is False       # holds futures: that market was removed
+    assert portfolio_bot.deployable(app, "ST004")[0] is False       # holds ETFs: price references only
 
 
 def qualify_portfolio(app, sid):

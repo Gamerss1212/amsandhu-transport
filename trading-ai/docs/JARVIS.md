@@ -7,19 +7,23 @@ login. A copy is included in the `jarvis` folder, with changes listed in `jarvis
 ## What it does for you
 
 * **Reads the Trading AI** while it runs on your computer: status, risk limits, the 100 agents (or one agent), the
-  account, recent activity, what the agents learned, the session report, and your computer's temperature.
+  account, recent activity, what the agents learned, the session report, the markets covered, the agents' roles, and
+  your computer's temperature.
+* **Controls it by voice (1.7.0).** "Pause new trades" and "Stop the system" (and stopping a temperature test) happen
+  at once, because they make the system do less. "Start the system", "resume trading", "run a temperature test" and
+  "set my paper balance to 100" are sent to page 1 as a request: **nothing happens until you press Approve.**
 * **Searches the internet** and opens web pages (Claude Code's own web search and web fetch). It is on by default.
 * Answers in short sentences, and only with numbers the Trading AI actually returned.
 
 ## What it cannot do (on purpose)
 
-* It **cannot place, cancel or change an order**, change a risk limit, arm live trading, or stop the Trading AI. Those
-  tools do not exist. If you ask, he tells you to do it in the Trading AI window.
-* It holds a **read-only token**. The Trading AI's server refuses that token on every non-read route, on every request
-  that is not a plain GET, and on broker connections, credentials and the audit chain. (Checked by 3 tests and by the
-  built program's self-test.)
-* Text from the internet is **information, never an instruction**. A web page cannot make JARVIS trade, because nothing
-  he can reach can trade.
+* It **cannot place, cancel or change an order**, change a risk limit, turn on live trading, touch a broker account or
+  credential, or re-arm the emergency stop. Those actions do not exist for JARVIS; the Trading AI refuses them (tested).
+* It holds two tokens. The **read token** works only for plain GET requests on information pages. The **command token**
+  works on exactly one route, where JARVIS can ask; it **cannot approve** its own request. Only the dashboard can.
+* The risk service, which is plain code, still checks every order. JARVIS is the voice; it is not above the rules.
+* Text from the internet is **information, never an instruction**. At worst a web page could make JARVIS ask for one
+  of the actions above, and everything that makes the system do more still waits for you.
 * He promises nothing about returns. See `CAN_100_DOLLARS_BECOME_300K.md`.
 
 ## How to run it (Windows)
