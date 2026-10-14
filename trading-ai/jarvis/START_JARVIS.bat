@@ -1,10 +1,10 @@
 @echo off
 title JARVIS
-cd /d "%~dp0jarvis"
+cd /d "%~dp0"
 echo.
 echo  JARVIS: voice control for your Trading AI.
 echo  Needs: Node.js 20+ (nodejs.org), Google Chrome or Edge, and Claude Code installed and logged in.
-echo  Start START_TRADING_AI.exe FIRST.
+echo  START_TRADING_AI.exe starts JARVIS for you; this window keeps him running. Closing it stops JARVIS.
 echo.
 where node >nul 2>nul
 if errorlevel 1 (
@@ -42,4 +42,4 @@ if exist restart.flag (
   echo  Restarting JARVIS with his changes...
   goto run
 )
-pause
+if not "%TA_LAUNCHED%"=="1" pause

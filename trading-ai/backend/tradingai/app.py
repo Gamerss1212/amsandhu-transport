@@ -209,6 +209,7 @@ class App:
         self.autopilot = Autopilot(self)
         from tradingai.engine.jarvis_link import JarvisCommands
         self.jarvis = JarvisCommands(self)
+        self.jarvis_status: Optional[dict] = None             # set by the launcher: is the voice assistant running
         if self._autopilot_override is not None:
             self.autopilot.cfg.enabled = bool(self._autopilot_override)
         return ("ON: the master agent trains and runs the 100 trading agents by itself" if self.autopilot.cfg.enabled

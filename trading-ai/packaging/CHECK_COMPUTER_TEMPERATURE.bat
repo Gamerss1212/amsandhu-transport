@@ -12,9 +12,9 @@ echo  It stops by itself at 95 C. Press Ctrl+C at any time to stop it.
 echo  Close games and other heavy programs first. Laptops: plug in the charger.
 echo.
 pause
-"%~dp0START_TRADING_AI.exe" --thermal-check --minutes 5
+"%~dp0..\START_TRADING_AI.exe" --thermal-check --minutes 5
 echo.
-echo  The report was saved in the thermal-reports folder next to this file.
+echo  The report was saved in the thermal-reports folder of the Trading AI.
 echo  You can send that .txt file to whoever helps you with this program.
 echo.
 pause

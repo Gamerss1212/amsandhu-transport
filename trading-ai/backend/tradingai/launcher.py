@@ -26,6 +26,7 @@ from pathlib import Path
 from typing import Optional
 
 from tradingai import APP_ID, __version__, config
+from tradingai import jarvis_launch
 
 PORT_RANGE = range(config.DEFAULT_PORT, config.DEFAULT_PORT + 100)
 
@@ -105,6 +106,7 @@ class Server:
         self.uv = uvicorn.Server(cfg)
         self.console = console
         self._stopped = threading.Event()
+        self.jarvis_proc = None                              # JARVIS, when this program started it
 
     @property
     def url(self) -> str:
@@ -165,6 +167,7 @@ class Server:
             return
         self._stopped.set()
         self.remove_link()
+        jarvis_launch.stop(self.jarvis_proc)
         try:
             if self.core.state.state != "SHUTTING_DOWN":
                 self.core.shutdown()
@@ -498,7 +501,8 @@ def main(argv: Optional[list[str]] = None) -> int:
     ap = argparse.ArgumentParser(prog="START_TRADING_AI", description="Start Trading AI on this computer")
     ap.add_argument("--port", type=int, default=None, help="preferred port (default: first free from 8000)")
     ap.add_argument("--home", default=None, help="data folder (default: beside the program)")
-    ap.add_argument("--no-browser", action="store_true", help="do not open the browser")
+    ap.add_argument("--no-browser", action="store_true", help="do not open the browser (also: do not start JARVIS)")
+    ap.add_argument("--no-jarvis", action="store_true", help="do not start the JARVIS voice assistant")
     ap.add_argument("--offline", action="store_true", help="no internet: stored and DEMO data only")
     ap.add_argument("--selftest", action="store_true", help="start, test end to end, print a report, exit")
     ap.add_argument("--thermal-check", action="store_true",
@@ -518,6 +522,9 @@ def main(argv: Optional[list[str]] = None) -> int:
             print(f"Trading AI is already running at http://{config.HOST}:{port} - opening it.")
             if not a.no_browser:
                 webbrowser.open(f"http://{config.HOST}:{port}")
+                if not a.no_jarvis:                          # JARVIS was closed: the same double-click brings him back
+                    st, _ = jarvis_launch.start(Path(config.BASE_DIR))
+                    print("JARVIS: " + st["note"])
             return 0
         print("Another copy of Trading AI is starting or did not exit cleanly. Wait a few seconds and try again.")
         time.sleep(4)
@@ -533,6 +540,14 @@ def main(argv: Optional[list[str]] = None) -> int:
             print(banner(srv.url, srv.core), flush=True)
             if not a.no_browser:
                 webbrowser.open(srv.url)
+            # One double-click runs everything: start JARVIS too (interactive starts only; Windows log-in starts use
+            # --no-browser, so he never starts talking at boot).
+            if a.no_browser or a.no_jarvis:
+                st = {"state": "off", "note": "JARVIS was not started (started without the browser or with --no-jarvis)."}
+            else:
+                st, srv.jarvis_proc = jarvis_launch.start(Path(config.BASE_DIR))
+            srv.core.jarvis_status = st
+            print("  JARVIS: " + st["note"], flush=True)
         else:
             print("The local server did not answer within 60 seconds. See logs/trading-ai.log.")
     threading.Thread(target=opener, name="browser", daemon=True).start()

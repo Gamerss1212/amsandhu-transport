@@ -146,4 +146,5 @@ def desk(app: "App") -> dict:
                    "cpu": reading.get("cpu_load_pct"), "temp": reading.get("max_temp_c"),
                    "ram": (health.get("system") or {}).get("ram_used_pct")},
         "jarvis_pending": len(app.jarvis.view()["pending"]),
+        "jarvis_status": getattr(app, "jarvis_status", None),
     }
