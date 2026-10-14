@@ -53,7 +53,7 @@ cp "$HERE/CHECK_COMPUTER_TEMPERATURE.bat" "$OUT/TradingAI/CHECK_COMPUTER_TEMPERA
 cp "$HERE/START_JARVIS.bat" "$OUT/TradingAI/START_JARVIS.bat"
 # JARVIS voice assistant: source only (npm installs the rest on the first run), never node_modules or build output
 mkdir -p "$OUT/TradingAI/jarvis"
-(cd "$ROOT/jarvis" && tar --exclude=node_modules --exclude=dist --exclude=.env.local -cf - .) | tar -xf - -C "$OUT/TradingAI/jarvis"
+(cd "$ROOT/jarvis" && tar --exclude=node_modules --exclude=dist --exclude=.env.local --exclude=.backups --exclude=restart.flag --exclude=data/memory.json -cf - .) | tar -xf - -C "$OUT/TradingAI/jarvis"
 
 echo "== 6/6 self-test of the built exe (fresh data folder, offline: no network needed)"
 ST="$WINEPREFIX/drive_c/tatest"

@@ -19,6 +19,20 @@ login. A copy is included in the `jarvis` folder, with changes listed in `jarvis
 * **Searches the internet** and opens web pages (Claude Code's own web search and web fetch). It is on by default.
 * Answers in short sentences, and only with numbers the Trading AI actually returned.
 
+## He does what you ask, and can improve himself (1.9.0, owner's request)
+
+* **Ask first.** When you ask him to do something on your computer (run a command, change a file, click in a page),
+  a "May I?" card shows exactly what he wants to do. Nothing happens until you press **Allow** (or Y). Deny (N) or no
+  answer in 90 seconds means no. If the action would reach the Trading AI, the card says so in red.
+* **His own code.** He may edit files inside his own `jarvis` folder without asking. Every file is copied to
+  `jarvis/.backups` first. Say "undo that" and he restores it. After a change he runs his own checks
+  (`check_my_code`); changes to his screen apply at once, and "restart yourself" reloads his bridge, but only if the
+  check passes, so a bad edit cannot lock him out.
+* **Memory.** "Remember that I like meme coins first" is kept in `jarvis/data/memory.json` and used in every later
+  conversation. "Forget ..." removes it. He refuses to store anything that looks like a password or key.
+* **Never** the Trading AI's program, its trading rules or its risk limits. Those are compiled into
+  START_TRADING_AI.exe and change only with a new release, tested first.
+
 ## Hands-free (1.9.0)
 
 `START_JARVIS.bat` opens JARVIS in his own Chrome or Edge window, set so sound may play without a click, and he powers

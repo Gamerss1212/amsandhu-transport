@@ -65,6 +65,11 @@ export function watchBlades(fn: (blade: Blade) => void): void {
  * server to volunteer anything. On that backend this watcher simply never
  * fires and the interface stays exactly as it ships.
  */
+/** Requests to allow an action arrive only through the bridge (added for the Trading AI). */
+export function watchConfirm(fn: (what: string) => Promise<boolean>): void {
+  if (usingBridge) bridge.watchConfirm(fn)
+}
+
 /** Trading AI announcements arrive only through the bridge (added for the Trading AI project). */
 export function watchAnnounce(fn: (a: bridge.Announcement) => void): void {
   if (usingBridge) bridge.watchAnnounce(fn)

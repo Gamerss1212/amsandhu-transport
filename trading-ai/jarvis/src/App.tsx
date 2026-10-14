@@ -1,8 +1,9 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Scene } from './scene/Scene'
 import { Hud } from './ui/Hud'
 import { Boot } from './ui/Boot'
 import { Ignition } from './ui/Ignition'
+import { Confirm } from './ui/Confirm'
 import { Diagnostics } from './ui/Diagnostics'
 import { useStore } from './store'
 import { startVoice, type Voice, type VoiceMode } from './lib/voice'
@@ -25,6 +26,7 @@ import {
   watchCapture,
   watchUi,
   watchAnnounce,
+  watchConfirm,
   watchConnection,
   connectedLabels,
   usingBridge,
@@ -75,6 +77,7 @@ export default function App() {
   const phase = useStore((s) => s.phase)
   const history = useRef<Msg[]>([])
   const speaker = useRef<ReturnType<typeof createSpeaker> | null>(null)
+  const [confirm, setConfirm] = useState<{ what: string; resolve: (allow: boolean) => void } | null>(null)
   const voice = useRef<Voice | null>(null)
 
   /**
@@ -365,6 +368,17 @@ export default function App() {
     watchServers((servers) => store.getState().setConnected(servers))
     watchPanels((panel) => store.getState().pushPanel(panel))
     watchBlades((blade) => store.getState().pushBlade(blade))
+
+    // "May I?": an action waiting for the user's Allow (ask-first mode). Spoken while JARVIS is resting.
+    watchConfirm((what) => new Promise<boolean>((resolve) => {
+      setConfirm({ what, resolve })
+      if (store.getState().phase === 'dormant') {
+        const spk = createSpeaker()
+        speaker.current = spk
+        spk.say('May I go ahead? Allow it on the screen.')
+        void spk.end()
+      }
+    }))
 
     // The Trading AI's own announcements (risk locks, emergency stop, feed loss, fills, hot computer...). Always
     // written to the transcript; spoken only while JARVIS is resting, so he never talks over you or over an answer.
@@ -736,6 +750,7 @@ export default function App() {
       <Boot />
       <Diagnostics />
       <Ignition onStart={() => void powerOn()} />
+      {confirm && <Confirm what={confirm.what} onAnswer={(allow) => { confirm.resolve(allow); setConfirm(null) }} />}
     </>
   )
 }

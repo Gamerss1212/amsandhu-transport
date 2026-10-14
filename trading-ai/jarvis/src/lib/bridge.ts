@@ -37,6 +37,7 @@ type Frame = {
   servers?: Array<string | { name?: string }>
   severity?: string
   subject?: string
+  what?: string
 }
 
 /** Every question gets an id so its answer can be told from anyone else's. */
@@ -98,6 +99,12 @@ export function watchBlades(fn: (blade: Blade) => void) {
  *  on the turn's result. The op/args pair stays untyped here on purpose — this
  *  module is a transport, and the store is where the shape is decided. */
 let onUi: ((op: string, args: any) => void) | null = null
+/** A request to allow one action (added for the Trading AI): resolves true only if the user allows it. */
+let onConfirm: ((what: string) => Promise<boolean>) | null = null
+export function watchConfirm(fn: (what: string) => Promise<boolean>) {
+  onConfirm = fn
+}
+
 /** An announcement from the Trading AI (see bridge/trading.mjs). Added for the Trading AI project. */
 export type Announcement = { id?: string; text: string; severity?: string; subject?: string }
 let onAnnounce: ((a: Announcement) => void) | null = null
@@ -212,6 +219,13 @@ function dispatch(ws: WebSocket) {
           .then(reply)
           .catch((err) => reply({ error: String(err?.message ?? err) }))
       }
+    } else if (msg.type === 'confirm' && msg.id) {
+      const id = msg.id
+      const reply = (allow: boolean) => {
+        if (ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ type: 'reply', id, allow }))
+      }
+      if (!onConfirm) reply(false)
+      else onConfirm(String(msg.what ?? 'an action')).then(reply).catch(() => reply(false))
     } else if (msg.type === 'announce' && msg.text) {
       onAnnounce?.({ id: msg.id, text: msg.text, severity: msg.severity, subject: msg.subject })
     } else if (msg.type === 'ui' && msg.op) {

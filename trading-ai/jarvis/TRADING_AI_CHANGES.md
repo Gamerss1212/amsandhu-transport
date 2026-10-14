@@ -15,4 +15,7 @@ Upstream: <https://github.com/adewaskar/jarvis> (MIT, see `LICENSE`), commit `1c
   the default model is `claude-opus-5-5`.
 * 1.9.0: `?autostart=1` powers on by itself when the browser allows sound without a click (`open_face.cmd` opens
   Chrome or Edge that way); a spoken greeting built from `/api/desk`; `get_trading_desk` reads the whole desk at once.
+* 1.9.0 (owner's request): `bridge/self.mjs` (check_my_code, undo_my_last_change, list_my_changes, restart_myself,
+  remember, recall, forget); `bridge/server.mjs` lets JARVIS edit his own folder when `JARVIS_SELF_EDIT=1` (backed up
+  first) and, with `JARVIS_ASK_FIRST=1`, shows every other action on screen for Allow / Deny (`src/ui/Confirm.tsx`).
 * No other file was changed. `npm run setup`, `npm start` and every upstream option work as before.
