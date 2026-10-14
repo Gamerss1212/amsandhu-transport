@@ -19,6 +19,19 @@ login. A copy is included in the `jarvis` folder, with changes listed in `jarvis
 * **Searches the internet** and opens web pages (Claude Code's own web search and web fetch). It is on by default.
 * Answers in short sentences, and only with numbers the Trading AI actually returned.
 
+## Talk to him like a person (1.9.3, owner's request)
+
+Press the round **TALK** button at the bottom right (or the Space bar) once. He answers, and after every reply he
+listens again, so you just keep talking: no wake word and no button between sentences, like a phone call. Talk
+about anything: trading, the news, a question, an idea. He remembers what was said earlier in the conversation. While
+he is speaking, press the button (or just start talking) to interrupt him. Say "goodbye" or "that's all", press
+the button again, or stay quiet for 90 seconds, and he goes back to standby. If his window opens with the
+INITIALISE button, that one click powers him on and starts the conversation too.
+
+Tested in Chrome with a real Claude session: one press, then three spoken turns without pressing again. He gave a
+full answer on what to learn first about trading, understood "Why that first?" from the earlier answer, and
+"Okay, that is all, goodbye" ended the conversation. The test browser stood in for the microphone and speakers.
+
 ## He does what you ask, and can improve himself (1.9.0, owner's request)
 
 * **Ask first.** When you ask him to do something on your computer (run a command, change a file, click in a page),

@@ -27,4 +27,8 @@ Upstream: <https://github.com/adewaskar/jarvis> (MIT, see `LICENSE`), commit `1c
   when none existed); status questions use one `get_trading_desk` call; `bridge/safety.test.mjs` (`npm run test:bridge`)
   checks the safety rules and runs on real Windows in CI; `open_face.cmd` waits for the screen server instead of a fixed
   12 seconds.
+* 1.9.3 (owner's request: "a talking JARVIS, with a press of a button"): `src/ui/TalkButton.tsx` and conversation
+  mode in `src/App.tsx` (one press, he listens again after every answer until goodbye, a second press or 90 s of
+  silence; Space does the same; INITIALISE also starts the conversation); the persona in `bridge/server.mjs` now
+  talks naturally (one to three sentences, more when asked) instead of a two-sentence ceiling.
 * No other file was changed. `npm run setup`, `npm start` and every upstream option work as before.

@@ -32,7 +32,8 @@ rem Actions that change your computer wait for Allow on his screen; he may edit 
 set JARVIS_ASK_FIRST=1
 set JARVIS_SELF_EDIT=1
 echo  JARVIS opens in his own window and starts by himself. Allow the microphone the first time.
-echo  Then just talk: "Hey Jarvis, open the trading system."
+echo  Then press the TALK button ^(or Space^) once and just talk to him, about anything. He keeps listening after
+echo  every answer. Say "goodbye" or press the button again to end.
 start "" /min "%CD%\open_face.cmd"
 :run
 call npm start

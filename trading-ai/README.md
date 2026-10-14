@@ -17,7 +17,7 @@ replay.
 Nothing shown as real is invented: every number comes from a calculation on real market data, an authenticated broker
 connection, or clearly labelled simulated (DEMO) data.
 
-Download for Windows 11 or 10 (64-bit): [`downloads/TradingAI-v1.9.2-windows.zip`](../downloads/TradingAI-v1.9.2-windows.zip)
+Download for Windows 11 or 10 (64-bit): [`downloads/TradingAI-v1.9.3-windows.zip`](../downloads/TradingAI-v1.9.3-windows.zip)
 (unzip, double-click `START_TRADING_AI.exe`; `docs/START_HERE.txt` explains the SmartScreen and Smart App Control
 messages). To check your computer's temperature under full load, double-click `CHECK_COMPUTER_TEMPERATURE.bat` in the
 same folder. `START_JARVIS.bat` opens the optional JARVIS voice assistant ([`docs/JARVIS.md`](docs/JARVIS.md)). The previous 1.7.0, 1.6.0 and 1.5.1 downloads are kept beside it. Can $100 become $300,000? [No, and why.](docs/CAN_100_DOLLARS_BECOME_300K.md)

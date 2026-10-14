@@ -4,6 +4,7 @@ import { Hud } from './ui/Hud'
 import { Boot } from './ui/Boot'
 import { Ignition } from './ui/Ignition'
 import { Confirm } from './ui/Confirm'
+import { TalkButton } from './ui/TalkButton'
 import { Diagnostics } from './ui/Diagnostics'
 import { useStore } from './store'
 import { startVoice, type Voice, type VoiceMode } from './lib/voice'
@@ -58,6 +59,11 @@ const AWAIT_SPEECH_MS = 14000
  *  again to continue a thought. */
 const FOLLOW_UP_MS = 11000
 
+/** A conversation started with the Talk button (or Space) keeps going: after every answer he listens again. It ends
+ *  when the button is pressed again, the user says goodbye, or nobody speaks for this long. Added for the Trading AI project. */
+const CONVERSATION_IDLE_MS = 90000
+const GOODBYE = /^\s*(?:ok(?:ay)?[,\s]+)?(?:thanks?(?: you)?[,\s]+)?(?:that'?s all|that is all|goodbye|good ?bye|bye(?: jarvis)?|stop listening|go to sleep|we'?re done)\b/i
+
 /** crypto.randomUUID needs a secure context, which a LAN address over plain
  *  http is not. Not worth failing a whole turn over an id. */
 const newId = () =>
@@ -79,6 +85,9 @@ export default function App() {
   const speaker = useRef<ReturnType<typeof createSpeaker> | null>(null)
   const [confirm, setConfirm] = useState<{ what: string; resolve: (allow: boolean) => void } | null>(null)
   const voice = useRef<Voice | null>(null)
+  const conversing = useRef(false)
+  const pendingTalk = useRef(false)
+  const [talking, setTalking] = useState(false)
 
   /**
    * Monotonic turn counter. Every await in a turn checks it on the way out:
@@ -103,6 +112,8 @@ export default function App() {
   }
 
   const goDormant = () => {
+    conversing.current = false
+    setTalking(false)
     clearIdle()
     silence()
     turn.current++
@@ -129,6 +140,7 @@ export default function App() {
 
   const respond = async (said: string): Promise<void> => {
     const mine = ++turn.current
+    const ending = conversing.current && GOODBYE.test(said)
     const stale = () => mine !== turn.current
 
     clearIdle()
@@ -217,7 +229,8 @@ export default function App() {
         music.working(false)
         // Stay open. Having to say his name again to add one more sentence is
         // the difference between a conversation and a vending machine.
-        listen(FOLLOW_UP_MS)
+        if (ending) goDormant()
+        else listen(conversing.current ? CONVERSATION_IDLE_MS : FOLLOW_UP_MS)
       }
     }
   }
@@ -320,6 +333,45 @@ export default function App() {
     store.getState().setError(message)
   }
 
+  // -- the Talk button ------------------------------------------------------
+
+  /** One press: he answers ("Yes, sir?", or the greeting he was holding) and the conversation stays open. */
+  const startConversation = (opening?: string) => {
+    const phase = store.getState().phase
+    if (phase === 'offline' || phase === 'boot') {
+      pendingTalk.current = true                       // start talking as soon as he has powered up
+      if (phase === 'offline') void powerOn()
+      return
+    }
+    conversing.current = true
+    setTalking(true)
+    if (phase === 'thinking' || phase === 'tooling' || phase === 'speaking') {
+      onSpeechStart()
+      listen(CONVERSATION_IDLE_MS)
+      return
+    }
+    store.getState().setError(null)
+    sfx.play('wake')
+    store.getState().setPhase('waking')
+    const spk = createSpeaker()
+    speaker.current = spk
+    spk.say(opening ?? attention())
+    void spk.end()
+    listen(CONVERSATION_IDLE_MS)
+  }
+
+  /** Pressed while he talks or thinks: interrupt him and listen. Pressed while he listens: end the conversation. */
+  const onTalkButton = () => {
+    const phase = store.getState().phase
+    if (!conversing.current) return startConversation()
+    if (phase === 'thinking' || phase === 'tooling' || phase === 'speaking') {
+      onSpeechStart()
+      listen(CONVERSATION_IDLE_MS)
+      return
+    }
+    goDormant()
+  }
+
   // -- power on -------------------------------------------------------------
 
   const powerOn = async () => {
@@ -397,7 +449,13 @@ export default function App() {
       else if (st.phase === 'offline' || st.phase === 'boot') held = a.text
     })
     store.subscribe((s) => {
-      if (held && s.phase === 'dormant') {
+      if (s.phase !== 'dormant') return
+      if (pendingTalk.current) {                       // the Talk button was pressed before he was ready
+        pendingTalk.current = false
+        const opening = held ?? undefined
+        held = null
+        startConversation(opening)
+      } else if (held) {
         const text = held
         held = null
         sayNow(text)
@@ -708,15 +766,8 @@ export default function App() {
         void powerOn()
       } else if (phase === 'boot') {
         /* ignore — the boot sequence owns the phase until it finishes */
-      } else if (
-        phase === 'thinking' ||
-        phase === 'tooling' ||
-        phase === 'speaking'
-      ) {
-        onSpeechStart()
-        listen(AWAIT_SPEECH_MS)
       } else {
-        onWake('')
+        onTalkButton()                                 // Space does what the Talk button does
       }
     }
     window.addEventListener('keydown', onKey)
@@ -761,7 +812,8 @@ export default function App() {
       <Hud />
       <Boot />
       <Diagnostics />
-      <Ignition onStart={() => void powerOn()} />
+      <Ignition onStart={() => startConversation()} />
+      <TalkButton talking={talking} onPress={onTalkButton} />
       {confirm && <Confirm what={confirm.what} onAnswer={(allow) => { confirm.resolve(allow); setConfirm(null) }} />}
     </>
   )

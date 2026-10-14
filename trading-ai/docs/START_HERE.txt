@@ -179,4 +179,5 @@ ROOM (top right) open the full details over the page. Start, Pause and E-STOP ar
 
 JARVIS starts and talks by himself: START_JARVIS.bat opens him in his own window where sound may play without a
 click. Allow the microphone the first time. He greets you with the real status, speaks the system's alerts, and you
-just say "Hey Jarvis, open the trading system".
+press the TALK button (or Space) once and just talk to him, about anything: he answers out loud and keeps
+listening after every answer, like a phone call. Say "goodbye" or press the button again to end.
