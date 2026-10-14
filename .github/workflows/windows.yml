@@ -45,6 +45,18 @@ jobs:
           npx vite build
           node --check bridge/server.mjs
           node --check bridge/trading.mjs
+          node --check bridge/self.mjs
+
+      - name: JARVIS safety rules on Windows paths (own folder only, Trading AI files refused, undo, honest window open)
+        working-directory: trading-ai/jarvis
+        run: npm run test:bridge
+
+      - name: START_JARVIS.bat finds Node.js and Claude Code on Windows
+        shell: cmd
+        run: |
+          call npm install -g @anthropic-ai/claude-code --no-audit --no-fund
+          set JARVIS_CHECK_ONLY=1
+          call trading-ai\packaging\START_JARVIS.bat < nul
 
       - name: Which Windows and which CPU
         run: |

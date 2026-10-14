@@ -132,8 +132,17 @@ export async function openTradingWindow(page = 'trading', { linkFile = LINK_FILE
       process.platform === 'win32' ? ['rundll32', ['url.dll,FileProtocolHandler', url]]
         : process.platform === 'darwin' ? ['open', [url]] : ['xdg-open', [url]]
     const child = run(cmd, args, { detached: true, stdio: 'ignore', windowsHide: true })
-    child.on?.('error', () => {})
+    // Only say "opened" when the opener really started: a missing browser launcher must not be reported as success.
+    const started = await new Promise((done) => {
+      if (typeof child?.once !== 'function') return done(true)
+      const timer = setTimeout(() => done(true), 3000)
+      child.once('spawn', () => { clearTimeout(timer); done(true) })
+      child.once('error', (e) => { clearTimeout(timer); done(e) })
+    })
     child.unref?.()
+    if (started !== true) {
+      return { ok: false, text: `Could not open a window on this computer (${started?.code ?? started?.message ?? 'no browser launcher'}). The Trading AI is at ${url}.` }
+    }
     return { ok: true, text: `Opened the ${page === 'brokers' ? 'Brokers page' : 'trading panel'} (${url}).` }
   } catch (e) {
     return { ok: false, text: `Could not open the Trading AI: ${e instanceof Error ? e.message : String(e)}` }

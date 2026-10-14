@@ -23,4 +23,8 @@ Upstream: <https://github.com/adewaskar/jarvis> (MIT, see `LICENSE`), commit `1c
   at the Trading AI folder; the prompt names his own folder's full path and steers reading to Read/Grep; the greeting
   is spoken even when the Trading AI is off, and waits until the screen has powered up; the "May I?" card takes the
   screen's current colour.
+* 1.9.2: `open_trading_system` says "opened" only when the browser launcher really started (it used to claim success
+  when none existed); status questions use one `get_trading_desk` call; `bridge/safety.test.mjs` (`npm run test:bridge`)
+  checks the safety rules and runs on real Windows in CI; `open_face.cmd` waits for the screen server instead of a fixed
+  12 seconds.
 * No other file was changed. `npm run setup`, `npm start` and every upstream option work as before.

@@ -6,17 +6,22 @@ echo  JARVIS: voice control for your Trading AI.
 echo  Needs: Node.js 20+ (nodejs.org), Google Chrome or Edge, and Claude Code installed and logged in.
 echo  Start START_TRADING_AI.exe FIRST.
 echo.
-where node >/dev/null 2>nul
+where node >nul 2>nul
 if errorlevel 1 (
   echo  Node.js was not found. Install it from https://nodejs.org , then double-click this file again.
   pause
   exit /b 1
 )
-where claude >/dev/null 2>nul
+where claude >nul 2>nul
 if errorlevel 1 (
   echo  Claude Code was not found. Install it: npm install -g @anthropic-ai/claude-code , run "claude" once and log in.
   pause
   exit /b 1
+)
+rem Used by the Windows CI check: stop here once Node and Claude Code have been found.
+if "%JARVIS_CHECK_ONLY%"=="1" (
+  echo  Checks passed: Node.js and Claude Code found.
+  exit /b 0
 )
 if not exist node_modules (
   echo  First run: installing JARVIS ^(a few minutes, needs the internet^)...
