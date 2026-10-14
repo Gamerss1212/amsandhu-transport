@@ -19,6 +19,13 @@ login. A copy is included in the `jarvis` folder, with changes listed in `jarvis
 * **Searches the internet** and opens web pages (Claude Code's own web search and web fetch). It is on by default.
 * Answers in short sentences, and only with numbers the Trading AI actually returned.
 
+## Hands-free (1.9.0)
+
+`START_JARVIS.bat` opens JARVIS in his own Chrome or Edge window, set so sound may play without a click, and he powers
+on by himself: no INITIALISE button. On connecting he says the real status, for example "JARVIS online. Paper balance
+100,003 dollars. 51 of 100 agents running, 1 cleared to trade." The microphone asks for permission once; after that,
+say "Hey Jarvis". In a normal browser window the INITIALISE button stays, as before.
+
 ## Open the trading system by voice (1.8.0)
 
 Say "open the trading system" (or "show my trades") and JARVIS opens the trading page in your browser and puts your

@@ -1,4 +1,4 @@
-# Requirements matrix — Trading AI 1.8.0
+# Requirements matrix — Trading AI 1.9.0
 
 Status meanings:
 * **DONE**: implemented and exercised by a test or by the self-test.
@@ -7,7 +7,7 @@ Status meanings:
 * **NOT DONE**: not built.
 
 How it was verified:
-* **Unit tests**: 205 tests (`backend/tests`), also run on real Windows 11 by `.github/workflows/windows.yml`.
+* **Unit tests**: 209 tests (`backend/tests`), also run on real Windows 11 by `.github/workflows/windows.yml`.
 * **Self-test**: `START_TRADING_AI.exe --selftest` runs 34 steps over HTTP and WebSocket against the real server (1.7.0: 34 of 34 from source; the Wine and Windows results are in `VERIFICATION_REPORT.md`).
 * **Real-data run**: the dashboard and API were exercised on live Coinbase, Kraken and Yahoo data.
 
@@ -237,3 +237,12 @@ overlays from the bottom dock, so nothing was lost.
 | "JARVIS, open the trading system" | DONE (not run on Windows here) | `open_trading_system` opens the trading or Brokers page from the link file's local address only. |
 | JARVIS as a general assistant like ChatGPT and Claude | PARTIAL, honestly | Claude Opus 5.5 by default, web search, browser through the Claude in Chrome extension, any MCP server; GPT models through an OpenRouter MCP server with the owner's key. Not tested here: needs the owner's login and extensions. |
 | Forex leftovers removed | DONE | Brokers page lists only brokers for stocks or crypto; paper account no longer mentions FX shorting. |
+
+## 1.9.0: the desk look, hands-free JARVIS (owner's request of 2026-10-14)
+
+| Requirement | Status | How it was verified |
+|---|---|---|
+| Trading screen looks like the owner's "desk" image | DONE | Black and red desk: balance, net PnL, session clock, decision pipeline (read, gate, execute), session timeline, rotating agent dome, entry checks, position control, decision log, balance history, positions, trades, roles, time since last trade. Chromium at 1600 px and 390 px: no errors, no sideways scroll. |
+| Faster screen | DONE | One `/api/desk` read every 3 s replaces seven separate polls (`tests/test_desk.py`, 4 tests). A balance change is not counted as profit (test). |
+| JARVIS talks without pressing a button | DONE (heard only on the owner's PC) | Auto power-on when the browser allows sound without a click; checked in Chromium: with the launcher's setting he powered on by himself, without it the button stayed. Greeting from real numbers, tested against a live Trading AI. |
+| All agents fully trained | see `AGENT_TRAINING_REPORT.md` | Trained on real market data with the app's own research engine. Training cannot make a strategy pass: only versions that pass every gate may trade. |

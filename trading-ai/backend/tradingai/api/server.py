@@ -43,7 +43,7 @@ READ_ONLY_PATHS = frozenset({
     "/api/overview", "/api/fleet", "/api/fleet/summary", "/api/learning", "/api/market/strip", "/api/daytrade",
     "/api/activity", "/api/autopilot", "/api/system/thermal", "/api/account", "/api/risk", "/api/orders",
     "/api/fills", "/api/decisions", "/api/equity", "/api/report/session", "/api/report/attribution", "/api/events",
-    "/api/jarvis/pending", "/api/instruments", "/api/coverage", "/api/roles",
+    "/api/jarvis/pending", "/api/instruments", "/api/coverage", "/api/roles", "/api/desk",
 })
 
 
@@ -315,6 +315,11 @@ def create_app(core, *, token: Optional[str] = None, on_shutdown=None, read_toke
     @api.post("/api/fleet/{agent_id}/probe")
     def fleet_probe(agent_id: str):
         return core.probe_agent(agent_id)
+
+    @api.get("/api/desk")
+    def desk_view():
+        from tradingai.engine.desk import desk
+        return desk(core)
 
     @api.get("/api/fleet/summary")
     def fleet_summary():

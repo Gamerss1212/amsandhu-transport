@@ -1,4 +1,4 @@
-# Verification report — Trading AI 1.8.0
+# Verification report — Trading AI 1.9.0
 
 Every line below is a check that was actually run, with its real result. A check that could not be run is listed as
 **NOT PERFORMED**, with the reason. Nothing here is a statement about future returns.

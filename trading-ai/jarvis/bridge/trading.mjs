@@ -39,7 +39,7 @@ const ALLOWED = new Set([
   '/api/overview', '/api/fleet/summary', '/api/fleet', '/api/learning', '/api/market/strip', '/api/daytrade',
   '/api/activity', '/api/autopilot', '/api/system/thermal', '/api/account', '/api/risk', '/api/orders',
   '/api/fills', '/api/decisions', '/api/equity', '/api/report/session', '/api/report/attribution', '/api/events',
-  '/api/jarvis/pending', '/api/coverage', '/api/roles',
+  '/api/jarvis/pending', '/api/coverage', '/api/roles', '/api/desk',
 ])
 /** Mirrors backend/tradingai/engine/jarvis_link.py. The server checks again and is the one that decides. */
 export const ACTIONS = [
@@ -97,6 +97,27 @@ export async function askTrading(action, { reason = '', minutes, amount } = {},
         `(${e instanceof Error ? e.message : String(e)}). Check page 1 before asking again.`,
     }
   }
+}
+
+/** A spoken status line built only from the Trading AI's own numbers (/api/desk). null when it is not running. */
+export async function greeting(opts) {
+  const r = await readTrading('/api/desk', opts)
+  if (!r.ok) return null
+  let d
+  try {
+    d = JSON.parse(r.text.slice(r.text.indexOf('\n') + 1))
+  } catch {
+    return null
+  }
+  const money = (v) => `${Math.round(Number(v)).toLocaleString('en-US')} dollars`
+  const a = d.agents ?? {}
+  const parts = [`JARVIS online. ${d.mode === 'live' ? 'Live' : 'Paper'} balance ${money(d.balance)}.`]
+  parts.push(`${a.running ?? 0} of ${a.target ?? 100} agents running, ${a.eligible ?? 0} cleared to trade.`)
+  const open = (d.positions ?? []).filter((p) => Number(p.qty) !== 0).length
+  if (open) parts.push(`${open} open position${open === 1 ? '' : 's'}.`)
+  const net = Number(d.net_pnl)
+  if (Number.isFinite(net) && Math.abs(net) >= 0.5) parts.push(`Net result ${net > 0 ? 'up' : 'down'} ${money(Math.abs(net))}.`)
+  return parts.join(' ')
 }
 
 /**
@@ -189,6 +210,7 @@ export async function readTrading(path, { linkFile = LINK_FILE, fetchImpl = fetc
 
 const NONE = {}
 export const TRADING_TOOLS = [
+  ['get_trading_desk', '/api/desk', 'Everything on the trading screen in one read: balance, net result, positions, trades, agents, checks, latest decisions. Use this first.'],
   ['get_trading_overview', '/api/overview', 'Overall state of the Trading AI: mode (paper or live), system state, counts.'],
   ['get_trading_agents', '/api/fleet/summary', 'The master agent and its 100 trading agents: how many have a market, a validated version, permission to trade.'],
   ['get_trading_risk', '/api/risk', 'Risk limits, the daily loss counter, drawdown, and whether the emergency stop is engaged.'],

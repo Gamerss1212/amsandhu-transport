@@ -1,12 +1,10 @@
 @echo off
-title JARVIS for Trading AI
+title JARVIS
 cd /d "%~dp0jarvis"
 echo.
-echo  JARVIS: a voice assistant for the Trading AI.
-echo  - It can READ the Trading AI (status, risk, agents, temperature). It cannot trade, change a limit or stop it.
-echo  - It can search the web. Web text is only information; it is never treated as an order.
-echo  - It needs: Node.js 20 or newer (nodejs.org), Google Chrome, and Claude Code installed and logged in.
-echo  - Start START_TRADING_AI.exe FIRST, so JARVIS can see it.
+echo  JARVIS: voice control for your Trading AI.
+echo  Needs: Node.js 20+ (nodejs.org), Google Chrome or Edge, and Claude Code installed and logged in.
+echo  Start START_TRADING_AI.exe FIRST.
 echo.
 where node >nul 2>nul
 if errorlevel 1 (
@@ -25,8 +23,8 @@ if not exist node_modules (
   call npm install --no-audit --no-fund
   if errorlevel 1 ( echo  The install failed. & pause & exit /b 1 )
 )
-echo  Starting. Open the address it prints in Chrome, click INITIALISE, and say "Hey Jarvis".
-echo  Writes stay OFF. Do not turn them on while the Trading AI is running.
-echo.
+echo  JARVIS opens in its own window and starts by himself. Allow the microphone the first time.
+echo  Then just talk: "Hey Jarvis, open the trading system."
+start "" /min "%CD%\open_face.cmd"
 call npm start
 pause

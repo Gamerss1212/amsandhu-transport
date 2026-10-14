@@ -708,6 +708,27 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  /**
+   * Hands-free start (added for the Trading AI). With ?autostart=1 JARVIS powers on by itself, so he can speak without
+   * anyone pressing INITIALISE. Browsers allow that only when sound may play without a click: START_JARVIS.bat opens
+   * Chrome with --autoplay-policy=no-user-gesture-required. Anywhere else the button stays, exactly as before.
+   */
+  useEffect(() => {
+    if (!new URLSearchParams(window.location.search).has('autostart')) return
+    const t = window.setTimeout(() => {
+      try {
+        const ac = new AudioContext()
+        const allowed = ac.state === 'running'
+        void ac.close()
+        if (allowed) void powerOn()
+      } catch {
+        // no audio at all: keep the button
+      }
+    }, 800)
+    return () => window.clearTimeout(t)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   return (
     <>
       <Scene />

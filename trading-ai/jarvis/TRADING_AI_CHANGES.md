@@ -13,4 +13,6 @@ Upstream: <https://github.com/adewaskar/jarvis> (MIT, see `LICENSE`), commit `1c
   warns if writes are enabled.
 * 1.8.0: `open_trading_system` opens the Trading AI page (only the address in the link file, this computer only);
   the default model is `claude-opus-5-5`.
+* 1.9.0: `?autostart=1` powers on by itself when the browser allows sound without a click (`open_face.cmd` opens
+  Chrome or Edge that way); a spoken greeting built from `/api/desk`; `get_trading_desk` reads the whole desk at once.
 * No other file was changed. `npm run setup`, `npm start` and every upstream option work as before.

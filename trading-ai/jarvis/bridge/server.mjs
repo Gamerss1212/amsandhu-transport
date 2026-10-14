@@ -21,7 +21,7 @@ import { displayServer } from './panels.mjs'
 import { uiServer } from './ui.mjs'
 import { chromeAvailable, chromeServer } from './chrome.mjs'
 import { visionServer } from './vision.mjs'
-import { tradingServer, startAnnouncer, LINK_FILE } from './trading.mjs'
+import { tradingServer, startAnnouncer, greeting, LINK_FILE } from './trading.mjs'
 import { homedir, tmpdir } from 'node:os'
 import { readFileSync, realpathSync } from 'node:fs'
 import { readFile, realpath, stat } from 'node:fs/promises'
@@ -1074,6 +1074,13 @@ if (process.env.JARVIS_TRADING_ANNOUNCE !== '0') {
 wss.on('connection', (socket) => {
   console.log('[jarvis] client connected')
   faces.add(socket)
+  // Say hello with the real trading status once the face has finished powering up.
+  if (process.env.JARVIS_TRADING_ANNOUNCE !== '0') {
+    setTimeout(async () => {
+      const text = await greeting()
+      if (text && socket.readyState === socket.OPEN) socket.send(JSON.stringify({ type: 'announce', id: 'greeting', text }))
+    }, 9000)
+  }
 
   // Answer the HUD straight away rather than making it wait for the agent's
   // first turn. Refined later by the real init message.
