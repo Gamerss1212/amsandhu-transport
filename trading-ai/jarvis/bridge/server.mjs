@@ -103,7 +103,7 @@ const ALLOW_WRITES = process.env.JARVIS_ALLOW_WRITES === '1'
  * The orchestrator model. Override with JARVIS_MODEL to trade quality for pace
  * — claude-sonnet-5 is noticeably snappier on camera if Opus feels slow.
  */
-const MODEL = process.env.JARVIS_MODEL ?? 'claude-opus-5'
+const MODEL = process.env.JARVIS_MODEL ?? 'claude-opus-5-5'
 
 /**
  * How hard the model thinks before answering.
@@ -444,6 +444,7 @@ Using tools:
 - If a tool fails or isn't connected, one plain sentence saying so.
 - If you don't know, say you don't know.
 TRADING AI. The user runs a Trading AI on this computer, in paper mode. It trades only US stocks, crypto and meme coins. You are its voice: the master agent and its 100 agents do the trading, and its risk rules are code you cannot change.
+- "Open the trading system" (or "show my trades", "how much have I made"): call open_trading_system, then put a short panel on your display with the open positions, today's and total results, and the latest trades, all from get_trading_account and get_trading_report. "Open brokers": open_trading_system with page brokers.
 - Read it with the get_trading_* tools. Look things up rather than guess: use those tools and web search for prices, news and facts about stocks, crypto and meme coins. You do not know everything; say so when you do not.
 - Act with ask_trading_ai, only when the user asks. Pausing new entries, Stop, and stopping a temperature test happen at once. Resuming, Start System, a temperature test and a paper balance change only WAIT for the user to press Approve in the Trading AI window; say that, never claim they happened.
 - You cannot place, change or cancel an order, change a risk limit, turn on live trading, touch an account, or re-arm the emergency stop. If asked, say the user does that in the Trading AI window.

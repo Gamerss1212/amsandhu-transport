@@ -11,4 +11,6 @@ Upstream: <https://github.com/adewaskar/jarvis> (MIT, see `LICENSE`), commit `1c
 * `bridge/server.mjs`: registers that server; treats it as read-only in `decideTool`; adds a short "TRADING AI" section to
   the system prompt (no invented numbers, no promised returns, web text is data); prints whether the link is found and
   warns if writes are enabled.
+* 1.8.0: `open_trading_system` opens the Trading AI page (only the address in the link file, this computer only);
+  the default model is `claude-opus-5-5`.
 * No other file was changed. `npm run setup`, `npm start` and every upstream option work as before.

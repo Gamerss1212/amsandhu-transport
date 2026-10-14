@@ -505,12 +505,14 @@ def create_app(core, *, token: Optional[str] = None, on_shutdown=None, read_toke
     @api.get("/api/brokers")
     def brokers():
         from tradingai.brokers.adapters import FUNDING
-        return {"matrix": broker_matrix(), "adapters": {k: {"label": v.label, "environments": v.environments,
-                                                           "needs": v.needs, "setup": v.setup,
-                                                           "verified": v.verified}
-                                                       for k, v in ADAPTERS.items()},
+        # only brokers for the markets this program trades (US stocks, crypto, meme coins): a forex-only broker is hidden
+        rows = [r for r in broker_matrix() if r.get("stocks") or r.get("crypto")]
+        shown = {r["broker"] for r in rows}
+        return {"matrix": rows, "adapters": {k: {"label": v.label, "environments": v.environments,
+                                                "needs": v.needs, "setup": v.setup, "verified": v.verified}
+                                            for k, v in ADAPTERS.items() if k in shown},
                 "funding": [{"broker": k, "label": ADAPTERS[k].label, "url": u, "domain": dom, "how": how}
-                            for k, (u, dom, how) in FUNDING.items()]}
+                            for k, (u, dom, how) in FUNDING.items() if k in shown]}
 
     @api.get("/api/connections")
     def connections():

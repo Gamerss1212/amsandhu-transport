@@ -1,4 +1,4 @@
-# Verification report — Trading AI 1.7.0
+# Verification report — Trading AI 1.8.0
 
 Every line below is a check that was actually run, with its real result. A check that could not be run is listed as
 **NOT PERFORMED**, with the reason. Nothing here is a statement about future returns.
@@ -32,6 +32,7 @@ temperature of your own computer can only be measured by running the thermal che
 | Market removal (1.7.0): only US stocks, crypto and meme coins | PASSED: 11 tests. The universe has no forex or futures; ETFs and indices are price references that cannot be traded; the risk service denies entries in etf, fx, future, index and option markets and still allows closing an old position; the coverage page lists only crypto and US stocks; the roster is 40 crypto, 15 meme and 45 stock agents. Live check on 2026-10-14: Coinbase listed 16 meme-coin USD pairs. |
 | JARVIS voice control (1.7.0) | PASSED where it could be run: 24 tests, a self-test step, and a live run against the Trading AI started from source: all 11 read tools returned real data; `pause_entries` ran at once; `start_system` and `set_paper_balance` waited; JARVIS's own token could not approve them (401); `arm_live` was refused (403); after the owner approved, the system started and the paper balance became 100.00. The page-1 approval card was opened in Chromium and Reject cleared it. NOT PERFORMED: voice, microphone and a JARVIS session with a Claude login. |
 | JARVIS spoken alerts and command IDs (1.7.0) | PASSED where it could be run: with a live Trading AI, an owner Emergency Stop produced the announcement "Emergency stop engaged. All bots are stopped..." in JARVIS's relay within seconds (the backlog before it was skipped). A simulated lost reply was reported as "Outcome UNKNOWN". A repeated command ID returned the first outcome (test). NOT PERFORMED: hearing it spoken (needs a browser with audio and a Claude login). |
+| JARVIS screen and two pages (1.8.0) | PASSED in Chromium: the trading page, the Agents overlay and the Brokers page render with no browser errors and no sideways scrolling at 1600 px and 390 px; positions, trades and P&L shown were the paper broker's own records on DEMO (simulated) markets in a test folder. |
 | The new agents (15 meme, 11 stock) | NOT PERFORMED: not trained yet. The training and portfolio reports describe the earlier roster (noted at the top of each). |
 | Live (real-money) execution | NOT PERFORMED, by design. Real-money orders stay disabled until you arm them separately with a verified broker account. |
 

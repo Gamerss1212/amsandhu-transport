@@ -4,5 +4,5 @@ Everything runs on this computer behind http://127.0.0.1:<port>. Nothing shown a
 from calculations on real or clearly labelled simulated data, or from an authenticated broker connection.
 """
 
-__version__ = "1.7.0"
+__version__ = "1.8.0"
 APP_ID = "trading-ai"

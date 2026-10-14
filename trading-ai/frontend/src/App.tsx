@@ -1,18 +1,21 @@
 import { useEffect, useState } from "react";
 import { api } from "./api";
-import { Badge, Modal, ModeBadge, PhraseConfirm, StateBadge } from "./components/ui";
+import { Modal, PhraseConfirm } from "./components/ui";
 import { useLive } from "./store";
 import CommandCenter from "./pages/CommandCenter";
 import BrokerMoney from "./pages/BrokerMoney";
 import LiveIntelligence from "./pages/LiveIntelligence";
 import Assistant from "./components/Assistant";
-import { Clock } from "./components/Dashboard";
+import Hud from "./hud/Hud";
+import "./hud/hud.css";
 
+// Two pages (owner's instruction of 2026-10-14): the JARVIS trading panel and Brokers & Accounts. The agent grid and
+// the detailed control room open as full-screen overlays inside them, not as pages.
 const PAGES = [
-  ["/", "AI Trading System"],
-  ["/intelligence", "AI Supercomputer — Agent Activity"],
-  ["/broker", "Brokers & Accounts"],
+  ["/", "Trading"],
+  ["/broker", "Brokers"],
 ] as const;
+type Overlay = null | "agents" | "control";
 
 export function go(path: string) {
   if (location.pathname !== path) {
@@ -21,49 +24,75 @@ export function go(path: string) {
   }
 }
 
+function HudClock() {
+  const [t, setT] = useState(() => new Date());
+  useEffect(() => { const i = setInterval(() => setT(new Date()), 1000); return () => clearInterval(i); }, []);
+  return (
+    <>
+      <span>Date <b>{t.toLocaleDateString(undefined, { year: "numeric", month: "2-digit", day: "2-digit" })}</b></span>
+      <span>Time <b className="mono">{t.toLocaleTimeString(undefined, { hour12: false })}</b></span>
+    </>
+  );
+}
+
+const ICONS: Record<string, JSX.Element> = {
+  trading: <svg viewBox="0 0 24 24"><path d="M3 17l5-6 4 3 8-9" /><path d="M14 5h6v6" /></svg>,
+  broker: <svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="2" /><path d="M3 10h18M7 15h4" /></svg>,
+  agents: <svg viewBox="0 0 24 24"><circle cx="12" cy="6" r="3" /><circle cx="5" cy="18" r="2.5" /><circle cx="12" cy="18" r="2.5" /><circle cx="19" cy="18" r="2.5" /><path d="M12 9v6.5M10 8l-4 7.6M14 8l4 7.6" /></svg>,
+  control: <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8" /><circle cx="12" cy="12" r="3" /><path d="M12 2v3M12 19v3M2 12h3M19 12h3" /></svg>,
+};
+
 export default function App() {
   const [path, setPath] = useState(location.pathname);
   const live = useLive();
   const [estop, setEstop] = useState(false);
   const [rearm, setRearm] = useState(false);
+  const [overlay, setOverlay] = useState<Overlay>(() => (location.pathname === "/intelligence" ? "agents" : null));
 
   useEffect(() => {
     const on = () => setPath(location.pathname);
     window.addEventListener("popstate", on);
     return () => window.removeEventListener("popstate", on);
   }, []);
+  useEffect(() => {                                  // the old page-2 address opens the agents overlay on page 1
+    if (location.pathname === "/intelligence") { history.replaceState(null, "", "/"); setPath("/"); }
+  }, []);
+  useEffect(() => {
+    const esc = (e: KeyboardEvent) => { if (e.key === "Escape") setOverlay(null); };
+    window.addEventListener("keydown", esc);
+    return () => window.removeEventListener("keydown", esc);
+  }, []);
 
   const o = live.overview;
   const page = PAGES.find(([p]) => p === path)?.[0] ?? "/";
   const kill = o?.risk?.kill_switch;
   const locked = o?.risk?.trading_locked;
+  const online = live.ws === "live";
 
   return (
-    <div className="shell">
-      <header className="topbar">
-        <div className="brand">
-          <svg viewBox="0 0 32 32" aria-hidden><rect width="32" height="32" rx="7" fill="#17243a" /><path d="M6 22l6-7 5 4 9-11" fill="none" stroke="#3dd9ff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" /></svg>
-          Trading AI
+    <div className="hud">
+      <header className="hud-head">
+        <div className="l">
+          <span>JARVIS OS <b>v{o?.version ?? "—"}</b></span>
+          <span>Status <b className={online ? "up" : "down"}>{online ? "Online" : live.ws === "offline" ? "Offline" : "Connecting"}</b></span>
+          {o && <span className={`hud-chip ${o.mode === "live" ? "bad" : "sim"}`}><i />{o.mode === "live" ? "LIVE · REAL MONEY" : `${o.mode.toUpperCase()} · SIMULATED`}</span>}
+          {o && <span className="hud-chip">{o.state.state.replace(/_/g, " ")}</span>}
+          {o?.offline && <span className="hud-chip warn">OFFLINE DATA</span>}
         </div>
-        <nav className="nav">
-          {PAGES.map(([p, label]) => (
-            <a key={p} href={p} className={page === p ? "on" : ""} onClick={(e) => { e.preventDefault(); go(p); }}>{label}</a>
-          ))}
-        </nav>
-        <div className="statusline">
-          <Clock />
-          {o && <ModeBadge mode={o.mode} />}
-          {live.account?.account && <span className="small dim hide-sm" title="Selected account">{live.account.account.account}</span>}
-          {o && <Badge kind={o.autopilot?.enabled ? "good" : ""} dot>{o.autopilot?.enabled ? "SYSTEM RUNNING" : "SYSTEM STOPPED"}</Badge>}
-          {o && <StateBadge state={o.state.state} />}
-          {kill ? <Badge kind="bad" dot>STOP ALL ENGAGED</Badge> : locked ? <Badge kind="bad" dot>TRADING LOCKED</Badge> : null}
-          <Badge kind={live.ws === "live" ? "good" : live.ws === "offline" ? "bad" : "warn"} dot>
-            {live.ws === "live" ? "LIVE FEED" : live.ws === "offline" ? "SERVER UNREACHABLE" : "CONNECTING"}
-          </Badge>
-          {o?.offline && <Badge kind="warn">OFFLINE DATA</Badge>}
+        <div className="hud-title">
+          <h1>JARVIS</h1>
+          <small>Just a rather very intelligent system · AI trading</small>
+        </div>
+        <div className="r">
+          <HudClock />
+          <nav className="hud-tabs" aria-label="Pages">
+            {PAGES.map(([p, label]) => (
+              <a key={p} href={p} className={page === p ? "on" : ""} onClick={(e) => { e.preventDefault(); setOverlay(null); go(p); }}>{label}</a>
+            ))}
+          </nav>
           {kill || locked
-            ? <button className="btn sm" onClick={() => setRearm(true)}>Re-arm…</button>
-            : <button className="estop" onClick={() => setEstop(true)} title="Stops every bot, cancels working orders, blocks new orders">EMERGENCY STOP</button>}
+            ? <button className="hud-btn warn" style={{ minWidth: 0 }} onClick={() => setRearm(true)}>Re-arm…</button>
+            : <button className="hud-estop" onClick={() => setEstop(true)} title="Stops every agent, cancels working orders, blocks new orders">Emergency stop</button>}
         </div>
       </header>
 
@@ -71,8 +100,8 @@ export default function App() {
       {live.ws === "offline" && (
         <div className="page"><div className="callout bad">The local server is not answering. If you closed the Trading AI window, double-click START_TRADING_AI.exe again.</div></div>
       )}
-      {o && (
-        <main className="page">
+      {o && (kill || locked || o.state.state === "RECONCILIATION_REQUIRED") && (
+        <div className="page" style={{ paddingBottom: 0 }}>
           {kill && (
             <div className="callout bad">
               <b>STOP ALL TRADING is engaged</b> ({kill.reason}, by {kill.by}). No new orders can be sent. Positions were kept
@@ -83,12 +112,29 @@ export default function App() {
             <div className="callout bad"><b>Trading is locked</b>: {locked.reason}. Only orders that reduce positions are allowed until you re-arm.</div>
           )}
           {o.state.state === "RECONCILIATION_REQUIRED" && (
-            <div className="callout bad"><b>Reconciliation required.</b> Local records and the broker disagree. New entries are blocked. Open Brokers &amp; Accounts → Reconcile now to see the differences.</div>
+            <div className="callout bad"><b>Reconciliation required.</b> Local records and the broker disagree. New entries are blocked. Open Brokers → Reconcile now to see the differences.</div>
           )}
-          {page === "/" && <CommandCenter />}
-          {page === "/broker" && <BrokerMoney />}
-          {page === "/intelligence" && <LiveIntelligence />}
-        </main>
+        </div>
+      )}
+      {o && page === "/" && <Hud />}
+      {o && page === "/broker" && <main className="page"><BrokerMoney /></main>}
+
+      {o && (
+        <nav className="hud-dock" aria-label="JARVIS">
+          <button className={page === "/" && !overlay ? "on" : ""} onClick={() => { setOverlay(null); go("/"); }}>{ICONS.trading}Trading</button>
+          <button className={page === "/broker" && !overlay ? "on" : ""} onClick={() => { setOverlay(null); go("/broker"); }}>{ICONS.broker}Brokers</button>
+          <button className={overlay === "agents" ? "on" : ""} onClick={() => setOverlay(overlay === "agents" ? null : "agents")}>{ICONS.agents}Agents</button>
+          <button className={overlay === "control" ? "on" : ""} onClick={() => setOverlay(overlay === "control" ? null : "control")}>{ICONS.control}Control room</button>
+        </nav>
+      )}
+      {o && overlay && (
+        <div className="hud-overlay" role="dialog" aria-modal="true" aria-label={overlay === "agents" ? "Agents" : "Control room"}>
+          <header>
+            <span>{overlay === "agents" ? "Supercomputer Brain · 100 agents" : "Control room · charts, decisions, risk, strategies"}</span>
+            <button className="hud-btn" style={{ minWidth: 0 }} onClick={() => setOverlay(null)}>Close (Esc)</button>
+          </header>
+          <div className="body"><div className="page">{overlay === "agents" ? <LiveIntelligence /> : <CommandCenter />}</div></div>
+        </div>
       )}
 
       {estop && (

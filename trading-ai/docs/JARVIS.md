@@ -19,6 +19,23 @@ login. A copy is included in the `jarvis` folder, with changes listed in `jarvis
 * **Searches the internet** and opens web pages (Claude Code's own web search and web fetch). It is on by default.
 * Answers in short sentences, and only with numbers the Trading AI actually returned.
 
+## Open the trading system by voice (1.8.0)
+
+Say "open the trading system" (or "show my trades") and JARVIS opens the trading page in your browser and puts your
+positions, results and latest trades on his own screen. "Open brokers" opens the Brokers page.
+
+## Use it like ChatGPT or Claude
+
+JARVIS runs on Claude Code with Claude Opus 5.5 by default (change it with `set JARVIS_MODEL=...`), so it can do what
+Claude can do from your computer:
+* **Research**: "research this topic" uses web search and reads the pages.
+* **Your browser**: with the Claude in Chrome extension running, JARVIS can open sites and read them, for example Google
+  Maps' "Popular times" for a place, when Google shows it. Clicking and typing on your behalf need writes mode (off by
+  default; keep it off while the Trading AI runs).
+* **More tools**: every MCP server you add to Claude Code is available to JARVIS. To ask OpenAI's GPT models for a second
+  opinion, add an OpenRouter MCP server named `openrouter` with your own OpenRouter key in that server's settings
+  (never in chat). JARVIS already treats its "send message" tool as a safe question to another model.
+
 ## What it cannot do (on purpose)
 
 * It **cannot place, cancel or change an order**, change a risk limit, turn on live trading, touch a broker account or

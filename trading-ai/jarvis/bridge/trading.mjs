@@ -1,3 +1,4 @@
+import { spawn } from 'node:child_process'
 import { randomUUID } from 'node:crypto'
 import { readFile } from 'node:fs/promises'
 import { dirname, resolve } from 'node:path'
@@ -95,6 +96,26 @@ export async function askTrading(action, { reason = '', minutes, amount } = {},
       text: `Outcome UNKNOWN: the request may or may not have reached the Trading AI ` +
         `(${e instanceof Error ? e.message : String(e)}). Check page 1 before asking again.`,
     }
+  }
+}
+
+/**
+ * Open the Trading AI's own window in the default browser: the trading panel or the Brokers page.
+ * The address comes from the link file and must be this computer; nothing else can be opened through this function.
+ */
+export async function openTradingWindow(page = 'trading', { linkFile = LINK_FILE, run = spawn } = {}) {
+  try {
+    const { origin } = await readLink(linkFile)
+    const url = origin + (page === 'brokers' ? '/broker' : '/')
+    const [cmd, args] =
+      process.platform === 'win32' ? ['rundll32', ['url.dll,FileProtocolHandler', url]]
+        : process.platform === 'darwin' ? ['open', [url]] : ['xdg-open', [url]]
+    const child = run(cmd, args, { detached: true, stdio: 'ignore', windowsHide: true })
+    child.on?.('error', () => {})
+    child.unref?.()
+    return { ok: true, text: `Opened the ${page === 'brokers' ? 'Brokers page' : 'trading panel'} (${url}).` }
+  } catch (e) {
+    return { ok: false, text: `Could not open the Trading AI: ${e instanceof Error ? e.message : String(e)}` }
   }
 }
 
@@ -200,6 +221,17 @@ export function tradingServer() {
     ),
   )
   tools.push(
+    tool(
+      'open_trading_system',
+      'Open the Trading AI window on this computer: page "trading" (positions, what JARVIS has earned, trades, agents) ' +
+        'or "brokers" (connect a real broker). Use when the user says "open the trading system", "show my trades", ' +
+        '"open brokers".',
+      { page: z.enum(['trading', 'brokers']).default('trading') },
+      async ({ page }) => {
+        const r = await openTradingWindow(page)
+        return { content: [{ type: 'text', text: r.text }], isError: !r.ok }
+      },
+    ),
     tool(
       'ask_trading_ai',
       'Ask the Trading AI to do something. pause_entries, stop_system and stop_thermal_check run at once (they make ' +

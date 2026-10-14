@@ -71,7 +71,7 @@ class PaperBroker(BrokerAdapter):
     # ------------------------------------------------------------------ interface
     def capabilities(self) -> dict:
         return {"stocks": True, "etfs": True, "crypto": True, "forex": True, "futures": True, "paper_mode": True,
-                "fractional": True, "shorting": "FX and futures only", "bracket_orders": False,
+                "fractional": True, "shorting": "not used (stocks and crypto are bought, then sold)", "bracket_orders": False,
                 "trailing_stops": False, "websocket": False, "historical_data": False, "realtime_data": False,
                 "level2": False, "order_modification": False}
 
@@ -104,7 +104,7 @@ class PaperBroker(BrokerAdapter):
                 used += abs(qty) * px * inst.multiplier * self._fx(inst, px) / D(5)
         return AccountInfo(self.account_id, "paper", self.base, eq.quantize(D("0.01")), cash.quantize(D("0.01")),
                            max(D(0), cash - used).quantize(D("0.01")), used.quantize(D("0.01")), True, "SIMULATED",
-                           now_ms(), {"shorting": "FX and futures only", "withdrawals": "not applicable"})
+                           now_ms(), {"shorting": "not used (stocks and crypto are bought, then sold)", "withdrawals": "not applicable"})
 
     def _positions(self) -> dict:
         return {r["instrument_id"]: r for r in self.db.query(

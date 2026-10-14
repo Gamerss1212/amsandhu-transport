@@ -170,3 +170,9 @@ CAN $100 BECOME $300,000?
 -------------------------
 No software can promise that, and this one does not. $100 to $300,000 is 3,000 times the money. The 100 agents have not
 passed their tests yet, so none is trading. Read CAN_100_DOLLARS_BECOME_300K.md for the maths and the measured results.
+
+THE SCREEN (1.8.0)
+------------------
+Two pages. TRADING: your equity in the middle, today's result, positions, trades, what was earned, the agents, and
+Start / Pause / Stop. BROKERS: connect a real broker. The Agents and Control room buttons at the bottom open the full
+details over the page. Say "JARVIS, open the trading system" and JARVIS opens the trading page for you.

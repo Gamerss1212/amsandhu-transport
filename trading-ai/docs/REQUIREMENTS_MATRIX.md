@@ -1,4 +1,4 @@
-# Requirements matrix — Trading AI 1.7.0
+# Requirements matrix — Trading AI 1.8.0
 
 Status meanings:
 * **DONE**: implemented and exercised by a test or by the self-test.
@@ -222,3 +222,18 @@ Contradictions with the master prompt, resolved in favour of the owner's later i
 | Command IDs and honest outcomes (master prompt section 11) | DONE | A repeated command ID returns the first outcome (test). Outcomes are done, waiting for the owner, refused, or UNKNOWN when the reply is lost. |
 | Page 2 name (master prompt section 2) | DONE | Restored to "AI Supercomputer — Agent Activity"; the master is shown as the "Supercomputer Brain (master agent)". |
 | JARVIS knows everything about stocks, crypto and meme coins | PARTIAL, honestly | It reads the program's markets, agents, roles and results and searches the web. No system knows everything; it is told to look things up and say when it does not know. |
+
+## 1.8.0: the JARVIS screen, two pages (owner's request of 2026-10-14)
+
+Override: the master prompt asks for exactly three pages; the owner now asks for two. Page 1 is the JARVIS trading
+panel, page 2 is Brokers. The agent grid and the control room (charts, decisions, risk, strategies) open as full-screen
+overlays from the bottom dock, so nothing was lost.
+
+| Requirement | Status | How it was verified |
+|---|---|---|
+| Look like the owner's JARVIS photo, cleaner, with animation | DONE | Arc-reactor centre with equity and today's result, side readouts, blue glass panels, rotating rings, radar sweep, scanlines; reduced-motion respected. Checked in Chromium at 1600 px and 390 px: no errors, no sideways scroll. |
+| Show only what matters: positions, earned, trades, agents | DONE | Positions (amount and value), Earned / Open P&L / Fees, last trades, agents by group (crypto, meme, stocks), status and Start / Pause / Stop. Every number comes from the backend; empty states say "No open positions" / "No trades yet". |
+| Two pages | DONE | Trading and Brokers; the old page-2 address opens the Agents overlay. |
+| "JARVIS, open the trading system" | DONE (not run on Windows here) | `open_trading_system` opens the trading or Brokers page from the link file's local address only. |
+| JARVIS as a general assistant like ChatGPT and Claude | PARTIAL, honestly | Claude Opus 5.5 by default, web search, browser through the Claude in Chrome extension, any MCP server; GPT models through an OpenRouter MCP server with the owner's key. Not tested here: needs the owner's login and extensions. |
+| Forex leftovers removed | DONE | Brokers page lists only brokers for stocks or crypto; paper account no longer mentions FX shorting. |
