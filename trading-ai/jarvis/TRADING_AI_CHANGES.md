@@ -18,4 +18,9 @@ Upstream: <https://github.com/adewaskar/jarvis> (MIT, see `LICENSE`), commit `1c
 * 1.9.0 (owner's request): `bridge/self.mjs` (check_my_code, undo_my_last_change, list_my_changes, restart_myself,
   remember, recall, forget); `bridge/server.mjs` lets JARVIS edit his own folder when `JARVIS_SELF_EDIT=1` (backed up
   first) and, with `JARVIS_ASK_FIRST=1`, shows every other action on screen for Allow / Deny (`src/ui/Confirm.tsx`).
+* 1.9.1: `@anthropic-ai/claude-agent-sdk` 0.3.220 -> 0.3.287 (the old bundled engine refused the model, so no question
+  was answered); `touchesTradingAI` in `bridge/self.mjs` refuses, before any other rule, file changes and commands aimed
+  at the Trading AI folder; the prompt names his own folder's full path and steers reading to Read/Grep; the greeting
+  is spoken even when the Trading AI is off, and waits until the screen has powered up; the "May I?" card takes the
+  screen's current colour.
 * No other file was changed. `npm run setup`, `npm start` and every upstream option work as before.

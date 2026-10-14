@@ -31,7 +31,21 @@ login. A copy is included in the `jarvis` folder, with changes listed in `jarvis
 * **Memory.** "Remember that I like meme coins first" is kept in `jarvis/data/memory.json` and used in every later
   conversation. "Forget ..." removes it. He refuses to store anything that looks like a password or key.
 * **Never** the Trading AI's program, its trading rules or its risk limits. Those are compiled into
-  START_TRADING_AI.exe and change only with a new release, tested first.
+  START_TRADING_AI.exe and change only with a new release, tested first. Since 1.9.1 this is enforced in code, not
+  only in his instructions: any file change or command aimed at the Trading AI's folder (the exe, `_internal`, `data`)
+  is refused before the "May I?" card would even appear, so pressing Allow cannot unlock it.
+
+### Tested for real (1.9.1)
+
+With a real Claude session: asked by voice to change his own screen, he read the file, edited it (backup taken, no
+card needed), ran his check (passed); "undo that" restored the file byte for byte. Asked to write a file elsewhere,
+the "May I?" card appeared: Deny left no file, Allow created it. Asked to raise the Trading AI's daily loss limit, he
+refused and the file was unchanged. In Chrome: he powered on by himself, spoke the greeting with the real balance,
+heard a spoken command, showed the card, and spoke the answer after Allow. What could not be tested here: real
+speakers and a real microphone (the test browser stood in for both), and a run on your PC.
+
+1.9.1 also fixes a fault that stopped him answering at all: the Claude engine bundled with him was too old for the
+model he uses. It is now a newer one.
 
 ## Hands-free (1.9.0)
 

@@ -22,7 +22,7 @@ import { uiServer } from './ui.mjs'
 import { chromeAvailable, chromeServer } from './chrome.mjs'
 import { visionServer } from './vision.mjs'
 import { tradingServer, startAnnouncer, greeting, LINK_FILE } from './trading.mjs'
-import { selfServer, insideOwnFolder, backupFile, memoryBlockSync } from './self.mjs'
+import { HOME as OWN_FOLDER, selfServer, insideOwnFolder, backupFile, memoryBlockSync, touchesTradingAI } from './self.mjs'
 import { homedir, tmpdir } from 'node:os'
 import { readFileSync, realpathSync } from 'node:fs'
 import { readFile, realpath, stat } from 'node:fs/promises'
@@ -479,7 +479,7 @@ TRADING AI. The user runs a Trading AI on this computer, in paper mode. It trade
 
 DOING THINGS AND IMPROVING YOURSELF.
 - When the user asks you to do something on the computer, do it. If an action needs permission, it appears on the screen; say "Allow it on the screen" once and wait. If they decline, stop.
-- Your own code is in your own folder (bridge/ and src/). When asked to change yourself: make the edit, run check_my_code, and fix it until it passes. Screen changes apply at once; bridge changes need restart_myself. "Undo that" means undo_my_last_change.
+- Your own code is in your own folder, ${OWN_FOLDER.replace(/\\/g, '/')} (bridge/ and src/ inside it); always use full paths there. Look at files with Read, Grep and Glob (they never need permission), never with shell commands. When asked to change yourself: Read the file, make the edit with Edit, run check_my_code, and fix it until it passes. Screen changes apply at once; bridge changes need restart_myself. "Undo that" means undo_my_last_change.
 - Never edit, patch or replace the Trading AI program, its risk limits or its trading rules. They are not yours to change.
 - remember / recall / forget keep the user's preferences between conversations. Never store passwords, keys or account numbers.`
 
@@ -1063,7 +1063,7 @@ if (ALLOW_WRITES) {
 }
 console.log(
   `[jarvis] writes ${ALLOW_WRITES ? 'ENABLED' : 'disabled'}` +
-    (ALLOW_WRITES ? '' : ' — set JARVIS_ALLOW_WRITES=1 to permit shell/file/device actions'),
+    (ALLOW_WRITES ? '' : ASK_FIRST ? ' — actions wait for Allow on screen' : ' — set JARVIS_ASK_FIRST=1 to allow actions you approve on screen'),
 )
 // Asynchronous, so it lands a beat after the rest of the banner. Worth printing
 // at all because an extension that is simply not running is indistinguishable
@@ -1109,8 +1109,8 @@ wss.on('connection', (socket) => {
   // Say hello with the real trading status once the face has finished powering up.
   if (process.env.JARVIS_TRADING_ANNOUNCE !== '0') {
     setTimeout(async () => {
-      const text = await greeting()
-      if (text && socket.readyState === socket.OPEN) socket.send(JSON.stringify({ type: 'announce', id: 'greeting', text }))
+      const text = (await greeting()) ?? 'JARVIS online. The Trading AI is not running yet. Start it and I will keep you posted.'
+      if (socket.readyState === socket.OPEN) socket.send(JSON.stringify({ type: 'announce', id: 'greeting', text }))
     }, 9000)
   }
 
@@ -1339,6 +1339,14 @@ wss.on('connection', (socket) => {
       // reliable; an absence of a call here is not proof nothing ran.
       canUseTool: async (toolName, input) => {
         const allow = { behavior: 'allow' }
+        // First and unconditional: the Trading AI program, its data and its risk limits. No answer unlocks this.
+        if (touchesTradingAI(toolName, input)) {
+          console.log(`[jarvis] tool ${toolName} -> refused (Trading AI files)`)
+          return {
+            behavior: 'deny',
+            message: 'Refused: JARVIS can never change the Trading AI program, its data or its risk limits, even with permission. Say so in one sentence; settings are changed in the Trading AI window.',
+          }
+        }
         if (decideTool(toolName)) {
           console.log(`[jarvis] tool ${toolName} -> allow`)
           return allow

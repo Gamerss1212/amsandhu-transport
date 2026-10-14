@@ -35,6 +35,31 @@ export function insideOwnFolder(p) {
   return !['node_modules', '.backups', 'dist', '.git'].includes(top)
 }
 
+/** The folder holding JARVIS and the Trading AI program (START_TRADING_AI.exe, _internal, data). */
+export const TRADING_ROOT = resolve(HOME, '..')
+const ROOT_FWD = TRADING_ROOT.replace(/\\/g, '/').toLowerCase()
+const TRADING_FILES = /start_trading_ai|\/_internal\/|jarvis-link\.json|backend\/tradingai|\/tradingai\/(risk|engine|market|brokers|api|storage)\//i
+const CHANGING_TOOLS = new Set(['Write', 'Edit', 'MultiEdit', 'NotebookEdit', 'Bash', 'PowerShell'])
+
+/**
+ * True when a tool call would change or run something in the Trading AI program, its data or its rules.
+ * Checked before every other rule and refused even if the user says yes: risk limits are not JARVIS's to touch.
+ * His own folder (jarvis/) inside the same parent stays editable.
+ */
+export function touchesTradingAI(toolName, input) {
+  if (!CHANGING_TOOLS.has(toolName)) return false
+  const i = input ?? {}
+  const raw = toolName === 'Bash' || toolName === 'PowerShell'
+    ? String(i.command ?? '')
+    : resolve(HOME, String(i.file_path ?? i.notebook_path ?? ''))
+  const t = raw.replace(/\\/g, '/').toLowerCase()
+  if (TRADING_FILES.test(t)) return true
+  for (let at = t.indexOf(ROOT_FWD); at !== -1; at = t.indexOf(ROOT_FWD, at + 1)) {
+    if (!/^\/jarvis(\/|$|[\s"'])/.test(t.slice(at + ROOT_FWD.length))) return true
+  }
+  return false
+}
+
 async function readJson(p, fallback) {
   try {
     return JSON.parse(await readFile(p, 'utf8'))

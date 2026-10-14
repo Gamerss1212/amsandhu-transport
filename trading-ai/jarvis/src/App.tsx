@@ -382,14 +382,26 @@ export default function App() {
 
     // The Trading AI's own announcements (risk locks, emergency stop, feed loss, fills, hot computer...). Always
     // written to the transcript; spoken only while JARVIS is resting, so he never talks over you or over an answer.
+    // Something said while he is still powering up (the greeting, usually) waits and is spoken once he is ready.
+    let held: string | null = null
+    const sayNow = (text: string) => {
+      const spk = createSpeaker()
+      speaker.current = spk
+      spk.say(text)
+      void spk.end()
+    }
     watchAnnounce((a) => {
       const st = store.getState()
       st.pushTurn({ id: `ta-${a.id ?? Date.now()}`, role: 'jarvis', text: a.text })
-      if (st.phase !== 'dormant') return
-      const spk = createSpeaker()
-      speaker.current = spk
-      spk.say(a.text)
-      void spk.end()
+      if (st.phase === 'dormant') sayNow(a.text)
+      else if (st.phase === 'offline' || st.phase === 'boot') held = a.text
+    })
+    store.subscribe((s) => {
+      if (held && s.phase === 'dormant') {
+        const text = held
+        held = null
+        sayNow(text)
+      }
     })
 
     /**

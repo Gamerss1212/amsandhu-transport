@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { accentFor, useStore } from '../store'
 
 /** "May I?" — one action JARVIS wants to take, waiting for the user. Added for the Trading AI project.
  *  Allow / Deny buttons, or the Y and N keys. No answer within 90 seconds means no (the bridge decides that). */
@@ -12,18 +13,20 @@ export function Confirm({ what, onAnswer }: { what: string; onAnswer: (allow: bo
     return () => window.removeEventListener('keydown', key)
   }, [onAnswer])
   const warn = what.includes('WARNING')
+  const accent = useStore((s) => accentFor(s.phase, s.ui))   // the same colour the HUD is showing right now
+  const tint = warn ? '#ff6b7d' : accent
   return (
     <div role="dialog" aria-modal="true" aria-label="Allow this action?" style={{
       position: 'fixed', left: '50%', bottom: '9vh', transform: 'translateX(-50%)', zIndex: 50, width: 'min(560px, 92vw)',
-      background: 'rgba(4, 18, 34, 0.92)', border: `1px solid ${warn ? '#ff6b7d' : '#39c6ff'}`, borderRadius: 8,
-      boxShadow: `0 0 28px ${warn ? 'rgba(255,90,110,.35)' : 'rgba(57,198,255,.35)'}`, padding: '16px 18px', color: '#dff7ff',
+      background: 'rgba(1, 6, 12, 0.97)', backdropFilter: 'blur(6px)', border: `1px solid ${tint}`, borderRadius: 8,
+      boxShadow: `0 0 28px color-mix(in srgb, ${tint} 35%, transparent)`, padding: '16px 18px', color: '#dff7ff',
       fontFamily: 'Bahnschrift, "Segoe UI", system-ui, sans-serif',
     }}>
-      <div style={{ fontSize: 11, letterSpacing: '0.2em', textTransform: 'uppercase', color: warn ? '#ffb3bd' : '#7fcff5' }}>May I?</div>
+      <div style={{ fontSize: 11, letterSpacing: '0.2em', textTransform: 'uppercase', color: tint }}>May I?</div>
       <div style={{ margin: '8px 0 14px', fontFamily: 'Consolas, ui-monospace, monospace', fontSize: 13, lineHeight: 1.5, wordBreak: 'break-word' }}>{what}</div>
       <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-        <button onClick={() => onAnswer(false)} style={{ padding: '8px 16px', background: 'transparent', color: '#cfefff', border: '1px solid #3a5a78', borderRadius: 4, cursor: 'pointer' }}>Deny (N)</button>
-        <button autoFocus onClick={() => onAnswer(true)} style={{ padding: '8px 16px', background: '#0f5d8f', color: '#fff', border: '1px solid #39c6ff', borderRadius: 4, cursor: 'pointer' }}>Allow (Y)</button>
+        <button onClick={() => onAnswer(false)} style={{ padding: '8px 16px', background: 'transparent', color: '#cfefff', border: `1px solid color-mix(in srgb, ${tint} 40%, transparent)`, borderRadius: 4, cursor: 'pointer' }}>Deny (N)</button>
+        <button autoFocus onClick={() => onAnswer(true)} style={{ padding: '8px 16px', background: `color-mix(in srgb, ${tint} 30%, #01060c)`, color: '#fff', border: `1px solid ${tint}`, borderRadius: 4, cursor: 'pointer' }}>Allow (Y)</button>
       </div>
     </div>
   )
