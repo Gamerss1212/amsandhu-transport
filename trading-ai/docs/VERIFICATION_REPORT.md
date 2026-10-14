@@ -15,8 +15,8 @@ temperature of your own computer can only be measured by running the thermal che
 | Unit and integration tests (`backend/tests`) | PASSED: 205 of 205 on Linux (1.7.0). On real Windows 11 the suite passed for 1.5.1 (167 tests, next rows); the same workflow runs on every push. |
 | Real Windows 11: tests, native build, exe self-test, thermal check (measured on 1.5.1) | PASSED on the second run. Workflow `.github/workflows/windows.yml` (run 38478862548): all tests, a native PyInstaller build, the built exe's 32-step self-test (all passed, including "computer temperature sensors read": "Windows 11: sensors via windows-pdh"), then the exe's thermal check (below). The first run FAILED, which found two Windows-only problems (rows 13 and 15 below). |
 | Thermal check on that Windows 11 VM (1 minute of full load) | RESULT: PASS (no temperature sensor). Windows reported no temperature: the `Thermal Zone Information` counter set exists but has no instances on a VM, so the report says "not reported" and shows no temperature figure. What it did measure: CPU busy 99% on all 4 logical CPUs, CPU speed 133% of nominal with no drop, no passive limit or throttle reasons reported, work rate 287 → 262 per second (−12%, below the 30% warning level). The check ran 3 minutes in all (1 idle, 1 load, 1 cool-down). This proves the load test, the Windows counters and the report work on real Windows 11. It says nothing about the heat of any physical PC. |
-| Self-test of the program from source (offline, over HTTP and WebSocket) | PASSED: 34 of 34 steps (1.7.0). |
-| Self-test of the built Windows exe under Wine | PASSED: 34 of 34 steps under Wine (1.7.0), in a fresh data folder, offline (`selftest.log` in the download). The agent probe ran the full decision pipeline on A004's market. The tests also passed inside the build (167). Under Wine the temperature counters do not exist, so that run shows "no temperature reported". |
+| Self-test of the program from source (offline, over HTTP and WebSocket) | PASSED: 34 of 34 steps (1.9.0). |
+| Self-test of the built Windows exe under Wine | PASSED: 34 of 34 steps under Wine (1.9.0), in a fresh data folder, offline (`selftest.log` in the download). The agent probe ran the full decision pipeline on A004's market. The tests also passed inside the build (209). Under Wine the temperature counters do not exist, so that run shows "no temperature reported". |
 | Crash recovery: real SIGKILL during training, then restart | PASSED: 14 of 14 checks (`scripts/kill_restart_check.py`). After the kill, the program restarted READY in paper mode with every start-up check passing, an intact database and audit chain, all 100 agents on the same markets, and 2 interrupted research runs marked failed (not left running). Reconciliation was clean. |
 | Paper round trip on a live BTC price through the real order path | PASSED: buy and sell both FILLED. Slippage 1.3 bp each side against the live quote, fee 0.20 per order on a 50 USD order. Reconciliation clean, paper ledger invariant holds. |
 | Soak on live data, run 1 (20 minutes) | FAILED, then fixed: 20 missed agent deadlines and a 2.7 s cycle every 5 minutes; "fresh data" flapped between 51 and 45. Causes and fixes are below. |
@@ -33,7 +33,8 @@ temperature of your own computer can only be measured by running the thermal che
 | JARVIS voice control (1.7.0) | PASSED where it could be run: 24 tests, a self-test step, and a live run against the Trading AI started from source: all 11 read tools returned real data; `pause_entries` ran at once; `start_system` and `set_paper_balance` waited; JARVIS's own token could not approve them (401); `arm_live` was refused (403); after the owner approved, the system started and the paper balance became 100.00. The page-1 approval card was opened in Chromium and Reject cleared it. NOT PERFORMED: voice, microphone and a JARVIS session with a Claude login. |
 | JARVIS spoken alerts and command IDs (1.7.0) | PASSED where it could be run: with a live Trading AI, an owner Emergency Stop produced the announcement "Emergency stop engaged. All bots are stopped..." in JARVIS's relay within seconds (the backlog before it was skipped). A simulated lost reply was reported as "Outcome UNKNOWN". A repeated command ID returned the first outcome (test). NOT PERFORMED: hearing it spoken (needs a browser with audio and a Claude login). |
 | JARVIS screen and two pages (1.8.0) | PASSED in Chromium: the trading page, the Agents overlay and the Brokers page render with no browser errors and no sideways scrolling at 1600 px and 390 px; positions, trades and P&L shown were the paper broker's own records on DEMO (simulated) markets in a test folder. |
-| The new agents (15 meme, 11 stock) | NOT PERFORMED: not trained yet. The training and portfolio reports describe the earlier roster (noted at the top of each). |
+| Training all 100 agents of the current roster (1.9.0) | Completed on real data on 2026-10-14 (26 minutes, 300 runs: 3 candidates for each agent, including the 15 meme-coin and 11 new stock agents). 0 of 100 passed the gate: 297 REJECT, 3 RESEARCH FURTHER. 139 runs reached 30 test trades, 49 had a positive held-out Sharpe, the best Deflated Sharpe was 0.28 (0.95 required), 275 lose money at 2x costs. Details: `AGENT_TRAINING_REPORT.md`. The portfolio report still describes the earlier roster. |
+| JARVIS self-editing and ask-first (1.9.0) | PASSED where it could be run: the bridge parses and the screen type-checks; a file in JARVIS's own folder was backed up, changed and restored exactly by "undo"; paths outside his folder (the Trading AI, `node_modules`, `C:/Windows`) are refused for self-editing; the code check passed. NOT PERFORMED: a spoken session with a Claude login (so no real edit by JARVIS himself has been observed), and the "May I?" card in a browser (it type-checks and builds). |
 | Live (real-money) execution | NOT PERFORMED, by design. Real-money orders stay disabled until you arm them separately with a verified broker account. |
 
 ## What the tests cover
@@ -102,11 +103,11 @@ Full tables: `AGENT_TRAINING_REPORT.md`.
 
 | Measure | Result |
 |---|---|
-| Research runs on real data | 300 (3 candidates for each of 100 agents) |
-| Runs with at least 30 held-out test trades | 131 |
-| Runs with a positive held-out Sharpe | 59 |
-| Highest Deflated Sharpe | 0.20 (0.95 required) |
-| Runs that lose money at 2x costs | 264 |
+| Research runs on real data | 300 (3 candidates for each of 100 agents; current roster, 2026-10-14) |
+| Runs with at least 30 held-out test trades | 139 |
+| Runs with a positive held-out Sharpe | 49 |
+| Highest Deflated Sharpe | 0.28 (0.95 required) |
+| Runs that lose money at 2x costs | 275 |
 | Verdicts | REJECT 297, RESEARCH FURTHER 3, PAPER TEST 0 |
 
 ## Portfolio result (walk-forward, every traded day out of sample)
