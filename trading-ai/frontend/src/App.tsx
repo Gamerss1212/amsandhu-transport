@@ -10,7 +10,7 @@ import { Clock } from "./components/Dashboard";
 
 const PAGES = [
   ["/", "AI Trading System"],
-  ["/intelligence", "Master Agent — 100 Agents"],
+  ["/intelligence", "AI Supercomputer — Agent Activity"],
   ["/broker", "Brokers & Accounts"],
 ] as const;
 

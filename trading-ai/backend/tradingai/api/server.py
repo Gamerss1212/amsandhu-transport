@@ -145,6 +145,7 @@ class CommandIn(BaseModel):
     reason: str = Field("", max_length=200)
     minutes: Optional[float] = None
     amount: Optional[Decimal] = None
+    command_id: Optional[str] = Field(None, max_length=64)
 
 
 class PauseIn(BaseModel):
@@ -248,7 +249,7 @@ def create_app(core, *, token: Optional[str] = None, on_shutdown=None, read_toke
     # ------------------------------------------------------------ the voice assistant (engine/jarvis_link.py)
     @api.post("/api/jarvis/command")
     def jarvis_command(c: CommandIn):
-        return core.jarvis.submit(c.action, c.reason, c.minutes, c.amount)
+        return core.jarvis.submit(c.action, c.reason, c.minutes, c.amount, c.command_id)
 
     @api.get("/api/jarvis/pending")
     def jarvis_pending():

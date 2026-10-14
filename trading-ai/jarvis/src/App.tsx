@@ -24,6 +24,7 @@ import {
   watchBlades,
   watchCapture,
   watchUi,
+  watchAnnounce,
   watchConnection,
   connectedLabels,
   usingBridge,
@@ -364,6 +365,18 @@ export default function App() {
     watchServers((servers) => store.getState().setConnected(servers))
     watchPanels((panel) => store.getState().pushPanel(panel))
     watchBlades((blade) => store.getState().pushBlade(blade))
+
+    // The Trading AI's own announcements (risk locks, emergency stop, feed loss, fills, hot computer...). Always
+    // written to the transcript; spoken only while JARVIS is resting, so he never talks over you or over an answer.
+    watchAnnounce((a) => {
+      const st = store.getState()
+      st.pushTurn({ id: `ta-${a.id ?? Date.now()}`, role: 'jarvis', text: a.text })
+      if (st.phase !== 'dormant') return
+      const spk = createSpeaker()
+      speaker.current = spk
+      spk.say(a.text)
+      void spk.end()
+    })
 
     /**
      * JARVIS asking to see something.

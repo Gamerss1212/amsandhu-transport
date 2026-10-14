@@ -7,7 +7,7 @@ Status meanings:
 * **NOT DONE**: not built.
 
 How it was verified:
-* **Unit tests**: 204 tests (`backend/tests`), also run on real Windows 11 by `.github/workflows/windows.yml`.
+* **Unit tests**: 205 tests (`backend/tests`), also run on real Windows 11 by `.github/workflows/windows.yml`.
 * **Self-test**: `START_TRADING_AI.exe --selftest` runs 34 steps over HTTP and WebSocket against the real server (1.7.0: 34 of 34 from source; the Wine and Windows results are in `VERIFICATION_REPORT.md`).
 * **Real-data run**: the dashboard and API were exercised on live Coinbase, Kraken and Yahoo data.
 
@@ -154,10 +154,10 @@ The two owner documents are stored unchanged: `docs/specs/AI_Trading_System_Mast
 
 | Requirement | Status | Evidence / limitation |
 |---|---|---|
-| Exactly three pages | DONE | AI Trading System, Master Agent — 100 Agents, Brokers & Accounts. Details open in drawers and dialogs. |
+| Exactly three pages | DONE | AI Trading System, AI Supercomputer — Agent Activity (the master prompt's name, restored in 1.7.0), Brokers & Accounts. Details open in drawers and dialogs. |
 | AI Trading System | DONE | Market strip; KPI strip; engine summary; candlestick chart with fills; equity and drawdown; decision activity; execution stream; team agent strip; Start System / Stop; Pause New Entries; Flatten All; paper/shadow mode; master agent card; agent execution loops (no hand-made bots); positions; session report; regime and agents; risk meters with limits in a settings drawer; strategy catalog; read-only research evidence. |
 | Brokers & Accounts | DONE | Account and balances; paper balance setting; connections (vault, test, remove); capability matrix; Add Funds; market and discovery coverage; live readiness and arming; orders and fills; reconciliation. |
-| Master Agent — 100 Agents | DONE | Master agent and its 100 agents (network by role, agent grid, drawers, learning, C01-C50 support services); decision feed with agent votes, conflicts, vetoes, risk checks, execution and audit trail; live event stream; system health; research ledger; signal agent functions. |
+| AI Supercomputer — Agent Activity | DONE | Master agent and its 100 agents (network by role, agent grid, drawers, learning, C01-C50 support services); decision feed with agent votes, conflicts, vetoes, risk checks, execution and audit trail; live event stream; system health; research ledger; signal agent functions. |
 | SIMULATED labels | DONE | Paper balances, DEMO prices and backtests on simulated data are labelled on every page. |
 | Works at phone width | DONE | No horizontal scrolling at 390 px (checked in Chromium). |
 
@@ -203,10 +203,22 @@ The two owner documents are stored unchanged: `docs/specs/AI_Trading_System_Mast
 
 ## 1.7.0: only stocks, crypto and meme coins; JARVIS controls the system by voice (owner's request of 2026-10-14)
 
+Contradictions with the master prompt, resolved in favour of the owner's later instructions:
+* Fleet size: the prompt's target of 320 agents (A001-A320) was replaced by exactly 100 agents (owner, 2026-10-13).
+* Markets: the prompt's all-markets objective (stocks, ETFs, crypto, meme coins, forex, futures, options, rates,
+  specialty) was narrowed to US stocks, crypto and meme coins (owner, 2026-10-14). ETFs and indices stay as price
+  references only, because the stock agents compare themselves with SPY.
+* "JARVIS controls everything": done within the prompt's own rules (sections 3, 7 and 11): the language model never
+  bypasses the risk engine, holds no credentials, cannot turn on live trading or raise capital; consequential actions
+  need the owner's deliberate action.
+
 | Requirement | Status | How it was verified |
 |---|---|---|
 | Remove every market except stocks, crypto and meme coins | DONE | Forex and futures are gone from the instrument universe; options and bonds rows are gone from coverage. The risk service denies an entry in any market other than US stocks and crypto (`market supported` check; exits stay allowed so an old position can be closed). ETFs and indices remain only as price references (stock agents compare with SPY); they cannot be ordered or assigned. `tests/test_market_policy.py` (11 tests). Engine code for futures and forex calendars stays dormant and unreachable. |
 | Meme coins as their own group | DONE | 15 agents (A041-A055): 8 momentum, 7 mean reversion, on Coinbase meme pairs (16 were online when checked on 2026-10-14). The other crypto agents never take a meme coin. Tested with 15 meme pairs: each meme agent got one, no crypto agent did. |
 | Exactly 100 agents | DONE | 40 crypto, 15 meme, 45 US stocks (11 new stock agents A090-A100 for intraday momentum). The new agents are untrained. |
-| JARVIS controls everything, like the master | DONE within the safety rules | `engine/jarvis_link.py`: pause and Stop run at once; Start, resume, a temperature test and a paper balance wait for the owner's Approve on page 1; orders, limits, live trading, brokers, credentials and the emergency stop do not exist for JARVIS. `tests/test_jarvis_commands.py` (23 tests), a self-test step, a live run of JARVIS's tools, and the page-1 card checked in Chromium. |
+| JARVIS controls everything, like the master | DONE within the safety rules | `engine/jarvis_link.py`: pause and Stop run at once; Start, resume, a temperature test and a paper balance wait for the owner's Approve on page 1; orders, limits, live trading, brokers, credentials and the emergency stop do not exist for JARVIS. `tests/test_jarvis_commands.py` (24 tests), a self-test step, a live run of JARVIS's tools, and the page-1 card checked in Chromium. |
+| JARVIS speaks the system's alerts (master prompt section 10) | DONE (voice not heard here) | JARVIS relays the Trading AI's own announcements (fixed wording, dedupe, expiry); tested live: an emergency stop produced the alert text in JARVIS's relay. Written to the transcript always; spoken only while JARVIS rests. Off with `JARVIS_TRADING_ANNOUNCE=0`. |
+| Command IDs and honest outcomes (master prompt section 11) | DONE | A repeated command ID returns the first outcome (test). Outcomes are done, waiting for the owner, refused, or UNKNOWN when the reply is lost. |
+| Page 2 name (master prompt section 2) | DONE | Restored to "AI Supercomputer — Agent Activity"; the master is shown as the "Supercomputer Brain (master agent)". |
 | JARVIS knows everything about stocks, crypto and meme coins | PARTIAL, honestly | It reads the program's markets, agents, roles and results and searches the web. No system knows everything; it is told to look things up and say when it does not know. |

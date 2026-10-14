@@ -21,7 +21,7 @@ import { displayServer } from './panels.mjs'
 import { uiServer } from './ui.mjs'
 import { chromeAvailable, chromeServer } from './chrome.mjs'
 import { visionServer } from './vision.mjs'
-import { tradingServer, LINK_FILE } from './trading.mjs'
+import { tradingServer, startAnnouncer, LINK_FILE } from './trading.mjs'
 import { homedir, tmpdir } from 'node:os'
 import { readFileSync, realpathSync } from 'node:fs'
 import { readFile, realpath, stat } from 'node:fs/promises'
@@ -1062,8 +1062,17 @@ const RESULT_FAILURES = {
   default: 'The turn ended without an answer.',
 }
 
+// Every open face, so the Trading AI's announcements reach whichever screen is showing.
+const faces = new Set()
+if (process.env.JARVIS_TRADING_ANNOUNCE !== '0') {
+  startAnnouncer((msg) => {
+    for (const f of faces) if (f.readyState === f.OPEN) f.send(JSON.stringify(msg))
+  })
+}
+
 wss.on('connection', (socket) => {
   console.log('[jarvis] client connected')
+  faces.add(socket)
 
   // Answer the HUD straight away rather than making it wait for the agent's
   // first turn. Refined later by the real init message.
@@ -1481,6 +1490,7 @@ wss.on('connection', (socket) => {
 
   socket.on('close', () => {
     console.log('[jarvis] client disconnected')
+    faces.delete(socket)
     closed = true
     deliver?.(null)
     session.close?.()

@@ -70,7 +70,7 @@ START_TRADING_AI.exe (launcher.py)
      ├─ portfolio  Ledoit-Wolf, inverse vol, risk parity, min variance, HRP, mean-variance
      └─ api        FastAPI REST + one WebSocket; Host / token / Origin guard; serves the compiled React dashboard
 jarvis/            JARVIS voice assistant (adewaskar/jarvis, MIT) with a read-only link to this program
-frontend/          React + TypeScript + Vite: AI Trading System · Master Agent — 100 Agents · Brokers & Accounts
+frontend/          React + TypeScript + Vite: AI Trading System · AI Supercomputer — Agent Activity · Brokers & Accounts
 packaging/         PyInstaller spec, Windows build script (runs under Wine on Linux), icon, version info
 ```
 
@@ -80,7 +80,7 @@ packaging/         PyInstaller spec, Windows build script (runs under Wine on Li
 python -m venv .venv && .venv/bin/pip install -r requirements-dev.txt
 cd frontend && npm ci && npm run build && cd ..
 cd backend && ../.venv/bin/python -m tradingai.launcher            # add --offline to use stored + DEMO data only
-../.venv/bin/python -m pytest -q tests                              # 204 tests
+../.venv/bin/python -m pytest -q tests                              # 205 tests
 ../.venv/bin/python -m tradingai.launcher --thermal-check --minutes 5   # temperature and throttling under full load
 ../.venv/bin/python -m tradingai.launcher --selftest --offline      # end-to-end test over HTTP and WebSocket
 ```

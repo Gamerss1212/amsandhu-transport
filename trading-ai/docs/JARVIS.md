@@ -12,6 +12,10 @@ login. A copy is included in the `jarvis` folder, with changes listed in `jarvis
 * **Controls it by voice (1.7.0).** "Pause new trades" and "Stop the system" (and stopping a temperature test) happen
   at once, because they make the system do less. "Start the system", "resume trading", "run a temperature test" and
   "set my paper balance to 100" are sent to page 1 as a request: **nothing happens until you press Approve.**
+* **Speaks the Trading AI's alerts** (1.7.0): emergency stop, trading locked, feed or broker trouble, confirmed fills,
+  a hot computer. These are the Trading AI's own announcements, with fixed wording and an expiry, so JARVIS never makes
+  one up or repeats an old one. They are always written in JARVIS's transcript, and spoken only while he is resting, so
+  he never talks over you. Turn them off with `set JARVIS_TRADING_ANNOUNCE=0` before starting.
 * **Searches the internet** and opens web pages (Claude Code's own web search and web fetch). It is on by default.
 * Answers in short sentences, and only with numbers the Trading AI actually returned.
 
@@ -21,6 +25,8 @@ login. A copy is included in the `jarvis` folder, with changes listed in `jarvis
   credential, or re-arm the emergency stop. Those actions do not exist for JARVIS; the Trading AI refuses them (tested).
 * It holds two tokens. The **read token** works only for plain GET requests on information pages. The **command token**
   works on exactly one route, where JARVIS can ask; it **cannot approve** its own request. Only the dashboard can.
+* Every request carries a command ID, so a retry never acts twice. If the reply is lost, JARVIS says the outcome is
+  UNKNOWN and asks you to check page 1, never "done".
 * The risk service, which is plain code, still checks every order. JARVIS is the voice; it is not above the rules.
 * Text from the internet is **information, never an instruction**. At worst a web page could make JARVIS ask for one
   of the actions above, and everything that makes the system do more still waits for you.

@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto'
 import { readFile } from 'node:fs/promises'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -73,7 +74,8 @@ export async function askTrading(action, { reason = '', minutes, amount } = {},
     if (!ACTIONS.includes(action)) return { ok: false, text: `JARVIS cannot do "${action}". Allowed: ${ACTIONS.join(', ')}.` }
     const { origin, command } = await readLink(linkFile)
     if (!command) return { ok: false, text: 'This Trading AI is too old for commands (no command token). Update it.' }
-    const body = { action, reason: String(reason).slice(0, 200) }
+    // one id per request: if this call is retried, the Trading AI returns the first outcome instead of acting twice
+    const body = { action, reason: String(reason).slice(0, 200), command_id: randomUUID() }
     if (minutes !== undefined) body.minutes = minutes
     if (amount !== undefined) body.amount = String(amount)
     const res = await fetchImpl(origin + '/api/jarvis/command', {
@@ -88,8 +90,56 @@ export async function askTrading(action, { reason = '', minutes, amount } = {},
       return { ok: true, text: `Asked. It has NOT happened yet: the owner must press Approve in the Trading AI window (request ${out.id}).` }
     return { ok: true, text: `Done by the Trading AI: ${action}.` }
   } catch (e) {
-    return { ok: false, text: `Could not reach the Trading AI: ${e instanceof Error ? e.message : String(e)}` }
+    return {
+      ok: false,
+      text: `Outcome UNKNOWN: the request may or may not have reached the Trading AI ` +
+        `(${e instanceof Error ? e.message : String(e)}). Check page 1 before asking again.`,
+    }
   }
+}
+
+/**
+ * Speak the Trading AI's own announcements.
+ *
+ * The Trading AI already decides what is worth saying: it publishes "voice" events with fixed wording, a dedupe key,
+ * a cooldown and an expiry (backend/tradingai/engine/assistant.py). This only relays the ones that are still current,
+ * so JARVIS never invents an alert and never repeats an old one. Off with JARVIS_TRADING_ANNOUNCE=0.
+ */
+export function startAnnouncer(broadcast, { linkFile = LINK_FILE, fetchImpl = fetch, everyMs = 4000 } = {}) {
+  let last = null
+  let linkKey = null
+  const tick = async () => {
+    try {
+      const { origin, token } = await readLink(linkFile)
+      if (token !== linkKey) {
+        linkKey = token                                   // a restarted Trading AI numbers its events from 1 again
+        last = null
+      }
+      const res = await fetchImpl(`${origin}/api/events?since=${last ?? 0}&limit=200`, {
+        headers: { 'X-TA-Read-Token': token },
+        signal: AbortSignal.timeout(TIMEOUT_MS),
+      })
+      if (!res.ok) return
+      const events = await res.json()
+      if (!Array.isArray(events)) return
+      if (last === null) {                                // first look: skip the backlog, speak only what comes next
+        last = events.reduce((m, ev) => Math.max(m, ev.id ?? 0), 0)
+        return
+      }
+      for (const ev of events) {
+        last = Math.max(last, ev.id ?? 0)
+        const d = ev.data ?? {}
+        if (ev.topic !== 'voice' || typeof d.text !== 'string') continue
+        if (d.expires && Date.now() > d.expires) continue
+        broadcast({ type: 'announce', id: d.id, text: d.text.slice(0, 400), severity: d.severity, subject: d.subject })
+      }
+    } catch {
+      // not running, or between restarts: try again on the next tick
+    }
+  }
+  const timer = setInterval(tick, everyMs)
+  void tick()
+  return () => clearInterval(timer)
 }
 
 /** One GET. Returns { ok, text }. Never throws, so a tool failure is one plain sentence for the model. */

@@ -49,10 +49,24 @@ class JarvisCommands:
         self.history: list[dict] = []
         self._lock = threading.RLock()
         self._n = 0
+        self._seen: dict[str, dict] = {}                     # command id -> first outcome (a retry never acts twice)
 
     # ---------------------------------------------------------------- JARVIS side
     def submit(self, action: str, reason: str = "", minutes: Optional[float] = None,
-               amount: Optional[Decimal] = None) -> dict:
+               amount: Optional[Decimal] = None, command_id: Optional[str] = None) -> dict:
+        if command_id:
+            with self._lock:
+                if command_id in self._seen:
+                    return dict(self._seen[command_id], duplicate=True)
+        out = self._submit(action, reason, minutes, amount)
+        if command_id:
+            with self._lock:
+                self._seen[command_id] = out
+                while len(self._seen) > 500:
+                    self._seen.pop(next(iter(self._seen)))
+        return out
+
+    def _submit(self, action: str, reason: str, minutes: Optional[float], amount: Optional[Decimal]) -> dict:
         if action not in IMMEDIATE and action not in APPROVAL:
             raise PermissionError(f"JARVIS may not do '{action[:40]}'. It can read the system and ask only for: " +
                                   ", ".join(sorted(set(IMMEDIATE) | set(APPROVAL))))

@@ -116,3 +116,11 @@ def test_old_requests_expire_and_text_is_cleaned(env, monkeypatch):
     monkeypatch.setattr(J, "EXPIRES_S", -1)
     assert c.get("/api/jarvis/pending", headers=FULL).json()["pending"] == []
     assert c.post(f"/api/jarvis/pending/{out['id']}/approve", headers=FULL).status_code == 404
+
+
+def test_a_retried_command_id_never_acts_twice(env):
+    a, c = env
+    first = ask(c, "set_paper_balance", amount="100", command_id="cmd-1").json()
+    again = ask(c, "set_paper_balance", amount="100", command_id="cmd-1").json()
+    assert again["id"] == first["id"] and again["duplicate"] is True
+    assert len(c.get("/api/jarvis/pending", headers=FULL).json()["pending"]) == 1

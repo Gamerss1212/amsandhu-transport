@@ -1073,7 +1073,7 @@ class Master:
     def _brain(self) -> dict:
         disc = getattr(self.app, "discovery", None)
         c = self.counts()
-        return {"name": "Master system agent", "kind": "coordinating service (not counted as a trader)",
+        return {"name": "Supercomputer Brain (master agent)", "kind": "coordinating service (not counted as a trader)",
                 "plan_version": self.plan_version, "owned_instruments": len(self.owner),
                 "market_state_version": disc.version if disc else None,
                 "model": "no cloud AI connected: agents are deterministic code; 0 model calls",

@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 
 # role id, name, implementation type, component, agent groups (for the specialist roles)
 ROLES = [
-    ("01", "Master system agent / fleet coordinator", "deterministic service", "engine/master.py (assignments, "
+    ("01", "Supercomputer Brain (master agent) / fleet coordinator", "deterministic service", "engine/master.py (assignments, "
      "training, versions, capital, permissions, monitoring, emergency stop) + engine/learning.py", ()),
     ("02", "Market-data supervisor", "deterministic service", "data/pipeline.py (providers, store, freshness)", ()),
     ("03", "Data-quality analyst", "agent functions", "data/quality.py + data agents D01-D10", ("data",)),
