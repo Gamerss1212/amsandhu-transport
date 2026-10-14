@@ -155,3 +155,14 @@ IF SOMETHING GOES WRONG
 - Send logs\trading-ai.log when asking for help (it never contains your keys).
 
 Nothing in this program is financial advice. Backtests describe the past under stated assumptions.
+
+TALK TO IT: JARVIS (OPTIONAL)
+-----------------------------
+JARVIS is a voice assistant that can READ the Trading AI and search the internet. It cannot trade, change a limit or
+stop the program. Start START_TRADING_AI.exe first, then double-click START_JARVIS.bat. It needs Node.js 20+, Google
+Chrome and Claude Code (logged in). Full steps: JARVIS.md.
+
+CAN $100 BECOME $300,000?
+-------------------------
+No software can promise that, and this one does not. $100 to $300,000 is 3,000 times the money. The 100 agents have not
+passed their tests yet, so none is trading. Read CAN_100_DOLLARS_BECOME_300K.md for the maths and the measured results.

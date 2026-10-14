@@ -45,11 +45,15 @@ echo "== 5/6 documents"
 cp "$ROOT/docs/START_HERE.txt" "$OUT/TradingAI/START_HERE.txt"
 cp "$ROOT/docs/REQUIREMENTS_MATRIX.md" "$OUT/TradingAI/REQUIREMENTS_MATRIX.md"
 cp "$ROOT/docs/CATALOG_BACKTEST_REPORT.md" "$OUT/TradingAI/CATALOG_BACKTEST_REPORT.md"
-for d in STRATEGY_RESEARCH AGENT_TRAINING_REPORT PORTFOLIO_BACKTEST_REPORT VERIFICATION_REPORT BACKUP_AND_RESTORE; do
+for d in STRATEGY_RESEARCH AGENT_TRAINING_REPORT PORTFOLIO_BACKTEST_REPORT VERIFICATION_REPORT BACKUP_AND_RESTORE JARVIS CAN_100_DOLLARS_BECOME_300K; do
   if [ -f "$ROOT/docs/$d.md" ]; then cp "$ROOT/docs/$d.md" "$OUT/TradingAI/$d.md"; fi
 done
 cp "$ROOT/README.md" "$OUT/TradingAI/README.md"
 cp "$HERE/CHECK_COMPUTER_TEMPERATURE.bat" "$OUT/TradingAI/CHECK_COMPUTER_TEMPERATURE.bat"
+cp "$HERE/START_JARVIS.bat" "$OUT/TradingAI/START_JARVIS.bat"
+# JARVIS voice assistant: source only (npm installs the rest on the first run), never node_modules or build output
+mkdir -p "$OUT/TradingAI/jarvis"
+(cd "$ROOT/jarvis" && tar --exclude=node_modules --exclude=dist --exclude=.env.local -cf - .) | tar -xf - -C "$OUT/TradingAI/jarvis"
 
 echo "== 6/6 self-test of the built exe (fresh data folder, offline: no network needed)"
 ST="$WINEPREFIX/drive_c/tatest"

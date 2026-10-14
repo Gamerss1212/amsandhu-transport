@@ -1,4 +1,4 @@
-# Requirements matrix — Trading AI 1.5.1
+# Requirements matrix — Trading AI 1.6.0
 
 Status meanings:
 * **DONE**: implemented and exercised by a test or by the self-test.
@@ -7,7 +7,7 @@ Status meanings:
 * **NOT DONE**: not built.
 
 How it was verified:
-* **Unit tests**: 167 tests (`backend/tests`), also run on real Windows 11 by `.github/workflows/windows.yml`.
+* **Unit tests**: 170 tests (`backend/tests`), also run on real Windows 11 by `.github/workflows/windows.yml`.
 * **Self-test**: `START_TRADING_AI.exe --selftest` runs 32 steps over HTTP and WebSocket against the real server. For 1.5.1 it passed 32 of 32 from source, on the built exe under Wine, and on an exe built natively on Windows 11.
 * **Real-data run**: the dashboard and API were exercised on live Coinbase, Kraken and Yahoo data.
 
@@ -188,3 +188,15 @@ The two owner documents are stored unchanged: `docs/specs/AI_Trading_System_Mast
 | Never overheats the PC through the check | DONE | The load stops at once at 95 °C; Ctrl+C or Stop also stops it. Tested with a simulated 96 °C sensor: stopped in under 5 seconds. |
 | Monitors while running, protects the PC | DONE | The program reads the temperature every 30 seconds; at 85 °C or when Windows limits the CPU, it pauses new training jobs and records the event. Trading rules and risk checks are not changed. Test: training pauses and resumes. |
 | No invented temperatures | DONE | A PC that reports no sensor is reported as such. Readings outside 5-130 °C are dropped as sensor faults. |
+
+## 1.6.0: JARVIS voice assistant, internet, small accounts (owner's request of 2026-10-14)
+
+| Requirement | Status | How it was verified |
+|---|---|---|
+| Set up `adewaskar/jarvis` with the Trading AI | DONE (voice not tested) | Copied into `jarvis/` with its licence (MIT) and a list of changes (`jarvis/TRADING_AI_CHANGES.md`). `npm ci`, `tsc`, `vite build` and lint pass; the same build is a step of the Windows CI workflow. The microphone, voice and 3D screen need a real Chrome window and a Claude Code login, so they were not run here. |
+| JARVIS can read the Trading AI | DONE | Nine read-only tools (`jarvis/bridge/trading.mjs`). Run against a live Trading AI: all nine returned real data. |
+| JARVIS cannot trade or change anything | DONE | A separate read-only token: the server accepts it only for GET on 18 information pages and refuses it on every write, on connections, brokers, credentials and the audit chain (`tests/test_readonly_link.py`, 3 tests, and a self-test step). JARVIS has no tool that acts. |
+| Internet access for JARVIS | DONE | Claude Code's web search and web fetch are allowed by default in JARVIS. Web text is treated as data; it cannot give orders because nothing JARVIS can reach acts. |
+| Works with any amount of money | DONE (as before) | Paper balance from $100 up; at $100 the limits allow $10 per order, $25 per position and a $3 daily loss. |
+| "$100 becomes $300K" | NOT PROMISED, by design | `CAN_100_DOLLARS_BECOME_300K.md`: the maths (3,000 times the money) and the measured results (0 of 100 agents passed the gate; the portfolio test was negative after costs). No software can promise this. |
+| Bot rewrites and deploys its own live logic | NOT DONE, by design | Improvements are made by a person with tests, never by the bot unattended. |

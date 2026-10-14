@@ -17,10 +17,10 @@ replay.
 Nothing shown as real is invented: every number comes from a calculation on real market data, an authenticated broker
 connection, or clearly labelled simulated (DEMO) data.
 
-Download for Windows 11 or 10 (64-bit): [`downloads/TradingAI-v1.5.1-windows.zip`](../downloads/TradingAI-v1.5.1-windows.zip)
+Download for Windows 11 or 10 (64-bit): [`downloads/TradingAI-v1.6.0-windows.zip`](../downloads/TradingAI-v1.6.0-windows.zip)
 (unzip, double-click `START_TRADING_AI.exe`; `docs/START_HERE.txt` explains the SmartScreen and Smart App Control
 messages). To check your computer's temperature under full load, double-click `CHECK_COMPUTER_TEMPERATURE.bat` in the
-same folder. The previous 1.5.0 and 1.4.1 downloads are kept beside it.
+same folder. `START_JARVIS.bat` opens the optional JARVIS voice assistant ([`docs/JARVIS.md`](docs/JARVIS.md)). The previous 1.5.1, 1.5.0 and 1.4.1 downloads are kept beside it. Can $100 become $300,000? [No, and why.](docs/CAN_100_DOLLARS_BECOME_300K.md)
 
 Beginners: read [`docs/START_HERE.txt`](docs/START_HERE.txt). What is done and what is not:
 [`docs/REQUIREMENTS_MATRIX.md`](docs/REQUIREMENTS_MATRIX.md). The owner's specification is in
@@ -69,6 +69,7 @@ START_TRADING_AI.exe (launcher.py)
      │             portfolio templates (rebalanced, next-day execution, equal-weight benchmark) and portfolio bots
      ├─ portfolio  Ledoit-Wolf, inverse vol, risk parity, min variance, HRP, mean-variance
      └─ api        FastAPI REST + one WebSocket; Host / token / Origin guard; serves the compiled React dashboard
+jarvis/            JARVIS voice assistant (adewaskar/jarvis, MIT) with a read-only link to this program
 frontend/          React + TypeScript + Vite: AI Trading System · Master Agent — 100 Agents · Brokers & Accounts
 packaging/         PyInstaller spec, Windows build script (runs under Wine on Linux), icon, version info
 ```
@@ -79,7 +80,7 @@ packaging/         PyInstaller spec, Windows build script (runs under Wine on Li
 python -m venv .venv && .venv/bin/pip install -r requirements-dev.txt
 cd frontend && npm ci && npm run build && cd ..
 cd backend && ../.venv/bin/python -m tradingai.launcher            # add --offline to use stored + DEMO data only
-../.venv/bin/python -m pytest -q tests                              # 167 tests
+../.venv/bin/python -m pytest -q tests                              # 170 tests
 ../.venv/bin/python -m tradingai.launcher --thermal-check --minutes 5   # temperature and throttling under full load
 ../.venv/bin/python -m tradingai.launcher --selftest --offline      # end-to-end test over HTTP and WebSocket
 ```

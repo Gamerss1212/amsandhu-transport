@@ -36,6 +36,23 @@ from tradingai.strategies.library import specs
 log = logs.get("api")
 LOCAL_HOSTS = {"127.0.0.1", "localhost"}
 
+# What the read-only token (X-TA-Read-Token) may fetch: GET only, and only these pages of information. It cannot reach
+# brokers, connections, credentials, the audit chain, or any route that changes anything. It exists so a voice
+# assistant (JARVIS) can read the system's state without being able to act on it.
+READ_ONLY_PATHS = frozenset({
+    "/api/overview", "/api/fleet", "/api/fleet/summary", "/api/learning", "/api/market/strip", "/api/daytrade",
+    "/api/activity", "/api/autopilot", "/api/system/thermal", "/api/account", "/api/risk", "/api/orders",
+    "/api/fills", "/api/decisions", "/api/equity", "/api/report/session", "/api/report/attribution", "/api/events",
+})
+
+
+def read_only_allows(method: str, path: str) -> bool:
+    if method != "GET":
+        return False
+    if path.startswith("/api/fleet/A") and path[len("/api/fleet/"):].isalnum():      # one agent: /api/fleet/A004
+        return True
+    return path in READ_ONLY_PATHS
+
 
 def clean(o: Any) -> Any:
     """JSON-safe: Decimals as text (exact money), NaN/inf as null, numpy scalars as Python numbers."""
@@ -133,12 +150,13 @@ class AskIn(BaseModel):
 
 
 # ---------------------------------------------------------------- the app
-def create_app(core, *, token: Optional[str] = None, on_shutdown=None) -> FastAPI:
+def create_app(core, *, token: Optional[str] = None, on_shutdown=None, read_token: Optional[str] = None) -> FastAPI:
     """`core` is a tradingai.app.App. `on_shutdown` is called after the owner presses Shut down."""
     token = token or secrets.token_urlsafe(32)
     api = FastAPI(title="Trading AI", version=__version__, docs_url=None, redoc_url=None, openapi_url=None,
                   default_response_class=J)
     api.state.token = token
+    api.state.read_token = read_token or secrets.token_urlsafe(32)
 
     class Guard(BaseHTTPMiddleware):
         async def dispatch(self, request: Request, call_next):
@@ -151,7 +169,10 @@ def create_app(core, *, token: Optional[str] = None, on_shutdown=None) -> FastAP
                 if origin and urlsplit(origin).hostname not in LOCAL_HOSTS:
                     return J({"error": "cross-site request refused"}, status_code=403)
             if path.startswith("/api/") and path != "/api/system/ping":
-                if not secrets.compare_digest(request.headers.get("x-ta-token", ""), token):
+                full = secrets.compare_digest(request.headers.get("x-ta-token", ""), token)
+                read = (not full and read_only_allows(request.method, path) and secrets.compare_digest(
+                    request.headers.get("x-ta-read-token", ""), api.state.read_token))
+                if not (full or read):
                     return J({"error": "missing or wrong session token: reload the page"}, status_code=401)
             resp = await call_next(request)
             resp.headers["X-Content-Type-Options"] = "nosniff"

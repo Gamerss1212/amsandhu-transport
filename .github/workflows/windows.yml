@@ -37,6 +37,15 @@ jobs:
         with:
           node-version: "22"
 
+      - name: JARVIS voice assistant installs, type-checks and builds on Windows
+        working-directory: trading-ai/jarvis
+        run: |
+          npm ci --ignore-scripts --no-audit --no-fund
+          npx tsc -b
+          npx vite build
+          node --check bridge/server.mjs
+          node --check bridge/trading.mjs
+
       - name: Which Windows and which CPU
         run: |
           Get-CimInstance Win32_OperatingSystem | Select-Object Caption, Version, BuildNumber, OSArchitecture | Format-List

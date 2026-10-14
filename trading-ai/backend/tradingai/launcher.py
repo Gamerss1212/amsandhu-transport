@@ -110,14 +110,40 @@ class Server:
     def url(self) -> str:
         return f"http://{config.HOST}:{self.port}"
 
+    @property
+    def link_file(self) -> Path:
+        return self.core.paths.data / "jarvis-link.json"
+
+    def write_link(self) -> None:
+        """Tell a local voice assistant (JARVIS) where this server is and give it the READ-ONLY token. The file is
+        rewritten at every start and removed at stop; the token cannot place orders, change limits or reach credentials."""
+        try:
+            self.link_file.parent.mkdir(parents=True, exist_ok=True)
+            self.link_file.write_text(json.dumps({"url": self.url, "read_token": self.api.state.read_token,
+                                                  "pid": os.getpid(), "note": "read-only; GET only"}), encoding="utf-8")
+            try:
+                os.chmod(self.link_file, 0o600)
+            except OSError:
+                pass
+        except OSError as e:
+            print(f"note: could not write the JARVIS link file: {e}")
+
+    def remove_link(self) -> None:
+        try:
+            self.link_file.unlink()
+        except OSError:
+            pass
+
     def run(self) -> None:
         """Blocks until the server stops."""
         try:
+            self.write_link()
             self.uv.run()
         finally:
             self.close()
 
     def start_background(self) -> threading.Thread:
+        self.write_link()
         self.uv.config.install_signal_handlers = False if hasattr(self.uv.config, "install_signal_handlers") else None
         t = threading.Thread(target=self.uv.run, name="web-server", daemon=True)
         t.start()
@@ -138,6 +164,7 @@ class Server:
         if self._stopped.is_set():
             return
         self._stopped.set()
+        self.remove_link()
         try:
             if self.core.state.state != "SHUTTING_DOWN":
                 self.core.shutdown()
@@ -231,6 +258,16 @@ def selftest(home: Optional[str], offline: bool) -> int:
         tok["h"] = {"X-TA-Token": srv.api.state.token}
     ok &= step("API refuses a request without the session token",
                lambda: (c.get("/api/overview").status_code == 401) or (_ for _ in ()).throw(AssertionError()))
+    def read_only_link():
+        link = json.loads(srv.link_file.read_text(encoding="utf-8"))
+        rh = {"X-TA-Read-Token": link["read_token"]}
+        got = c.get("/api/overview", headers=rh).status_code
+        no_post = c.post("/api/controls/pause-entries", headers=rh, json={"paused": True}).status_code
+        no_conn = c.get("/api/connections", headers=rh).status_code
+        assert (got, no_post, no_conn) == (200, 401, 401), f"read {got}, write {no_post}, connections {no_conn}"
+        return "the read-only token can read the overview and cannot write or reach connections"
+
+    ok &= step("voice-assistant link is read-only", read_only_link)
     ok &= step("API refuses a foreign Host header",
                lambda: (c.get("/health", headers={"Host": "evil.example"}).status_code == 421) or
                (_ for _ in ()).throw(AssertionError()))
